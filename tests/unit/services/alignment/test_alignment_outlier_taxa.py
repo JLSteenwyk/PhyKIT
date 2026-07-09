@@ -764,6 +764,62 @@ class TestAlignmentOutlierTaxa:
             expected,
         )
 
+    def test_ascii_symbol_counts_by_site_direct_path_uses_raised_taxa_limit(
+        self,
+        monkeypatch,
+    ):
+        matrix = alignment_outlier_taxa_module.np.frombuffer(
+            (b"ACGTACGT" * 6),
+            dtype=alignment_outlier_taxa_module.np.uint8,
+        ).reshape(6, 8)
+        symbols = alignment_outlier_taxa_module.np.frombuffer(
+            b"ACGT",
+            dtype=alignment_outlier_taxa_module.np.uint8,
+        )
+        monkeypatch.setattr(
+            alignment_outlier_taxa_module,
+            "_SITE_COUNTS_DIRECT_MIN_SITES",
+            8,
+        )
+        monkeypatch.setattr(
+            alignment_outlier_taxa_module,
+            "_SITE_COUNTS_DIRECT_MAX_TAXA",
+            3,
+        )
+        monkeypatch.setattr(
+            alignment_outlier_taxa_module,
+            "_SITE_COUNTS_DIRECT_HIGH_TAXA_MIN_SITES",
+            8,
+        )
+        monkeypatch.setattr(
+            alignment_outlier_taxa_module,
+            "_SITE_COUNTS_DIRECT_HIGH_TAXA_MAX_TAXA",
+            6,
+        )
+
+        def fail_bincount(*_args, **_kwargs):
+            raise AssertionError("small-alphabet site counts should use direct sums")
+
+        monkeypatch.setattr(
+            alignment_outlier_taxa_module.np,
+            "bincount",
+            fail_bincount,
+        )
+
+        observed = AlignmentOutlierTaxa._symbol_counts_by_site(matrix, symbols)
+        expected = alignment_outlier_taxa_module.np.array(
+            [
+                alignment_outlier_taxa_module.np.sum(matrix == symbol, axis=0)
+                for symbol in symbols
+            ],
+            dtype=alignment_outlier_taxa_module.np.float64,
+        )
+
+        alignment_outlier_taxa_module.np.testing.assert_array_equal(
+            observed,
+            expected,
+        )
+
     def test_variable_ascii_outliers_use_symbol_count_helpers(self, monkeypatch):
         service = self._service()
         alignment = MultipleSeqAlignment(

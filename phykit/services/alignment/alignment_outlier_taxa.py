@@ -24,6 +24,8 @@ _SITE_ENTROPY_DIRECT_SUM_MAX_SIZE = 100_000
 _SITE_COUNTS_DIRECT_MAX_SYMBOLS = 4
 _SITE_COUNTS_DIRECT_MIN_SITES = 1_000
 _SITE_COUNTS_DIRECT_MAX_TAXA = 1_000
+_SITE_COUNTS_DIRECT_HIGH_TAXA_MIN_SITES = 2_000
+_SITE_COUNTS_DIRECT_HIGH_TAXA_MAX_TAXA = 8_192
 _NO_OUTLIER_FAST_PATH_MIN_TAXA = 1_024
 
 
@@ -375,8 +377,16 @@ class AlignmentOutlierTaxa(Alignment):
             n_taxa, n_sites = alignment_array.shape
             if (
                 symbols.size <= _SITE_COUNTS_DIRECT_MAX_SYMBOLS
-                and n_sites >= _SITE_COUNTS_DIRECT_MIN_SITES
-                and n_taxa <= _SITE_COUNTS_DIRECT_MAX_TAXA
+                and (
+                    (
+                        n_sites >= _SITE_COUNTS_DIRECT_MIN_SITES
+                        and n_taxa <= _SITE_COUNTS_DIRECT_MAX_TAXA
+                    )
+                    or (
+                        n_sites >= _SITE_COUNTS_DIRECT_HIGH_TAXA_MIN_SITES
+                        and n_taxa <= _SITE_COUNTS_DIRECT_HIGH_TAXA_MAX_TAXA
+                    )
+                )
             ):
                 return np.array(
                     [
