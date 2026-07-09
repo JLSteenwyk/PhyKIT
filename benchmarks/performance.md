@@ -1064,6 +1064,7 @@ Results:
 | `SpectralDiscordance._kmeans` k-means++ initialization distances | 80k rows x 8 dimensions, 12 seeded initial centers, identical centers and closest-distance vector | 0.047207s | 0.033778s | 1.40x |
 | `SpectralDiscordance._kmeans` cached lazy NumPy attributes | 20k rows x 8 dimensions, 8 clusters, fixed RandomState seed and identical labels | 1.675318s | 1.256851s | 1.33x |
 | `SpectralDiscordance._format_json` one-PC score rows | 250k gene-tree score rows x 1 PC, identical score dictionary and cluster assignments | 0.538037s | 0.261451s | 2.06x |
+| `SpectralDiscordance._print_text` one-PC score rows | 100k gene-tree score rows x 1 PC, identical captured stdout text | 0.410053s | 0.121780s | 3.37x |
 | `SpectralDiscordance._plot_scatter` cluster index reuse | 1k/10k/100k/500k score rows with 4/8/12/12 clusters, side-by-side previous boolean scatter mask plus separate annotation index lookup | 0.000383s / 0.002307s / 0.024657s / 0.218886s | 0.000227s / 0.001371s / 0.009554s / 0.079477s | 1.68x / 1.68x / 2.58x / 2.75x |
 | `SpectralDiscordance` plot redundant tight layout passes | repeated 200-point scatter plus 50-bar eigengap PNG renders, explicit `Figure.tight_layout()` calls removed while retaining `savefig(..., bbox_inches="tight")` | 2.975426s | 2.545816s | 1.17x |
 | `SpectralDiscordance._get_top_loadings` partial top-N selection | 20 PCs x 300k bipartitions, top 10 loadings per PC, identical reported entries | 0.442687s | 0.050885s | 8.70x |

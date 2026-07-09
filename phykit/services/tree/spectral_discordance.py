@@ -399,7 +399,23 @@ class SpectralDiscordance(Tree):
         header += f"{'Cluster':>10s}"
         lines.append("\nPC scores:")
         lines.append(header)
-        if show_pcs == 5:
+        if show_pcs == 1:
+            col1 = scores[:, 0].tolist()
+            label_values = (
+                labels.tolist()
+                if hasattr(labels, "tolist")
+                else labels
+            )
+            for g, val1, label in zip(
+                range(1, scores.shape[0] + 1), col1, label_values
+            ):
+                gene_tree = "gene_tree_" + str(g)
+                lines.append(
+                    f"  {gene_tree:<14s}"
+                    f"{val1:>10.4f}"
+                    f"{label:>10d}"
+                )
+        elif show_pcs == 5:
             for g, row_scores in enumerate(scores):
                 gene_tree = "gene_tree_" + str(g + 1)
                 lines.append(
