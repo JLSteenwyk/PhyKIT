@@ -119,6 +119,17 @@ class _AlignmentJsonDefaultArgs:
         self.json = False
 
 
+class _AlignmentEntropyDefaultArgs:
+    __slots__ = ("alignment", "verbose", "json", "plot", "plot_output")
+
+    def __init__(self, alignment: str) -> None:
+        self.alignment = alignment
+        self.verbose = False
+        self.json = False
+        self.plot = False
+        self.plot_output = "alignment_entropy_plot.png"
+
+
 class _FastaVerboseJsonDefaultArgs:
     __slots__ = ("fasta", "verbose", "json")
 
@@ -716,6 +727,13 @@ class Phykit:
 
     @staticmethod
     def alignment_entropy(argv):
+        if len(argv) == 1 and argv[0] and argv[0][0] != "-":
+            _run_service_with_args(
+                _AlignmentEntropyDefaultArgs(argv[0]),
+                AlignmentEntropy,
+            )
+            return
+
         parser = _new_parser(
             description=_dedent(
                 f"""\
