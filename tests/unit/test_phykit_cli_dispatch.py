@@ -390,6 +390,32 @@ def test_gc_content_default_invocation_bypasses_parser(monkeypatch):
     assert args.json is False
 
 
+@pytest.mark.parametrize("verbose_flag", ["-v", "--verbose"])
+def test_gc_content_verbose_invocation_bypasses_parser(monkeypatch, verbose_flag):
+    captured = {}
+
+    class Runner:
+        def __init__(self, args):
+            captured["args"] = args
+
+        def run(self):
+            captured["ran"] = True
+
+    def fail_new_parser(*_args, **_kwargs):
+        raise AssertionError("verbose gc_content should not build parser")
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+    monkeypatch.setattr(phykit_module, "GCContent", Runner)
+
+    phykit_module.Phykit.gc_content(["alignment.fa", verbose_flag])
+
+    args = captured["args"]
+    assert captured["ran"] is True
+    assert args.fasta == "alignment.fa"
+    assert args.verbose is True
+    assert args.json is False
+
+
 def test_gc_content_option_invocation_keeps_parser(monkeypatch):
     calls = {"parser": False, "ran": False}
 
@@ -415,10 +441,10 @@ def test_gc_content_option_invocation_keeps_parser(monkeypatch):
     monkeypatch.setattr(phykit_module, "_new_parser", fake_new_parser)
     monkeypatch.setattr(phykit_module, "GCContent", Runner)
 
-    phykit_module.Phykit.gc_content(["alignment.fa", "-v"])
+    phykit_module.Phykit.gc_content(["alignment.fa", "--json"])
 
     assert calls["parser"] is True
-    assert calls["argv"] == ["alignment.fa", "-v"]
+    assert calls["argv"] == ["alignment.fa", "--json"]
     assert calls["ran"] is True
 
 

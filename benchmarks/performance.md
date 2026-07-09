@@ -353,6 +353,7 @@ Results:
 | `GCContent.run` verbose JSON local round | 500k mocked per-sequence GC rows, identical payload dictionaries, side-by-side previous global `round` lookup | 0.608651s | 0.547883s | 1.11x |
 | `GCContent.calculate_gc_per_sequence_data` cached lazy NumPy attributes | 1200 variable DNA records x 3000 sites, repeated ASCII matrix counts after lookup-table warmup | 0.018320s | 0.011841s | 1.55x |
 | `Phykit.gc_content` default parser bypass | 1000 repeated direct handler calls with service mocked, plus command profiler default `gc_content test_alignment_0.fa`, 30 runs after 5 warmups, default/verbose/JSON stdout matched previous branch | 1.001582s / 0.077593s | 0.000401s / 0.071797s | 2497.71x / 1.08x |
+| `Phykit.gc_content` verbose parser bypass | direct dispatch 1000 mocked service calls for `--verbose`; command profiler `gc_content_verbose`, 30 runs after 5 warmups | 0.908328s / 0.066765s | 0.000497s / 0.053721s | 1827.62x / 1.24x |
 | `gc_content` module import without eager NumPy/Bio.Align | cold subprocess import after lazy NumPy lookup construction and annotation-only Bio.Align import | 0.111378s | 0.023406s | 4.76x |
 | `gc_content` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006135s | 0.004972s | 1.23x |
 | `gc_content` module import without `typing` startup | median cold subprocess import after removing runtime `TYPE_CHECKING` and converting annotation-only typing aliases to built-in annotations | 0.002604s | 0.000947s | 2.75x |

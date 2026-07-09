@@ -133,9 +133,9 @@ class _AlignmentEntropyDefaultArgs:
 class _FastaVerboseJsonDefaultArgs:
     __slots__ = ("fasta", "verbose", "json")
 
-    def __init__(self, fasta: str) -> None:
+    def __init__(self, fasta: str, *, verbose: bool = False) -> None:
         self.fasta = fasta
-        self.verbose = False
+        self.verbose = verbose
         self.json = False
 
 
@@ -1422,6 +1422,17 @@ class Phykit:
     def gc_content(argv):
         if len(argv) == 1 and argv[0] and argv[0][0] != "-":
             _run_service_with_args(_FastaVerboseJsonDefaultArgs(argv[0]), GCContent)
+            return
+        if (
+            len(argv) == 2
+            and argv[0]
+            and argv[0][0] != "-"
+            and argv[1] in ("-v", "--verbose")
+        ):
+            _run_service_with_args(
+                _FastaVerboseJsonDefaultArgs(argv[0], verbose=True),
+                GCContent,
+            )
             return
 
         parser = _new_parser(
