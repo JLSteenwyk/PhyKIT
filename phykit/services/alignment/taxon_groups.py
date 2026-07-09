@@ -198,10 +198,15 @@ class TaxonGroups:
                     [f"Could not parse FASTA file: {path}"], code=2
                 )
         else:
-            from Bio import Phylo
             from ..tree.base import Tree
 
             try:
+                taxa = Tree._scan_simple_newick_tip_names(path)
+                if taxa is not None:
+                    return list(taxa)
+
+                from Bio import Phylo
+
                 tree = Phylo.read(path, "newick")
                 taxa = Tree.calculate_terminal_names_fast(tree)
                 if taxa is not None:

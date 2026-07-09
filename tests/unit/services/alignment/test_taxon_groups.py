@@ -261,6 +261,19 @@ class TestTreeMode:
 
         assert svc._extract_taxa(str(tree_path)) == ["A", "B", "C", "D"]
 
+    def test_extract_tree_taxa_scans_simple_newick_before_biopython(
+        self, tmp_path, mocker
+    ):
+        tree_path = tmp_path / "tree.nwk"
+        _write_tree(tree_path, "((A:1,B:2):3,(C:4,D:5):6);\n")
+        svc = TaxonGroups(_make_args(tmp_path / "unused.txt"))
+        mocker.patch(
+            "Bio.Phylo.read",
+            side_effect=AssertionError("simple Newick should avoid Bio.Phylo"),
+        )
+
+        assert svc._extract_taxa(str(tree_path)) == ["A", "B", "C", "D"]
+
     def test_extract_taxa_uses_os_exists_instead_of_path_per_file(
         self, tmp_path, monkeypatch, mocker
     ):

@@ -657,6 +657,7 @@ Results:
 | `TaxonGroups._extract_taxa` FASTA header-only parser | 50k FASTA records, mixed-case 120 bp each, legacy `SimpleFastaParser` baseline | 0.039226s | 0.022543s | 1.74x |
 | `_fasta.read_fasta_first_tokens` binary header scan | 100k FASTA records, 120 bp each, identical first-token ID list | 0.042712s | 0.040428s | 1.06x |
 | `TaxonGroups._extract_taxa` tree terminal-name extraction | parsed balanced 65536-tip Newick tree, collect terminal names | 0.1344s | 0.0129s | 10.4x |
+| `TaxonGroups`/`OccupancyFilter._extract_taxa` simple-Newick file scanner | 300 plain Newick tree files x 128 tips, side-by-side previous Bio.Phylo parse before direct terminal-name extraction | 1.619811s | 0.301661s | 5.37x |
 | `TaxonGroups._read_file_list` streaming parse | 500k relative paths with comments/blanks | 1.617507s | 1.484327s | 1.09x |
 | `TaxonGroups._read_file_list` Path-compatible string resolver | 500k relative/absolute paths with comments/blanks and redundant separators, old `Path`-per-row parser baseline | 1.587105s | 0.320406s | 4.95x |
 | `TaxonGroups._read_file_list` simple-path normalization fast path | 500k relative/absolute paths with comments/blanks and redundant separators, side-by-side previous string resolver comparison | 0.313885s | 0.178136s | 1.76x |
