@@ -25,6 +25,7 @@ _DNA_GAP_LOOKUP = None
 _PROTEIN_GAP_LOOKUP = None
 _GAP_DELETE_TABLES = {}
 _PLOT_DIRECT_MAX_LIMIT = 100_000
+_ASCII_COUNT_BLOCK_SIZE = 512
 
 
 def _column_sum_squares(counts: np.ndarray) -> np.ndarray:
@@ -69,7 +70,7 @@ def _column_totals_and_sum_squares_from_ascii_codes(
     alignment_array,
     valid_mask,
     valid_symbols,
-    block_size: int = 8192,
+    block_size: int = _ASCII_COUNT_BLOCK_SIZE,
 ):
     aln_len = alignment_array.shape[1]
     totals = np.zeros(aln_len, dtype=np.float64)

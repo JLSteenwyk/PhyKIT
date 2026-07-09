@@ -11,6 +11,7 @@ from Bio.SeqRecord import SeqRecord
 
 from phykit.services.alignment.evolutionary_rate_per_site import EvolutionaryRatePerSite
 from phykit.services.alignment.evolutionary_rate_per_site import (
+    _ASCII_COUNT_BLOCK_SIZE,
     _GAP_DELETE_TABLES,
     _column_totals,
     _column_sum_squares,
@@ -303,6 +304,34 @@ assert "phykit.helpers.plot_config" not in sys.modules
         )
         np.testing.assert_allclose(totals, expected_counts.sum(axis=0))
         np.testing.assert_allclose(sum_squares, (expected_counts ** 2).sum(axis=0))
+
+    def test_ascii_column_totals_helper_defaults_to_cache_sized_blocks(
+        self, monkeypatch
+    ):
+        import numpy as np
+
+        width = _ASCII_COUNT_BLOCK_SIZE + 1
+        matrix = np.tile(
+            np.frombuffer(b"ACDEFGHIKLMNPQRSTVWY", dtype=np.uint8),
+            (3, width // 20 + 1),
+        )[:, :width]
+        valid_symbols = np.unique(matrix)
+        original_bincount = erps_module.np.bincount
+        observed_widths = []
+
+        def bincount_spy(values, *args, **kwargs):
+            observed_widths.append(kwargs["minlength"] // 256)
+            return original_bincount(values, *args, **kwargs)
+
+        monkeypatch.setattr(erps_module.np, "bincount", bincount_spy)
+
+        _column_totals_and_sum_squares_from_ascii_codes(
+            matrix,
+            None,
+            valid_symbols,
+        )
+
+        assert observed_widths == [_ASCII_COUNT_BLOCK_SIZE, 1]
 
     def test_prepare_evolutionary_rate_plot_series_matches_row_series(self):
         import numpy as np
