@@ -296,6 +296,33 @@ class TestOccupancyPerTaxon(object):
             occupancy.calculate_occupancy_per_taxon(alignment, is_protein=False)
         ) == {"a": 0.8, "b": 2 / 3}
 
+    def test_occupancy_per_taxon_long_gappy_ascii_uses_per_row_counts(
+        self, args, monkeypatch, mocker
+    ):
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("ACGTN-" * 4), id="a"),
+                SeqRecord(Seq("ACGT--" * 4), id="b"),
+            ]
+        )
+        occupancy = OccupancyPerTaxon(args)
+        monkeypatch.setattr(
+            occupancy_per_taxon_module,
+            "_PER_ROW_OCCUPANCY_MIN_SEQUENCE_LENGTH",
+            1,
+        )
+        mocker.patch.object(
+            occupancy_per_taxon_module.np,
+            "frombuffer",
+            side_effect=AssertionError(
+                "long gappy ASCII rows should avoid matrix construction"
+            ),
+        )
+
+        assert dict(
+            occupancy.calculate_occupancy_per_taxon(alignment, is_protein=False)
+        ) == {"a": 4 / 6, "b": 4 / 6}
+
     def test_occupancy_per_taxon_unicode_fallback(self, args):
         alignment = [SimpleNamespace(seq="A\u03a9N-", id="a")]
         occupancy = OccupancyPerTaxon(args)

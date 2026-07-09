@@ -27,6 +27,7 @@ _PROTEIN_INVALID_BYTES = b"-?*Xx"
 _DNA_INVALID_COUNT_CHARS = "-?*XNxn"
 _PROTEIN_INVALID_COUNT_CHARS = "-?*Xx"
 _INVALID_SCAN_BYTES = 4096
+_PER_ROW_OCCUPANCY_MIN_SEQUENCE_LENGTH = 1024
 
 
 class _IdenticalOccupancyRows(list):
@@ -124,6 +125,12 @@ def _occupancy_from_ascii_matrix(record_data, is_protein: bool):
     if not any(code in alignment_bytes for code in invalid_bytes):
         occupancy = 0.0 if seq_len == 0 else 1.0
         return _identical_occupancy_rows(record_data, occupancy)
+
+    if seq_len >= _PER_ROW_OCCUPANCY_MIN_SEQUENCE_LENGTH:
+        return [
+            (record_id, _occupancy_for_sequence(sequence, is_protein))
+            for record_id, sequence in record_data
+        ]
 
     try:
         alignment_array = np.frombuffer(
