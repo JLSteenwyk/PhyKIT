@@ -111,6 +111,14 @@ class _PairwiseIdentityDefaultArgs:
         self.color_file = None
 
 
+class _AlignmentJsonDefaultArgs:
+    __slots__ = ("alignment", "json")
+
+    def __init__(self, alignment: str) -> None:
+        self.alignment = alignment
+        self.json = False
+
+
 def _dedent(text: str) -> str:
     from textwrap import dedent
 
@@ -209,6 +217,10 @@ def add_plot_arguments(parser) -> None:
 
 def _run_service(parser, argv, service_factory) -> None:
     args = parser.parse_args(argv)
+    _run_service_with_args(args, service_factory)
+
+
+def _run_service_with_args(args, service_factory) -> None:
     try:
         service_factory(args).run()
     except PhykitUserError as err:
@@ -566,6 +578,10 @@ class Phykit:
     ## Alignment functions
     @staticmethod
     def alignment_length(argv):
+        if len(argv) == 1 and argv[0] and argv[0][0] != "-":
+            _run_service_with_args(_AlignmentJsonDefaultArgs(argv[0]), AlignmentLength)
+            return
+
         parser = _new_parser(
             description=_dedent(
                 f"""\
@@ -1524,15 +1540,10 @@ class Phykit:
     @staticmethod
     def pairwise_identity(argv):
         if len(argv) == 1 and argv[0] and argv[0][0] != "-":
-            try:
-                PairwiseIdentity(_PairwiseIdentityDefaultArgs(argv[0])).run()
-            except PhykitUserError as err:
-                try:
-                    for message in err.messages:
-                        print(message)
-                except BrokenPipeError:
-                    pass
-                raise SystemExit(err.code)
+            _run_service_with_args(
+                _PairwiseIdentityDefaultArgs(argv[0]),
+                PairwiseIdentity,
+            )
             return
 
         parser = _new_parser(

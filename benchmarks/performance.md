@@ -350,6 +350,7 @@ Results:
 | `gc_content` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006135s | 0.004972s | 1.23x |
 | `gc_content` module import without `typing` startup | median cold subprocess import after removing runtime `TYPE_CHECKING` and converting annotation-only typing aliases to built-in annotations | 0.002604s | 0.000947s | 2.75x |
 | `gc_content` module import without eager file helper | median cold subprocess import after lazy alignment-reader wrappers in service and alignment base | 0.048802s | 0.030473s | 1.60x |
+| `Phykit.alignment_length` default parser bypass | 1000 repeated direct handler calls with service mocked, plus command profiler default `alignment_length test_alignment_0.fa`, 15 runs after 3 warmups, text/JSON stdout matched previous branch | 0.636235s / 0.079175s | 0.000408s / 0.059136s | 1559.40x / 1.34x |
 | `AlignmentLength.run` FASTA parser fast path | 50k FASTA records x 304 bp, cold alignment cache each baseline run | 0.605968s | 0.094259s | 6.43x |
 | `AlignmentLength._get_fasta_alignment_length` direct scanner | 50k wrapped FASTA records x 304 bp, side-by-side previous `SimpleFastaParser` length helper | 0.068333s | 0.046054s | 1.48x |
 | `AlignmentLength._get_fasta_alignment_length` binary direct scanner | 50k wrapped ASCII FASTA records x 304 bp, side-by-side previous text direct scanner | 0.026663s | 0.024407s | 1.09x |
