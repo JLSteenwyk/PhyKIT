@@ -204,6 +204,37 @@ class TestColumnScore:
             reference, query
         ) == (4, 6)
 
+    def test_direct_column_matching_five_taxa_skip_numpy_matrix(
+        self, mocker, args
+    ):
+        service = ColumnScore(args)
+        reference = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("A-G-TAT"), id="r1"),
+                SeqRecord(Seq("A-G--AT"), id="r2"),
+                SeqRecord(Seq("A-G--TA"), id="r3"),
+                SeqRecord(Seq("AG-A-TA"), id="r4"),
+                SeqRecord(Seq("AC-a-T-"), id="r5"),
+            ]
+        )
+        query = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("A-GTAT"), id="q1"),
+                SeqRecord(Seq("A-G-AT"), id="q2"),
+                SeqRecord(Seq("A-G-TA"), id="q3"),
+                SeqRecord(Seq("AGA-TA"), id="q4"),
+                SeqRecord(Seq("ACa-T-"), id="q5"),
+            ]
+        )
+        mocker.patch(
+            "phykit.services.alignment.column_score.np.frombuffer",
+            side_effect=AssertionError("five-taxon column score should use sets"),
+        )
+
+        assert service._calculate_matches_between_alignments_direct(
+            reference, query
+        ) == (5, 6)
+
     def test_small_ascii_column_set_rejects_unicode(self):
         assert ColumnScore._small_ascii_column_set(["AΩ", "AT"]) is None
 

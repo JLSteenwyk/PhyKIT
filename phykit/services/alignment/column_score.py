@@ -39,7 +39,7 @@ class _LazyNumpy:
 
 
 np = _LazyNumpy()
-_SMALL_TAXON_COLUMN_SET_MAX = 4
+_SMALL_TAXON_COLUMN_SET_MAX = 8
 
 
 def print_json(*args, **kwargs):
