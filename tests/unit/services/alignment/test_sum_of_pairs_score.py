@@ -372,6 +372,37 @@ class TestSumOfPairsScore:
         assert pairs == 112
         assert observed_stack_sizes == [(2, 2, 4)]
 
+    def test_complete_equal_lengths_majority_changed_stacks_changed_records(
+        self, mocker
+    ):
+        ids = [f"id{i}" for i in range(8)]
+        reference_records = _make_records({key: "AAAA" for key in ids})
+        query_records = _make_records({
+            key: "AATA" if idx < 6 else "AAAA"
+            for idx, key in enumerate(ids)
+        })
+        original_stack = SumOfPairsScore._stack_equal_length_sequence_pairs
+        observed_stack_sizes = []
+
+        def recording_stack(ref_seqs, query_seqs, seq_len):
+            observed_stack_sizes.append((len(ref_seqs), len(query_seqs), seq_len))
+            return original_stack(ref_seqs, query_seqs, seq_len)
+
+        mocker.patch.object(
+            SumOfPairsScore,
+            "_stack_equal_length_sequence_pairs",
+            side_effect=recording_stack,
+        )
+
+        matches, pairs = SumOfPairsScore._calculate_equal_length_complete_records(
+            reference_records,
+            query_records,
+        )
+
+        assert matches == 85
+        assert pairs == 112
+        assert observed_stack_sizes == [(6, 6, 4)]
+
     def test_complete_equal_lengths_identical_records_skip_matrix_stack(
         self, mocker, args
     ):
