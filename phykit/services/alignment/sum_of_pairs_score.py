@@ -69,6 +69,10 @@ class SumOfPairsScore(Alignment):
             reference_records, query_records
         )
         if fast_result is None:
+            fast_result = self._calculate_unchanged_complete_records(
+                reference_records, query_records
+            )
+        if fast_result is None:
             record_id_pairs = list(
                 itertools.combinations(reference_records.keys(), 2)
             )
@@ -169,7 +173,13 @@ class SumOfPairsScore(Alignment):
         record_ids = list(reference_records.keys())
         if not SumOfPairsScore._has_complete_pair_set(record_id_pairs, record_ids):
             return None
-        return SumOfPairsScore._calculate_equal_length_complete_records(
+        equal_length_result = SumOfPairsScore._calculate_equal_length_complete_records(
+            reference_records,
+            query_records,
+        )
+        if equal_length_result is not None:
+            return equal_length_result
+        return SumOfPairsScore._calculate_unchanged_complete_records(
             reference_records,
             query_records,
         )
@@ -236,6 +246,34 @@ class SumOfPairsScore(Alignment):
             matching_taxa_per_site * (matching_taxa_per_site - 1)
         ) // 2
         return int(matches_per_site.sum()), total_pairs
+
+    @staticmethod
+    def _calculate_unchanged_complete_records(
+        reference_records: dict[str, object],
+        query_records: dict[str, object],
+    ) -> tuple[int, int] | None:
+        if not reference_records:
+            return None
+
+        record_seq = SumOfPairsScore._record_seq
+        lengths = []
+        if reference_records is query_records:
+            for record in reference_records.values():
+                lengths.append(len(record_seq(record)))
+        else:
+            for seq_id, reference_record in reference_records.items():
+                ref_seq = record_seq(reference_record)
+                if ref_seq != record_seq(query_records[seq_id]):
+                    return None
+                lengths.append(len(ref_seq))
+
+        lengths.sort()
+        total_pairs = 0
+        remaining = len(lengths) - 1
+        for length in lengths:
+            total_pairs += length * remaining
+            remaining -= 1
+        return total_pairs, total_pairs
 
     @staticmethod
     def _calculate_unchanged_record_pairs(

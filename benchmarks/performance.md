@@ -264,6 +264,7 @@ Results:
 | `SumOfPairsScore.determine_number_of_matches_and_total_pairs` sequential equal-length cache | 49 incomplete pair comparisons, 14 taxa x 50k sites, side-by-side previous per-pair array conversion | 0.001350s | 0.000487s | 2.77x |
 | `SumOfPairsScore.determine_number_of_matches_and_total_pairs` sequential mixed-length path | 8 taxa x 50k reference sites x 49k query sites, 28 pairs | 0.141108s | 0.000271s | 520.8x |
 | `SumOfPairsScore.determine_number_of_matches_and_total_pairs` unchanged incomplete pairs | 49 incomplete mixed-length pair comparisons, 14 taxa x ~50k sites, side-by-side previous sequential array path | 0.000806s | 0.000244s | 3.30x |
+| `SumOfPairsScore.determine_number_of_matches_and_total_pairs` complete mixed-length unchanged records | 500 / 2000 / 5000 unchanged mixed-length records, complete ordered pair set already supplied, side-by-side previous pairwise min-length loop | 0.041525s / 1.321374s / 7.048240s | 0.009377s / 0.119811s / 1.533370s | 4.43x / 11.03x / 4.60x |
 | `SumOfPairsScore.determine_number_of_matches_and_total_pairs` cached lazy NumPy attributes | 49 incomplete mixed-length pair comparisons, 14 taxa x ~50k sites, sequential fallback path, side-by-side previous lazy proxy lookup path | 0.000323750s | 0.000294125s | 1.10x |
 | `SumOfPairsScore.determine_number_of_matches_and_total_pairs` fallback multiprocessing threshold | 3153 incomplete mixed-length pair comparisons, 80 taxa x ~2000 sites, side-by-side previous low multiprocessing cutoff | 0.850238s | 0.003587s | 237.02x |
 | `SumOfPairsScore._read_fasta` | 50k FASTA records, mixed-case 120 bp each | 0.1076s | 0.0342s | 3.1x |
@@ -3467,6 +3468,10 @@ Profiling summary:
   unchanged raw query/reference sequences now return
   full-match totals from the requested pair lengths before building arrays or
   entering the multiprocessing fallback.
+  Complete mixed-length query/reference records that are unchanged now compute
+  the all-pairs total from sorted sequence lengths, so the `run` path avoids
+  materializing the complete pair list and direct callers skip the previous
+  pairwise min-length loop when they pass a complete pair set.
   The multiprocessing cutoff for the remaining fallback path is now much higher,
   so medium incomplete pair sets keep using the cached sequential kernel instead
   of paying process startup and pickling overhead.

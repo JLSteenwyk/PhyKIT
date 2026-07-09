@@ -165,6 +165,40 @@ class TestSumOfPairsScore:
             query_records,
         )
 
+    def test_run_mixed_length_unchanged_records_skips_pair_list_setup(
+        self, mocker, args, capsys
+    ):
+        sop = SumOfPairsScore(args)
+        reference_records = _make_records({
+            "id1": "AAAA",
+            "id2": "AAA",
+            "id3": "AA",
+        })
+        query_records = _make_records({
+            "id1": "AAAA",
+            "id2": "AAA",
+            "id3": "AA",
+        })
+        mocker.patch.object(
+            SumOfPairsScore,
+            "_read_fasta",
+            side_effect=[query_records, reference_records],
+        )
+        mocker.patch(
+            "phykit.services.alignment.sum_of_pairs_score.itertools.combinations",
+            side_effect=AssertionError("unchanged records should skip pair list"),
+        )
+        mocked_determine = mocker.patch.object(
+            sop,
+            "determine_number_of_matches_and_total_pairs",
+            side_effect=AssertionError("unchanged records should skip fallback"),
+        )
+
+        sop.run()
+
+        assert capsys.readouterr().out == "1.0\n"
+        mocked_determine.assert_not_called()
+
     def test_determine_matches_sequential_equal_lengths(self, args):
         sop = SumOfPairsScore(args)
         ids = ["id1", "id2", "id3"]
@@ -483,6 +517,36 @@ class TestSumOfPairsScore:
         assert pairs == 5
         mocked_arrays.assert_not_called()
         mocked_pool.assert_not_called()
+
+    def test_complete_mixed_length_unchanged_pair_set_skips_pair_loop(
+        self, mocker, args
+    ):
+        sop = SumOfPairsScore(args)
+        ids = [f"id{i}" for i in range(8)]
+        reference_records = _make_records({
+            key: "A" * (idx + 1)
+            for idx, key in enumerate(ids)
+        })
+        query_records = _make_records({
+            key: "A" * (idx + 1)
+            for idx, key in enumerate(ids)
+        })
+        record_id_pairs = list(itertools.combinations(ids, 2))
+        mocked_pair_loop = mocker.patch.object(
+            SumOfPairsScore,
+            "_calculate_unchanged_record_pairs",
+            side_effect=AssertionError("complete unchanged records should skip pair loop"),
+        )
+
+        matches, pairs = sop.determine_number_of_matches_and_total_pairs(
+            record_id_pairs,
+            reference_records,
+            query_records,
+        )
+
+        assert matches == sum(length * (8 - length) for length in range(1, 9))
+        assert pairs == matches
+        mocked_pair_loop.assert_not_called()
 
     def test_determine_matches_sequential_mismatched_lengths(self, args):
         sop = SumOfPairsScore(args)
