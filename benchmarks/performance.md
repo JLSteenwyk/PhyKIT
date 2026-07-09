@@ -461,6 +461,7 @@ Results:
 | `compositional_bias_per_site` module import without eager NumPy/Bio.Align | cold subprocess import after lazy NumPy lookup construction and annotation-only Bio.Align import | 0.117581s | 0.029701s | 3.96x |
 | `compositional_bias_per_site` module import without eager JSON/plot config helpers | median cold subprocess import after lazy JSON wrapper and localized `PlotConfig` import | 0.012085s | 0.005828s | 2.07x |
 | `compositional_bias_per_site` module import without typing startup | median cold subprocess import after converting annotation-only typing names to built-in postponed annotations | 0.006420s | 0.004329s | 1.48x |
+| `CompositionalBiasPerSite.process_args` no-plot config elision | `python -m timeit`, 7 repeats of 2000 no-plot `CompositionalBiasPerSite` constructions, text and JSON CLI stdout/stderr matched previous commit | 0.000003790s | 0.000001520s | 2.49x |
 | `RelativeCompositionVariabilityTaxon.calculate_rows` | 260 taxa x 5000 sites, alphabet `ACGT-?NX*` | 0.0756s | 0.0286s | 2.6x |
 | `RelativeCompositionVariabilityTaxon.calculate_rows` invalid lookup | 500 taxa x 8000 sites, alphabet `ACGT-?NX*` | 0.058200s | 0.025501s | 2.28x |
 | `RelativeCompositionVariabilityTaxon.calculate_rows` protein byte bincounts | 2000 taxa x 5000 sites, protein alphabet plus gaps/ambiguous symbols | 0.102812s | 0.095350s | 1.08x |

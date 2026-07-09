@@ -392,6 +392,27 @@ assert "numpy" not in sys.modules
         assert parsed["json_output"] is False
         assert parsed["plot"] is False
         assert parsed["plot_output"] == "compositional_bias_per_site_plot.png"
+        assert parsed["plot_config"] is None
+
+    def test_no_plot_init_does_not_import_plot_config(self):
+        code = """
+import sys
+from argparse import Namespace
+from phykit.services.alignment.compositional_bias_per_site import CompositionalBiasPerSite
+CompositionalBiasPerSite(Namespace(alignment="x.fa", plot=False))
+assert "phykit.helpers.plot_config" not in sys.modules
+"""
+        subprocess.run([sys.executable, "-c", code], check=True)
+
+    def test_process_args_builds_plot_config_when_plotting(self):
+        parsed = CompositionalBiasPerSite(
+            Namespace(alignment="x.fa", plot=True)
+        ).process_args(
+            Namespace(alignment="x.fa", plot=True)
+        )
+
+        assert parsed["plot"] is True
+        assert parsed["plot_config"] is not None
 
     def test_calculate_compositional_bias_per_site_all_gaps(self):
         service = CompositionalBiasPerSite(Namespace(alignment="x.fa"))

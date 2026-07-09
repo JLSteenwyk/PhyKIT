@@ -369,14 +369,19 @@ class CompositionalBiasPerSite(Alignment):
             print(f"Saved compositional bias plot: {self.plot_output}")
 
     def process_args(self, args) -> dict[str, str]:
-        from ...helpers.plot_config import PlotConfig
+        plot = getattr(args, "plot", False)
+        plot_config = None
+        if plot:
+            from ...helpers.plot_config import PlotConfig
+
+            plot_config = PlotConfig.from_args(args)
 
         return dict(
             alignment_file_path=args.alignment,
             json_output=getattr(args, "json", False),
-            plot=getattr(args, "plot", False),
+            plot=plot,
             plot_output=getattr(args, "plot_output", "compositional_bias_per_site_plot.png"),
-            plot_config=PlotConfig.from_args(args),
+            plot_config=plot_config,
         )
 
     @staticmethod
