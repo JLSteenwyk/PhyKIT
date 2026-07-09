@@ -4,6 +4,10 @@ Benchmarks are local microbenchmarks for optimized hot paths. They use fixed
 random seeds and synthetic alignments to make before/after comparisons stable
 enough for regression tracking; absolute timings will vary by machine.
 
+`benchmarks/profile_commands.py` provides a lightweight command-level profiler
+for ranking representative PhyKIT CLI hotspots before choosing the next
+optimization target.
+
 ## 2026-06-22
 
 Environment:
