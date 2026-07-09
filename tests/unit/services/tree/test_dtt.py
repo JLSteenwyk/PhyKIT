@@ -19,7 +19,13 @@ from pathlib import Path
 from Bio import Phylo
 from Bio.Phylo.BaseTree import TreeMixin
 
-from phykit.services.tree.dtt import Dtt, _max_terminal_depth, _mean_selected_columns
+from phykit.services.tree.dtt import (
+    Dtt,
+    _max_terminal_depth,
+    _mean_selected_columns,
+    _observed_avg_sq_clade_disparities,
+    _should_use_observed_postorder_disparities,
+)
 import phykit.services.tree.dtt as dtt_module
 
 
@@ -69,6 +75,12 @@ def test_max_terminal_depth_scans_terminals_once():
 
     assert _max_terminal_depth(iterable, depths, 0.5) == 3.5
     assert iterable.iterations == 1
+
+
+def test_observed_postorder_disparity_threshold_targets_larger_work():
+    assert not _should_use_observed_postorder_disparities(np.empty((1024, 2)))
+    assert _should_use_observed_postorder_disparities(np.empty((1024, 12)))
+    assert _should_use_observed_postorder_disparities(np.empty((8192, 2)))
 
 
 def test_permutation_p_value_ge_counts_extreme_permutations(monkeypatch):
@@ -484,6 +496,65 @@ class TestComputeDtt:
             ordered_names,
         )
 
+        np.testing.assert_allclose(observed[0], expected[0])
+        np.testing.assert_allclose(observed[1], expected[1])
+
+    def test_observed_avg_sq_clade_disparities_match_sliced_disparities(self):
+        args = _make_args()
+        svc = Dtt(args)
+        newick = "((A:1,B:1):3,(C:2,(D:1,E:1):1):2);"
+        ordered_names = ["A", "B", "C", "D", "E"]
+        data = np.arange(60.0).reshape(5, 12)
+        tree = Phylo.read(StringIO(newick), "newick")
+        context = svc._prepare_dtt_context(tree, ordered_names)
+
+        observed = _observed_avg_sq_clade_disparities(data, context)
+        expected = {
+            clade_id: svc._compute_disparity(data[indices])
+            for clade_id, indices in context["clade_index_arrays"].items()
+        }
+
+        assert observed.keys() == expected.keys()
+        for clade_id, value in observed.items():
+            assert value == pytest.approx(expected[clade_id])
+
+    def test_compute_dtt_wide_avg_sq_avoids_per_clade_slicing(
+        self, monkeypatch
+    ):
+        args = _make_args()
+        svc = Dtt(args)
+        newick = "((A:1,B:1):3,(C:2,(D:1,E:1):1):2);"
+        ordered_names = ["A", "B", "C", "D", "E"]
+        data = np.arange(60.0).reshape(5, 12)
+        expected = svc._compute_dtt(
+            Phylo.read(StringIO(newick), "newick"),
+            data,
+            ordered_names,
+        )
+        calls = 0
+        original_compute_disparity = svc._compute_disparity
+
+        def count_total_disparity_only(data_arg):
+            nonlocal calls
+            calls += 1
+            if calls > 1:
+                raise AssertionError(
+                    "wide avg-squared DTT should aggregate clades postorder"
+                )
+            return original_compute_disparity(data_arg)
+
+        monkeypatch.setattr(
+            svc,
+            "_compute_disparity",
+            count_total_disparity_only,
+        )
+        observed = svc._compute_dtt(
+            Phylo.read(StringIO(newick), "newick"),
+            data,
+            ordered_names,
+        )
+
+        assert calls == 1
         np.testing.assert_allclose(observed[0], expected[0])
         np.testing.assert_allclose(observed[1], expected[1])
 

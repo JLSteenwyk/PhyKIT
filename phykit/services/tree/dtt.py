@@ -108,6 +108,71 @@ def _max_terminal_depth(terminals, depths, root_depth):
     return max_height
 
 
+def _should_use_observed_postorder_disparities(data: np.ndarray) -> bool:
+    tip_count = data.shape[0]
+    trait_count = data.shape[1] if data.ndim > 1 else 1
+    return trait_count >= 12 or (trait_count >= 2 and tip_count >= 8192)
+
+
+def _observed_avg_sq_clade_disparities(
+    data: np.ndarray,
+    context: dict,
+) -> dict[int, float] | None:
+    """Compute observed avg-squared clade disparities without slicing subtrees."""
+    postorder_ids = context.get("postorder_clade_ids")
+    terminal_indices = context.get("terminal_index_by_clade_id")
+    child_clade_ids = context.get("child_clade_ids")
+    if not postorder_ids or terminal_indices is None or child_clade_ids is None:
+        return None
+
+    clade_index_arrays = context["clade_index_arrays"]
+    counts = {}
+    sums = {}
+    sums_sq = {}
+    clade_disp = {}
+    for clade_id in postorder_ids:
+        terminal_idx = terminal_indices.get(clade_id)
+        if terminal_idx is not None:
+            values = data[terminal_idx]
+            counts[clade_id] = 1
+            sums[clade_id] = values
+            sums_sq[clade_id] = float(np.dot(values, values))
+            continue
+
+        count = 0
+        total_sum = None
+        total_sum_sq = 0.0
+        for child_id in child_clade_ids.get(clade_id, ()):
+            child_count = counts.get(child_id)
+            if child_count is None:
+                continue
+
+            count += child_count
+            if total_sum is None:
+                total_sum = sums[child_id].copy()
+            else:
+                total_sum += sums[child_id]
+            total_sum_sq += sums_sq[child_id]
+
+        if count == 0:
+            continue
+
+        counts[clade_id] = count
+        sums[clade_id] = total_sum
+        sums_sq[clade_id] = total_sum_sq
+
+        if count < 2 or clade_id not in clade_index_arrays:
+            continue
+
+        pair_count = count * (count - 1) / 2
+        clade_disp[clade_id] = (
+            count * total_sum_sq
+            - float(np.dot(total_sum, total_sum))
+        ) / pair_count
+
+    return clade_disp
+
+
 class Dtt(Tree):
     def __init__(self, args) -> None:
         parsed = self.process_args(args)
@@ -427,10 +492,17 @@ class Dtt(Tree):
         if total_disp == 0:
             return [0.0, 1.0], [1.0, 0.0]
 
-        clade_disp = {
-            clade_id: self._compute_disparity(data[indices])
-            for clade_id, indices in context["clade_index_arrays"].items()
-        }
+        clade_disp = None
+        if (
+            self.index == "avg_sq"
+            and _should_use_observed_postorder_disparities(data)
+        ):
+            clade_disp = _observed_avg_sq_clade_disparities(data, context)
+        if clade_disp is None:
+            clade_disp = {
+                clade_id: self._compute_disparity(data[indices])
+                for clade_id, indices in context["clade_index_arrays"].items()
+            }
 
         times = list(context["times"])
         dtt_values = [1.0]
