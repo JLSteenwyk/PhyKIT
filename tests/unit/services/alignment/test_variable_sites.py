@@ -133,13 +133,23 @@ assert "typing" not in sys.modules
         assert aln_len == 2
         assert isclose(var_sites_per, 100.0, rel_tol=0.001)
 
-    def test_variable_sites_ascii_path_uses_gap_code_reduction(self, mocker, args):
+    def test_variable_sites_ascii_path_uses_gap_code_reduction(
+        self,
+        mocker,
+        monkeypatch,
+        args,
+    ):
         alignment = MultipleSeqAlignment([
             SeqRecord(Seq("aa"), id="t1"),
             SeqRecord(Seq("a-"), id="t2"),
             SeqRecord(Seq("tt"), id="t3"),
         ])
         vs = VariableSites(args)
+        monkeypatch.setattr(
+            variable_sites_module,
+            "_VARIABLE_SITES_SCALAR_MAX_CELLS",
+            0,
+        )
         gap_codes_spy = mocker.spy(variable_sites_module, "_get_gap_codes")
 
         var_sites, aln_len, var_sites_per = vs.calculate_variable_sites(
@@ -236,6 +246,36 @@ assert "typing" not in sys.modules
         assert aln_len == 4
         assert isclose(var_sites_per, 25.0, rel_tol=0.001)
 
+    def test_variable_sites_small_ascii_uses_scalar_path(self, mocker, args):
+        alignment = MultipleSeqAlignment([
+            SeqRecord(Seq("aC-N"), id="t1"),
+            SeqRecord(Seq("AGTN"), id="t2"),
+            SeqRecord(Seq("AGTN"), id="t3"),
+        ])
+        vs = VariableSites(args)
+        mocker.patch(
+            "phykit.services.alignment.variable_sites.np.frombuffer",
+            side_effect=AssertionError(
+                "small ASCII variable-site counts should avoid NumPy setup"
+            ),
+        )
+
+        var_sites, aln_len, var_sites_per = vs.calculate_variable_sites(
+            alignment,
+            is_protein=False,
+        )
+
+        assert var_sites == 1
+        assert aln_len == 4
+        assert isclose(var_sites_per, 25.0, rel_tol=0.001)
+
+    def test_variable_sites_scalar_path_rejects_uneven_lengths(self):
+        assert variable_sites_module._count_variable_sites_scalar(
+            ["ACGT", "ACG"],
+            4,
+            False,
+        ) is None
+
     def test_variable_sites_identical_sequences_skip_matrix(self, mocker, args):
         alignment = MultipleSeqAlignment([
             SeqRecord(Seq("AcGt"), id="t1"),
@@ -290,7 +330,7 @@ assert "typing" not in sys.modules
 
         assert variable_sites_module._all_sequences_identical(sequences) is True
 
-    def test_variable_sites_unicode_fallback(self, args, mocker):
+    def test_variable_sites_unicode_fallback(self, args, mocker, monkeypatch):
         class DummyAlignment(list):
             def get_alignment_length(self):
                 return 2
@@ -301,6 +341,11 @@ assert "typing" not in sys.modules
             SimpleNamespace(seq="T\u00d1", id="t3"),
         ])
         vs = VariableSites(args)
+        monkeypatch.setattr(
+            variable_sites_module,
+            "_VARIABLE_SITES_SCALAR_MAX_CELLS",
+            0,
+        )
         count_nonzero_spy = mocker.spy(variable_sites_module.np, "count_nonzero")
 
         var_sites, aln_len, var_sites_per = vs.calculate_variable_sites(

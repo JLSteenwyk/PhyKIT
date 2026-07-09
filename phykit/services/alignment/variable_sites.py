@@ -30,6 +30,9 @@ _DNA_GAP_CODES = None
 _PROTEIN_GAP_CODES = None
 _DNA_GAP_BYTES = b"-?*XN"
 _PROTEIN_GAP_BYTES = b"-?*X"
+_DNA_GAP_CHARS = frozenset("-?*XN")
+_PROTEIN_GAP_CHARS = frozenset("-?*X")
+_VARIABLE_SITES_SCALAR_MAX_CELLS = 8192
 
 
 def _get_gap_codes(is_protein: bool):
@@ -42,6 +45,32 @@ def _get_gap_codes(is_protein: bool):
     if _DNA_GAP_CODES is None:
         _DNA_GAP_CODES = np.frombuffer(b"-?*XN", dtype=np.uint8)
     return _DNA_GAP_CODES
+
+
+def _count_variable_sites_scalar(
+    sequences: list[str],
+    aln_len: int,
+    is_protein: bool,
+) -> int | None:
+    if not sequences or (len(sequences) * aln_len) > _VARIABLE_SITES_SCALAR_MAX_CELLS:
+        return None
+    if any(len(sequence) != aln_len for sequence in sequences):
+        return None
+
+    gap_chars = _PROTEIN_GAP_CHARS if is_protein else _DNA_GAP_CHARS
+    variable_sites = 0
+    for column_idx in range(aln_len):
+        first_valid = None
+        for sequence in sequences:
+            char = sequence[column_idx].upper()
+            if char in gap_chars:
+                continue
+            if first_valid is None:
+                first_valid = char
+            elif char != first_valid:
+                variable_sites += 1
+                break
+    return variable_sites
 
 
 class VariableSites(Alignment):
@@ -98,6 +127,15 @@ class VariableSites(Alignment):
 
         if all_identical:
             return 0, aln_len, 0.0
+
+        scalar_var_sites = _count_variable_sites_scalar(
+            raw_sequences,
+            aln_len,
+            is_protein,
+        )
+        if scalar_var_sites is not None:
+            return scalar_var_sites, aln_len, (scalar_var_sites / aln_len) * 100
+
         sequences = [sequence.upper() for sequence in raw_sequences]
 
         try:
