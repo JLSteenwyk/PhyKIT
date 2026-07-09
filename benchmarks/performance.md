@@ -1829,6 +1829,7 @@ Results:
 | `parsimony_utils.fitch_downpass` small-state mask-set lookup | balanced 2048-tip tree, 128 DNA-style discrete characters, side-by-side previous per-character dict mask-to-set cache with identical state sets | 0.233088s | 0.146116s | 1.60x |
 | `parsimony_utils.fitch_uppass_acctran` direct preorder | balanced 32768-tip tree, eight-character state sets after downpass | 0.162745s | 0.077135s | 2.11x |
 | `parsimony_utils._preorder_clades_direct` binary-child fast path | balanced 32768-tip tree, direct preorder helper for parsimony uppass/change traversal | 0.013750s | 0.006956s | 1.98x |
+| `parsimony_utils.detect_changes` single-character path | balanced 131072-tip tree, one-character node-state map with identical branch-change tuples | 0.532840s | 0.354632s | 1.50x |
 | `parsimony_utils.classify_changes` plain-dict transition counts | balanced 32768-tip tree, 24-character synthetic branch-change map with 1.26M changes, identical classifications | 1.033947s | 0.943712s | 1.10x |
 | `parsimony_utils.retention_index` large-alphabet ASCII state counts | 1000 characters x 500 taxa / 6000 characters x 1200 taxa / 10000 characters x 256 taxa with 22-46 observed states, side-by-side repeated equality scans | 0.790840s / 1.323010s / 1.573656s | 0.333097s / 0.462331s / 0.455574s | 2.37x / 2.86x / 3.45x |
 | `parsimony_utils.retention_index` ASCII reduction cleanup | 12k characters x 1200 taxa, 24 ASCII states plus wildcards, side-by-side previous generic `np.sum` reductions | 0.348832s | 0.323524s | 1.08x |
@@ -6758,7 +6759,9 @@ Profiling summary:
   caches repeated wide mask-vector conversions back to state-set lists when at
   least 16 characters and repeated terminal state vectors make the cache
   worthwhile, while keeping the previous per-node conversion path for smaller or
-  mostly unique matrices.
+  mostly unique matrices. Single-character `detect_changes` now emits the same
+  one-item branch-change tuple lists directly instead of entering the generic
+  per-character loop for each non-root clade.
   `classify_changes` now counts `(character, new_state)` transitions with a
   plain dictionary instead of `Counter`, avoiding the subclass overhead while
   preserving the same lookups for transitions collected from the first pass.

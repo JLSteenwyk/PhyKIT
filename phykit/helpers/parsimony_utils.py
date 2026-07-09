@@ -601,6 +601,18 @@ def detect_changes(
     if clades is None:
         clades = tree.find_clades(order="preorder")
 
+    if n_chars == 1:
+        root = tree.root
+        for clade in clades:
+            if clade == root:
+                continue
+            cid = id(clade)
+            old = node_states[id(parent_map[cid])][0]
+            new = node_states[cid][0]
+            if old != new:
+                changes[cid] = [(0, old, new)]
+        return changes
+
     for clade in clades:
         if clade == tree.root:
             continue

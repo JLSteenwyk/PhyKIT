@@ -658,6 +658,26 @@ class TestDeltranUppass:
 # ---------------------------------------------------------------------------
 
 class TestDetectChanges:
+    def test_single_character_path_skips_per_character_loop(self, monkeypatch):
+        tree = _make_tree("((A:1,B:1):1,(C:1,D:1):1);")
+        resolve_polytomies(tree)
+        tip_states = {"A": ["0"], "B": ["0"], "C": ["1"], "D": ["1"]}
+        node_state_sets, _ = fitch_downpass(tree, tip_states)
+        pm = build_parent_map(tree)
+        node_states = fitch_uppass_acctran(tree, node_state_sets, pm)
+
+        def fail_range(*_args, **_kwargs):
+            raise AssertionError("single-character changes should not loop over range(1)")
+
+        monkeypatch.setattr(parsimony_module, "range", fail_range, raising=False)
+
+        changes = detect_changes(tree, node_states, pm)
+
+        all_changes = [
+            c for branch_changes in changes.values() for c in branch_changes
+        ]
+        assert all_changes == [(0, "0", "1")]
+
     def test_counts_changes(self):
         tree = _make_tree("((A:1,B:1):1,(C:1,D:1):1);")
         resolve_polytomies(tree)
