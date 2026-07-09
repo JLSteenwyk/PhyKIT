@@ -184,6 +184,15 @@ class _TreeTaxaJsonDefaultArgs:
         self.json = False
 
 
+class _TwoTreeJsonDefaultArgs:
+    __slots__ = ("tree_zero", "tree_one", "json")
+
+    def __init__(self, tree_zero: str, tree_one: str) -> None:
+        self.tree_zero = tree_zero
+        self.tree_one = tree_one
+        self.json = False
+
+
 def _dedent(text: str) -> str:
     from textwrap import dedent
 
@@ -7919,6 +7928,19 @@ class Phykit:
 
     @staticmethod
     def rf_distance(argv):
+        if (
+            len(argv) == 2
+            and argv[0]
+            and argv[0][0] != "-"
+            and argv[1]
+            and argv[1][0] != "-"
+        ):
+            _run_service_with_args(
+                _TwoTreeJsonDefaultArgs(argv[0], argv[1]),
+                RobinsonFouldsDistance,
+            )
+            return
+
         parser = _new_parser(
             description=_dedent(
                 f"""\

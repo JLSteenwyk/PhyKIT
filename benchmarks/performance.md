@@ -1053,6 +1053,7 @@ Results:
 | `RobinsonFouldsDistance._get_all_bipartition_id_sets_direct` preorder child push | balanced 32768-tip synthetic tree, compact rooted descendant split ids, side-by-side previous `stack.extend(clade.clades)` preorder setup | 0.250958s | 0.214371s | 1.17x |
 | `RobinsonFouldsDistance.calculate_robinson_foulds_distance` same-object shortcut | balanced 32768-tip tree compared to itself, side-by-side previous compact split-id path and unchanged RF normalization denominator | 1.189548s | 0.004597s | 258.79x |
 | `RobinsonFouldsDistance.calculate_multiple_rf_distances` multiprocessing threshold | 20 small Bio.Phylo tree pairs, side-by-side previous low process-pool cutoff | 0.023194s | 0.000164s | 141.32x |
+| `Phykit.rf_distance` default two-tree parser bypass | direct dispatch 1000 mocked service calls; direct command timing, 30 runs after 5 warmups | 1.466187s / 0.579143s | 0.000462s / 0.535393s | 3173.56x / 1.08x |
 | `rf_distance` module import without annotation-only Bio.Phylo | cold subprocess import after postponed annotations and removing `Newick` import | 0.138859s | 0.043381s | 3.20x |
 | `rf_distance` module import without eager concurrent futures | cold subprocess import after lazy `ProcessPoolExecutor` proxy | 0.043023s | 0.025542s | 1.68x |
 | `rf_distance` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.007791s | 0.006287s | 1.24x |
