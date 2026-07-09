@@ -228,6 +228,7 @@ Results:
 | `parsimony_informative_sites` module import without eager NumPy/Bio.Align | cold subprocess import after lazy NumPy lookup construction and annotation-only Bio.Align import | 0.101964s | 0.023527s | 4.33x |
 | `parsimony_informative_sites` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006218s | 0.005062s | 1.23x |
 | `parsimony_informative_sites` module import without `typing` startup | median cold subprocess import after removing runtime `TYPE_CHECKING` and converting annotation-only typing aliases to built-in annotations | 0.002538s | 0.000957s | 2.65x |
+| `Phykit.parsimony_informative_sites` default parser bypass | 1000 repeated direct handler calls with service mocked, plus command profiler default `parsimony_informative_sites test_alignment_0.fa`, 15 runs after 3 warmups, text/JSON stdout matched previous branch | 1.312102s / 0.086690s | 0.000396s / 0.047174s | 3313.39x / 1.84x |
 | `AlignmentEntropy.calculate_site_entropies` | 220 taxa x 5000 sites, alphabet `ACGT-?NX*` | 0.1706s | 0.0549s | 3.1x |
 | `AlignmentEntropy.calculate_site_entropies` byte matrix setup | 500 taxa x 8000 sites, alphabet `ACGT-?NX*` | 0.1702s | 0.0564s | 3.0x |
 | `AlignmentEntropy.calculate_site_entropies` gap lookup | 500 taxa x 8000 sites, alphabet `ACGT-?NX*` | 0.064573s | 0.031327s | 2.06x |

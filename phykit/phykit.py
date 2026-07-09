@@ -1801,6 +1801,13 @@ class Phykit:
 
     @staticmethod
     def parsimony_informative_sites(argv):
+        if len(argv) == 1 and argv[0] and argv[0][0] != "-":
+            _run_service_with_args(
+                _AlignmentJsonDefaultArgs(argv[0]),
+                ParsimonyInformative,
+            )
+            return
+
         parser = _new_parser(
             description=_dedent(
                 f"""\
