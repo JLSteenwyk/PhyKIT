@@ -1502,6 +1502,7 @@ Results:
 | `Tree` base module import without typing startup | median cold subprocess import after converting annotation-only typing names to built-in postponed annotations | 0.006148s | 0.003180s | 1.93x |
 | `Tree` base module import without `hashlib` startup | median cold subprocess import after localizing cache-key hashing to `_get_file_hash` | 0.003903s | 0.000873s | 4.47x |
 | `Tree._get_file_hash` raw stat cache key | 100k cache-key generations for one tree file | 0.000002628s | 0.000001821s | 1.44x |
+| PhyKIT command parser fixed-width formatter | side-by-side command profiler, 15 runs after 3 warmup; representative parser-heavy `pairwise_identity --verbose` / `column_score` / `sum_of_pairs_score`; stdout and `column_score -h` matched previous commit | 0.066009s / 0.061782s / 0.064236s | 0.057913s / 0.055560s / 0.053823s | 1.14x / 1.11x / 1.19x |
 | `Tree._scan_simple_newick_summary` command fast path | command profiler, 3 runs after 1 warmup, plain Newick input; `total_tree_length` / `tip_labels` / `treeness` | 0.706072s / 0.665136s / 0.604595s | 0.056479s / 0.062866s / 0.056583s | 12.50x / 10.58x / 10.69x |
 | `EvolutionaryRate.run` simple Newick summary fast path | command profiler, 5 runs after 1 warmup, plain Newick input `12_YPR191W_Anc_7.548_codon_aln.fasta.clipkit.treefile` | 0.457423s | 0.054635s | 8.37x |
 | `BipartitionSupportStats.run` simple Newick support scan | command profiler, 5 runs after 1 warmup, plain Newick input `small_Aspergillus_tree.tre` | 0.544450s | 0.061464s | 8.86x |

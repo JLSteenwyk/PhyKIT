@@ -50,6 +50,7 @@ help_header = BANNER
 SUPPRESS = "==SUPPRESS=="
 _DEDENTED_BANNER = None
 _DEDENTED_VERSION_BANNER = None
+_FIXED_WIDTH_FORMATTER_CLASS = None
 
 
 def _dedent(text: str) -> str:
@@ -88,10 +89,30 @@ def _clear_banner_cache() -> None:
     _DEDENTED_VERSION_BANNER = None
 
 
+def _fixed_width_raw_description_formatter():
+    global _FIXED_WIDTH_FORMATTER_CLASS
+    if _FIXED_WIDTH_FORMATTER_CLASS is None:
+        from argparse import RawDescriptionHelpFormatter
+
+        class FixedWidthRawDescriptionHelpFormatter(RawDescriptionHelpFormatter):
+            def __init__(
+                self,
+                prog,
+                indent_increment=2,
+                max_help_position=24,
+                width=None,
+            ):
+                if width is None:
+                    width = 78
+                super().__init__(prog, indent_increment, max_help_position, width)
+
+        _FIXED_WIDTH_FORMATTER_CLASS = FixedWidthRawDescriptionHelpFormatter
+    return _FIXED_WIDTH_FORMATTER_CLASS
+
+
 def _new_parser(*, description: str):
     from argparse import (
         ArgumentParser,
-        RawDescriptionHelpFormatter,
         SUPPRESS as argparse_suppress,
     )
 
@@ -100,7 +121,7 @@ def _new_parser(*, description: str):
     return ArgumentParser(
         add_help=True,
         usage=SUPPRESS,
-        formatter_class=RawDescriptionHelpFormatter,
+        formatter_class=_fixed_width_raw_description_formatter(),
         description=description,
     )
 

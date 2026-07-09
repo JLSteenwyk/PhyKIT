@@ -150,6 +150,18 @@ assert "phykit.helpers.plot_config" not in sys.modules
     subprocess.run([sys.executable, "-c", code], check=True)
 
 
+def test_new_parser_setup_does_not_import_shutil():
+    code = """
+import sys
+import phykit.phykit as module
+parser = module._new_parser(description="description")
+parser.add_argument("input")
+assert "argparse" in sys.modules
+assert "shutil" not in sys.modules
+"""
+    subprocess.run([sys.executable, "-c", code], check=True)
+
+
 class TestPhykitCliDispatch:
     @pytest.mark.parametrize("method_name", COMMAND_METHODS)
     def test_command_parser_help_exits_cleanly(self, method_name):
