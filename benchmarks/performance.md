@@ -1503,6 +1503,7 @@ Results:
 | `Treeness.run` cached read-only tree path | balanced 32768-tip cached tree with varied branch lengths, output mocked | 0.122251s | 0.004065s | 30.08x |
 | `treeness` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006082s | 0.004897s | 1.24x |
 | `treeness` module import without `typing` startup | median cold subprocess import after postponing annotations and converting the annotation-only typing alias to a built-in annotation | 0.005941s | 0.003868s | 1.54x |
+| `Phykit.treeness` default tree parser bypass | direct dispatch 1000 mocked service calls; command profiler, 30 runs after 5 warmups | 1.071064s / 0.063098s | 0.003139s / 0.055803s | 341.21x / 1.13x |
 | `Tree.calculate_first_terminal_name_fast` direct leftmost descent | balanced depth-17 tree, first terminal lookup, side-by-side previous direct stack helper | 0.000002652s | 0.000001049s | 2.53x |
 | `Tree.calculate_first_terminal_name_fast` direct clades attribute loop | balanced depth-10 / depth-17 trees, 20k repeated first terminal lookups, side-by-side previous `getattr` loop | 0.000006792s / 0.000008355s | 0.000004783s / 0.000006917s | 1.42x / 1.21x |
 | `Tree.calculate_first_terminal_name_fast` reused root child lookup | balanced depth-10 / depth-17 trees, 30k repeated first terminal lookups, side-by-side previous direct-attribute loop | 0.000004545s / 0.000007914s | 0.000004300s / 0.000004996s | 1.06x / 1.58x |

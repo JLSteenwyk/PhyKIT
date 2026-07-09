@@ -8258,6 +8258,10 @@ class Phykit:
 
     @staticmethod
     def treeness(argv):
+        if len(argv) == 1 and argv[0] and argv[0][0] != "-":
+            _run_service_with_args(_TreeJsonDefaultArgs(argv[0]), Treeness)
+            return
+
         parser = _new_parser(
             description=_dedent(
                 f"""\
