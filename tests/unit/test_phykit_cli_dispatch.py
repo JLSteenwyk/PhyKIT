@@ -941,6 +941,69 @@ def test_variable_sites_option_invocation_keeps_parser(monkeypatch):
     assert calls["ran"] is True
 
 
+@pytest.mark.parametrize("reference_flag", ["-r", "--reference"])
+def test_sum_of_pairs_score_default_reference_invocation_bypasses_parser(
+    monkeypatch,
+    reference_flag,
+):
+    captured = {}
+
+    class Runner:
+        def __init__(self, args):
+            captured["args"] = args
+
+        def run(self):
+            captured["ran"] = True
+
+    def fail_new_parser(*_args, **_kwargs):
+        raise AssertionError("default sum_of_pairs_score should not build parser")
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+    monkeypatch.setattr(phykit_module, "SumOfPairsScore", Runner)
+
+    phykit_module.Phykit.sum_of_pairs_score(["query.fa", reference_flag, "ref.fa"])
+
+    args = captured["args"]
+    assert captured["ran"] is True
+    assert args.fasta == "query.fa"
+    assert args.reference == "ref.fa"
+    assert args.json is False
+
+
+def test_sum_of_pairs_score_option_invocation_keeps_parser(monkeypatch):
+    calls = {"parser": False, "ran": False}
+
+    class FakeParser:
+        def add_argument(self, *args, **kwargs):
+            return None
+
+        def parse_args(self, argv):
+            calls["argv"] = argv
+            return object()
+
+    class Runner:
+        def __init__(self, args):
+            calls["args"] = args
+
+        def run(self):
+            calls["ran"] = True
+
+    def fake_new_parser(*_args, **_kwargs):
+        calls["parser"] = True
+        return FakeParser()
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fake_new_parser)
+    monkeypatch.setattr(phykit_module, "SumOfPairsScore", Runner)
+
+    phykit_module.Phykit.sum_of_pairs_score(
+        ["query.fa", "--reference", "ref.fa", "--json"]
+    )
+
+    assert calls["parser"] is True
+    assert calls["argv"] == ["query.fa", "--reference", "ref.fa", "--json"]
+    assert calls["ran"] is True
+
+
 class TestPhykitCliDispatch:
     @pytest.mark.parametrize("method_name", COMMAND_METHODS)
     def test_command_parser_help_exits_cleanly(self, method_name):
