@@ -1613,6 +1613,7 @@ Results:
 | `MonophylyCheck.get_bootstrap_statistics` direct support traversal | balanced 32768-tip clade, support on every internal node | 0.066024s | 0.006910s | 9.56x |
 | `MonophylyCheck._collect_bootstrap_values_direct` unordered support scan | balanced 131072-tip clade, support on every internal node, optimized helper baseline | 0.028672s | 0.021346s | 1.34x |
 | `MonophylyCheck.print_results` batched text output | 200k mixed status/support rows, captured stdout and identical text | 0.301773s | 0.271484s | 1.11x |
+| `MonophylyCheck.print_results` direct stdout write | 200k mixed status/support rows, captured stdout and identical text, side-by-side previous newline-joined `print` path | 1.296510s | 1.178141s | 1.10x |
 | `MonophylyCheck.print_results` JSON row literals | 500k mixed status/support rows, identical JSON row dictionaries | 1.410068s | 1.195951s | 1.18x |
 | `MonophylyCheck.print_results` JSON row comprehension | 500k mixed status/support rows, identical JSON row dictionaries | 2.207833s | 1.843909s | 1.20x |
 | `MonophylyCheck._resolve_interest_clade` all-tip root shortcut | balanced 1024 / 32768 / 131072-tip trees with every tip selected, identical root clade result versus previous exact-clade traversal | 0.002118966s / 0.075454304s / 0.284963092s | 0.000009200s / 0.001063702s / 0.003564433s | 230.33x / 70.94x / 79.95x |
@@ -6211,7 +6212,9 @@ Profiling summary:
   used for bootstrap support summaries until those summaries are computed. Text
   output now batches mixed support/status rows into one newline-joined print
   while preserving exact stdout text and the existing offending-taxa sorting. A
-  follow-up JSON output pass builds full and status-only row dictionaries with
+  later text-output pass writes the joined buffer directly to stdout and
+  localizes rounding, preserving the same trailing newline with less dispatch
+  overhead. A follow-up JSON output pass builds full and status-only row dictionaries with
   literals and localized helpers, preserving the same row payload while avoiding
   one `dict()` call and repeated global lookups per result row. A
   later startup pass removes annotation-only `typing` aliases by using built-in

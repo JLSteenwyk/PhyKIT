@@ -293,18 +293,19 @@ class MonophylyCheck(Tree):
 
         lines = []
         append = lines.append
+        round_ = round
         for res in res_arr:
             try:
                 if res[5]:
                     res[5].sort()
                     append(
-                        f"{res[0]}\t{round(res[1], 4)}\t{round(res[2], 4)}\t{round(res[3], 4)}\t{round(res[4], 4)}\t{';'.join(res[5])}"
+                        f"{res[0]}\t{round_(res[1], 4)}\t{round_(res[2], 4)}\t{round_(res[3], 4)}\t{round_(res[4], 4)}\t{';'.join(res[5])}"
                     )
                 else:
                     append(
-                        f"{res[0]}\t{round(res[1], 4)}\t{round(res[2], 4)}\t{round(res[3], 4)}\t{round(res[4], 4)}"
+                        f"{res[0]}\t{round_(res[1], 4)}\t{round_(res[2], 4)}\t{round_(res[3], 4)}\t{round_(res[4], 4)}"
                     )
             except IndexError:
                 append(f"{res[0]}")
         if lines:
-            print("\n".join(lines))
+            sys.stdout.write("\n".join(lines) + "\n")

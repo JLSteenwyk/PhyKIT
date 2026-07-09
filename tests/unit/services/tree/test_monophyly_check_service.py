@@ -372,6 +372,7 @@ class TestMonophylyCheck:
     def test_print_results_text_paths(self, mocker, args):
         service = MonophylyCheck(args)
         service.json_output = False
+        mocked_write = mocker.patch("phykit.services.tree.monophyly_check.sys.stdout.write")
         mocked_print = mocker.patch("builtins.print")
 
         service.print_results(
@@ -382,8 +383,9 @@ class TestMonophylyCheck:
             ]
         )
 
-        mocked_print.assert_called_once_with(
+        mocked_print.assert_not_called()
+        mocked_write.assert_called_once_with(
             "not_monophyletic\t95.0\t100.0\t85.0\t7.0\ta;z\n"
             "monophyletic\t92.0\t100.0\t90.0\t3.0\n"
-            "insufficient_taxon_representation"
+            "insufficient_taxon_representation\n"
         )
