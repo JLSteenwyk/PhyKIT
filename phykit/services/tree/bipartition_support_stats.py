@@ -55,12 +55,22 @@ class BipartitionSupportStats(Tree):
         self.thresholds = parsed["thresholds"]
 
     def run(self) -> None:
-        tree = self.read_tree_file_unmodified()
-        if self.verbose:
-            bs_vals, term_names = self.get_bipartition_support_vals(tree)
+        simple_result = self._scan_simple_newick_bipartitions(self.tree_file_path)
+        used_simple_result = simple_result is not None
+        if simple_result is not None:
+            bs_vals, term_names = simple_result
         else:
-            bs_vals = self.get_bipartition_support_values(tree)
+            tree = self.read_tree_file_unmodified()
+            if self.verbose:
+                bs_vals, term_names = self.get_bipartition_support_vals(tree)
+            else:
+                bs_vals = self.get_bipartition_support_values(tree)
+                term_names = []
+
+        if not self.verbose:
             term_names = []
+            if used_simple_result:
+                bs_vals = [float(value) for value in bs_vals]
         threshold_stats = self.calculate_threshold_stats(bs_vals, self.thresholds)
 
         if self.json_output:
@@ -112,6 +122,132 @@ class BipartitionSupportStats(Tree):
             sys.exit(2)
 
         return thresholds
+
+    @staticmethod
+    def _scan_simple_newick_bipartitions(file_path: str):
+        try:
+            with open(file_path) as handle:
+                text = handle.read()
+        except OSError:
+            return None
+
+        if not text or any(char in text for char in "'\"[]"):
+            return None
+
+        text_len = len(text)
+        whitespace = " \t\r\n"
+        delimiters = "(),:;"
+
+        def skip_ws(index):
+            while index < text_len and text[index] in whitespace:
+                index += 1
+            return index
+
+        def parse_label(index):
+            index = skip_ws(index)
+            start = index
+            while (
+                index < text_len
+                and text[index] not in delimiters
+                and text[index] not in whitespace
+            ):
+                index += 1
+            return text[start:index], index
+
+        def parse_length(index):
+            index = skip_ws(index)
+            if index >= text_len or text[index] != ":":
+                return index
+            index += 1
+            index = skip_ws(index)
+            start = index
+            while (
+                index < text_len
+                and text[index] not in ",);"
+                and text[index] not in whitespace
+            ):
+                index += 1
+            if start == index:
+                return None
+            try:
+                float(text[start:index])
+            except ValueError:
+                return None
+            return skip_ws(index)
+
+        def parse_node(index):
+            index = skip_ws(index)
+            if index >= text_len:
+                return None
+
+            if text[index] == "(":
+                index += 1
+                child_nodes = []
+                names = []
+                while True:
+                    parsed = parse_node(index)
+                    if parsed is None:
+                        return None
+                    child_names, child_entries, index = parsed
+                    names.extend(child_names)
+                    child_nodes.extend(child_entries)
+
+                    index = skip_ws(index)
+                    if index >= text_len:
+                        return None
+                    if text[index] == ",":
+                        index += 1
+                        continue
+                    if text[index] == ")":
+                        index += 1
+                        break
+                    return None
+
+                label, index = parse_label(index)
+                parsed_length = parse_length(index)
+                if parsed_length is None:
+                    return None
+                index = parsed_length
+
+                entries = child_nodes
+                if label:
+                    try:
+                        support = float(label)
+                    except ValueError:
+                        return None
+                    if support.is_integer():
+                        support = int(support)
+                    entries = [(support, names)] + child_nodes
+                return names, entries, index
+
+            label, index = parse_label(index)
+            if not label:
+                return None
+            parsed_length = parse_length(index)
+            if parsed_length is None:
+                return None
+            return [label], [], parsed_length
+
+        try:
+            parsed = parse_node(0)
+        except RecursionError:
+            return None
+        if parsed is None:
+            return None
+        _names, entries, index = parsed
+        index = skip_ws(index)
+        if index >= text_len or text[index] != ";":
+            return None
+        index = skip_ws(index + 1)
+        if index != text_len:
+            return None
+
+        bs_vals = []
+        term_names = []
+        for support, names in entries:
+            bs_vals.append(support)
+            term_names.append(names)
+        return bs_vals, term_names
 
     @staticmethod
     def _format_verbose_text(

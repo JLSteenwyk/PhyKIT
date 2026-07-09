@@ -79,6 +79,10 @@ COMMANDS: tuple[tuple[str, tuple[str, ...]], ...] = (
             str(SAMPLES / "12_YPR191W_Anc_7.548_codon_aln.fasta.clipkit.treefile"),
         ),
     ),
+    (
+        "bipartition_support_stats",
+        ("bipartition_support_stats", str(SAMPLES / "small_Aspergillus_tree.tre")),
+    ),
 )
 
 

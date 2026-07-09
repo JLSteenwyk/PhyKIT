@@ -262,6 +262,26 @@ assert "Bio.Phylo" not in sys.modules
 
         assert t.calculate_threshold_stats(NoIterList([90.0, 100.0]), []) == []
 
+    def test_scan_simple_newick_bipartitions_preserves_preorder(self, tmp_path):
+        tree = tmp_path / "tree.tre"
+        tree.write_text("((A:1,B:1)90:1,(C:1,D:1)80:1)70:1;\n")
+
+        vals, names = BipartitionSupportStats._scan_simple_newick_bipartitions(
+            str(tree)
+        )
+
+        assert vals == [70.0, 90.0, 80.0]
+        assert names == [["A", "B", "C", "D"], ["A", "B"], ["C", "D"]]
+
+    def test_scan_simple_newick_bipartitions_rejects_annotations(self, tmp_path):
+        tree = tmp_path / "tree.tre"
+        tree.write_text("((A:1,B:1)90[comment]:1,C:1);\n")
+
+        assert (
+            BipartitionSupportStats._scan_simple_newick_bipartitions(str(tree))
+            is None
+        )
+
     def test_to_builtin_converts_numpy_scalars(self, args):
         t = BipartitionSupportStats(args)
         value = {"a": np.int64(1), "b": [np.float64(1.5)]}
@@ -573,6 +593,25 @@ assert "Bio.Phylo" not in sys.modules
         t.run()
 
         read_tree.assert_called_once_with()
+
+    def test_run_uses_simple_newick_bipartition_scan(self, mocker, args):
+        args.verbose = True
+        args.json = False
+        t = BipartitionSupportStats(args)
+        mocker.patch.object(
+            t,
+            "_scan_simple_newick_bipartitions",
+            return_value=([70.0, 90.0], [["A", "B"], ["C", "D"]]),
+        )
+        read_tree = mocker.patch.object(
+            t,
+            "read_tree_file_unmodified",
+            side_effect=AssertionError("simple Newick should skip tree parsing"),
+        )
+
+        t.run()
+
+        read_tree.assert_not_called()
 
     def test_run_nonverbose_prints_summary_and_thresholds(self, mocker, args):
         args.verbose = False
