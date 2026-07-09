@@ -1765,6 +1765,7 @@ Results:
 | `EvolutionaryRate.run` cached read-only tree path | balanced 32768-tip cached tree, output mocked | 0.111459s | 0.004104s | 27.16x |
 | `evolutionary_rate` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006227s | 0.004876s | 1.28x |
 | `evolutionary_rate` module import without `typing` startup | median cold subprocess import after postponing annotations and converting the annotation-only typing alias to a built-in annotation | 0.011586s | 0.008064s | 1.44x |
+| `Phykit.evolutionary_rate` default parser bypass | 1000 repeated direct handler calls with service mocked, plus command profiler default `evolutionary_rate 12_YPR191W_Anc_7.548_codon_aln.fasta.clipkit.treefile`, 10 runs after 2 warmups, text/JSON stdout matched previous branch | 1.525158s / 0.112830s | 0.000395s / 0.063571s | 3861.16x / 1.77x |
 | `total_tree_length` module import without eager Bio.Phylo/NumPy | cold subprocess import of total-tree-length command module | 0.153291s | 0.065309s | 2.35x |
 | `total_tree_length` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006164s | 0.004823s | 1.28x |
 | `total_tree_length` module import without `typing` startup | median cold subprocess import after converting annotation-only typing aliases to built-in postponed annotations | 0.011637s | 0.007487s | 1.55x |

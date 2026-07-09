@@ -128,6 +128,14 @@ class _FastaVerboseJsonDefaultArgs:
         self.json = False
 
 
+class _TreeJsonDefaultArgs:
+    __slots__ = ("tree", "json")
+
+    def __init__(self, tree: str) -> None:
+        self.tree = tree
+        self.json = False
+
+
 class _TreeTaxaJsonDefaultArgs:
     __slots__ = ("tree", "list_of_taxa", "json")
 
@@ -3606,6 +3614,10 @@ class Phykit:
 
     @staticmethod
     def evolutionary_rate(argv):
+        if len(argv) == 1 and argv[0] and argv[0][0] != "-":
+            _run_service_with_args(_TreeJsonDefaultArgs(argv[0]), EvolutionaryRate)
+            return
+
         parser = _new_parser(
             description=_dedent(
                 f"""\
