@@ -174,6 +174,16 @@ class _TreeFactorJsonDefaultArgs:
         self.json = False
 
 
+class _TreesConsensusDefaultArgs:
+    __slots__ = ("trees", "method", "missing_taxa", "json")
+
+    def __init__(self, trees: str) -> None:
+        self.trees = trees
+        self.method = "majority"
+        self.missing_taxa = "error"
+        self.json = False
+
+
 class _TreeVerboseJsonDefaultArgs:
     __slots__ = ("tree", "verbose", "json")
 
@@ -6672,6 +6682,18 @@ class Phykit:
 
     @staticmethod
     def consensus_tree(argv):
+        if (
+            len(argv) == 2
+            and argv[0] in ("-t", "--trees")
+            and argv[1]
+            and argv[1][0] != "-"
+        ):
+            _run_service_with_args(
+                _TreesConsensusDefaultArgs(argv[1]),
+                ConsensusTree,
+            )
+            return
+
         parser = _new_parser(
             description=_dedent(
                 f"""\

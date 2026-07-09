@@ -1175,6 +1175,65 @@ def test_spurious_sequence_option_invocation_keeps_parser(monkeypatch):
     assert calls["ran"] is True
 
 
+@pytest.mark.parametrize("trees_flag", ["-t", "--trees"])
+def test_consensus_tree_default_invocation_bypasses_parser(monkeypatch, trees_flag):
+    captured = {}
+
+    class Runner:
+        def __init__(self, args):
+            captured["args"] = args
+
+        def run(self):
+            captured["ran"] = True
+
+    def fail_new_parser(*_args, **_kwargs):
+        raise AssertionError("default consensus_tree should not build parser")
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+    monkeypatch.setattr(phykit_module, "ConsensusTree", Runner)
+
+    phykit_module.Phykit.consensus_tree([trees_flag, "trees.nwk"])
+
+    args = captured["args"]
+    assert captured["ran"] is True
+    assert args.trees == "trees.nwk"
+    assert args.method == "majority"
+    assert args.missing_taxa == "error"
+    assert args.json is False
+
+
+def test_consensus_tree_option_invocation_keeps_parser(monkeypatch):
+    calls = {"parser": False, "ran": False}
+
+    class FakeParser:
+        def add_argument(self, *args, **kwargs):
+            return None
+
+        def parse_args(self, argv):
+            calls["argv"] = argv
+            return object()
+
+    class Runner:
+        def __init__(self, args):
+            calls["args"] = args
+
+        def run(self):
+            calls["ran"] = True
+
+    def fake_new_parser(*_args, **_kwargs):
+        calls["parser"] = True
+        return FakeParser()
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fake_new_parser)
+    monkeypatch.setattr(phykit_module, "ConsensusTree", Runner)
+
+    phykit_module.Phykit.consensus_tree(["-t", "trees.nwk", "--json"])
+
+    assert calls["parser"] is True
+    assert calls["argv"] == ["-t", "trees.nwk", "--json"]
+    assert calls["ran"] is True
+
+
 def test_evolutionary_rate_default_invocation_bypasses_parser(monkeypatch):
     captured = {}
 
