@@ -856,6 +856,7 @@ Results:
 | `Dstatistic` no-informative jackknife finalization | 10k / 100k / 300k / 1M zero ABBA/BABA jackknife blocks, side-by-side previous vectorized jackknife/mean/dot finalization | 0.000073195s / 0.019479912s / 0.037968862s / 0.044663861s | 0.000000057s / 0.000000077s / 0.000000150s / 0.000000083s | 1291.9x / 252842.5x / 253143.5x / 535837.5x |
 | `Dstatistic._read_fasta` / `Dfoil._read_fasta` | 50k FASTA records, lowercase 120 bp each | 0.0638s | 0.0360s | 1.8x |
 | `Dstatistic._read_fasta` / `Dfoil._read_fasta` shared first-token parser | 50k FASTA records, lowercase 120 bp each, legacy `SimpleFastaParser` baseline | 0.047871s | 0.040750s | 1.17x |
+| shared `_fasta.read_fasta_first_token_upper` single-line uppercase cleanup | 100k FASTA records, lowercase 120 bp single-line sequences, side-by-side previous `_clean_sequence(...).upper()` helper path | 0.241192s | 0.174688s | 1.38x |
 | `Dfoil._count_site_patterns` | 475k sites, DFOIL informative/invariant/ambiguous/non-biallelic synthetic alignment | 0.3978s | 0.0073s | 54.5x |
 | `Dfoil._count_site_patterns` pairwise derived-allele predicate | 1M valid ASCII sites, synthetic DFOIL informative/invariant/non-biallelic alignment | 0.008275s | 0.007467s | 1.11x |
 | `Dfoil._count_site_patterns` all-valid ASCII shortcut | 2M sites, clean ASCII DFOIL informative/uninformative synthetic alignment | 0.027733s | 0.021082s | 1.32x |
@@ -4847,17 +4848,20 @@ Profiling summary:
   pass replaces the two command-local `SimpleFastaParser` readers with a shared
   streaming first-token parser that preserves multiline sequence joining,
   internal space/carriage-return removal, uppercase conversion, and duplicate
-  replacement without constructing parser tuples. A startup pass imports
-  SimpleFastaParser inside the read helpers and imports Bio.Phylo inside
-  D-statistic gene-tree parsing, avoiding Biopython parser startup for
-  import-only callers. Follow-up startup passes also defer NumPy and JSON output
-  imports behind module-level wrappers while preserving the existing vectorized
-  site-pattern paths and JSON output behavior. Gene-tree mode now builds the
-  direct preorder list once and reuses its reverse for the descendant-taxon pass,
-  preserving nonterminal preorder while avoiding visited-flag stack tuples. A
-  later DFOIL startup pass removes annotation-only `typing` aliases under
-  postponed built-in annotations. A follow-up D-statistic startup pass applies
-  the same conversion, so command discovery no longer loads
+  replacement without constructing parser tuples. The shared uppercase cleanup
+  now handles common single-line sequence records directly, preserving internal
+  space/carriage-return removal while avoiding the extra generic cleanup helper
+  call. A startup pass imports SimpleFastaParser inside the read helpers and
+  imports Bio.Phylo inside D-statistic gene-tree parsing, avoiding Biopython
+  parser startup for import-only callers. Follow-up startup passes also defer
+  NumPy and JSON output imports behind module-level wrappers while preserving
+  the existing vectorized site-pattern paths and JSON output behavior. Gene-tree
+  mode now builds the direct preorder list once and reuses its reverse for the
+  descendant-taxon pass, preserving nonterminal preorder while avoiding
+  visited-flag stack tuples. A later DFOIL startup pass removes annotation-only
+  `typing` aliases under postponed built-in annotations. A follow-up
+  D-statistic startup pass applies the same conversion, so command discovery no
+  longer loads
   `typing`. The scalar fallback for non-ASCII alignments now uses direct skip
   checks and computes block membership only for counted sites, preserving
   ABBA/BABA totals and jackknife block arrays while avoiding per-site list and

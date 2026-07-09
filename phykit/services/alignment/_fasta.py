@@ -23,6 +23,13 @@ def _clean_sequence_bytes(sequence_parts: list[bytes]) -> str:
 
 
 def _clean_upper_sequence(sequence_parts: list[str]) -> str:
+    if len(sequence_parts) == 1:
+        sequence = sequence_parts[0]
+        if " " in sequence:
+            sequence = sequence.replace(" ", "")
+        if "\r" in sequence:
+            sequence = sequence.replace("\r", "")
+        return sequence.upper()
     return _clean_sequence(sequence_parts).upper()
 
 

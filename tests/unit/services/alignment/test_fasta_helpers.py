@@ -1,5 +1,6 @@
 from phykit.services.alignment._fasta import (
     _clean_sequence,
+    _clean_upper_sequence,
     read_unique_fasta_entries,
     read_fasta_first_tokens,
     read_fasta_first_token_set,
@@ -14,6 +15,10 @@ def test_clean_sequence_single_line_preserves_clean_sequence():
 
 def test_clean_sequence_removes_spaces_and_carriage_returns():
     assert _clean_sequence(["AC GT\r", "TA"]) == "ACGTTA"
+
+
+def test_clean_upper_sequence_single_line_cleans_and_uppercases():
+    assert _clean_upper_sequence(["ac gt\r"]) == "ACGT"
 
 
 def test_read_fasta_first_token_set_uses_first_header_tokens(tmp_path):
