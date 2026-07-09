@@ -297,6 +297,39 @@ assert "numpy" not in sys.modules
         alignment_base_module.np.testing.assert_array_equal(observed, expected)
         assert bincount_spy.call_count == 1
 
+    def test_ascii_rcv_count_matrix_default_threshold_uses_single_bincount(
+        self,
+        mocker,
+    ):
+        alphabet = b"ACDEFGHIKLMNPQRSTVWY"
+        matrix = alignment_base_module.np.resize(
+            alignment_base_module.np.frombuffer(
+                alphabet,
+                dtype=alignment_base_module.np.uint8,
+            ),
+            2_048 * 512,
+        ).reshape(2_048, 512)
+        unique_chars = alignment_base_module.np.unique(matrix)
+        bincount_spy = mocker.spy(alignment_base_module.np, "bincount")
+
+        observed = alignment_base_module._ascii_rcv_count_matrix(
+            matrix,
+            unique_chars,
+            None,
+        )
+
+        expected = alignment_base_module.np.zeros(
+            (matrix.shape[0], len(unique_chars)),
+            dtype=alignment_base_module.np.float64,
+        )
+        for row_idx, row in enumerate(matrix):
+            expected[row_idx] = alignment_base_module.np.bincount(
+                row,
+                minlength=256,
+            )[unique_chars]
+        alignment_base_module.np.testing.assert_array_equal(observed, expected)
+        assert bincount_spy.call_count == matrix.shape[0] + 1
+
     def test_ascii_rcv_count_matrix_large_short_gappy_uses_single_bincount(
         self,
         mocker,

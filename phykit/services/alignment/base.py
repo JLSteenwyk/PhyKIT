@@ -28,6 +28,8 @@ class _LazyNumpy:
 np = _LazyNumpy()
 _DNA_INVALID_LOOKUP = None
 _PROTEIN_INVALID_LOOKUP = None
+_ASCII_RCV_GLOBAL_BINCOUNT_MIN_RECORDS = 2_048
+_ASCII_RCV_GLOBAL_BINCOUNT_MAX_LENGTH = 512
 
 
 def _all_sequences_identical(sequences) -> bool:
@@ -60,7 +62,10 @@ def _get_invalid_lookup(is_protein: bool):
 
 def _ascii_rcv_count_matrix(alignment_array, unique_chars, valid_mask):
     num_records, aln_len = alignment_array.shape
-    if num_records >= 10_000 and aln_len <= 256:
+    if (
+        num_records >= _ASCII_RCV_GLOBAL_BINCOUNT_MIN_RECORDS
+        and aln_len <= _ASCII_RCV_GLOBAL_BINCOUNT_MAX_LENGTH
+    ):
         encoded = alignment_array.astype(np.int64)
         encoded += (np.arange(num_records, dtype=np.int64) * 256)[:, None]
         counts = np.bincount(
