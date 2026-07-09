@@ -193,6 +193,16 @@ class _TwoTreeJsonDefaultArgs:
         self.json = False
 
 
+class _TreeTwoTipsJsonDefaultArgs:
+    __slots__ = ("tree_zero", "tip_1", "tip_2", "json")
+
+    def __init__(self, tree_zero: str, tip_1: str, tip_2: str) -> None:
+        self.tree_zero = tree_zero
+        self.tip_1 = tip_1
+        self.tip_2 = tip_2
+        self.json = False
+
+
 def _dedent(text: str) -> str:
     from textwrap import dedent
 
@@ -8315,6 +8325,21 @@ class Phykit:
 
     @staticmethod
     def tip_to_tip_node_distance(argv):
+        if (
+            len(argv) == 3
+            and argv[0]
+            and argv[0][0] != "-"
+            and argv[1]
+            and argv[1][0] != "-"
+            and argv[2]
+            and argv[2][0] != "-"
+        ):
+            _run_service_with_args(
+                _TreeTwoTipsJsonDefaultArgs(argv[0], argv[1], argv[2]),
+                TipToTipNodeDistance,
+            )
+            return
+
         parser = _new_parser(
             description=_dedent(
                 f"""\

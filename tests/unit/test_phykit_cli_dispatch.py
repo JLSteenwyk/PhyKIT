@@ -1148,6 +1148,68 @@ def test_kf_distance_option_invocation_keeps_parser(monkeypatch):
     assert calls["ran"] is True
 
 
+def test_tip_to_tip_node_distance_default_invocation_bypasses_parser(monkeypatch):
+    captured = {}
+
+    class Runner:
+        def __init__(self, args):
+            captured["args"] = args
+
+        def run(self):
+            captured["ran"] = True
+
+    def fail_new_parser(*_args, **_kwargs):
+        raise AssertionError(
+            "default tip_to_tip_node_distance should not build parser"
+        )
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+    monkeypatch.setattr(phykit_module, "TipToTipNodeDistance", Runner)
+
+    phykit_module.Phykit.tip_to_tip_node_distance(["tree.tre", "tip_a", "tip_b"])
+
+    args = captured["args"]
+    assert captured["ran"] is True
+    assert args.tree_zero == "tree.tre"
+    assert args.tip_1 == "tip_a"
+    assert args.tip_2 == "tip_b"
+    assert args.json is False
+
+
+def test_tip_to_tip_node_distance_option_invocation_keeps_parser(monkeypatch):
+    calls = {"parser": False, "ran": False}
+
+    class FakeParser:
+        def add_argument(self, *args, **kwargs):
+            return None
+
+        def parse_args(self, argv):
+            calls["argv"] = argv
+            return object()
+
+    class Runner:
+        def __init__(self, args):
+            calls["args"] = args
+
+        def run(self):
+            calls["ran"] = True
+
+    def fake_new_parser(*_args, **_kwargs):
+        calls["parser"] = True
+        return FakeParser()
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fake_new_parser)
+    monkeypatch.setattr(phykit_module, "TipToTipNodeDistance", Runner)
+
+    phykit_module.Phykit.tip_to_tip_node_distance(
+        ["tree.tre", "tip_a", "tip_b", "--json"]
+    )
+
+    assert calls["parser"] is True
+    assert calls["argv"] == ["tree.tre", "tip_a", "tip_b", "--json"]
+    assert calls["ran"] is True
+
+
 def test_lb_score_default_invocation_bypasses_parser(monkeypatch):
     captured = {}
 
