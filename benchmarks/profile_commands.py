@@ -103,6 +103,7 @@ COMMANDS: tuple[tuple[str, tuple[str, ...]], ...] = (
             str(SAMPLES / "small_Aspergillus_tree.monophyly_check.false.txt"),
         ),
     ),
+    ("patristic_distances", ("patristic_distances", str(SAMPLES / "tree_simple.tre"))),
 )
 
 

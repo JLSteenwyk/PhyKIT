@@ -222,6 +222,81 @@ class TestPatristicDistances(object):
         assert [len(batch) for batch in batches] == [3, 3, 3, 1]
         assert observed_pairs == list(combinations(tips, 2))
 
+    def test_scan_simple_newick_distance_inputs_preserves_pair_order(self, tmp_path):
+        tree_file = tmp_path / "tree.tre"
+        tree_file.write_text("((A:1,B:2):3,(C:4,D:5):6):7;\n")
+
+        tips, tip_indices, parent_indices, _levels, depths = (
+            PatristicDistances._scan_simple_newick_distance_inputs(str(tree_file))
+        )
+
+        distances = PatristicDistances._pairwise_tip_distance_values_from_paths(
+            tip_indices,
+            parent_indices,
+            depths,
+        )
+
+        assert tips == ["A", "B", "C", "D"]
+        assert distances == [3.0, 14.0, 15.0, 15.0, 16.0, 9.0]
+
+    def test_scan_simple_newick_distance_inputs_rejects_annotations(self, tmp_path):
+        tree_file = tmp_path / "tree.tre"
+        tree_file.write_text("((A:1,B:2):3[comment],C:4);\n")
+
+        result = PatristicDistances._scan_simple_newick_distance_inputs(
+            str(tree_file)
+        )
+
+        assert result is None
+
+    def test_scan_simple_newick_distance_inputs_rejects_duplicate_names(self, tmp_path):
+        tree_file = tmp_path / "tree.tre"
+        tree_file.write_text("((A:1,A:2):3,C:4);\n")
+
+        result = PatristicDistances._scan_simple_newick_distance_inputs(
+            str(tree_file)
+        )
+
+        assert result is None
+
+    def test_run_nonverbose_uses_simple_newick_scan(self, tmp_path, mocker):
+        tree_file = tmp_path / "tree.tre"
+        tree_file.write_text("((A:1,B:2):3,(C:4,D:5):6):7;\n")
+        t = PatristicDistances(
+            Namespace(tree=str(tree_file), verbose=False, json=False)
+        )
+        mocker.patch.object(
+            t,
+            "read_tree_file_unmodified",
+            side_effect=AssertionError("simple Newick fast path should be used"),
+        )
+        mocked_summary = mocker.patch(
+            "phykit.services.tree.patristic_distances.print_summary_statistics"
+        )
+
+        t.run()
+
+        stats = mocked_summary.call_args.args[0]
+        assert stats["minimum"] == 3.0
+        assert stats["maximum"] == 16.0
+
+    def test_run_verbose_uses_simple_newick_scan(self, tmp_path, mocker, capsys):
+        tree_file = tmp_path / "tree.tre"
+        tree_file.write_text("((A:1,B:2):3,C:4);\n")
+        t = PatristicDistances(
+            Namespace(tree=str(tree_file), verbose=True, json=False)
+        )
+        mocker.patch.object(
+            t,
+            "read_tree_file_unmodified",
+            side_effect=AssertionError("simple Newick fast path should be used"),
+        )
+
+        t.run()
+
+        captured = capsys.readouterr()
+        assert captured.out == "A\tB\t3.0\nA\tC\t8.0\nB\tC\t9.0\n"
+
     def test_distance_values_fallback_skips_returned_combos(self, mocker, args):
         t = PatristicDistances(args)
         tips = [f"tip{i}" for i in range(15)]

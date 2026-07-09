@@ -99,6 +99,61 @@ class PatristicDistances(Tree):
         self.json_output = parsed["json_output"]
 
     def run(self):
+        simple_result = self._scan_simple_newick_distance_inputs(self.tree_file_path)
+        if simple_result is not None:
+            tips, tip_indices, parent_indices, levels, depths = simple_result
+            max_tip_level = max(levels[tip_idx] for tip_idx in tip_indices)
+            if max_tip_level > self._PAIRWISE_LCA_DEPTH_THRESHOLD:
+                patristic_distances = self._pairwise_tip_distance_values_from_lca_index(
+                    tip_indices,
+                    parent_indices,
+                    levels,
+                    depths,
+                    max_tip_level,
+                )
+            else:
+                patristic_distances = self._pairwise_tip_distance_values_from_paths(
+                    tip_indices,
+                    parent_indices,
+                    depths,
+                )
+
+            if self.verbose:
+                if self.json_output:
+                    rows = [
+                        {
+                            "taxon_a": taxon_a,
+                            "taxon_b": taxon_b,
+                            "patristic_distance": round(distance, 4),
+                        }
+                        for (taxon_a, taxon_b), distance in zip(
+                            itertools.combinations(tips, 2),
+                            patristic_distances,
+                        )
+                    ]
+                    print_json(dict(verbose=True, rows=rows, pairs=rows))
+                else:
+                    try:
+                        lines = [
+                            f"{taxon_a}\t{taxon_b}\t{round(distance, 4)}"
+                            for (taxon_a, taxon_b), distance in zip(
+                                itertools.combinations(tips, 2),
+                                patristic_distances,
+                            )
+                        ]
+                        if lines:
+                            print("\n".join(lines))
+                    except BrokenPipeError:
+                        pass
+                return
+
+            stats = calculate_summary_statistics_from_arr(patristic_distances)
+            if self.json_output:
+                print_json(dict(verbose=False, summary=stats))
+            else:
+                print_summary_statistics(stats)
+            return
+
         tree = self.read_tree_file_unmodified()
         if self.verbose:
             if self.json_output:
@@ -219,6 +274,147 @@ class PatristicDistances(Tree):
             verbose=args.verbose,
             json_output=getattr(args, "json", False),
         )
+
+    @staticmethod
+    def _scan_simple_newick_distance_inputs(file_path: str):
+        try:
+            with open(file_path) as handle:
+                text = handle.read()
+        except OSError:
+            return None
+
+        if not text or any(char in text for char in "'\"[]"):
+            return None
+
+        text_len = len(text)
+        whitespace = " \t\r\n"
+        delimiters = "(),:;"
+
+        def skip_ws(index):
+            while index < text_len and text[index] in whitespace:
+                index += 1
+            return index
+
+        def parse_label(index):
+            index = skip_ws(index)
+            start = index
+            while (
+                index < text_len
+                and text[index] not in delimiters
+                and text[index] not in whitespace
+            ):
+                index += 1
+            return text[start:index], index
+
+        def parse_length(index):
+            index = skip_ws(index)
+            if index >= text_len or text[index] != ":":
+                return index, 0.0
+            index += 1
+            index = skip_ws(index)
+            start = index
+            while (
+                index < text_len
+                and text[index] not in ",);"
+                and text[index] not in whitespace
+            ):
+                index += 1
+            if start == index:
+                return None
+            try:
+                length = float(text[start:index])
+            except ValueError:
+                return None
+            return skip_ws(index), length
+
+        def parse_node(index):
+            index = skip_ws(index)
+            if index >= text_len:
+                return None
+
+            if text[index] == "(":
+                index += 1
+                children = []
+                while True:
+                    parsed = parse_node(index)
+                    if parsed is None:
+                        return None
+                    child, index = parsed
+                    children.append(child)
+
+                    index = skip_ws(index)
+                    if index >= text_len:
+                        return None
+                    if text[index] == ",":
+                        index += 1
+                        continue
+                    if text[index] == ")":
+                        index += 1
+                        break
+                    return None
+
+                _label, index = parse_label(index)
+                parsed_length = parse_length(index)
+                if parsed_length is None:
+                    return None
+                index, branch_length = parsed_length
+                return {"children": children, "name": None, "length": branch_length}, index
+
+            label, index = parse_label(index)
+            if not label:
+                return None
+            parsed_length = parse_length(index)
+            if parsed_length is None:
+                return None
+            index, branch_length = parsed_length
+            return {"children": [], "name": label, "length": branch_length}, index
+
+        try:
+            parsed = parse_node(0)
+        except RecursionError:
+            return None
+        if parsed is None:
+            return None
+        root, index = parsed
+        index = skip_ws(index)
+        if index >= text_len or text[index] != ";":
+            return None
+        index = skip_ws(index + 1)
+        if index != text_len:
+            return None
+
+        tips = []
+        tip_indices = []
+        parent_indices = []
+        levels = []
+        depths = []
+        stack = [(root, -1, 0, 0.0)]
+        while stack:
+            node, parent_idx, level, depth = stack.pop()
+            node_idx = len(parent_indices)
+            parent_indices.append(parent_idx)
+            levels.append(level)
+            depths.append(depth)
+            children = node["children"]
+            if children:
+                next_level = level + 1
+                for child in reversed(children):
+                    stack.append(
+                        (
+                            child,
+                            node_idx,
+                            next_level,
+                            depth + child["length"],
+                        )
+                    )
+            else:
+                tips.append(node["name"])
+                tip_indices.append(node_idx)
+
+        if len(tips) != len(set(tips)):
+            return None
+
+        return tips, tip_indices, parent_indices, levels, depths
 
     def _calculate_distance_batch(self, tree_pickle, combo_batch):
         """Helper function to calculate distances for a batch of combinations."""
