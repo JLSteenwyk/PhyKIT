@@ -72,11 +72,11 @@ class TestRenameTreeTips:
 
     def test_read_id_map_parses_whitespace_tokens_from_bytes(self, tmp_path):
         idmap_file = tmp_path / "idmap.txt"
-        idmap_file.write_bytes(b"a\tA\nb   B\n")
+        idmap_file.write_bytes(b"a\tA\nb   B\na A2\n")
         args = Namespace(tree="/x.tre", idmap=str(idmap_file), output=None)
         service = RenameTreeTips(args)
 
-        assert service.read_id_map() == {"a": "A", "b": "B"}
+        assert service.read_id_map() == {"a": "A2", "b": "B"}
 
     def test_read_id_map_missing_file_exits(self):
         args = Namespace(tree="/x.tre", idmap="/does/not/exist.txt", output=None)

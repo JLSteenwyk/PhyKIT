@@ -1656,6 +1656,7 @@ Results:
 | `RenameTreeTips.run` JSON boolean rename precheck | balanced 131072-tip tree, every 16th tip in id map, side-by-side previous full count precheck before copy | 0.106993917s | 0.000007209s | 14841.43x |
 | `RenameTreeTips` empty id-map short-circuit | balanced 32768-tip tree, empty id map for has/count/replace helper paths | 0.011177500s / 0.006682375s / 0.013954125s | 0.000005042s / 0.000002667s / 0.000003791s | 2216.80x / 2505.73x / 3680.91x |
 | `RenameTreeTips.read_id_map` binary token parser | 50k / 200k / 500k two-column rename rows, side-by-side previous text-mode `line.split()` parser | 0.028986s / 0.146914s / 0.463356s | 0.025624s / 0.132921s / 0.448390s | 1.13x / 1.11x / 1.03x |
+| `RenameTreeTips.read_id_map` text token parser | 500k two-column rename rows, side-by-side previous binary parser with per-token decode, identical whitespace parsing and duplicate-key overwrite | 0.317668s | 0.237988s | 1.33x |
 | `rename_tree_tips` module import without eager Bio.Phylo | cold subprocess import of rename-tree-tips command module | 0.162538s | 0.065407s | 2.49x |
 | `rename_tree_tips` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006052s | 0.004723s | 1.28x |
 | `RootTree.run` | balanced 32768-tip tree, root with one-tip outgroup | 0.3064s | 0.1872s | 1.6x |
@@ -6471,7 +6472,9 @@ Profiling summary:
   full-tree scan when a mapping file has no usable entries. JSON output now also
   uses the boolean preflight scan before copying, then gets the exact renamed-tip
   count from the rename pass itself, avoiding a full count-only traversal when a
-  matching tip is found early.
+  matching tip is found early. The id-map reader now parses text rows directly,
+  avoiding per-token byte decoding while preserving whitespace splitting and
+  duplicate-key overwrite behavior.
 - `RootTree.run` baseline time made a second full-tree pickle/unpickle copy
   before rerooting. The optimized path reroots the isolated tree returned by
   `read_tree_file()` directly before writing it. A later startup pass preserves
