@@ -491,6 +491,88 @@ class TestQuartetPieJson:
 
 
 class TestQuartetPieValidation:
+    def test_read_prepared_tree_skips_copy_for_branch_length_tree(
+        self, mocker, tmp_path
+    ):
+        tree_path = tmp_path / "tree.tre"
+        tree_path.write_text("((A:1,B:1):1,(C:1,D:1):1);\n")
+        qp = QuartetPie(
+            Namespace(
+                tree=str(tree_path),
+                gene_trees=None,
+                output=str(tmp_path / "out.png"),
+                annotate=False,
+            )
+        )
+        mocker.patch.object(
+            qp,
+            "_fast_copy",
+            side_effect=AssertionError(
+                "branch-length quartet_pie tree should stay read-only"
+            ),
+        )
+
+        tree = qp._read_prepared_tree()
+
+        assert tree is qp._read_tree_with_error(
+            str(tree_path),
+            "tree_file_path",
+            copy_tree=False,
+        )
+
+    def test_read_prepared_tree_fills_missing_lengths_on_copy(self, tmp_path):
+        tree_path = tmp_path / "tree.tre"
+        tree_path.write_text("((A,B),(C,D));\n")
+        qp = QuartetPie(
+            Namespace(
+                tree=str(tree_path),
+                gene_trees=None,
+                output=str(tmp_path / "out.png"),
+                annotate=False,
+            )
+        )
+
+        prepared = qp._read_prepared_tree()
+        cached = qp._read_tree_with_error(
+            str(tree_path),
+            "tree_file_path",
+            copy_tree=False,
+        )
+
+        assert all(
+            clade.branch_length == 1e-8
+            for clade in prepared.root.clades
+        )
+        assert all(
+            clade.branch_length is None
+            for clade in cached.root.clades
+        )
+
+    def test_read_prepared_tree_ladderize_forces_copy(self, mocker, tmp_path):
+        tree_path = tmp_path / "tree.tre"
+        tree_path.write_text("((A:1,B:1):1,(C:1,D:1):1);\n")
+        qp = QuartetPie(
+            Namespace(
+                tree=str(tree_path),
+                gene_trees=None,
+                output=str(tmp_path / "out.png"),
+                annotate=False,
+                ladderize=True,
+            )
+        )
+        copied = mocker.Mock()
+        copy_tree = mocker.patch.object(qp, "_fast_copy", return_value=copied)
+        validate_tree = mocker.patch.object(qp, "validate_tree")
+
+        assert qp._read_prepared_tree() is copied
+        copy_tree.assert_called_once()
+        validate_tree.assert_called_once_with(
+            copied,
+            min_tips=4,
+            assign_default_branch_length=1e-8,
+            context="quartet analysis",
+        )
+
     def test_too_few_tips_exits(self, tmp_path):
         from Bio import Phylo
         from io import StringIO

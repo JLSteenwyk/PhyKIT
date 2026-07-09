@@ -39,8 +39,7 @@ class QuartetPie(Tree):
         self.plot_config = parsed["plot_config"]
 
     def run(self) -> None:
-        tree = self.read_tree_file()
-        self.validate_tree(tree, min_tips=4, assign_default_branch_length=1e-8, context="quartet analysis")
+        tree = self._read_prepared_tree()
 
         branch_info = {}  # clade id -> {"f1": ..., "pp1": ...}
 
@@ -129,6 +128,83 @@ class QuartetPie(Tree):
                 ],
                 code=2,
             )
+
+    def _read_prepared_tree(self):
+        tree = self.read_tree_file_unmodified()
+        missing_lengths = self._validate_tree_without_filling(
+            tree,
+            min_tips=4,
+            context="quartet analysis",
+        )
+        if not self.plot_config.ladderize and not missing_lengths:
+            return tree
+
+        tree = self._fast_copy(tree)
+        self.validate_tree(
+            tree,
+            min_tips=4,
+            assign_default_branch_length=1e-8,
+            context="quartet analysis",
+        )
+        return tree
+
+    @staticmethod
+    def _validate_tree_without_filling(
+        tree,
+        min_tips: int,
+        context: str = "",
+    ) -> bool:
+        ctx = f" for {context}" if context else ""
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            if not Tree._has_minimum_terminals(tree, min_tips):
+                raise PhykitUserError(
+                    [f"Tree must have at least {min_tips} tips{ctx}."],
+                    code=2,
+                )
+            missing_lengths = False
+            for clade in tree.find_clades():
+                if clade.branch_length is None and clade != tree.root:
+                    missing_lengths = True
+            return missing_lengths
+
+        tip_count = 0
+        missing_lengths = False
+        stack = [root]
+        pop = stack.pop
+        extend = stack.extend
+        try:
+            while stack:
+                clade = pop()
+                children = clade.clades
+                if children:
+                    extend(children)
+                else:
+                    tip_count += 1
+
+                if clade is not root and clade.branch_length is None:
+                    missing_lengths = True
+        except AttributeError:
+            if not Tree._has_minimum_terminals(tree, min_tips):
+                raise PhykitUserError(
+                    [f"Tree must have at least {min_tips} tips{ctx}."],
+                    code=2,
+                )
+            missing_lengths = False
+            for clade in tree.find_clades():
+                if clade.branch_length is None and clade != tree.root:
+                    missing_lengths = True
+            return missing_lengths
+
+        if tip_count < min_tips:
+            raise PhykitUserError(
+                [f"Tree must have at least {min_tips} tips{ctx}."],
+                code=2,
+            )
+
+        return missing_lengths
 
     @staticmethod
     def _collect_clade_tip_names(tree) -> dict[int, tuple[str, ...]]:
