@@ -165,6 +165,15 @@ class _TreeOutputJsonDefaultArgs:
         self.json = False
 
 
+class _TreeFactorJsonDefaultArgs:
+    __slots__ = ("tree", "factor", "json")
+
+    def __init__(self, tree: str, factor=None) -> None:
+        self.tree = tree
+        self.factor = factor
+        self.json = False
+
+
 class _TreeVerboseJsonDefaultArgs:
     __slots__ = ("tree", "verbose", "json")
 
@@ -8220,6 +8229,13 @@ class Phykit:
 
     @staticmethod
     def spurious_sequence(argv):
+        if len(argv) == 1 and argv[0] and argv[0][0] != "-":
+            _run_service_with_args(
+                _TreeFactorJsonDefaultArgs(argv[0]),
+                SpuriousSequence,
+            )
+            return
+
         parser = _new_parser(
             description=_dedent(
                 f"""\

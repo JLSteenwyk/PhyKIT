@@ -1016,6 +1016,7 @@ Results:
 | `SpuriousSequence.run` no-hit output fast path | 100k / 500k mocked terminal branch rows below threshold, side-by-side previous empty JSON and text row scans with identical output payload/text | JSON: 0.002749410s / 0.011800677s; text: 0.002857457s / 0.012784354s | JSON: 0.001388460s / 0.006522125s; text: 0.001165718s / 0.006966344s | JSON: 1.98x / 1.81x; text: 2.45x / 1.84x |
 | `SpuriousSequence.run` JSON row construction | 500k mocked flagged terminal rows, identical row dictionaries | 0.748736s | 0.589699s | 1.27x |
 | `SpuriousSequence.run` cached read-only tree path | balanced 32768-tip cached tree with 1% long terminal branches, output mocked | 0.122502s | 0.005828s | 21.02x |
+| `spurious_sequence` default CLI parser bypass | direct dispatch of `spurious_sequence tree` into a no-op service, 1000 calls; direct command timing against `tree_simple.tre`, 30 runs after 5 warmups, stdout matched `None` | 1.363937s; 0.574518s mean | 0.004701s; 0.477098s mean | 290.14x; 1.20x |
 | `spurious_sequence` module import without eager Bio.Phylo | cold subprocess import of spurious-sequence command module | 0.157770s | 0.070032s | 2.25x |
 | `spurious_sequence` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.010024s | 0.009378s | 1.07x |
 | `spurious_sequence` module import without eager statistics | median cold subprocess import after local median helper | 0.010221s | 0.005496s | 1.86x |
