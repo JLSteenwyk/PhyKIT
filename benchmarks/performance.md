@@ -1451,6 +1451,7 @@ Results:
 | `BipartitionSupportStats._format_verbose_text` preallocated rows | 200k bipartition rows, randomized side-by-side formatter runs with identical text | 0.149440s | 0.101164s | 1.48x |
 | `BipartitionSupportStats._print_threshold_stats` batched threshold output | 100k threshold summary rows, captured stdout and identical text | 0.108712s | 0.098320s | 1.11x |
 | `BipartitionSupportStats.run` cached read-only tree path | balanced 32768-tip cached tree with support on every internal node and two thresholds, non-verbose output mocked | 0.118359s | 0.004085s | 28.97x |
+| `Phykit.bipartition_support_stats` default parser bypass | direct dispatch 1000 mocked service calls; command profiler `bipartition_support_stats`, 30 runs after 5 warmups | 0.946228s / 0.067217s | 0.000536s / 0.058952s | 1765.35x / 1.14x |
 | `bipartition_support_stats` module import without eager Bio.Phylo/NumPy | cold subprocess import of bipartition-support-stats command module | 0.171310s | 0.069630s | 2.46x |
 | `bipartition_support_stats` module import without eager stdlib JSON | median cold subprocess import after lazy `json.dumps` wrapper | 0.010258s | 0.009065s | 1.13x |
 | `bipartition_support_stats` module import without eager stats helper | median cold subprocess import after lazy forwarding wrappers for summary helpers and JSON dumps | 0.028963s | 0.025592s | 1.13x |

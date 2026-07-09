@@ -165,6 +165,16 @@ class _TreeVerboseJsonDefaultArgs:
         self.json = False
 
 
+class _TreeVerboseThresholdJsonDefaultArgs:
+    __slots__ = ("tree", "verbose", "thresholds", "json")
+
+    def __init__(self, tree: str) -> None:
+        self.tree = tree
+        self.verbose = False
+        self.thresholds = None
+        self.json = False
+
+
 class _TreeTaxaJsonDefaultArgs:
     __slots__ = ("tree", "list_of_taxa", "json")
 
@@ -3397,6 +3407,13 @@ class Phykit:
 
     @staticmethod
     def bipartition_support_stats(argv):
+        if len(argv) == 1 and argv[0] and argv[0][0] != "-":
+            _run_service_with_args(
+                _TreeVerboseThresholdJsonDefaultArgs(argv[0]),
+                BipartitionSupportStats,
+            )
+            return
+
         parser = _new_parser(
             description=_dedent(
                 f"""\
