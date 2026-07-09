@@ -234,6 +234,15 @@ class TestTreeBase:
 
         assert Tree._scan_simple_newick_tip_names(str(tree_path)) is None
 
+    def test_scan_simple_newick_tip_names_rejects_malformed_branch_length(
+        self,
+        tmp_path,
+    ):
+        tree_path = tmp_path / "malformed.tre"
+        tree_path.write_text("(a:bad,b:2);")
+
+        assert Tree._scan_simple_newick_tip_names(str(tree_path)) is None
+
     def test_scan_simple_newick_terminal_distance_stats_matches_biophylo(
         self,
         tmp_path,

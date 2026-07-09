@@ -1507,7 +1507,7 @@ Results:
 | `BipartitionSupportStats.run` simple Newick support scan | command profiler, 5 runs after 1 warmup, plain Newick input `small_Aspergillus_tree.tre` | 0.544450s | 0.061464s | 8.86x |
 | `TipLabels.run` tip-name extraction | balanced 65536-tip tree, terminal labels before output | 0.135883s | 0.017736s | 7.66x |
 | `TipLabels.run` cached read-only tree path | balanced 32768-tip cached tree, output mocked | 0.112631s | 0.004871s | 23.12x |
-| `TipLabels.run` simple Newick names-only scan | 1000 repeated text runs on `tree_simple.tre`, stdout suppressed, side-by-side previous general simple-Newick summary scanner | 0.005774s | 0.004869s | 1.19x |
+| `TipLabels.run` validated simple Newick names-only scan | 100k repeated text runs on `tree_simple.tre`, stdout suppressed, side-by-side previous general simple-Newick summary scanner | 0.600088s | 0.469424s | 1.28x |
 | `TipLabels.run` JSON row literals | 500k terminal labels, JSON row payload construction only, side-by-side previous `dict(taxon=...)` rows | 0.092065s | 0.063262s | 1.45x |
 | `TipLabels.run` text output direct write | 500k terminal labels, captured stdout and identical trailing newline | 0.029063s | 0.021958s | 1.32x |
 | `tip_labels` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006193s | 0.004810s | 1.29x |

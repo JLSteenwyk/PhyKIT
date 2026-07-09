@@ -310,7 +310,12 @@ class Tree(BaseService):
                 start = i
                 while i < text_len and text[i] not in ",);" and text[i] not in whitespace:
                     i += 1
-                if start == i:
+                number = text[start:i]
+                if not number:
+                    return None
+                try:
+                    float(number)
+                except ValueError:
                     return None
                 prev_sig = "branch_length"
                 continue
