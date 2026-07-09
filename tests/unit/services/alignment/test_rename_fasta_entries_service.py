@@ -6,6 +6,7 @@ import pytest
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
+import phykit.services.alignment.rename_fasta_entries as rename_fasta_entries
 from phykit.services.alignment.rename_fasta_entries import RenameFastaEntries
 
 
@@ -181,6 +182,30 @@ class TestRenameFastaEntries:
             ">b original description\n"
             "CCCC\n"
         )
+
+    def test_replace_ids_in_file_and_write_batches_large_sequences(
+        self, tmp_path, args, monkeypatch
+    ):
+        monkeypatch.setattr(rename_fasta_entries, "_FASTA_WRAP_WIDTH", 5)
+        monkeypatch.setattr(rename_fasta_entries, "_WRAPPED_FASTA_BATCH_MIN_LENGTH", 1)
+        monkeypatch.setattr(rename_fasta_entries, "_WRAPPED_FASTA_BATCH_CHUNKS", 1)
+
+        service = RenameFastaEntries(args)
+        input_file = tmp_path / "input.fa"
+        output_file = tmp_path / "renamed.fa"
+        input_file.write_text(
+            ">a original description\n"
+            "ABCDEFGHIJKL\n"
+        )
+
+        renamed_count, total_records = service.replace_ids_in_file_and_write(
+            str(output_file),
+            str(input_file),
+            {"a": "A"},
+        )
+
+        assert (renamed_count, total_records) == (1, 1)
+        assert output_file.read_text() == ">A\nABCDE\nFGHIJ\nKL\n"
 
     def test_write_wrapped_fasta_sequence_helper(self, tmp_path):
         output_file = tmp_path / "wrapped.fa"

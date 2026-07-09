@@ -6,6 +6,9 @@ import sys
 from .base import Alignment
 
 _path_exists = os.path.exists
+_FASTA_WRAP_WIDTH = 60
+_WRAPPED_FASTA_BATCH_CHUNKS = 8_192
+_WRAPPED_FASTA_BATCH_MIN_LENGTH = 1_000_000
 
 
 def print_json(*args, **kwargs):
@@ -106,7 +109,8 @@ class RenameFastaEntries(Alignment):
 
         with open(fasta_path) as input_file, open(output_file_path, "w") as output_file:
             write = output_file.write
-            width = 60
+            width = _FASTA_WRAP_WIDTH
+            batch_min_length = _WRAPPED_FASTA_BATCH_MIN_LENGTH
             for title, sequence in SimpleFastaParser(input_file):
                 total_records += 1
                 record_id = title.split(None, 1)[0]
@@ -116,15 +120,19 @@ class RenameFastaEntries(Alignment):
                     renamed_count += 1
                 else:
                     header = title
-                if not sequence:
+                sequence_length = len(sequence)
+                if sequence_length == 0:
                     write(f">{header}\n")
-                elif len(sequence) <= width:
+                elif sequence_length <= width:
                     write(f">{header}\n{sequence}\n")
+                elif sequence_length >= batch_min_length:
+                    write(f">{header}\n")
+                    self._write_wrapped_fasta_sequence(output_file, sequence, width)
                 else:
                     wrapped_sequence = "\n".join(
                         [
                             sequence[idx:idx + width]
-                            for idx in range(0, len(sequence), width)
+                            for idx in range(0, sequence_length, width)
                         ]
                     )
                     write(f">{header}\n{wrapped_sequence}\n")
@@ -133,14 +141,31 @@ class RenameFastaEntries(Alignment):
 
     @staticmethod
     def _write_wrapped_fasta_sequence(handle, sequence: str, width: int = 60) -> None:
-        if not sequence:
+        sequence_length = len(sequence)
+        if sequence_length == 0:
             return
-        handle.write(
-            "\n".join(
-                [
-                    sequence[idx:idx + width]
-                    for idx in range(0, len(sequence), width)
-                ]
+        if sequence_length < _WRAPPED_FASTA_BATCH_MIN_LENGTH:
+            handle.write(
+                "\n".join(
+                    [
+                        sequence[idx:idx + width]
+                        for idx in range(0, sequence_length, width)
+                    ]
+                )
             )
-        )
-        handle.write("\n")
+            handle.write("\n")
+            return
+
+        write = handle.write
+        batch_size = width * _WRAPPED_FASTA_BATCH_CHUNKS
+        for start in range(0, sequence_length, batch_size):
+            stop = min(start + batch_size, sequence_length)
+            write(
+                "\n".join(
+                    [
+                        sequence[idx:idx + width]
+                        for idx in range(start, stop, width)
+                    ]
+                )
+            )
+            write("\n")
