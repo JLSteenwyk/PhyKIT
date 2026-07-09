@@ -1481,6 +1481,7 @@ Results:
 | `parsimony_score` module import without eager FASTA parser | cold subprocess import after lazy Bio.SeqIO.FastaIO import | 0.227281s | 0.124062s | 1.83x |
 | `parsimony_score` module import without eager NumPy | cold subprocess import after lazy NumPy proxy | 0.077951s | 0.025578s | 3.05x |
 | `RelativeRateTest._run_single` | 140 ingroup taxa x 1500 sites plus outgroup, alphabet `ACGT-?NX` | 1.4043s | 0.0275s | 51.1x |
+| `RelativeRateTest._run_pairwise_tests` length validation | 200k ingroup taxa, all equal / first mismatch / last mismatch sequence lengths before vectorized dispatch | 2.981313s / 2.818937s / 3.313863s | 2.536708s / 0.000003s / 2.644228s | 1.18x / 902044.62x / 1.25x |
 | `RelativeRateTest._tajima_test` long ASCII helper | five 1M-site Tajima tests, alphabet `ACGTn` | 1.111929s | 0.012380s | 89.82x |
 | `RelativeRateTest._tajima_test` clean ASCII shortcut | 2M-site Tajima triplet, alphabet `ACGT`, side-by-side previous validity-mask vector path | 0.008916s | 0.007849s | 1.14x |
 | `RelativeRateTest._tajima_test` sampled lowercase byte normalization | 1M clean-uppercase sites / 1M lowercase plus `N`-skip sites, side-by-side previous NumPy lowercase-mask uppercase path | 0.006543s / 0.010762s | 0.004997s / 0.006683s | 1.31x / 1.61x |
@@ -5918,10 +5919,13 @@ Profiling summary:
   optimized equal-length ASCII path builds valid-site, differs-from-outgroup,
   and matches-outgroup boolean matrices, then obtains all pairwise `m1`/`m2`
   counts with matrix products before applying the same chi-square and multiple
-  testing corrections. Uneven or non-ASCII sequences retain the legacy pairwise
-  fallback. Its multiple-testing helpers keep list outputs while using NumPy for
-  large correction arrays: Bonferroni correction applies the cap in one
-  vectorized operation, and FDR computes the same Benjamini-Hochberg adjustment
+  testing corrections. Pairwise dispatch now scans ingroup sequence lengths
+  directly before vectorized setup instead of constructing a temporary length
+  set, preserving the legacy fallback for uneven inputs while short-circuiting
+  on the first mismatched sequence. Uneven or non-ASCII sequences retain the
+  legacy pairwise fallback. Its multiple-testing helpers keep list outputs while
+  using NumPy for large correction arrays: Bonferroni correction applies the cap
+  in one vectorized operation, and FDR computes the same Benjamini-Hochberg adjustment
   with sorting and a reverse cumulative minimum instead of tuple sorting plus a
   Python reverse loop. The large-vector FDR path now also scales the sorted
   p-values in place and uses in-place NumPy minima, avoiding temporary adjusted

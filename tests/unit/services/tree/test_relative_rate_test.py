@@ -519,6 +519,30 @@ class TestPairwiseTajima:
         assert all("p_bonf" in row for row in results)
         assert all("p_fdr" in row for row in results)
 
+    def test_pairwise_tests_length_check_short_circuits_on_first_mismatch(self, mocker):
+        svc = RelativeRateTest.__new__(RelativeRateTest)
+        ingroup = ["A", "B", "C"]
+
+        class _LengthRaises:
+            def __len__(self):
+                raise AssertionError("later ingroup lengths should not be inspected")
+
+        seq_dict = {"A": "A", "B": _LengthRaises(), "C": _LengthRaises()}
+        seq_out = "AA"
+        expected = [{"taxon1": "A", "taxon2": "B"}]
+        legacy = mocker.patch.object(
+            svc,
+            "_run_pairwise_tests_legacy",
+            return_value=expected,
+        )
+        vectorized = mocker.patch.object(svc, "_run_pairwise_tests_vectorized")
+
+        observed = svc._run_pairwise_tests(seq_dict, ingroup, seq_out)
+
+        assert observed == expected
+        legacy.assert_called_once_with(seq_dict, ingroup, seq_out)
+        vectorized.assert_not_called()
+
     def test_large_pairwise_builtin_rows_preserve_scalar_branch_results(
         self, monkeypatch
     ):

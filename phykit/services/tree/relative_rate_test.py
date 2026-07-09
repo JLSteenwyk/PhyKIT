@@ -383,13 +383,15 @@ class RelativeRateTest(Tree):
     def _run_pairwise_tests(
         self, seq_dict: dict[str, str], ingroup: list[str], seq_out: str
     ) -> list[dict]:
-        lengths = {len(seq_dict[taxon]) for taxon in ingroup}
-        lengths.add(len(seq_out))
-        if len(lengths) == 1:
-            try:
-                return self._run_pairwise_tests_vectorized(seq_dict, ingroup, seq_out)
-            except UnicodeEncodeError:
-                pass
+        seq_len = len(seq_out)
+        for taxon in ingroup:
+            if len(seq_dict[taxon]) != seq_len:
+                return self._run_pairwise_tests_legacy(seq_dict, ingroup, seq_out)
+
+        try:
+            return self._run_pairwise_tests_vectorized(seq_dict, ingroup, seq_out)
+        except UnicodeEncodeError:
+            pass
         return self._run_pairwise_tests_legacy(seq_dict, ingroup, seq_out)
 
     def _run_pairwise_tests_legacy(
