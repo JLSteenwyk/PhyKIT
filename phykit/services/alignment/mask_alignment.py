@@ -31,6 +31,8 @@ np = _LazyNumpy()
 _DNA_INVALID_LOOKUP = None
 _PROTEIN_INVALID_LOOKUP = None
 _ASCII_ENTROPY_BLOCK_SIZE = 512
+_MASK_CLUSTERED_RANGE_FACTOR = 4
+_MASK_CLUSTER_SAMPLE_WIDTH = 4096
 
 
 def _entropy_columns_from_probabilities(probs, log_probs):
@@ -342,6 +344,7 @@ class MaskAlignment(Alignment):
             }
 
         if mask_len:
+            kept_count = int(np.count_nonzero(keep_mask))
             run_start = int(keep_mask.argmax())
             run_stop = mask_len - int(keep_mask[::-1].argmax())
             if keep_mask[run_start:run_stop].all():
@@ -352,6 +355,23 @@ class MaskAlignment(Alignment):
                         masked = None
                         break
                     masked[record.id] = sequence[run_start:run_stop].upper()
+                if masked is not None:
+                    return masked
+
+            ranges = self._clustered_true_mask_ranges(keep_mask, kept_count)
+            if ranges is not None:
+                masked = {}
+                for record in records:
+                    sequence = str(record.seq)
+                    if len(sequence) != mask_len:
+                        masked = None
+                        break
+                    masked[record.id] = "".join(
+                        [
+                            sequence[start:stop]
+                            for start, stop in ranges
+                        ]
+                    ).upper()
                 if masked is not None:
                     return masked
 
@@ -373,3 +393,37 @@ class MaskAlignment(Alignment):
                 record.id: "".join(row.tolist())
                 for record, row in zip(records, masked_array)
             }
+
+    @staticmethod
+    def _clustered_true_mask_ranges(
+        keep_mask: np.ndarray,
+        kept_count: int,
+    ) -> list[tuple[int, int]] | None:
+        if kept_count <= 0:
+            return []
+        if kept_count < 1024:
+            return None
+
+        mask_len = len(keep_mask)
+        sample_width = min(mask_len, _MASK_CLUSTER_SAMPLE_WIDTH)
+        if sample_width < mask_len:
+            sample = keep_mask[:sample_width]
+            sample_kept = int(np.count_nonzero(sample))
+            if sample_kept:
+                sample_changes = int(np.count_nonzero(sample[1:] != sample[:-1]))
+                sample_range_count = (sample_changes + int(bool(sample[0])) + 1) // 2
+                if sample_range_count * _MASK_CLUSTERED_RANGE_FACTOR >= sample_kept:
+                    return None
+
+        padded_mask = np.empty(mask_len + 2, dtype=np.bool_)
+        padded_mask[0] = False
+        padded_mask[-1] = False
+        padded_mask[1:-1] = keep_mask
+        changes = np.flatnonzero(padded_mask[1:] != padded_mask[:-1])
+        range_count = changes.size // 2
+        if range_count * _MASK_CLUSTERED_RANGE_FACTOR >= kept_count:
+            return None
+
+        starts = changes[0::2].tolist()
+        stops = changes[1::2].tolist()
+        return list(zip(starts, stops))

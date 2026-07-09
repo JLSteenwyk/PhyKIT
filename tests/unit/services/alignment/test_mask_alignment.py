@@ -616,6 +616,50 @@ assert "Bio.AlignIO" not in sys.modules
 
         assert masked == {"a": "CGT", "b": "GCA"}
 
+    def test_apply_mask_clustered_intervals_slice_sequences_directly(
+        self, mocker, args
+    ):
+        sequence_a = ("a" * 600) + ("c" * 300) + ("g" * 600) + ("t" * 300)
+        sequence_b = ("t" * 600) + ("g" * 300) + ("c" * 600) + ("a" * 300)
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq(sequence_a), id="a"),
+                SeqRecord(Seq(sequence_b), id="b"),
+            ]
+        )
+        masker = MaskAlignment(args)
+        mocker.patch(
+            "phykit.services.alignment.mask_alignment.np.frombuffer",
+            side_effect=AssertionError(
+                "clustered partial masks should not build a matrix"
+            ),
+        )
+
+        masked = masker.apply_mask(
+            alignment,
+            keep_mask=mask_alignment_module.np.array(
+                ([True] * 600)
+                + ([False] * 300)
+                + ([True] * 600)
+                + ([False] * 300)
+            ),
+        )
+
+        assert masked == {
+            "a": ("A" * 600) + ("G" * 600),
+            "b": ("T" * 600) + ("C" * 600),
+        }
+
+    def test_clustered_true_mask_ranges_rejects_fragmented_masks(self):
+        mask = mask_alignment_module.np.array(
+            [True, False, True, False, True, False, True, False],
+        )
+
+        assert (
+            MaskAlignment._clustered_true_mask_ranges(mask, kept_count=4)
+            is None
+        )
+
     def test_apply_mask_falls_back_for_non_ascii_sequences(self, args):
         alignment = [
             SimpleNamespace(seq="A\u00d1GT", id="a"),
