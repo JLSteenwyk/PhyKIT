@@ -34,6 +34,7 @@ _DNA_GAP_LOOKUP = None
 _PROTEIN_GAP_LOOKUP = None
 _FDR_VECTOR_MIN_LENGTH = 32
 _PLOT_DIRECT_MAX_LIMIT = 100_000
+_ASCII_COUNT_BLOCK_SIZE = 512
 
 
 def _column_sum_squares(counts: np.ndarray) -> np.ndarray:
@@ -215,7 +216,7 @@ def _column_count_stats_from_ascii_codes(
     alignment_array: np.ndarray,
     valid_mask: np.ndarray | None,
     valid_symbols: np.ndarray,
-    block_size: int = 8192,
+    block_size: int = _ASCII_COUNT_BLOCK_SIZE,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     aln_len = alignment_array.shape[1]
     category_counts = np.zeros(aln_len, dtype=np.int16)

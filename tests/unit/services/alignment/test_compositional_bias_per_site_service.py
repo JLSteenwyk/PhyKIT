@@ -662,6 +662,32 @@ assert "numpy" not in sys.modules
         np.testing.assert_allclose(totals, np.sum(counts, axis=0))
         np.testing.assert_allclose(sum_squares, np.sum(counts * counts, axis=0))
 
+    def test_column_count_stats_from_ascii_codes_default_blocks(
+        self, monkeypatch
+    ):
+        width = cbps_module._ASCII_COUNT_BLOCK_SIZE + 1
+        alignment_array = np.tile(
+            np.frombuffer(b"ACDEFGHIKLMNPQRSTVWY", dtype=np.uint8),
+            (3, width // 20 + 1),
+        )[:, :width]
+        valid_symbols = np.unique(alignment_array)
+        original_bincount = cbps_module.np.bincount
+        observed_widths = []
+
+        def bincount_spy(values, *args, **kwargs):
+            observed_widths.append(kwargs["minlength"] // 256)
+            return original_bincount(values, *args, **kwargs)
+
+        monkeypatch.setattr(cbps_module.np, "bincount", bincount_spy)
+
+        cbps_module._column_count_stats_from_ascii_codes(
+            alignment_array,
+            None,
+            valid_symbols,
+        )
+
+        assert observed_widths == [cbps_module._ASCII_COUNT_BLOCK_SIZE, 1]
+
     def test_calculate_compositional_bias_per_site_protein_uses_chunked_counts(
         self, mocker, args
     ):
