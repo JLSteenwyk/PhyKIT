@@ -183,6 +183,7 @@ Results:
 | `pairwise_identity` module import without eager NumPy lookup tables | cold subprocess import after lazy class-level gap lookup construction | 0.088633s | 0.039021s | 2.27x |
 | `pairwise_identity` module import without eager multiprocessing/stats/json/plot helpers | cold subprocess import after lazy helper wrappers and localized `partial` import | 0.039676s | 0.025821s | 1.54x |
 | `pairwise_identity` module import without `typing` startup | median cold subprocess import after removing runtime `TYPE_CHECKING` and converting annotation-only typing aliases to built-in annotations | 0.036227s | 0.032552s | 1.11x |
+| `PairwiseIdentity.process_args` no-plot config elision | `python -m timeit`, 7 repeats of 2000 no-plot `PairwiseIdentity` constructions, text and JSON CLI stdout/stderr matched previous commit | 0.000004340s | 0.000000739s | 5.87x |
 | `PairwiseIdentity._LazyMultiprocessing.cpu_count` method proxy | 10k / 100k / 1M repeated `cpu_count()` calls through the lazy multiprocessing proxy after first resolution | 0.007777458s / 0.122871250s / 1.999485208s | 0.004185000s / 0.055022667s / 0.806983583s | 1.86x / 2.23x / 2.48x |
 | `VariableSites.calculate_variable_sites` | 220 taxa x 5000 sites, alphabet `ACGT-?NX*` | 0.1652s | 0.0621s | 2.7x |
 | `VariableSites.calculate_variable_sites` byte matrix setup | 500 taxa x 8000 sites, alphabet `ACGT-?NX*` | 0.1697s | 0.0491s | 3.5x |

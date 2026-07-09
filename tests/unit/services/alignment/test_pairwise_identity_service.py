@@ -1039,6 +1039,17 @@ class TestPairwiseIdentity:
         assert parsed["json_output"] is False
         assert parsed["plot"] is False
         assert parsed["plot_output"] == "pairwise_identity_heatmap.png"
+        assert parsed["plot_config"] is None
+
+    def test_no_plot_init_does_not_import_plot_config(self):
+        code = """
+import sys
+from argparse import Namespace
+from phykit.services.alignment.pairwise_identity import PairwiseIdentity
+PairwiseIdentity(Namespace(alignment="x.fa", verbose=False, exclude_gaps=False, plot=False))
+assert "phykit.helpers.plot_config" not in sys.modules
+"""
+        subprocess.run([sys.executable, "-c", code], check=True)
 
     def test_print_json_output_non_verbose(self, mocker):
         service = PairwiseIdentity(

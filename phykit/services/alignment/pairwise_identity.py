@@ -384,16 +384,21 @@ class PairwiseIdentity(Alignment):
             print(f"Saved pairwise identity heatmap: {self.plot_output}")
 
     def process_args(self, args) -> dict[str, str]:
-        from ...helpers.plot_config import PlotConfig
+        plot = getattr(args, "plot", False)
+        plot_config = None
+        if plot:
+            from ...helpers.plot_config import PlotConfig
+
+            plot_config = PlotConfig.from_args(args)
 
         return dict(
             alignment_file_path=args.alignment,
             verbose=args.verbose,
             exclude_gaps=args.exclude_gaps,
             json_output=getattr(args, "json", False),
-            plot=getattr(args, "plot", False),
+            plot=plot,
             plot_output=getattr(args, "plot_output", "pairwise_identity_heatmap.png"),
-            plot_config=PlotConfig.from_args(args),
+            plot_config=plot_config,
         )
 
     def _print_json_output(
