@@ -1635,6 +1635,7 @@ Results:
 | `HiddenParalogyCheck.run` sequential non-exact terminal collection | balanced 4096 / 32768 / 65536-tip MRCA clades, side-by-side previous generic tip-name helper plus set conversion | 0.002064s / 0.009363s / 0.022338s | 0.001377s / 0.006641s / 0.015721s | 1.50x / 1.41x / 1.42x |
 | `HiddenParalogyCheck` requested-clade shared-taxa intersection | 500k three-taxon requested clades against 100k master tree tips, duplicate/off-tree semantics preserved | 0.247522s | 0.190846s | 1.30x |
 | `HiddenParalogyCheck.print_results` text output | 200k clade status rows, identical stdout text | 0.028718s | 0.004742s | 6.06x |
+| `HiddenParalogyCheck.print_results` direct stdout write | 200k clade status rows, captured stdout and identical text, side-by-side previous newline-joined `print` path | 0.014860s | 0.009386s | 1.58x |
 | `HiddenParalogyCheck.print_results` JSON row construction | 500k clade status rows with mixed unexpected-taxa lists, identical row dictionaries | 2.142931s | 1.682672s | 1.27x |
 | `HiddenParalogyCheck.print_results` inline JSON rows | 500k clade status rows with mixed unexpected-taxa lists, side-by-side previous per-row helper call | 0.304951s | 0.234537s | 1.30x |
 | `HiddenParalogyCheck.read_clades_file` bulk read split | 500k three-taxon clade rows with blank-line compatibility | 0.572789s | 0.435850s | 1.31x |
@@ -6281,7 +6282,9 @@ Profiling summary:
   actually needed. The lazy reader now caches the resolved `Bio.Phylo` module
   after the first read, reducing repeated import dispatch in non-exact
   sequential and batch fallback paths that parse many small trees. A subsequent
-  startup pass keeps `mp.cpu_count` and `mp.Pool` behind a lazy proxy and
+  text-output pass writes the joined status buffer directly to stdout, preserving
+  the same trailing newline with less dispatch overhead. A later startup pass
+  keeps `mp.cpu_count` and `mp.Pool` behind a lazy proxy and
   imports `functools.partial` only when the large-clade
   multiprocessing branch is used. The lazy multiprocessing proxy now caches
   the imported module while preserving direct stdlib monkeypatch visibility.

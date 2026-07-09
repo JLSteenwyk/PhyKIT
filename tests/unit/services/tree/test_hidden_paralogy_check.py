@@ -183,11 +183,13 @@ class TestHiddenParalogyCheck(unittest.TestCase):
             ["insufficient_taxon_representation"]
         ]
 
-        with patch("sys.stdout", new_callable=StringIO) as output:
+        with patch(
+            "phykit.services.tree.hidden_paralogy_check.sys.stdout.write"
+        ) as write, patch("builtins.print") as mocked_print:
             self.checker.print_results(res_arr)
 
-        self.assertEqual(
-            output.getvalue(),
+        mocked_print.assert_not_called()
+        write.assert_called_once_with(
             "monophyletic\n"
             "not_monophyletic\n"
             "insufficient_taxon_representation\n",
@@ -491,9 +493,9 @@ class TestHiddenParalogyCheck(unittest.TestCase):
         mock_read.assert_not_called()
         self.assertEqual(results, [["monophyletic", []]])
 
-    @patch('builtins.print')
+    @patch('phykit.services.tree.hidden_paralogy_check.sys.stdout.write')
     @patch('phykit.services.tree.hidden_paralogy_check.Phylo.read')
-    def test_run_sequential_processing(self, mock_phylo_read, mock_print):
+    def test_run_sequential_processing(self, mock_phylo_read, mock_write):
         """Test run method with sequential processing (small dataset)"""
         # Setup mock tree
         mock_master_tree = Mock()
@@ -533,10 +535,10 @@ class TestHiddenParalogyCheck(unittest.TestCase):
         mock_phylo_read.assert_called_once_with("test_tree.tre", "newick")
 
         # Check output
-        mock_print.assert_called_once_with("monophyletic")
+        mock_write.assert_called_once_with("monophyletic\n")
 
-    @patch('builtins.print')
-    def test_run_sequential_exact_clade_skips_tree_reread(self, mock_print):
+    @patch('phykit.services.tree.hidden_paralogy_check.sys.stdout.write')
+    def test_run_sequential_exact_clade_skips_tree_reread(self, mock_write):
         """Exact clades are classified from the master tree without rerooting."""
         tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
         self.checker.read_tree_file_unmodified = Mock(return_value=tree)
@@ -548,10 +550,10 @@ class TestHiddenParalogyCheck(unittest.TestCase):
         ):
             self.checker.run()
 
-        mock_print.assert_called_once_with("monophyletic")
+        mock_write.assert_called_once_with("monophyletic\n")
 
-    @patch('builtins.print')
-    def test_run_sequential_nonexact_uses_direct_terminal_names(self, mock_print):
+    @patch('phykit.services.tree.hidden_paralogy_check.sys.stdout.write')
+    def test_run_sequential_nonexact_uses_direct_terminal_names(self, mock_write):
         """Sequential non-exact clades avoid generic terminal materialization."""
         master_tree = Phylo.read(StringIO("((A:1,C:1):1,(B:1,D:1):1);"), "newick")
         work_tree = Phylo.read(StringIO("((A:1,C:1):1,(B:1,D:1):1);"), "newick")
@@ -572,11 +574,11 @@ class TestHiddenParalogyCheck(unittest.TestCase):
         finally:
             TreeMixin.get_terminals = original_get_terminals
 
-        mock_print.assert_called_once_with("not_monophyletic")
+        mock_write.assert_called_once_with("not_monophyletic\n")
 
-    @patch('builtins.print')
+    @patch('phykit.services.tree.hidden_paralogy_check.sys.stdout.write')
     @patch('multiprocessing.Pool')
-    def test_run_parallel_processing(self, mock_pool_class, mock_print):
+    def test_run_parallel_processing(self, mock_pool_class, mock_write):
         """Test run method with parallel processing (large dataset)"""
         self.checker.MP_MIN_CLADES = 10
         # Setup mock tree
@@ -611,13 +613,13 @@ class TestHiddenParalogyCheck(unittest.TestCase):
         mock_pool.map.assert_called_once()
 
         self.assertEqual(
-            mock_print.call_args.args[0].splitlines(),
+            mock_write.call_args.args[0].splitlines(),
             ["monophyletic"] * 15,
         )
 
-    @patch('builtins.print')
+    @patch('phykit.services.tree.hidden_paralogy_check.sys.stdout.write')
     @patch('multiprocessing.Pool')
-    def test_run_medium_exact_clades_skip_pool(self, mock_pool_class, mock_print):
+    def test_run_medium_exact_clades_skip_pool(self, mock_pool_class, mock_write):
         """Default processing keeps medium exact-clade lists sequential."""
         tree = Phylo.read(StringIO("(((A,B),(C,D)),((E,F),(G,H)));"), "newick")
         exact_clades = [["A", "B"], ["C", "D"], ["E", "F"]] * 5
@@ -632,13 +634,13 @@ class TestHiddenParalogyCheck(unittest.TestCase):
 
         mock_pool_class.assert_not_called()
         self.assertEqual(
-            mock_print.call_args.args[0].splitlines(),
+            mock_write.call_args.args[0].splitlines(),
             ["monophyletic"] * 15,
         )
 
-    @patch('builtins.print')
+    @patch('phykit.services.tree.hidden_paralogy_check.sys.stdout.write')
     @patch('phykit.services.tree.hidden_paralogy_check.Phylo.read')
-    def test_run_with_insufficient_taxa(self, mock_phylo_read, mock_print):
+    def test_run_with_insufficient_taxa(self, mock_phylo_read, mock_write):
         """Test run with insufficient taxa representation"""
         mock_master_tree = Mock()
         mock_tree = Mock()
@@ -658,11 +660,11 @@ class TestHiddenParalogyCheck(unittest.TestCase):
         self.checker.run()
 
         # Check output
-        mock_print.assert_called_once_with("insufficient_taxon_representation")
+        mock_write.assert_called_once_with("insufficient_taxon_representation\n")
 
-    @patch('builtins.print')
+    @patch('phykit.services.tree.hidden_paralogy_check.sys.stdout.write')
     @patch('phykit.services.tree.hidden_paralogy_check.Phylo.read')
-    def test_run_with_not_monophyletic(self, mock_phylo_read, mock_print):
+    def test_run_with_not_monophyletic(self, mock_phylo_read, mock_write):
         """Test run with not monophyletic result"""
         mock_master_tree = Mock()
         mock_tree = Mock()
@@ -689,7 +691,7 @@ class TestHiddenParalogyCheck(unittest.TestCase):
         self.checker.run()
 
         # Check output
-        mock_print.assert_called_once_with("not_monophyletic")
+        mock_write.assert_called_once_with("not_monophyletic\n")
 
     @patch('multiprocessing.cpu_count')
     @patch('multiprocessing.Pool')

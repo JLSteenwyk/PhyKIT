@@ -292,4 +292,4 @@ class HiddenParalogyCheck(Tree):
 
         lines = [res[0] for res in res_arr]
         if lines:
-            print("\n".join(lines))
+            sys.stdout.write("\n".join(lines) + "\n")
