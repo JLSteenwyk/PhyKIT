@@ -823,6 +823,74 @@ assert "Bio.AlignIO" not in sys.modules
         out, _ = capsys.readouterr()
         assert '"mean_entropy": 0.75' in out
 
+    def test_run_nonverbose_identical_alignment_skips_entropy_list(
+        self, monkeypatch, capsys
+    ):
+        from Bio.Align import MultipleSeqAlignment
+        from Bio.Seq import Seq
+        from Bio.SeqRecord import SeqRecord
+
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("ACGT" * 100), id=f"t{idx}")
+                for idx in range(8)
+            ]
+        )
+        svc = AlignmentEntropy(
+            Namespace(alignment="x.fa", verbose=False, json=False, plot=False)
+        )
+        monkeypatch.setattr(
+            svc,
+            "get_alignment_and_format",
+            lambda: (alignment, None, False),
+        )
+        monkeypatch.setattr(
+            svc,
+            "calculate_site_entropies",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(
+                AssertionError("identical summary should not build per-site entropy")
+            ),
+        )
+
+        svc.run()
+
+        out, _ = capsys.readouterr()
+        assert out == "0.0\n"
+
+    def test_run_nonverbose_identical_json_skips_entropy_list(
+        self, monkeypatch, capsys
+    ):
+        from Bio.Align import MultipleSeqAlignment
+        from Bio.Seq import Seq
+        from Bio.SeqRecord import SeqRecord
+
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("ACGT" * 100), id=f"t{idx}")
+                for idx in range(8)
+            ]
+        )
+        svc = AlignmentEntropy(
+            Namespace(alignment="x.fa", verbose=False, json=True, plot=False)
+        )
+        monkeypatch.setattr(
+            svc,
+            "get_alignment_and_format",
+            lambda: (alignment, None, False),
+        )
+        monkeypatch.setattr(
+            svc,
+            "calculate_site_entropies",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(
+                AssertionError("identical JSON summary should not build entropy list")
+            ),
+        )
+
+        svc.run()
+
+        out, _ = capsys.readouterr()
+        assert '"mean_entropy": 0.0' in out
+
     def test_run_verbose_terminal_rows(self, monkeypatch, capsys):
         svc = AlignmentEntropy(Namespace(alignment="x.fa", verbose=True, json=False, plot=False))
         monkeypatch.setattr(svc, "get_alignment_and_format", lambda: ("aln", None, True))

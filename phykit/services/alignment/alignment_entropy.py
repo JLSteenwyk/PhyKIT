@@ -154,7 +154,14 @@ class AlignmentEntropy(Alignment):
 
     def run(self) -> None:
         alignment, _, is_protein = self.get_alignment_and_format()
-        entropies = self.calculate_site_entropies(alignment, is_protein)
+        mean_entropy = None
+        if not self.verbose and not self.plot:
+            mean_entropy = self._mean_entropy_if_identical(alignment)
+
+        if mean_entropy is None:
+            entropies = self.calculate_site_entropies(alignment, is_protein)
+        else:
+            entropies = None
         rows = None
 
         if self.plot and self.verbose:
@@ -181,7 +188,12 @@ class AlignmentEntropy(Alignment):
             else:
                 payload = dict(
                     verbose=False,
-                    mean_entropy=round(sum(entropies) / len(entropies), 4) if entropies else 0.0,
+                    mean_entropy=round(
+                        mean_entropy
+                        if mean_entropy is not None
+                        else (sum(entropies) / len(entropies) if entropies else 0.0),
+                        4,
+                    ),
                 )
             if self.plot:
                 payload["plot_output"] = self.plot_output
@@ -202,7 +214,9 @@ class AlignmentEntropy(Alignment):
             if lines:
                 print("\n".join(lines))
         else:
-            if entropies:
+            if mean_entropy is not None:
+                print(round(mean_entropy, 4))
+            elif entropies:
                 print(round(sum(entropies) / len(entropies), 4))
             else:
                 print(0.0)
@@ -221,6 +235,45 @@ class AlignmentEntropy(Alignment):
             plot_output=getattr(args, "plot_output", "alignment_entropy_plot.png"),
             plot_config=PlotConfig.from_args(args),
         )
+
+    @staticmethod
+    def _mean_entropy_if_identical(alignment) -> float | None:
+        try:
+            record_count = len(alignment)
+        except TypeError:
+            return None
+
+        if record_count == 0:
+            return 0.0
+
+        try:
+            first_record = alignment[0]
+            first_raw_sequence = str(first_record.seq)
+        except (AttributeError, IndexError, TypeError):
+            return None
+
+        first_sequence = first_raw_sequence.upper()
+        for sample_idx in {record_count // 2, record_count - 1}:
+            if sample_idx == 0:
+                continue
+            try:
+                sample_sequence = str(alignment[sample_idx].seq)
+            except (AttributeError, IndexError, TypeError):
+                return None
+            if (
+                sample_sequence != first_raw_sequence
+                and sample_sequence.upper() != first_sequence
+            ):
+                return None
+
+        for idx in range(1, record_count):
+            sequence = str(alignment[idx].seq)
+            if (
+                sequence != first_raw_sequence
+                and sequence.upper() != first_sequence
+            ):
+                return None
+        return 0.0
 
     def _plot_alignment_entropy(self, rows: list[dict[str, float]]) -> None:
         try:
