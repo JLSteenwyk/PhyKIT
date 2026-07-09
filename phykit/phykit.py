@@ -130,10 +130,23 @@ def _add_json_argument(parser) -> None:
     parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
 
 
-def add_plot_arguments(*args, **kwargs):
-    from .helpers.plot_config import add_plot_arguments as _add_plot_arguments
-
-    return _add_plot_arguments(*args, **kwargs)
+def add_plot_arguments(parser) -> None:
+    group = parser.add_argument_group("plot options")
+    group.add_argument("--fig-width", type=float, default=None, help="Figure width in inches (auto-scaled if omitted)")
+    group.add_argument("--fig-height", type=float, default=None, help="Figure height in inches (auto-scaled if omitted)")
+    group.add_argument("--dpi", type=int, default=300, help="Resolution in DPI (default: 300)")
+    group.add_argument("--no-title", action="store_true", default=False, help="Hide the plot title")
+    group.add_argument("--title", type=str, default=None, help="Custom title text")
+    group.add_argument("--legend-position", type=str, default=None, help="Legend location (e.g., 'upper right', 'none' to hide)")
+    group.add_argument("--ylabel-fontsize", type=float, default=None, help="Font size for y-axis labels; 0 to hide")
+    group.add_argument("--xlabel-fontsize", type=float, default=None, help="Font size for x-axis labels; 0 to hide")
+    group.add_argument("--title-fontsize", type=float, default=None, help="Font size for the title")
+    group.add_argument("--axis-fontsize", type=float, default=None, help="Font size for axis labels")
+    group.add_argument("--colors", type=str, default=None, help="Comma-separated colors (hex or named)")
+    group.add_argument("--ladderize", action="store_true", default=False, help="Ladderize (sort) the tree before plotting")
+    group.add_argument("--cladogram", action="store_true", default=False, help="Draw cladogram (equal branch lengths, tips aligned) instead of phylogram")
+    group.add_argument("--circular", action="store_true", default=False, help="Draw circular (radial/fan) phylogram instead of rectangular")
+    group.add_argument("--color-file", type=str, default=None, help="Color annotation file for tip labels, clade ranges, and branch colors")
 
 
 def _run_service(parser, argv, service_factory) -> None:
