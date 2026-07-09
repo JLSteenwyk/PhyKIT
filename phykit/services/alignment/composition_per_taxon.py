@@ -31,6 +31,7 @@ _COMPOSITION_ROW_ZIP_MIN_COUNT = 50_000
 _IDENTICAL_INDEXED_SCAN_MIN_RECORDS = 200_000
 _IDENTICAL_ROW_TILE_MIN_COUNT = 1_000
 _ASCII_OFFSET_BINCOUNT_MAX_ROWS = 16_384
+_COMPOSITION_SCALAR_MAX_CELLS = 8192
 
 
 class _IdenticalCompositionOutputRows(list):
@@ -83,6 +84,48 @@ def _row_symbol_counts_from_ascii_codes(alignment_array, symbol_values):
         encoded,
         minlength=n_rows * 256,
     ).reshape(n_rows, 256)[:, symbol_values].astype(np.float64, copy=False)
+
+
+def _composition_per_taxon_scalar(raw_records, invalid_chars):
+    if not raw_records:
+        return [], []
+
+    aln_len = len(raw_records[0][1])
+    total_cells = len(raw_records) * aln_len
+    if total_cells > _COMPOSITION_SCALAR_MAX_CELLS:
+        return None
+    if any(len(sequence) != aln_len for _, sequence in raw_records):
+        return None
+
+    invalid_chars = frozenset(char.upper() for char in invalid_chars)
+    row_counts = []
+    valid_symbols = set()
+    for record_id, sequence in raw_records:
+        counts = {}
+        valid_count = 0
+        for char in sequence.upper():
+            if char in invalid_chars:
+                continue
+            counts[char] = counts.get(char, 0) + 1
+            valid_count += 1
+        row_counts.append((record_id, counts, valid_count))
+        valid_symbols.update(counts)
+
+    if not valid_symbols:
+        return [], []
+
+    symbols = sorted(valid_symbols)
+    freqs = []
+    for _, counts, valid_count in row_counts:
+        if valid_count == 0:
+            freqs.append([0.0 for _ in symbols])
+        else:
+            freqs.append([
+                counts.get(symbol, 0) / valid_count
+                for symbol in symbols
+            ])
+    record_ids = [record_id for record_id, _, _ in row_counts]
+    return symbols, _composition_output_rows(record_ids, freqs)
 
 
 class CompositionPerTaxon(Alignment):
@@ -267,6 +310,10 @@ class CompositionPerTaxon(Alignment):
 
             freqs = counts.astype(np.float64) / float(counts.sum())
             return symbols, _identical_composition_output_rows(record_ids, freqs)
+
+        scalar_result = _composition_per_taxon_scalar(raw_records, invalid_chars)
+        if scalar_result is not None:
+            return scalar_result
 
         records = [
             (record_id, sequence.upper())

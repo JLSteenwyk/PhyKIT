@@ -31,6 +31,10 @@ COMMANDS: tuple[tuple[str, tuple[str, ...]], ...] = (
         ("gc_content", str(SAMPLES / "test_alignment_0.fa"), "--verbose"),
     ),
     ("variable_sites", ("variable_sites", str(SAMPLES / "test_alignment_0.fa"))),
+    (
+        "composition_per_taxon",
+        ("composition_per_taxon", str(SAMPLES / "test_alignment_0.fa")),
+    ),
     ("alignment_entropy", ("alignment_entropy", str(SAMPLES / "test_alignment_0.fa"))),
     (
         "parsimony_informative_sites",

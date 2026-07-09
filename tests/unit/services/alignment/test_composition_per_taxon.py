@@ -249,13 +249,20 @@ assert "Bio.SeqIO.FastaIO" not in sys.modules
         assert np.allclose(by_taxon["t1"], np.array([0.25, 0.25, 0.25, 0.25]))
         assert np.allclose(by_taxon["t2"], np.array([1.0, 0.0, 0.0, 0.0]))
 
-    def test_calculate_composition_per_taxon_ascii_large_alphabet_uses_offset_bincount(self, args, mocker):
+    def test_calculate_composition_per_taxon_ascii_large_alphabet_uses_offset_bincount(
+        self, args, mocker, monkeypatch
+    ):
         svc = CompositionPerTaxon(args)
         alignment = MultipleSeqAlignment(
             [
                 SeqRecord(Seq("ACDEFGHIKLMNPQRSTVWY"), id="t1"),
                 SeqRecord(Seq("YWVTSRQPNMLKIHGFEDCA"), id="t2"),
             ]
+        )
+        monkeypatch.setattr(
+            composition_per_taxon_module,
+            "_COMPOSITION_SCALAR_MAX_CELLS",
+            0,
         )
         bincount_spy = mocker.spy(composition_per_taxon_module.np, "bincount")
         offset_spy = mocker.spy(
@@ -272,7 +279,7 @@ assert "Bio.SeqIO.FastaIO" not in sys.modules
         assert np.allclose(by_taxon["t1"], np.full(20, 0.05))
 
     def test_calculate_composition_per_taxon_ascii_no_gap_uses_full_lengths(
-        self, args, mocker
+        self, args, mocker, monkeypatch
     ):
         svc = CompositionPerTaxon(args)
         alignment = MultipleSeqAlignment(
@@ -280,6 +287,11 @@ assert "Bio.SeqIO.FastaIO" not in sys.modules
                 SeqRecord(Seq("ACDEFGHIKLMNPQRSTVWY"), id="t1"),
                 SeqRecord(Seq("ACDEFGHIKLMNPQRSTVWA"), id="t2"),
             ]
+        )
+        monkeypatch.setattr(
+            composition_per_taxon_module,
+            "_COMPOSITION_SCALAR_MAX_CELLS",
+            0,
         )
         full_spy = mocker.spy(composition_per_taxon_module.np, "full")
 
@@ -292,6 +304,45 @@ assert "Bio.SeqIO.FastaIO" not in sys.modules
         full_spy.assert_called_once_with(2, 20, dtype=composition_per_taxon_module.np.intp)
         assert symbols == list("ACDEFGHIKLMNPQRSTVWY")
         assert np.allclose(by_taxon["t1"], np.full(20, 0.05))
+
+    def test_calculate_composition_per_taxon_small_alignment_uses_scalar_path(
+        self, args, mocker
+    ):
+        svc = CompositionPerTaxon(args)
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("aCGN"), id="t1"),
+                SeqRecord(Seq("a--t"), id="t2"),
+            ]
+        )
+        mocker.patch(
+            "phykit.services.alignment.composition_per_taxon.np.frombuffer",
+            side_effect=AssertionError(
+                "small composition should avoid byte matrix setup"
+            ),
+        )
+        mocker.patch(
+            "phykit.services.alignment.composition_per_taxon.np.array",
+            side_effect=AssertionError(
+                "small composition should avoid NumPy array setup"
+            ),
+        )
+
+        symbols, rows = svc.calculate_composition_per_taxon(
+            alignment,
+            is_protein=False,
+        )
+        by_taxon = {taxon: vals for taxon, vals in rows}
+
+        assert symbols == ["A", "C", "G", "T"]
+        assert np.allclose(by_taxon["t1"], [1 / 3, 1 / 3, 1 / 3, 0.0])
+        assert np.allclose(by_taxon["t2"], [0.5, 0.0, 0.0, 0.5])
+
+    def test_composition_per_taxon_scalar_rejects_uneven_lengths(self):
+        assert composition_per_taxon_module._composition_per_taxon_scalar(
+            [("t1", "ACGT"), ("t2", "ACG")],
+            {"-", "?", "*", "N", "X"},
+        ) is None
 
     def test_calculate_composition_per_taxon_large_short_protein_uses_offset_bincount(
         self, args, mocker
