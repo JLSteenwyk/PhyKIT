@@ -49,12 +49,22 @@ class TestTotalTreeLength(object):
 
     @patch("builtins.print")
     def test_total_tree_length_incorrect_file_path(self, mocked_print):
+        testargs = [
+            "phykit",
+            "total_tree_length",
+            "missing.tree",
+        ]
 
         with pytest.raises(SystemExit) as pytest_wrapped_e:
-            Phykit()
+            with patch.object(sys, "argv", testargs):
+                Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2
+        assert mocked_print.mock_calls == [
+            call("missing.tree corresponds to no such file or directory."),
+            call("Please check filename and pathing"),
+        ]
 
     @patch("builtins.print")
     def test_total_tree_length_json(self, mocked_print):

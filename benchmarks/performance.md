@@ -1772,6 +1772,7 @@ Results:
 | `total_tree_length` module import without eager Bio.Phylo/NumPy | cold subprocess import of total-tree-length command module | 0.153291s | 0.065309s | 2.35x |
 | `total_tree_length` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006164s | 0.004823s | 1.28x |
 | `total_tree_length` module import without `typing` startup | median cold subprocess import after converting annotation-only typing aliases to built-in postponed annotations | 0.011637s | 0.007487s | 1.55x |
+| `Phykit.total_tree_length` default parser bypass | 1000 repeated direct handler calls with service mocked, plus command profiler default `total_tree_length tree_simple.tre`, 30 runs after 5 warmups, text/JSON stdout matched previous branch | 1.055385s / 0.069957s | 0.000391s / 0.064227s | 2699.19x / 1.09x |
 | `LTT` shared terminal/depth setup | balanced 32768-tip tree, compute gamma and LTT data | 0.3442s | 0.2626s | 1.3x |
 | `LTT._terminal_clades` setup | balanced 65536-tip tree, terminal clade list for gamma/LTT helpers | 0.1272s | 0.0172s | 7.4x |
 | `LTT._terminal_clades` order-preserving binary push | balanced 131072-tip tree, terminal clade list with identical tip order, optimized helper baseline | 0.022452s | 0.017732s | 1.27x |

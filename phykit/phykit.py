@@ -8188,6 +8188,10 @@ class Phykit:
 
     @staticmethod
     def total_tree_length(argv):
+        if len(argv) == 1 and argv[0] and argv[0][0] != "-":
+            _run_service_with_args(_TreeJsonDefaultArgs(argv[0]), TotalTreeLength)
+            return
+
         parser = _new_parser(
             description=_dedent(
                 f"""\
