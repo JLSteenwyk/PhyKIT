@@ -194,6 +194,25 @@ class _TreeTaxaOutputJsonDefaultArgs:
         self.json = False
 
 
+class _PruneTreeDefaultArgs:
+    __slots__ = (
+        "tree",
+        "list_of_taxa",
+        "output",
+        "keep",
+        "ignore_branch_labels",
+        "json",
+    )
+
+    def __init__(self, tree: str, list_of_taxa: str) -> None:
+        self.tree = tree
+        self.list_of_taxa = list_of_taxa
+        self.output = None
+        self.keep = False
+        self.ignore_branch_labels = False
+        self.json = False
+
+
 class _TreeFactorOutputJsonDefaultArgs:
     __slots__ = ("tree", "factor", "output", "json")
 
@@ -7477,6 +7496,19 @@ class Phykit:
 
     @staticmethod
     def prune_tree(argv):
+        if (
+            len(argv) == 2
+            and argv[0]
+            and argv[0][0] != "-"
+            and argv[1]
+            and argv[1][0] != "-"
+        ):
+            _run_service_with_args(
+                _PruneTreeDefaultArgs(argv[0], argv[1]),
+                PruneTree,
+            )
+            return
+
         parser = _new_parser(
             description=_dedent(
                 f"""\

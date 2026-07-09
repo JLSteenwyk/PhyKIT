@@ -1001,6 +1001,66 @@ def test_rename_tree_tips_option_invocation_keeps_parser(monkeypatch):
     assert calls["ran"] is True
 
 
+def test_prune_tree_default_invocation_bypasses_parser(monkeypatch):
+    captured = {}
+
+    class Runner:
+        def __init__(self, args):
+            captured["args"] = args
+
+        def run(self):
+            captured["ran"] = True
+
+    def fail_new_parser(*_args, **_kwargs):
+        raise AssertionError("default prune_tree should not build parser")
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+    monkeypatch.setattr(phykit_module, "PruneTree", Runner)
+
+    phykit_module.Phykit.prune_tree(["tree.tre", "taxa.txt"])
+
+    args = captured["args"]
+    assert captured["ran"] is True
+    assert args.tree == "tree.tre"
+    assert args.list_of_taxa == "taxa.txt"
+    assert args.output is None
+    assert args.keep is False
+    assert args.ignore_branch_labels is False
+    assert args.json is False
+
+
+def test_prune_tree_option_invocation_keeps_parser(monkeypatch):
+    calls = {"parser": False, "ran": False}
+
+    class FakeParser:
+        def add_argument(self, *args, **kwargs):
+            return None
+
+        def parse_args(self, argv):
+            calls["argv"] = argv
+            return object()
+
+    class Runner:
+        def __init__(self, args):
+            calls["args"] = args
+
+        def run(self):
+            calls["ran"] = True
+
+    def fake_new_parser(*_args, **_kwargs):
+        calls["parser"] = True
+        return FakeParser()
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fake_new_parser)
+    monkeypatch.setattr(phykit_module, "PruneTree", Runner)
+
+    phykit_module.Phykit.prune_tree(["tree.tre", "taxa.txt", "-k"])
+
+    assert calls["parser"] is True
+    assert calls["argv"] == ["tree.tre", "taxa.txt", "-k"]
+    assert calls["ran"] is True
+
+
 def test_evolutionary_rate_default_invocation_bypasses_parser(monkeypatch):
     captured = {}
 

@@ -1757,6 +1757,7 @@ Results:
 | `PruneTree.run --ignore-branch-labels` terminal-name selection | balanced 32768-tip tree, keep half of tips with every third tip labeled | 0.0726s | 0.0122s | 5.9x |
 | `PruneTree._strip_branch_label` plain-name regex guard | 32768 tip names x 40 scans, every third tip labeled | 0.358330s | 0.246274s | 1.45x |
 | `PruneTree.run` keep-all read-only cached tree path | balanced 32768-tip cached tree, keep all tips, output stubbed | 0.220430s | 0.014711s | 14.98x |
+| `prune_tree` default CLI parser bypass | direct dispatch of `prune_tree tree taxa` into a no-op service, 1000 calls; direct command timing against a temp copy of `tree_simple.tre`, 30 runs after 5 warmups | 1.674471s; 0.703753s mean | 0.000454s; 0.481282s mean | 3688.26x; 1.46x |
 | `prune_tree` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006864s | 0.005426s | 1.27x |
 | `prune_tree` module import without `typing` startup | median cold subprocess import after postponing annotations and converting the annotation-only typing alias to a built-in annotation | 0.006264s | 0.004162s | 1.50x |
 | `prune_tree` module import without eager file helper | median cold subprocess import, interleaved lazy import vs eager-equivalent `phykit.helpers.files` preload | 0.026866s | 0.026566s | 1.01x |
