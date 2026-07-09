@@ -32,6 +32,28 @@ _IDENTICAL_INDEXED_SCAN_MIN_RECORDS = 200_000
 _IDENTICAL_ROW_TILE_MIN_COUNT = 1_000
 
 
+class _IdenticalCompositionOutputRows(list):
+    __slots__ = ("shared_composition",)
+
+    def __init__(self, rows, shared_composition):
+        super().__init__(rows)
+        self.shared_composition = shared_composition
+
+
+def _composition_payload(symbols, comps):
+    return {
+        symbol: round(float(value), 4)
+        for symbol, value in zip(symbols, comps)
+    }
+
+
+def _composition_text(symbols, comps):
+    return ";".join(
+        f"{symbol}:{round(float(value), 4)}"
+        for symbol, value in zip(symbols, comps)
+    )
+
+
 def _composition_output_rows(record_ids, freqs):
     if len(record_ids) >= _COMPOSITION_ROW_ZIP_MIN_COUNT:
         return list(zip(record_ids, freqs))
@@ -43,11 +65,13 @@ def _composition_output_rows(record_ids, freqs):
 
 def _identical_composition_output_rows(record_ids, freqs):
     if len(record_ids) >= _IDENTICAL_ROW_TILE_MIN_COUNT:
-        return list(zip(record_ids, np.tile(freqs, (len(record_ids), 1))))
-    return [
-        (record_id, freqs.copy())
-        for record_id in record_ids
-    ]
+        rows = zip(record_ids, np.tile(freqs, (len(record_ids), 1)))
+    else:
+        rows = [
+            (record_id, freqs.copy())
+            for record_id in record_ids
+        ]
+    return _IdenticalCompositionOutputRows(rows, freqs)
 
 
 class CompositionPerTaxon(Alignment):
@@ -65,26 +89,33 @@ class CompositionPerTaxon(Alignment):
             return
 
         if self.json_output:
-            payload_rows = [
-                {
-                    "taxon": taxon,
-                    "composition": {
-                        symbol: round(float(value), 4)
-                        for symbol, value in zip(symbols, comps)
-                    },
-                }
-                for taxon, comps in rows
-            ]
+            shared_composition = getattr(rows, "shared_composition", None)
+            if shared_composition is None:
+                payload_rows = [
+                    {
+                        "taxon": taxon,
+                        "composition": _composition_payload(symbols, comps),
+                    }
+                    for taxon, comps in rows
+                ]
+            else:
+                composition = _composition_payload(symbols, shared_composition)
+                payload_rows = [
+                    {"taxon": taxon, "composition": composition.copy()}
+                    for taxon, _ in rows
+                ]
             print_json(dict(symbols=symbols, rows=payload_rows, taxa=payload_rows))
             return
 
-        lines = []
-        for taxon, comps in rows:
-            comp_str = ";".join(
-                f"{symbol}:{round(float(value), 4)}"
-                for symbol, value in zip(symbols, comps)
-            )
-            lines.append(f"{taxon}\t{comp_str}")
+        shared_composition = getattr(rows, "shared_composition", None)
+        if shared_composition is None:
+            lines = [
+                f"{taxon}\t{_composition_text(symbols, comps)}"
+                for taxon, comps in rows
+            ]
+        else:
+            comp_str = _composition_text(symbols, shared_composition)
+            lines = [f"{taxon}\t{comp_str}" for taxon, _ in rows]
         if lines:
             print("\n".join(lines))
 

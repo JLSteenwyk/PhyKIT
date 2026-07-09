@@ -67,6 +67,19 @@ class TestCompositionPerTaxon(object):
         assert [taxon for taxon, _ in rows] == ["t1", "t2", "t3"]
         assert [values.tolist() for _, values in rows] == [[1.0], [0.5], [0.0]]
 
+    def test_identical_composition_output_rows_marks_shared_composition(self):
+        freqs = np.array([0.5, 0.5])
+
+        rows = composition_per_taxon_module._identical_composition_output_rows(
+            ["t1", "t2"],
+            freqs,
+        )
+
+        assert rows.shared_composition is freqs
+        assert [taxon for taxon, _ in rows] == ["t1", "t2"]
+        assert [values.tolist() for _, values in rows] == [[0.5, 0.5], [0.5, 0.5]]
+        assert rows[0][1] is not rows[1][1]
+
     def test_composition_mask_and_sop_modules_defer_heavy_imports(self):
         modules = [
             "phykit.services.alignment.composition_per_taxon",
@@ -533,6 +546,62 @@ assert "Bio.SeqIO.FastaIO" not in sys.modules
         assert out == (
             "t1\tA:0.25;C:0.25;G:0.25;T:0.25\n"
             "t2\tA:1.0;C:0.0;G:0.0;T:0.0\n"
+        )
+
+    def test_run_text_output_reuses_shared_identical_composition(
+        self,
+        mocker,
+        capsys,
+    ):
+        svc = CompositionPerTaxon(Namespace(alignment="x.fa", json=False))
+        rows = composition_per_taxon_module._identical_composition_output_rows(
+            ["t1", "t2"],
+            np.array([0.5, 0.5]),
+        )
+        mocker.patch.object(
+            CompositionPerTaxon,
+            "get_alignment_and_format",
+            return_value=(object(), "fasta", False),
+        )
+        mocker.patch.object(
+            CompositionPerTaxon,
+            "calculate_composition_per_taxon",
+            return_value=(["A", "C"], rows),
+        )
+
+        svc.run()
+
+        out, _ = capsys.readouterr()
+        assert out == "t1\tA:0.5;C:0.5\nt2\tA:0.5;C:0.5\n"
+
+    def test_run_json_output_reuses_shared_identical_composition(self, mocker):
+        svc = CompositionPerTaxon(Namespace(alignment="x.fa", json=True))
+        rows = composition_per_taxon_module._identical_composition_output_rows(
+            ["t1", "t2"],
+            np.array([0.5, 0.5]),
+        )
+        mocker.patch.object(
+            CompositionPerTaxon,
+            "get_alignment_and_format",
+            return_value=(object(), "fasta", False),
+        )
+        mocker.patch.object(
+            CompositionPerTaxon,
+            "calculate_composition_per_taxon",
+            return_value=(["A", "C"], rows),
+        )
+        mocked_json = mocker.patch.object(composition_per_taxon_module, "print_json")
+
+        svc.run()
+
+        payload = mocked_json.call_args.args[0]
+        assert payload["rows"] == [
+            {"taxon": "t1", "composition": {"A": 0.5, "C": 0.5}},
+            {"taxon": "t2", "composition": {"A": 0.5, "C": 0.5}},
+        ]
+        assert (
+            payload["rows"][0]["composition"]
+            is not payload["rows"][1]["composition"]
         )
 
     def test_run_returns_early_when_no_symbols(self, mocker, capsys):
