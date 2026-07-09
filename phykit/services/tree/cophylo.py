@@ -211,8 +211,8 @@ class Cophylo(Tree):
                     line = line.strip()
                     if not line or line[0] == "#":
                         continue
-                    taxon1, sep, taxon2 = line.partition("\t")
-                    if not sep or "\t" in taxon2:
+                    parts = line.split("\t", 2)
+                    if len(parts) != 2:
                         column_count = line.count("\t") + 1
                         raise PhykitUserError(
                             [
@@ -221,6 +221,7 @@ class Cophylo(Tree):
                             ],
                             code=2,
                         )
+                    taxon1, taxon2 = parts
                     mapping[taxon1] = taxon2
         except FileNotFoundError:
             raise PhykitUserError(

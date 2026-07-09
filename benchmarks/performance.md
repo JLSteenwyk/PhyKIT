@@ -2133,6 +2133,7 @@ Results:
 | `Cophylo._print_text_output` batched summary | 100k captured cophylo text summaries, identical stdout text | 0.099878s | 0.057622s | 1.73x |
 | `Cophylo._parse_mapping_file` streaming parser | 1M two-column mapped taxa rows with comments/blanks | 0.393696s | 0.391772s | 1.00x |
 | `Cophylo._parse_mapping_file` partition parser | 1M two-column mapped taxa rows with comments/blanks, side-by-side previous split parser comparison | 0.392522s | 0.351642s | 1.12x |
+| `Cophylo._parse_mapping_file` bounded tab split | 1M two-column mapped taxa rows with whitespace-prefixed comments/blanks, side-by-side previous partition parser with identical strict column-count behavior | 1.026328s | 0.806512s | 1.27x |
 | `cophylo` module import without NumPy | cold subprocess import after replacing internal y-position mean with Python arithmetic | 0.086469s | 0.031961s | 2.71x |
 | `cophylo` module import without eager color annotations | cold subprocess import after localizing optional color-file helpers | 0.014231s | 0.013016s | 1.09x |
 | `cophylo` module import without eager JSON/plot helpers | median cold subprocess import after localizing PlotConfig, cladogram layout helper, and lazy JSON wrapper | 0.013248s | 0.005757s | 2.30x |
@@ -7513,6 +7514,9 @@ Profiling summary:
   with postponed built-in annotations. Mapping-file parsing now streams rows
   directly from the file handle instead of materializing `readlines()`, preserving
   column-count validation while reducing peak memory for large tanglegram maps.
+  A follow-up mapping parser pass uses a bounded tab split for strict two-column
+  rows, preserving wrong-column-count diagnostics while avoiding a second scan
+  through each valid mapped-taxa row.
 - `SimmapSummary._summarize_per_branch` single-segment branch histories are now
   accumulated directly as full-branch dwelling time, while multi-segment
   histories compute dwelling times and transition counts in one pass. This
