@@ -95,16 +95,31 @@ def _build_root_path_map_direct(root):
     except AttributeError:
         return None
 
-    paths = {root: [root]}
-    stack = [(root, paths[root])]
+    root_path = [root]
+    paths = {root: root_path}
+    stack = [(root, root_path)]
     try:
+        pop = stack.pop
+        append = stack.append
         while stack:
-            clade, path = stack.pop()
+            clade, path = pop()
             children = clade.clades
-            for child in reversed(children):
+            child_count = len(children)
+            if child_count == 2:
+                child = children[1]
                 child_path = path + [child]
                 paths[child] = child_path
-                stack.append((child, child_path))
+                append((child, child_path))
+                child = children[0]
+                child_path = path + [child]
+                paths[child] = child_path
+                append((child, child_path))
+            elif child_count:
+                for index in range(child_count - 1, -1, -1):
+                    child = children[index]
+                    child_path = path + [child]
+                    paths[child] = child_path
+                    append((child, child_path))
     except AttributeError:
         return None
     return paths

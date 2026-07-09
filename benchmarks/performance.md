@@ -2043,6 +2043,7 @@ Results:
 | `tree_paths.build_object_parent_map` | balanced 65536-tip tree, object parent map for VCV/path helpers | 0.1865s | 0.0177s | 10.6x |
 | `tree_paths.build_object_parent_map` unordered child push | balanced 131072-tip tree, object parent map for VCV/path helpers, optimized helper baseline | 0.042188s | 0.030392s | 1.39x |
 | `tree_paths.build_root_path_map` | balanced 32768-tip tree, root-to-node path lists for all clades | 0.146555s | 0.050841s | 2.9x |
+| `tree_paths.build_root_path_map` binary child push | balanced 2047 / 8191 / 32767 / 131071-node trees, root-to-node path lists with identical node order and path lengths, side-by-side previous `reversed(children)` helper | 0.116850s / 0.150365s / 0.130269s / 0.120126s | 0.097579s / 0.132914s / 0.122082s / 0.112083s | 1.20x / 1.13x / 1.07x / 1.07x |
 | `tree_paths.path_from_root` bounded cycle guard | 512 sampled terminal paths from balanced 65536-tip tree, side-by-side previous per-path `seen` set guard | 0.499046s | 0.249614s | 2.00x |
 | `LTT._compute_gamma` + `LTT._compute_ltt` | balanced tree with 500 tips | 0.3363s | 0.0077s | 43.8x |
 | `Chronogram._compute_root_to_tip` | balanced tree with 5000 tips | 9.8673s | 0.0041s | 2417.5x |
@@ -6362,7 +6363,9 @@ Profiling summary:
   not an ordered traversal. `path_from_root` now uses the parent-map size as a
   bounded walk guard, avoiding a per-path `seen` set allocation while still
   returning `None` for incomplete parent maps and cycles that never reach the
-  root.
+  root. A follow-up root-path pass handles binary child lists without calling
+  `reversed(children)`, preserving preorder path order while reducing setup
+  overhead for the common bifurcating-tree case.
 - `LTT` baseline time computed terminal lists and root-depth maps separately
   for the gamma statistic and lineage-through-time table. The optimized run path
   builds that setup context once and passes it into both helpers, while the

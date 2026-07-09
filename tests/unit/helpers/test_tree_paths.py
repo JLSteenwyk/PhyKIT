@@ -95,6 +95,28 @@ def test_build_root_path_map_uses_direct_traversal(monkeypatch):
     assert paths[right.clades[1]] == [tree.root, right, right.clades[1]]
 
 
+def test_build_root_path_map_binary_children_do_not_call_reversed():
+    class NoReversedList(list):
+        def __reversed__(self):
+            raise AssertionError("binary root-path traversal should push explicitly")
+
+    def wrap_binary_children(clade):
+        if len(clade.clades) == 2:
+            clade.clades = NoReversedList(clade.clades)
+        for child in clade.clades:
+            wrap_binary_children(child)
+
+    tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+    wrap_binary_children(tree.root)
+
+    paths = build_root_path_map(tree)
+
+    left = tree.root.clades[0]
+    right = tree.root.clades[1]
+    assert paths[left.clades[0]] == [tree.root, left, left.clades[0]]
+    assert paths[right.clades[1]] == [tree.root, right, right.clades[1]]
+
+
 def test_path_from_root_returns_none_for_incomplete_parent_map():
     root = Clade(name="root")
     parent = Clade(name="parent")
