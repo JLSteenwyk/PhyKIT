@@ -1031,6 +1031,52 @@ class TestRun:
             }
         }
 
+    def test_format_json_one_pc_skips_generic_row_iteration(self, default_args):
+        class _Column:
+            def __init__(self, values):
+                self._values = values
+
+            def tolist(self):
+                return self._values
+
+        class OnePcScores:
+            shape = (2, 1)
+
+            def __getitem__(self, key):
+                rows, column = key
+                assert rows == slice(None, None, None)
+                assert column == 0
+                return _Column([0.1, 1.1])
+
+            def __iter__(self):
+                raise AssertionError("1-PC output should not use row iteration")
+
+        class Labels:
+            def tolist(self):
+                return [2, 0]
+
+            def __iter__(self):
+                raise AssertionError("fixed-column output should bulk-convert labels")
+
+        svc = SpectralDiscordance(default_args)
+
+        payload = svc._format_json(
+            OnePcScores(),
+            np.array([1.0]),
+            {},
+            Labels(),
+            3,
+            np.array([0.7]),
+            1,
+            {frozenset({"A", "B"}): 0},
+            {},
+        )
+
+        assert payload["scores"] == {
+            "gene_tree_1": {"PC1": 0.1, "cluster": 2},
+            "gene_tree_2": {"PC1": 1.1, "cluster": 0},
+        }
+
     def test_format_json_three_pcs_skips_generic_row_iteration(self, default_args):
         class _Column:
             def __init__(self, values):

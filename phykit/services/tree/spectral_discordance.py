@@ -263,7 +263,18 @@ class SpectralDiscordance(Tree):
             if hasattr(labels, "tolist")
             else [int(label) for label in labels]
         )
-        if show_pcs == 2:
+        if show_pcs == 1:
+            col1 = scores[:, 0].tolist()
+            score_dict = {
+                f"gene_tree_{g}": {
+                    "PC1": val1,
+                    "cluster": label,
+                }
+                for g, val1, label in zip(
+                    gene_tree_indices, col1, label_values
+                )
+            }
+        elif show_pcs == 2:
             col1 = scores[:, 0].tolist()
             col2 = scores[:, 1].tolist()
             score_dict = {
