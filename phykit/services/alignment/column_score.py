@@ -148,10 +148,16 @@ class ColumnScore(Alignment):
         return int(unique_columns.size)
 
     @staticmethod
-    def _small_ascii_column_set(sequences: list[str]) -> set[tuple[str, ...]] | None:
+    def _small_ascii_column_set(
+        sequences: list[str],
+    ) -> set[str] | set[tuple[str, ...]] | None:
         if len(sequences) > _SMALL_TAXON_COLUMN_SET_MAX:
             return None
         try:
+            if len(sequences) == 1:
+                sequence = sequences[0]
+                sequence.encode("ascii")
+                return set(sequence)
             for sequence in sequences:
                 sequence.encode("ascii")
         except UnicodeEncodeError:

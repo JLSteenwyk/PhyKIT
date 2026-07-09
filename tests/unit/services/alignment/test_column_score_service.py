@@ -206,6 +206,24 @@ class TestColumnScore:
     def test_small_ascii_column_set_rejects_unicode(self):
         assert ColumnScore._small_ascii_column_set(["AΩ", "AT"]) is None
 
+    def test_small_ascii_column_set_single_taxon_uses_symbol_set(self):
+        assert ColumnScore._small_ascii_column_set(["ACGTA"]) == {"A", "C", "G", "T"}
+
+    def test_direct_column_matching_single_taxon_intersects_symbols(
+        self, mocker, args
+    ):
+        service = ColumnScore(args)
+        reference = MultipleSeqAlignment([SeqRecord(Seq("ACGTAC"), id="r1")])
+        query = MultipleSeqAlignment([SeqRecord(Seq("CCTTAA"), id="q1")])
+        mocker.patch(
+            "phykit.services.alignment.column_score.np.frombuffer",
+            side_effect=AssertionError("single-taxon columns should use symbols"),
+        )
+
+        assert service._calculate_matches_between_alignments_direct(
+            reference, query
+        ) == (3, 6)
+
     def test_direct_column_matching_repeated_rows_intersects_symbols(
         self, mocker, args
     ):
