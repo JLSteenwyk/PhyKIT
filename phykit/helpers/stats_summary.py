@@ -200,6 +200,46 @@ def _calculate_small_sequence_statistics(values):
     )
 
 
+def _calculate_uniform_sequence_statistics(values):
+    if not isinstance(values, (list, tuple)):
+        return _SMALL_STATS_FALLBACK
+
+    count = len(values)
+    if count <= _SMALL_SEQUENCE_STATS_MAX:
+        return _SMALL_STATS_FALLBACK
+
+    try:
+        first_value = values[0]
+        if (
+            first_value != values[-1]
+            or first_value != values[count // 2]
+            or values.count(first_value) != count
+        ):
+            return _SMALL_STATS_FALLBACK
+    except (TypeError, ValueError, IndexError):
+        return _SMALL_STATS_FALLBACK
+
+    scalar = _python_scalar(first_value)
+    if type(scalar) is int:
+        mean = scalar
+        median = scalar
+        quartile = float(scalar)
+    else:
+        mean = scalar
+        median = scalar
+        quartile = scalar
+    return dict(
+        mean=mean,
+        median=median,
+        twenty_fifth=quartile,
+        seventy_fifth=quartile,
+        minimum=scalar,
+        maximum=scalar,
+        standard_deviation=0.0,
+        variance=0.0,
+    )
+
+
 def _calculate_summary_statistics(values):
     if _has_too_few_values(values):
         return _no_values_result()
@@ -207,6 +247,10 @@ def _calculate_summary_statistics(values):
     small_stats = _calculate_small_sequence_statistics(values)
     if small_stats is not _SMALL_STATS_FALLBACK:
         return small_stats
+
+    uniform_stats = _calculate_uniform_sequence_statistics(values)
+    if uniform_stats is not _SMALL_STATS_FALLBACK:
+        return uniform_stats
 
     arr = np.asarray(values)
     if arr.size < 2:
