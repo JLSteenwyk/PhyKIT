@@ -849,6 +849,7 @@ Results:
 | `Dfoil._count_site_patterns` skip-code result dictionary | 100 / 1000 / 10k / 100k ASCII sites with skip codes, side-by-side previous indexed result-dictionary construction | 0.00002542s / 0.00003558s / 0.00011915s / 0.00383773s | 0.00002596s / 0.00003525s / 0.00010835s / 0.00198642s | 0.98x / 1.01x / 1.10x / 1.93x |
 | `Dfoil.run` informative-site total | 250k repeated 16-pattern count dictionaries, side-by-side previous `items()` membership scan | 1.003864s | 0.209843s | 4.78x |
 | `Dfoil.run` JSON informative pattern counts | 500k repeated 16-pattern count dictionaries, side-by-side previous `items()` membership filter | 2.385777s | 1.781671s | 1.34x |
+| `Dfoil.run` D-statistic component counts | 1M repeated 16-pattern count dictionaries, side-by-side previous repeated pattern-key lookup sums | 1.301717s | 0.655029s | 1.99x |
 | `Dstatistic._count_site_patterns` small skip-code lookup mask | 512 / 1000 ASCII sites with sparse skip codes, side-by-side previous six-code validity loop | 0.228495791s / 0.075854083s | 0.101425458s / 0.032493250s | 2.25x / 2.33x |
 | `Dfoil._count_site_patterns` all-invariant shortcut | 2M sites, P1/P2/P3/P4 identical to outgroup, identical all-zero pattern dictionary | 0.028345s | 0.000002s | 14172.5x |
 | `Dfoil._count_site_patterns` all-zero pattern template | 500k repeated 200-site / 200k repeated 10k-site all-identical DFOIL counts, fresh mutable result preserved | 2.190396s / 0.995680s | 0.287203s / 0.313775s | 7.63x / 3.17x |

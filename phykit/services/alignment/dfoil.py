@@ -73,6 +73,32 @@ def _informative_pattern_counts(counts):
     return {pattern: counts[pattern] for pattern in _INFORMATIVE_PATTERNS}
 
 
+def _dfoil_component_counts(counts):
+    aaaba = counts['AAABA']
+    aabaa = counts['AABAA']
+    abaaa = counts['ABAAA']
+    ababa = counts['ABABA']
+    abbaa = counts['ABBAA']
+    abbba = counts['ABBBA']
+    baaaa = counts['BAAAA']
+    baaba = counts['BAABA']
+    babaa = counts['BABAA']
+    babba = counts['BABBA']
+    bbaba = counts['BBABA']
+    bbbaa = counts['BBBAA']
+
+    return (
+        aaaba + ababa + babaa + bbbaa,
+        aabaa + abbaa + baaba + bbaba,
+        aaaba + abbaa + baaba + bbbaa,
+        aabaa + ababa + babaa + bbaba,
+        abaaa + ababa + babaa + babba,
+        baaaa + abbaa + baaba + abbba,
+        abaaa + abbaa + baaba + babba,
+        baaaa + ababa + babaa + abbba,
+    )
+
+
 # Sign-pattern interpretation table (DFO, DIL, DFI, DOL).
 INTERPRETATIONS = {
     '+++0': 'Introgression: P1 -> P3 (or P3 -> P1)',
@@ -382,17 +408,16 @@ class Dfoil(Alignment):
         informative_sites = _count_informative_sites(counts)
 
         # Compute the four D-statistics
-        dfo_left = counts['AAABA'] + counts['ABABA'] + counts['BABAA'] + counts['BBBAA']
-        dfo_right = counts['AABAA'] + counts['ABBAA'] + counts['BAABA'] + counts['BBABA']
-
-        dil_left = counts['AAABA'] + counts['ABBAA'] + counts['BAABA'] + counts['BBBAA']
-        dil_right = counts['AABAA'] + counts['ABABA'] + counts['BABAA'] + counts['BBABA']
-
-        dfi_left = counts['ABAAA'] + counts['ABABA'] + counts['BABAA'] + counts['BABBA']
-        dfi_right = counts['BAAAA'] + counts['ABBAA'] + counts['BAABA'] + counts['ABBBA']
-
-        dol_left = counts['ABAAA'] + counts['ABBAA'] + counts['BAABA'] + counts['BABBA']
-        dol_right = counts['BAAAA'] + counts['ABABA'] + counts['BABAA'] + counts['ABBBA']
+        (
+            dfo_left,
+            dfo_right,
+            dil_left,
+            dil_right,
+            dfi_left,
+            dfi_right,
+            dol_left,
+            dol_right,
+        ) = _dfoil_component_counts(counts)
 
         DFO = (dfo_left - dfo_right) / (dfo_left + dfo_right) if (dfo_left + dfo_right) > 0 else 0.0
         DIL = (dil_left - dil_right) / (dil_left + dil_right) if (dil_left + dil_right) > 0 else 0.0

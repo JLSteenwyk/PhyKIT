@@ -256,6 +256,24 @@ class TestDfoilPatternCounting:
             for pattern in dfoil_module._INFORMATIVE_PATTERNS
         }
 
+    def test_dfoil_component_counts_reuse_pattern_lookups(self):
+        class Counts(dict):
+            def items(self):
+                raise AssertionError("component counts should not scan items")
+
+        counts = Counts({pattern: index + 1 for index, pattern in enumerate(PATTERNS)})
+
+        assert dfoil_module._dfoil_component_counts(counts) == (
+            counts["AAABA"] + counts["ABABA"] + counts["BABAA"] + counts["BBBAA"],
+            counts["AABAA"] + counts["ABBAA"] + counts["BAABA"] + counts["BBABA"],
+            counts["AAABA"] + counts["ABBAA"] + counts["BAABA"] + counts["BBBAA"],
+            counts["AABAA"] + counts["ABABA"] + counts["BABAA"] + counts["BBABA"],
+            counts["ABAAA"] + counts["ABABA"] + counts["BABAA"] + counts["BABBA"],
+            counts["BAAAA"] + counts["ABBAA"] + counts["BAABA"] + counts["ABBBA"],
+            counts["ABAAA"] + counts["ABBAA"] + counts["BAABA"] + counts["BABBA"],
+            counts["BAAAA"] + counts["ABABA"] + counts["BABAA"] + counts["ABBBA"],
+        )
+
     def test_large_ascii_with_skips_keeps_loop_validity_mask(self, monkeypatch):
         monkeypatch.setattr(dfoil_module, "_SKIP_LOOKUP_SMALL_ALIGNMENT_MAX", 1)
         monkeypatch.setattr(
