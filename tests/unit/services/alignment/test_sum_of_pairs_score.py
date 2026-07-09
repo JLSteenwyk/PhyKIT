@@ -214,9 +214,10 @@ class TestSumOfPairsScore:
         assert pairs == 4 * len(record_id_pairs)
 
     def test_determine_matches_sequential_equal_lengths_caches_arrays(
-        self, mocker, args
+        self, mocker, monkeypatch, args
     ):
         sop = SumOfPairsScore(args)
+        monkeypatch.setattr(module, "_SOPS_SCALAR_PAIR_MAX_CELLS", 0)
         ids = [f"id{i}" for i in range(8)]
         reference_records = _make_records({key: "AAAAA" for key in ids})
         query_records = _make_records({
@@ -518,6 +519,31 @@ class TestSumOfPairsScore:
         mocked_arrays.assert_not_called()
         mocked_pool.assert_not_called()
 
+    def test_small_mixed_length_pairs_use_scalar_fallback(self, mocker, args):
+        sop = SumOfPairsScore(args)
+        reference_records = _make_records({
+            "id1": "ABCD",
+            "id2": "WXYZ",
+        })
+        query_records = _make_records({
+            "id1": "ABX",
+            "id2": "WXY",
+        })
+        record_id_pairs = [("id1", "id2")]
+        mocked_arrays = mocker.patch.object(
+            SumOfPairsScore,
+            "_sequence_arrays",
+            side_effect=AssertionError("small mixed-length pairs should stay scalar"),
+        )
+
+        matches, pairs = sop.determine_number_of_matches_and_total_pairs(
+            record_id_pairs, reference_records, query_records
+        )
+
+        assert matches == 2
+        assert pairs == 3
+        mocked_arrays.assert_not_called()
+
     def test_complete_mixed_length_unchanged_pair_set_skips_pair_loop(
         self, mocker, args
     ):
@@ -548,8 +574,11 @@ class TestSumOfPairsScore:
         assert pairs == matches
         mocked_pair_loop.assert_not_called()
 
-    def test_determine_matches_sequential_mismatched_lengths(self, args):
+    def test_determine_matches_sequential_mismatched_lengths(
+        self, monkeypatch, args
+    ):
         sop = SumOfPairsScore(args)
+        monkeypatch.setattr(module, "_SOPS_SCALAR_PAIR_MAX_CELLS", 0)
         reference_records = _make_records({
             "id1": "ABCD",
             "id2": "WXYZ",
@@ -568,9 +597,10 @@ class TestSumOfPairsScore:
         assert pairs == 3
 
     def test_determine_matches_sequential_mismatched_lengths_caches_arrays(
-        self, mocker, args
+        self, mocker, monkeypatch, args
     ):
         sop = SumOfPairsScore(args)
+        monkeypatch.setattr(module, "_SOPS_SCALAR_PAIR_MAX_CELLS", 0)
         reference_records = _make_records({
             "id1": "AAAAA",
             "id2": "AAAAC",
@@ -592,8 +622,11 @@ class TestSumOfPairsScore:
         assert pairs == 12
         assert array_spy.call_count == len(reference_records)
 
-    def test_determine_matches_sequential_mismatched_lengths_non_ascii(self, args):
+    def test_determine_matches_sequential_mismatched_lengths_non_ascii(
+        self, monkeypatch, args
+    ):
         sop = SumOfPairsScore(args)
+        monkeypatch.setattr(module, "_SOPS_SCALAR_PAIR_MAX_CELLS", 0)
         reference_records = {
             "id1": SimpleNamespace(seq="AΩCT"),
             "id2": SimpleNamespace(seq="AΩGT"),
@@ -745,8 +778,9 @@ class TestSumOfPairsScore:
         assert matches == 1
         assert pairs == 3
 
-    def test_determine_matches_parallel_path(self, mocker, args):
+    def test_determine_matches_parallel_path(self, mocker, monkeypatch, args):
         sop = SumOfPairsScore(args)
+        monkeypatch.setattr(module, "_SOPS_SCALAR_PAIR_MAX_CELLS", 0)
         ids = [f"id{i}" for i in range(13)]
         reference_records = _make_records({key: "AAAAA" for key in ids})
         query_records = _make_records({

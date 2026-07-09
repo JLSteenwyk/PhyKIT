@@ -47,6 +47,7 @@ class _LazyNumpy:
 
 mp = _LazyMultiprocessing()
 np = _LazyNumpy()
+_SOPS_SCALAR_PAIR_MAX_CELLS = 8192
 
 
 class SumOfPairsScore(Alignment):
@@ -303,6 +304,44 @@ class SumOfPairsScore(Alignment):
         return total_pairs, total_pairs
 
     @staticmethod
+    def _calculate_pair_matches_scalar(
+        record_id_pairs: list[tuple[str, str]],
+        reference_records: dict[str, object],
+        query_records: dict[str, object],
+    ) -> tuple[int, int] | None:
+        seq_cache = {}
+        record_seq = SumOfPairsScore._record_seq
+        total_cells = 0
+
+        for first_in_pair, second_in_pair in record_id_pairs:
+            for seq_id in (first_in_pair, second_in_pair):
+                if seq_id in seq_cache:
+                    continue
+                ref_seq = record_seq(reference_records[seq_id])
+                query_seq = record_seq(query_records[seq_id])
+                comparable_len = min(len(ref_seq), len(query_seq))
+                total_cells += comparable_len
+                if total_cells > _SOPS_SCALAR_PAIR_MAX_CELLS:
+                    return None
+                seq_cache[seq_id] = (comparable_len, ref_seq, query_seq)
+
+        number_of_matches = 0
+        number_of_total_pairs = 0
+        for first_in_pair, second_in_pair in record_id_pairs:
+            len1, ref_seq1, query_seq1 = seq_cache[first_in_pair]
+            len2, ref_seq2, query_seq2 = seq_cache[second_in_pair]
+            min_len = min(len1, len2)
+            for idx in range(min_len):
+                if (
+                    ref_seq1[idx] == query_seq1[idx]
+                    and ref_seq2[idx] == query_seq2[idx]
+                ):
+                    number_of_matches += 1
+            number_of_total_pairs += min_len
+
+        return number_of_matches, number_of_total_pairs
+
+    @staticmethod
     def _sequence_match_masks_for_pairs(
         record_id_pairs: list[tuple[str, str]],
         reference_records: dict[str, object],
@@ -383,6 +422,14 @@ class SumOfPairsScore(Alignment):
         )
         if unchanged_result is not None:
             return unchanged_result
+
+        scalar_result = self._calculate_pair_matches_scalar(
+            record_id_pairs,
+            reference_records,
+            query_records,
+        )
+        if scalar_result is not None:
+            return scalar_result
 
         # For small and medium fallback datasets, multiprocessing overhead
         # dominates the cached sequential pair kernel.

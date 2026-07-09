@@ -58,6 +58,15 @@ COMMANDS: tuple[tuple[str, tuple[str, ...]], ...] = (
             str(SAMPLES / "simple_reference.fa"),
         ),
     ),
+    (
+        "sum_of_pairs_score",
+        (
+            "sum_of_pairs_score",
+            str(SAMPLES / "simple.fa"),
+            "--reference",
+            str(SAMPLES / "simple_reference.fa"),
+        ),
+    ),
     ("alignment_length_no_gaps", ("alignment_length_no_gaps", str(SAMPLES / "simple.fa"))),
     ("tip_labels", ("tip_labels", str(SAMPLES / "tree_simple.tre"))),
     ("dvmc", ("dvmc", str(SAMPLES / "tree_simple.tre"))),
