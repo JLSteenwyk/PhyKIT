@@ -74,6 +74,15 @@ def _all_finite_values_equal(finite_values) -> bool:
     return bool(finite_values.min() == finite_values.max())
 
 
+def _shared_valid_sites(valid_mask):
+    if valid_mask.shape[0] == 0:
+        return None
+    first_mask = valid_mask[0]
+    if (valid_mask == first_mask).all():
+        return first_mask
+    return None
+
+
 class AlignmentOutlierTaxa(Alignment):
     _INVALID_LOOKUP_CACHE = {}
     _PAIRWISE_MATRIX_MAX_CELLS = 4_000_000
@@ -572,12 +581,26 @@ class AlignmentOutlierTaxa(Alignment):
         long_branch_proxy = np.full(n_taxa, np.nan, dtype=np.float64)
         pairwise_cells = n_taxa * n_taxa
         site_counts = None
+        shared_valid_sites = (
+            None if all_valid_ascii else _shared_valid_sites(valid_mask)
+        )
         if valid_chars.size > 0 and all_valid_ascii:
             site_counts = self._symbol_counts_by_site(alignment_array, symbols)
             long_branch_proxy = self._all_valid_long_branch_proxy(
                 alignment_array,
                 symbols,
                 site_counts,
+            )
+        elif valid_chars.size > 0 and shared_valid_sites is not None:
+            shared_alignment_array = alignment_array[:, shared_valid_sites]
+            shared_site_counts = self._symbol_counts_by_site(
+                shared_alignment_array,
+                symbols,
+            )
+            long_branch_proxy = self._all_valid_long_branch_proxy(
+                shared_alignment_array,
+                symbols,
+                shared_site_counts,
             )
         elif (
             valid_chars.size > 0

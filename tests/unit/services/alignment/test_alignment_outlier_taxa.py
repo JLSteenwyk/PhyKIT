@@ -951,6 +951,53 @@ class TestAlignmentOutlierTaxa:
         assert calls == 1
         assert result["rows"][0]["long_branch_proxy"] == 0.1875
 
+    def test_shared_invalid_columns_use_all_valid_long_branch_proxy(
+        self,
+        monkeypatch,
+    ):
+        service = self._service()
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("A-GT"), id="a"),
+                SeqRecord(Seq("A-GA"), id="b"),
+                SeqRecord(Seq("T-GA"), id="c"),
+            ]
+        )
+        original = AlignmentOutlierTaxa._all_valid_long_branch_proxy
+        calls = []
+
+        def count_all_valid(alignment_array, symbols, site_counts):
+            calls.append(alignment_array.shape)
+            return original(alignment_array, symbols, site_counts)
+
+        def fail_pairwise_branch(*_args, **_kwargs):
+            raise AssertionError("shared invalid columns should skip pairwise matrix")
+
+        monkeypatch.setattr(
+            AlignmentOutlierTaxa,
+            "_all_valid_long_branch_proxy",
+            staticmethod(count_all_valid),
+        )
+        monkeypatch.setattr(
+            AlignmentOutlierTaxa,
+            "_blocked_long_branch_proxy",
+            staticmethod(fail_pairwise_branch),
+        )
+        monkeypatch.setattr(
+            alignment_outlier_taxa_module.np,
+            "fill_diagonal",
+            fail_pairwise_branch,
+        )
+
+        result = service.calculate_outliers(alignment, is_protein=False)
+
+        assert calls == [(3, 3)]
+        assert [row["long_branch_proxy"] for row in result["rows"]] == [
+            0.5,
+            0.3333,
+            0.5,
+        ]
+
     def test_blocked_long_branch_proxy_matches_pairwise_reference(self):
         service = self._service()
         matrix = alignment_outlier_taxa_module.np.frombuffer(
