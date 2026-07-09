@@ -4,12 +4,12 @@ import sys
 
 from .version import __version__
 
-from .cli_registry import ALIAS_TO_HANDLER
 from .service_factories import SERVICE_FACTORIES
 from .errors import PhykitUserError
 
 
 _STR2BOOL = None
+_ALIAS_TO_HANDLER = None
 
 
 def str2bool(value):
@@ -21,6 +21,15 @@ def str2bool(value):
 
     _STR2BOOL = _str2bool
     return _str2bool(value)
+
+
+def _alias_to_handler():
+    global _ALIAS_TO_HANDLER
+    if _ALIAS_TO_HANDLER is None:
+        from .cli_registry import ALIAS_TO_HANDLER
+
+        _ALIAS_TO_HANDLER = ALIAS_TO_HANDLER
+    return _ALIAS_TO_HANDLER
 
 
 # Expose legacy factory names used by static command handlers in this module.
@@ -488,7 +497,7 @@ class Phykit:
 
     ## Aliases
     def run_alias(self, command, argv):
-        handler_name = ALIAS_TO_HANDLER.get(command)
+        handler_name = _alias_to_handler().get(command)
         if handler_name:
             handler = getattr(self, handler_name)
             if handler_name == "version":

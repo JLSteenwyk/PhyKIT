@@ -142,6 +142,7 @@ def test_module_import_does_not_import_typing():
 import sys
 import phykit.phykit
 assert "argparse" not in sys.modules
+assert "phykit.cli_registry" not in sys.modules
 assert "logging" not in sys.modules
 assert "textwrap" not in sys.modules
 assert "typing" not in sys.modules
@@ -158,6 +159,20 @@ parser = module._new_parser(description="description")
 parser.add_argument("input")
 assert "argparse" in sys.modules
 assert "shutil" not in sys.modules
+"""
+    subprocess.run([sys.executable, "-c", code], check=True)
+
+
+def test_canonical_command_dispatch_does_not_import_alias_registry():
+    code = """
+import sys
+import phykit.phykit as module
+class Runner:
+    def run(self):
+        pass
+module.AlignmentLength = lambda args: Runner()
+module.Phykit.alignment_length(["alignment.fa"])
+assert "phykit.cli_registry" not in sys.modules
 """
     subprocess.run([sys.executable, "-c", code], check=True)
 
