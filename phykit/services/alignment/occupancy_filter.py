@@ -333,6 +333,10 @@ class OccupancyFilter:
             handle.write("\n")
             return
 
+        if sequence_length <= width * 2:
+            handle.write(f"{sequence[:width]}\n{sequence[width:]}\n")
+            return
+
         if sequence_length >= _WRAPPED_FASTA_BATCH_MIN_LENGTH:
             write = handle.write
             batch_size = width * _WRAPPED_FASTA_BATCH_CHUNKS

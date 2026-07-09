@@ -256,6 +256,19 @@ class TestOccupancyFilter:
 
         assert output_fasta.read_text() == "ACGT\n"
 
+    def test_write_wrapped_fasta_sequence_two_line_sequence(self, tmp_path):
+        output_fasta = tmp_path / "wrapped_two_line.fa"
+        with open(output_fasta, "w") as handle:
+            OccupancyFilter._write_wrapped_fasta_sequence(handle, "A" * 120)
+            OccupancyFilter._write_wrapped_fasta_sequence(handle, "C" * 61)
+
+        assert output_fasta.read_text() == (
+            f"{'A' * 60}\n"
+            f"{'A' * 60}\n"
+            f"{'C' * 60}\n"
+            "C\n"
+        )
+
     def test_write_wrapped_fasta_sequence_custom_width(self, tmp_path):
         output_fasta = tmp_path / "wrapped_custom.fa"
         with open(output_fasta, "w") as handle:
