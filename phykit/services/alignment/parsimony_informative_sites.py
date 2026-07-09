@@ -31,6 +31,7 @@ _PROTEIN_GAP_CODES = None
 _DNA_GAP_BYTES = b"-?*XN"
 _PROTEIN_GAP_BYTES = b"-?*X"
 _DNA_STANDARD_CODES = (65, 67, 71, 84)  # A, C, G, T
+_ASCII_PI_BLOCK_SIZE = 128
 
 
 def _get_gap_codes(is_protein: bool):
@@ -48,7 +49,7 @@ def _get_gap_codes(is_protein: bool):
 def _count_ascii_parsimony_informative_sites(
     alignment_array,
     valid_mask=None,
-    block_size: int = 8192,
+    block_size: int = _ASCII_PI_BLOCK_SIZE,
 ) -> int:
     aln_len = alignment_array.shape[1]
     pi_sites = 0

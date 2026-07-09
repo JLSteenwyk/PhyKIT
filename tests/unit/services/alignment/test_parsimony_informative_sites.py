@@ -207,6 +207,38 @@ assert "Bio.AlignIO" not in sys.modules
         assert aln_len == 4
         assert isclose(pi_sites_per, 25.0, rel_tol=0.001)
 
+    def test_ascii_parsimony_informative_sites_defaults_to_tuned_blocks(
+        self,
+        monkeypatch,
+    ):
+        np = pi_module.np
+        width = pi_module._ASCII_PI_BLOCK_SIZE + 1
+        alignment_array = np.array(
+            [
+                [ord("A") if (row + col) % 2 else ord("C") for col in range(width)]
+                for row in range(4)
+            ],
+            dtype=np.uint8,
+        )
+        original_bincount = pi_module.np.bincount
+        min_lengths = []
+
+        def bincount_spy(values, *args, **kwargs):
+            min_lengths.append(kwargs.get("minlength"))
+            return original_bincount(values, *args, **kwargs)
+
+        monkeypatch.setattr(pi_module.np, "bincount", bincount_spy)
+
+        pi_sites = pi_module._count_ascii_parsimony_informative_sites(
+            alignment_array,
+        )
+
+        assert pi_sites == width
+        assert min_lengths == [
+            pi_module._ASCII_PI_BLOCK_SIZE * 256,
+            256,
+        ]
+
     def test_parsimony_informative_clean_dna_skips_valid_mask(
         self, mocker, args
     ):
