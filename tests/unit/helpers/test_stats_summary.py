@@ -185,6 +185,26 @@ class TestCalculateSummaryStatisticsFromArr(unittest.TestCase):
         self.assertEqual(stats['standard_deviation'], 0.0)
         self.assertEqual(stats['variance'], 0.0)
 
+    def test_medium_identical_float_list_skips_sort_and_numpy(self):
+        data = [7.5] * 63
+        with patch(
+            'builtins.sorted',
+            side_effect=AssertionError("constant medium float lists should not sort"),
+        ), patch(
+            'phykit.helpers.stats_summary.np.asarray',
+            side_effect=AssertionError(
+                "constant medium float lists should avoid NumPy"
+            ),
+        ):
+            stats = calculate_summary_statistics_from_arr(data)
+
+        self.assertEqual(stats['mean'], 7.5)
+        self.assertEqual(stats['median'], 7.5)
+        self.assertEqual(stats['twenty_fifth'], 7.5)
+        self.assertEqual(stats['seventy_fifth'], 7.5)
+        self.assertEqual(stats['standard_deviation'], 0.0)
+        self.assertEqual(stats['variance'], 0.0)
+
     def test_large_identical_list_skips_numpy_conversion(self):
         data = [7] * 129
         with patch(

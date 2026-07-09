@@ -29,6 +29,7 @@ Results:
 | `calculate_summary_statistics_from_arr` two-value scalar summary | 100k two-value integer / floating-point / equal-integer list summaries, side-by-side previous small-sequence sort/loop path | 0.380812s / 0.288351s / 0.122273s | 0.134694s / 0.090756s / 0.054581s | 2.83x / 3.18x / 2.24x |
 | `calculate_summary_statistics_from_arr` constant small integer sequence shortcut | 10k repeated summaries for a 128-value equal-integer list, side-by-side previous small-sequence sort path | 0.070001s | 0.004364s | 16.04x |
 | `calculate_summary_statistics_from_arr` medium constant integer sequence shortcut | 10k repeated summaries for a 63-value equal-integer list, side-by-side previous small-sequence sort path | 0.029095s | 0.008871s | 3.28x |
+| `calculate_summary_statistics_from_arr` medium constant float sequence shortcut | 10k repeated summaries for a 63-value equal-float list, side-by-side previous small-sequence sort path | 0.045919s | 0.019114s | 2.40x |
 | `calculate_summary_statistics_from_arr` large uniform Python sequence shortcut | 1M identical integer / floating-point list values, side-by-side previous NumPy conversion and constant-array detection | 0.101205s / 0.096625s | 0.000390s / 0.000396s | 259.33x / 244.23x |
 | `calculate_summary_statistics_from_arr` / `_from_dict` cached lazy NumPy attributes | 1000-value float array / 5k-value float dictionary summaries, side-by-side previous module-only lazy NumPy proxy, identical summary dictionaries | 0.000168225s / 0.000426684s | 0.000099357s / 0.000256622s | 1.69x / 1.66x |
 | `calculate_summary_statistics_from_dict` | 1M floating-point dictionary values | 1.1465s | 0.0539s | 21.3x |
@@ -9465,10 +9466,10 @@ Profiling summary:
   Two-value small summaries now compute sorted extrema, linear quartiles,
   sample variance, and exact integer mean/median formatting directly, avoiding
   the generic small-sequence sort and variance loop for common tiny summaries.
-  Medium-sized constant integer summaries now share the no-sort shortcut used
-  by larger small sequences, avoiding sorted-list construction for repeated
-  equal support or count summaries while leaving shorter nonconstant summaries
-  on the previous branch path.
+  Medium-sized constant integer and float summaries now share the no-sort
+  shortcut used by larger small sequences, avoiding sorted-list construction for
+  repeated equal support or count summaries while leaving shorter nonconstant
+  summaries on the previous branch path.
   A startup pass wraps the NumPy module in a lazy proxy so importing commands
   that only reference summary helpers does not import NumPy until a summary is
   calculated. The proxy now caches resolved NumPy attributes after first use,

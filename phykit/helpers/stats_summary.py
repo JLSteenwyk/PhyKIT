@@ -78,13 +78,16 @@ def _calculate_small_sequence_statistics(values):
         if count >= 48:
             first_value = values[0]
             if (
-                type(first_value) is int
+                type(first_value) in (int, float)
                 and first_value == values[-1]
+                and first_value == values[count // 2]
                 and values.count(first_value) == count
             ):
                 mean = first_value
                 median = first_value
-                quartile = float(first_value)
+                quartile = (
+                    float(first_value) if type(first_value) is int else first_value
+                )
                 return dict(
                     mean=mean,
                     median=median,
