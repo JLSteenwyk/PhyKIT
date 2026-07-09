@@ -207,6 +207,7 @@ Results:
 | `variable_sites` module import without eager NumPy/Bio.Align | cold subprocess import after lazy NumPy lookup construction and annotation-only Bio.Align import | 0.119398s | 0.023496s | 5.08x |
 | `variable_sites` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006383s | 0.005138s | 1.24x |
 | `variable_sites` module import without `typing` startup | median cold subprocess import after removing runtime `TYPE_CHECKING` and converting annotation-only typing aliases to built-in annotations | 0.003050s | 0.000955s | 3.19x |
+| `Phykit.variable_sites` default parser bypass | 1000 repeated direct handler calls with service mocked, plus command profiler default `variable_sites test_alignment_0.fa`, 15 runs after 3 warmups, text/JSON stdout matched previous branch | 0.765712s / 0.086120s | 0.000392s / 0.054509s | 1953.35x / 1.58x |
 | `ParsimonyInformative.calculate_parsimony_informative_sites` | 220 taxa x 5000 sites, alphabet `ACGT-?NX*` | 0.1827s | 0.0590s | 3.1x |
 | `ParsimonyInformative.calculate_parsimony_informative_sites` byte matrix setup | 500 taxa x 8000 sites, alphabet `ACGT-?NX*` | 0.1776s | 0.0575s | 3.1x |
 | `ParsimonyInformative.calculate_parsimony_informative_sites` gap lookup | 500 taxa x 8000 sites, alphabet `ACGT-?NX*` | 0.058787s | 0.028491s | 2.06x |

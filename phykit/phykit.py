@@ -2117,6 +2117,10 @@ class Phykit:
 
     @staticmethod
     def variable_sites(argv):
+        if len(argv) == 1 and argv[0] and argv[0][0] != "-":
+            _run_service_with_args(_AlignmentJsonDefaultArgs(argv[0]), VariableSites)
+            return
+
         parser = _new_parser(
             description=_dedent(
                 f"""\
