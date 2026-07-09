@@ -74,6 +74,12 @@ class MonophylyCheck(Tree):
         )
 
     def _resolve_interest_clade(self, tree, taxa_of_interest, tree_tips):
+        if taxa_of_interest == tree_tips:
+            try:
+                return tree.root, taxa_of_interest
+            except AttributeError:
+                pass
+
         clade = self._find_exact_clade_by_taxa(tree, taxa_of_interest)
         if clade is not None:
             return clade, taxa_of_interest

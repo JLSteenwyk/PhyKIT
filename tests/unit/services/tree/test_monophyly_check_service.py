@@ -273,6 +273,30 @@ class TestMonophylyCheck:
         assert sorted(t.name for t in clade.get_terminals()) == ["A", "B"]
         assert tips == frozenset(["A", "B"])
 
+    def test_resolve_interest_clade_all_tree_tips_returns_root_without_search(
+        self, mocker, args
+    ):
+        service = MonophylyCheck(args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        all_tips = frozenset(["A", "B", "C", "D"])
+        find_exact = mocker.patch.object(
+            MonophylyCheck,
+            "_find_exact_clade_by_taxa",
+            side_effect=AssertionError("all-tip input should use root shortcut"),
+        )
+        copy_tree = mocker.patch.object(
+            service,
+            "_fast_copy",
+            side_effect=AssertionError("all-tip input should not reroot a copy"),
+        )
+
+        clade, tips = service._resolve_interest_clade(tree, all_tips, all_tips)
+
+        assert clade is tree.root
+        assert tips == all_tips
+        find_exact.assert_not_called()
+        copy_tree.assert_not_called()
+
     def test_find_exact_clade_uses_count_path(self, monkeypatch, args):
         tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
         expected = tree.root.clades[0]

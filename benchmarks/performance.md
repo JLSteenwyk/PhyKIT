@@ -1595,6 +1595,7 @@ Results:
 | `MonophylyCheck.print_results` batched text output | 200k mixed status/support rows, captured stdout and identical text | 0.301773s | 0.271484s | 1.11x |
 | `MonophylyCheck.print_results` JSON row literals | 500k mixed status/support rows, identical JSON row dictionaries | 1.410068s | 1.195951s | 1.18x |
 | `MonophylyCheck.print_results` JSON row comprehension | 500k mixed status/support rows, identical JSON row dictionaries | 2.207833s | 1.843909s | 1.20x |
+| `MonophylyCheck._resolve_interest_clade` all-tip root shortcut | balanced 1024 / 32768 / 131072-tip trees with every tip selected, identical root clade result versus previous exact-clade traversal | 0.002118966s / 0.075454304s / 0.284963092s | 0.000009200s / 0.001063702s / 0.003564433s | 230.33x / 70.94x / 79.95x |
 | `MonophylyCheck._resolve_interest_clade` subset fallback setup | 10k / 100k / 500k tree tips with 1k / 10k / 50k selected taxa, exact-clade miss, side-by-side previous redundant `shared_tips` intersection | 0.002017600s / 0.043606010s / 0.303310453s | 0.000685298s / 0.022006354s / 0.153611406s | 2.94x / 1.98x / 1.97x |
 | `monophyly_check` module import without annotation-only Bio.Phylo | cold subprocess import after postponed annotations and removing `Newick` import | 0.137385s | 0.030312s | 4.53x |
 | `monophyly_check` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.010405s | 0.009056s | 1.15x |
