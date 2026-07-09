@@ -637,6 +637,46 @@ class TestIdentityMatrixUnit:
         assert fast_names == legacy_names
         np.testing.assert_allclose(fast, legacy)
 
+    def test_partition_identities_clean_ascii_uses_direct_comparison(
+        self, tmp_path, monkeypatch
+    ):
+        aln_path = tmp_path / "aln.fa"
+        out_path = tmp_path / "out.png"
+        _write_alignment(aln_path, {
+            "taxon_A": "ACGTACGTACGT",
+            "taxon_B": "ACGTTCGTTCGT",
+            "taxon_C": "TCGTACGTACTT",
+            "taxon_D": "ACGTACGTTTTT",
+        })
+        args = _make_args(aln_path, out_path)
+        service = IdentityMatrix(args)
+        sequences, taxa_names, _ = service._parse_alignment()
+        partitions = [("p1", 0, 4), ("p2", 4, 8), ("p3", 8, 12)]
+        legacy_names, legacy = service._compute_partition_identities_pairwise(
+            sequences,
+            taxa_names,
+            partitions,
+        )
+        monkeypatch.setattr(
+            identity_matrix_module,
+            "_CLEAN_PARTITION_DIRECT_MIN_TAXA",
+            4,
+        )
+
+        def fail_unique(*_args, **_kwargs):
+            raise AssertionError("clean partitions should skip per-symbol products")
+
+        monkeypatch.setattr(identity_matrix_module.np, "unique", fail_unique)
+
+        fast_names, fast = service._compute_partition_identities(
+            sequences,
+            taxa_names,
+            partitions,
+        )
+
+        assert fast_names == legacy_names
+        np.testing.assert_allclose(fast, legacy)
+
     def test_partition_identities_identical_sequences_skip_matrix_setup(self, mocker):
         service = IdentityMatrix.__new__(IdentityMatrix)
         mocker.patch.object(

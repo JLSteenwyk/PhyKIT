@@ -36,6 +36,7 @@ _NO_INVALID_DIRECT_MIN_TAXA = 100
 _NO_INVALID_DIRECT_SHORT_ALIGNMENT_MIN_TAXA = 150
 _NO_INVALID_DIRECT_MAX_TAXA = 700
 _SHARED_VALID_DIRECT_MAX_TAXA = 600
+_CLEAN_PARTITION_DIRECT_MIN_TAXA = 128
 _IDENTITY_RUN_CACHE = {}
 _IDENTITY_RUN_CACHE_MAXSIZE = 8
 
@@ -157,6 +158,18 @@ def _direct_ascii_identity_matrix(seq_matrix, seq_len: int) -> np.ndarray:
         matrix[start:stop] = match_counts / denominator
     np.fill_diagonal(matrix, 1.0)
     return matrix
+
+
+def _direct_ascii_partition_identities(
+    seq_matrix,
+    partitions: list[tuple[str, int, int]],
+) -> np.ndarray:
+    n = seq_matrix.shape[0]
+    result = np.zeros((n * (n - 1) // 2, len(partitions)), dtype=np.float64)
+    for part_idx, (_name, start, end) in enumerate(partitions):
+        matrix = _direct_ascii_identity_matrix(seq_matrix[:, start:end], end - start)
+        result[:, part_idx] = squareform(matrix, checks=False)
+    return result
 
 
 class IdentityMatrix(Alignment):
@@ -522,13 +535,23 @@ class IdentityMatrix(Alignment):
                 sequences, taxa_names, partitions
             )
 
-        invalid = np.frombuffer(b"-?NX*nx", dtype=np.uint8)
-        valid_masks = ~np.isin(seq_matrix, invalid)
+        part_names = [p[0] for p in partitions]
+        invalid = np.frombuffer(_IDENTITY_INVALID_BYTES, dtype=np.uint8)
+        if n >= _CLEAN_PARTITION_DIRECT_MIN_TAXA:
+            invalid_masks = np.isin(seq_matrix, invalid)
+            if not invalid_masks.any():
+                return part_names, _direct_ascii_partition_identities(
+                    seq_matrix,
+                    partitions,
+                )
+            valid_masks = ~invalid_masks
+        else:
+            valid_masks = ~np.isin(seq_matrix, invalid)
+
         valid_symbols = np.unique(seq_matrix[valid_masks])
 
         n_pairs = n * (n - 1) // 2
 
-        part_names = [p[0] for p in partitions]
         result = np.zeros((n_pairs, n_parts), dtype=np.float64)
         valid_float = valid_masks.astype(np.float64, copy=False)
 
