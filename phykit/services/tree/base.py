@@ -103,6 +103,11 @@ class Tree(BaseService):
 
     @staticmethod
     @lru_cache(maxsize=32)
+    def _cached_simple_newick_tip_names(file_path: str, file_hash: str):
+        return Tree._scan_simple_newick_tip_names(file_path)
+
+    @staticmethod
+    @lru_cache(maxsize=32)
     def _cached_simple_newick_terminal_distance_stats(
         file_path: str,
         file_hash: str,
@@ -264,10 +269,86 @@ class Tree(BaseService):
 
         return None
 
+    @staticmethod
+    def _scan_simple_newick_tip_names(file_path: str):
+        with open(file_path) as handle:
+            text = handle.read()
+
+        if not text or any(char in text for char in "'\"[]"):
+            return None
+
+        tip_names = []
+        prev_sig = None
+        i = 0
+        text_len = len(text)
+        delimiters = "(),:;"
+        whitespace = " \t\r\n"
+
+        while i < text_len:
+            char = text[i]
+            if char in whitespace:
+                i += 1
+                continue
+
+            if char == "(":
+                prev_sig = "("
+                i += 1
+                continue
+            if char == ",":
+                prev_sig = ","
+                i += 1
+                continue
+            if char == ")":
+                prev_sig = ")"
+                i += 1
+                continue
+            if char == ";":
+                return tuple(tip_names)
+
+            if char == ":":
+                i += 1
+                start = i
+                while i < text_len and text[i] not in ",);" and text[i] not in whitespace:
+                    i += 1
+                if start == i:
+                    return None
+                prev_sig = "branch_length"
+                continue
+
+            start = i
+            while i < text_len and text[i] not in delimiters and text[i] not in whitespace:
+                i += 1
+            token = text[start:i]
+            if not token:
+                return None
+            if prev_sig in ("(", ",", None):
+                tip_names.append(token)
+                prev_sig = "terminal_label"
+            elif prev_sig == ")":
+                prev_sig = "internal_label"
+            else:
+                return None
+
+        return None
+
     def _get_simple_newick_summary(self, tree_path: str, attr_name: str):
         try:
             file_hash = self._get_file_hash(tree_path)
             return self._cached_simple_newick_summary(tree_path, file_hash)
+        except FileNotFoundError:
+            path = getattr(self, attr_name)
+            raise PhykitUserError(
+                [
+                    f"{path} corresponds to no such file or directory.",
+                    "Please check filename and pathing",
+                ],
+                code=2,
+            )
+
+    def _get_simple_newick_tip_names(self, tree_path: str, attr_name: str):
+        try:
+            file_hash = self._get_file_hash(tree_path)
+            return self._cached_simple_newick_tip_names(tree_path, file_hash)
         except FileNotFoundError:
             path = getattr(self, attr_name)
             raise PhykitUserError(

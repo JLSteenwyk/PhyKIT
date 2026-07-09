@@ -219,6 +219,21 @@ class TestTreeBase:
 
         assert Tree._scan_simple_newick_summary(str(tree_path)) is None
 
+    def test_scan_simple_newick_tip_names_matches_biophylo(self, tmp_path):
+        tree_path = tmp_path / "simple.tre"
+        tree_path.write_text("(a:1,(b:2,c:3)90:4)root:5;")
+        names = Tree._scan_simple_newick_tip_names(str(tree_path))
+        tree = Phylo.read(str(tree_path), "newick")
+
+        assert names is not None
+        assert list(names) == [tip.name for tip in tree.get_terminals()]
+
+    def test_scan_simple_newick_tip_names_rejects_complex_syntax(self, tmp_path):
+        tree_path = tmp_path / "complex.tre"
+        tree_path.write_text("('a b':1,b[comment]:2);")
+
+        assert Tree._scan_simple_newick_tip_names(str(tree_path)) is None
+
     def test_scan_simple_newick_terminal_distance_stats_matches_biophylo(
         self,
         tmp_path,
@@ -563,6 +578,18 @@ class TestTreeBase:
 
         assert first is second
         assert first == (("a", "b"), 3.0, 0.0)
+
+    def test_get_simple_newick_tip_names_uses_cached_file_hash(self, tmp_path):
+        tree_path = tmp_path / "tree.tre"
+        tree_path.write_text("(a:1,b:2);")
+        Tree._cached_simple_newick_tip_names.cache_clear()
+
+        service = Tree(tree_file_path=str(tree_path))
+        first = service._get_simple_newick_tip_names(str(tree_path), "tree_file_path")
+        second = service._get_simple_newick_tip_names(str(tree_path), "tree_file_path")
+
+        assert first is second
+        assert first == ("a", "b")
 
     def test_get_simple_newick_terminal_distance_stats_uses_cached_file_hash(
         self,
