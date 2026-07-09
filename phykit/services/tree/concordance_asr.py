@@ -142,7 +142,7 @@ class ConcordanceAsr(Tree):
                         append(children[idx])
 
     def run(self) -> None:
-        species_tree = self.read_tree_file()
+        species_tree = self.read_tree_file_unmodified()
 
         # Create a helper ASR instance for reusing methods
         from .ancestral_reconstruction import AncestralReconstruction

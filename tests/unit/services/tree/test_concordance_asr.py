@@ -997,7 +997,16 @@ class TestRun:
         gene_trees = svc._parse_gene_trees(GENE_TREES)
         all_taxa = set(svc.get_tip_names_from_tree(species_tree))
         spy = mocker.spy(svc, "get_tip_names_from_tree")
-        mocker.patch.object(svc, "read_tree_file", return_value=species_tree)
+        read_unmodified = mocker.patch.object(
+            svc, "read_tree_file_unmodified", return_value=species_tree
+        )
+        mocker.patch.object(
+            svc,
+            "read_tree_file",
+            side_effect=AssertionError(
+                "run should avoid copying the species tree before it knows a copy is needed"
+            ),
+        )
         mocker.patch.object(svc, "_parse_gene_trees", return_value=gene_trees)
         mocker.patch.object(
             svc, "_normalize_taxa", return_value=(gene_trees, all_taxa)
@@ -1016,6 +1025,7 @@ class TestRun:
 
         svc.run()
 
+        read_unmodified.assert_called_once_with()
         assert spy.call_count == 2
         fast_copy.assert_not_called()
         assert run_weighted.call_args.args[0] is species_tree
@@ -1040,7 +1050,9 @@ class TestRun:
             if taxon != "dog"
         )
 
-        mocker.patch.object(svc, "read_tree_file", return_value=species_tree)
+        read_unmodified = mocker.patch.object(
+            svc, "read_tree_file_unmodified", return_value=species_tree
+        )
         mocker.patch.object(svc, "_parse_gene_trees", return_value=gene_trees)
         mocker.patch.object(
             svc, "_normalize_taxa", return_value=(gene_trees, all_taxa)
@@ -1068,6 +1080,7 @@ class TestRun:
 
         svc.run()
 
+        read_unmodified.assert_called_once_with()
         fast_copy.assert_called_once_with(species_tree)
         prune.assert_called_once_with(species_copy, ["dog"])
         assert run_weighted.call_args.args[0] is pruned_species
