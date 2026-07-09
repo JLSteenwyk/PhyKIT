@@ -31,6 +31,9 @@ _DNA_GAP_CHARS = {"-", "?", "*", "X", "N"}
 _PROTEIN_GAP_CHARS = {"-", "?", "*", "X"}
 _DNA_GAP_COUNT_CHARS = "-?*XNxn"
 _PROTEIN_GAP_COUNT_CHARS = "-?*Xx"
+_DENSE_GAP_SCAN_MIN_BYTES = 1_000_000
+_DENSE_GAP_SAMPLE_BYTES = 8192
+_DENSE_GAP_SAMPLE_MIN_FRACTION = 0.03
 
 
 def _count_no_gap_sites_in_identical_sequence(sequence: str, is_protein: bool) -> int:
@@ -75,6 +78,34 @@ def _count_columns_without_gap_bytes(
                     return 0
             gap_position = alignment_bytes.find(gap_byte, gap_position + 1)
     return aln_len - gap_column_count
+
+
+def _should_use_dense_gap_matrix_scan(
+    alignment_bytes: bytes,
+    gap_bytes: bytes,
+) -> bool:
+    if len(alignment_bytes) < _DENSE_GAP_SCAN_MIN_BYTES:
+        return False
+
+    sample_len = min(_DENSE_GAP_SAMPLE_BYTES, len(alignment_bytes))
+    sample = alignment_bytes[:sample_len]
+    gap_count = sum(sample.count(bytes((gap_byte,))) for gap_byte in gap_bytes)
+    return (gap_count / sample_len) >= _DENSE_GAP_SAMPLE_MIN_FRACTION
+
+
+def _count_columns_without_gap_bytes_matrix(
+    alignment_bytes: bytes,
+    aln_len: int,
+    gap_bytes: bytes,
+) -> int:
+    alignment_array = np.frombuffer(
+        alignment_bytes,
+        dtype=np.uint8,
+    ).reshape(len(alignment_bytes) // aln_len, aln_len)
+    gap_lookup = np.zeros(256, dtype=np.bool_)
+    gap_lookup[np.frombuffer(gap_bytes, dtype=np.uint8)] = True
+    columns_with_gaps = np.any(gap_lookup[alignment_array], axis=0)
+    return int(np.count_nonzero(~columns_with_gaps))
 
 
 class AlignmentLengthNoGaps(Alignment):
@@ -152,6 +183,12 @@ class AlignmentLengthNoGaps(Alignment):
             gap_bytes = _PROTEIN_GAP_BYTES if is_protein else _DNA_GAP_BYTES
             if not any(gap_code in alignment_bytes for gap_code in gap_bytes):
                 return aln_len
+            if _should_use_dense_gap_matrix_scan(alignment_bytes, gap_bytes):
+                return _count_columns_without_gap_bytes_matrix(
+                    alignment_bytes,
+                    aln_len,
+                    gap_bytes,
+                )
             return _count_columns_without_gap_bytes(
                 alignment_bytes,
                 aln_len,

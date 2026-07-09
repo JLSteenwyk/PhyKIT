@@ -170,6 +170,34 @@ assert "Bio.AlignIO" not in sys.modules
             == 0
         )
 
+    def test_get_sites_no_gaps_count_dense_ascii_gaps_use_matrix_scan(
+        self, monkeypatch, mocker, args
+    ):
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("A-C?T"), id="a"),
+                SeqRecord(Seq("AN-?T"), id="b"),
+                SeqRecord(Seq("A--?T"), id="c"),
+            ]
+        )
+        aln = AlignmentLengthNoGaps(args)
+        monkeypatch.setattr(alg_module, "_DENSE_GAP_SCAN_MIN_BYTES", 1)
+        monkeypatch.setattr(alg_module, "_DENSE_GAP_SAMPLE_MIN_FRACTION", 0.1)
+        matrix_spy = mocker.spy(
+            alg_module,
+            "_count_columns_without_gap_bytes_matrix",
+        )
+        mocker.patch(
+            "phykit.services.alignment.alignment_length_no_gaps."
+            "_count_columns_without_gap_bytes",
+            side_effect=AssertionError(
+                "dense ASCII gaps should use the matrix column scan"
+            ),
+        )
+
+        assert aln.get_sites_no_gaps_count(alignment, 5, is_protein=False) == 2
+        matrix_spy.assert_called_once()
+
     def test_get_sites_no_gaps_count_ascii_path_skips_gap_char_set(
         self, mocker, args
     ):
