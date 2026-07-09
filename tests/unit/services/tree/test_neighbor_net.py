@@ -291,6 +291,71 @@ class TestDistanceMatrixFromAlignment:
         )
         direct_path.assert_called_once()
 
+    def test_mid_sized_clean_ascii_distance_matrix_uses_direct_comparison(
+        self, mocker, monkeypatch, tmp_path
+    ):
+        output = str(tmp_path / "network.png")
+        args = Namespace(
+            alignment=SAMPLE_ALIGNMENT,
+            distance_matrix=None,
+            output=output,
+            metric="p-distance",
+            max_splits=30,
+            json=False,
+            fig_width=None,
+            fig_height=None,
+            dpi=300,
+            no_title=False,
+            title=None,
+            legend_position=None,
+            ylabel_fontsize=None,
+            xlabel_fontsize=None,
+            title_fontsize=None,
+            axis_fontsize=None,
+            colors=None,
+            ladderize=False,
+            cladogram=False,
+            circular=False,
+            color_file=None,
+        )
+        service = NeighborNet(args)
+        monkeypatch.setattr(neighbor_net_module, "_NO_SKIP_DIRECT_MIN_LENGTH", 100)
+        monkeypatch.setattr(neighbor_net_module, "_NO_SKIP_DIRECT_MID_MIN_TAXA", 3)
+        monkeypatch.setattr(neighbor_net_module, "_NO_SKIP_DIRECT_MID_MIN_LENGTH", 4)
+        monkeypatch.setattr(neighbor_net_module, "_NO_SKIP_DIRECT_MAX_TAXA", 10)
+        direct_path = mocker.spy(
+            service,
+            "_compute_distance_matrix_from_no_skip_matrix",
+        )
+        mocker.patch.object(
+            neighbor_net_module.np,
+            "isin",
+            side_effect=AssertionError(
+                "mid-sized clean direct comparison should skip validity-mask setup"
+            ),
+        )
+
+        observed = service._compute_distance_matrix_from_equal_length_sequences(
+            ["A", "B", "C"],
+            {
+                "A": "ACGTACGT",
+                "B": "ACGTTCGT",
+                "C": "TCGTACGA",
+            },
+        )
+
+        np.testing.assert_allclose(
+            observed,
+            np.array(
+                [
+                    [0.0, 0.125, 0.25],
+                    [0.125, 0.0, 0.375],
+                    [0.25, 0.375, 0.0],
+                ]
+            ),
+        )
+        direct_path.assert_called_once()
+
     def test_identity_no_overlap_stays_zero(self, tmp_path):
         output = str(tmp_path / "network.png")
         args = Namespace(

@@ -56,6 +56,8 @@ np = _LazyNumpy()
 
 _DISTANCE_SKIP_BYTES = b"-NX?"
 _NO_SKIP_DIRECT_MIN_LENGTH = 2048
+_NO_SKIP_DIRECT_MID_MIN_TAXA = 150
+_NO_SKIP_DIRECT_MID_MIN_LENGTH = 500
 _NO_SKIP_DIRECT_MAX_TAXA = 700
 
 
@@ -154,7 +156,13 @@ class NeighborNet:
             dtype=np.uint8,
         ).reshape(n_taxa, aln_len)
         if (
-            aln_len >= _NO_SKIP_DIRECT_MIN_LENGTH
+            (
+                aln_len >= _NO_SKIP_DIRECT_MIN_LENGTH
+                or (
+                    n_taxa >= _NO_SKIP_DIRECT_MID_MIN_TAXA
+                    and aln_len >= _NO_SKIP_DIRECT_MID_MIN_LENGTH
+                )
+            )
             and n_taxa <= _NO_SKIP_DIRECT_MAX_TAXA
             and not any(code in alignment_bytes for code in _DISTANCE_SKIP_BYTES)
         ):
