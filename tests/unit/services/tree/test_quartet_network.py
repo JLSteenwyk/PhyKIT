@@ -458,6 +458,42 @@ class TestNanuqDistance:
         # (A,C) only in topo 0 → 0.5
         assert dist[idx["A"]][idx["C"]] == 0.5
 
+    def test_nanuq_distance_updates_pairs_without_cross_pair_allocations(
+        self, monkeypatch
+    ):
+        """Mixed quartet classes should not need temporary cross-pair lists."""
+
+        def fail_cross_pairs(*_args):
+            raise AssertionError("_cross_pairs should not be used")
+
+        monkeypatch.setattr(QuartetNetwork, "_cross_pairs", fail_cross_pairs)
+
+        all_taxa = frozenset({"A", "B", "C", "D", "E"})
+        quartet_results = {
+            ("A", "B", "C", "D"): {
+                "classification": "tree",
+                "counts": [5, 0, 0],
+            },
+            ("A", "B", "C", "E"): {
+                "classification": "hybrid",
+                "counts": [4, 6, 5],
+            },
+            ("A", "B", "D", "E"): {
+                "classification": "unresolved",
+                "counts": [3, 3, 3],
+            },
+        }
+
+        _, dist, idx = QuartetNetwork._compute_nanuq_distance(
+            all_taxa, quartet_results
+        )
+
+        assert dist[idx["A"]][idx["B"]] == 2.0
+        assert dist[idx["A"]][idx["C"]] == 1.5
+        assert dist[idx["A"]][idx["D"]] == 2.0
+        assert dist[idx["B"]][idx["E"]] == 1.5
+        assert dist[idx["C"]][idx["D"]] == 0.0
+
 
 class TestNeighborJoiningOrder:
     def test_four_taxa_tree_ordering(self):

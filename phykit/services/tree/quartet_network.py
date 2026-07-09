@@ -686,19 +686,76 @@ class QuartetNetwork(Tree):
             counts = result["counts"]
 
             if classification == "unresolved":
-                for x, y in [(ia, ib), (ia, ic), (ia, id_), (ib, ic), (ib, id_), (ic, id_)]:
-                    dist[x][y] += 1
-                    dist[y][x] += 1
+                dist[ia][ib] += 1
+                dist[ib][ia] += 1
+                dist[ia][ic] += 1
+                dist[ic][ia] += 1
+                dist[ia][id_] += 1
+                dist[id_][ia] += 1
+                dist[ib][ic] += 1
+                dist[ic][ib] += 1
+                dist[ib][id_] += 1
+                dist[id_][ib] += 1
+                dist[ic][id_] += 1
+                dist[id_][ic] += 1
             elif classification == "tree":
                 dominant_idx = QuartetNetwork._dominant_topology_index(counts)
-                for x, y in QuartetNetwork._cross_pairs(dominant_idx, ia, ib, ic, id_):
-                    dist[x][y] += 1
-                    dist[y][x] += 1
+                if dominant_idx == 0:
+                    dist[ia][ic] += 1
+                    dist[ic][ia] += 1
+                    dist[ia][id_] += 1
+                    dist[id_][ia] += 1
+                    dist[ib][ic] += 1
+                    dist[ic][ib] += 1
+                    dist[ib][id_] += 1
+                    dist[id_][ib] += 1
+                elif dominant_idx == 1:
+                    dist[ia][ib] += 1
+                    dist[ib][ia] += 1
+                    dist[ia][id_] += 1
+                    dist[id_][ia] += 1
+                    dist[ic][ib] += 1
+                    dist[ib][ic] += 1
+                    dist[ic][id_] += 1
+                    dist[id_][ic] += 1
+                else:
+                    dist[ia][ib] += 1
+                    dist[ib][ia] += 1
+                    dist[ia][ic] += 1
+                    dist[ic][ia] += 1
+                    dist[id_][ib] += 1
+                    dist[ib][id_] += 1
+                    dist[id_][ic] += 1
+                    dist[ic][id_] += 1
             else:  # hybrid
                 for topo_idx in QuartetNetwork._top_two_topology_indices(counts):
-                    for x, y in QuartetNetwork._cross_pairs(topo_idx, ia, ib, ic, id_):
-                        dist[x][y] += 0.5
-                        dist[y][x] += 0.5
+                    if topo_idx == 0:
+                        dist[ia][ic] += 0.5
+                        dist[ic][ia] += 0.5
+                        dist[ia][id_] += 0.5
+                        dist[id_][ia] += 0.5
+                        dist[ib][ic] += 0.5
+                        dist[ic][ib] += 0.5
+                        dist[ib][id_] += 0.5
+                        dist[id_][ib] += 0.5
+                    elif topo_idx == 1:
+                        dist[ia][ib] += 0.5
+                        dist[ib][ia] += 0.5
+                        dist[ia][id_] += 0.5
+                        dist[id_][ia] += 0.5
+                        dist[ic][ib] += 0.5
+                        dist[ib][ic] += 0.5
+                        dist[ic][id_] += 0.5
+                        dist[id_][ic] += 0.5
+                    else:
+                        dist[ia][ib] += 0.5
+                        dist[ib][ia] += 0.5
+                        dist[ia][ic] += 0.5
+                        dist[ic][ia] += 0.5
+                        dist[id_][ib] += 0.5
+                        dist[ib][id_] += 0.5
+                        dist[id_][ic] += 0.5
+                        dist[ic][id_] += 0.5
 
         return taxa_list, dist, taxa_idx
 

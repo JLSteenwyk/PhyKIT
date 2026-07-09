@@ -1090,6 +1090,7 @@ Results:
 | `QuartetNetwork.run` JSON quartet row assembly | 1k / 100k quartet result rows, identical payload rows, side-by-side previous iterable unpack/list conversion path | 0.002633s / 2.514947s | 0.001911s / 2.322615s | 1.38x / 1.08x |
 | `QuartetNetwork._neighbor_joining_order` direct row totals | 40 / 80 / 120 taxa distance matrices, identical NJ ordering, side-by-side previous generator `sum` row totals | 0.018761s / 0.173474s / 0.292239s | 0.017317s / 0.150813s / 0.281683s | 1.08x / 1.15x / 1.04x |
 | `QuartetNetwork._compute_nanuq_distance` topology index helpers | 42 taxa, 111930 quartet classifications, mixed tree/hybrid/unresolved results | 0.111250s | 0.096283s | 1.16x |
+| `QuartetNetwork._compute_nanuq_distance` direct matrix updates | 42 taxa, 111930 quartet classifications, mixed tree/hybrid/unresolved results, side-by-side previous temporary pair-list path | 0.391543s | 0.327267s | 1.20x |
 | `QuartetNetwork._extract_bipartitions` direct ordered traversal | balanced 4096-tip tree, public frozenset bipartition helper | 0.389116s | 0.366308s | 1.06x |
 | `QuartetNetwork._extract_bipartition_masks` | balanced 32768-tip tree, bitmask split extraction setup | 0.2149s | 0.1446s | 1.5x |
 | `QuartetNetwork._extract_bipartition_masks` direct postorder | balanced 32768-tip tree, bitmask split extraction setup | 0.175142s | 0.081568s | 2.1x |
