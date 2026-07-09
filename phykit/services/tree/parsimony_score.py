@@ -42,6 +42,7 @@ _PARSIMONY_DNA_STATE_SYMBOLS = ["A", "C", "G", "T"]
 _PARSIMONY_WILDCARD_CHARS = frozenset("-NX?nx")
 _PARSIMONY_DNA_OR_WILDCARD_BYTES = b"ACGT-?NXnx"
 _PARSIMONY_JOINED_STATE_SCAN_MIN_SEQUENCES = 64
+_PARSIMONY_SPARSE_UNION_FACTOR = 8
 
 
 def _parsimony_state_symbols(
@@ -408,13 +409,27 @@ class ParsimonyScore(Tree):
                 changed = intersection == 0
                 if return_per_site:
                     site_scores += changed
+                    node_states[id(clade)] = np.where(
+                        changed,
+                        left_states | right_states,
+                        intersection,
+                    )
                 else:
-                    total_score += int(np.count_nonzero(changed))
-                node_states[id(clade)] = np.where(
-                    changed,
-                    left_states | right_states,
-                    intersection,
-                )
+                    changed_count = int(np.count_nonzero(changed))
+                    total_score += changed_count
+                    if changed_count == 0:
+                        node_states[id(clade)] = intersection
+                    elif changed_count * _PARSIMONY_SPARSE_UNION_FACTOR <= aln_length:
+                        intersection[changed] = (
+                            left_states[changed] | right_states[changed]
+                        )
+                        node_states[id(clade)] = intersection
+                    else:
+                        node_states[id(clade)] = np.where(
+                            changed,
+                            left_states | right_states,
+                            intersection,
+                        )
 
         if return_per_site:
             total_score = int(site_scores.sum())

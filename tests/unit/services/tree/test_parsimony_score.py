@@ -704,6 +704,46 @@ class TestFitchAlgorithm:
         assert score_per_site == []
         assert count_nonzero.call_count >= 1
 
+    def test_vectorized_fitch_score_only_skips_full_union_for_sparse_sites(
+        self, args, monkeypatch
+    ):
+        ps = ParsimonyScore(args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        sequences = {
+            "A": "A" * 64,
+            "B": "A" * 64,
+            "C": ("A" * 63) + "C",
+            "D": ("A" * 63) + "C",
+        }
+
+        verbose_total, per_site = ps._fitch_parsimony(
+            tree,
+            sequences,
+            64,
+            return_per_site=True,
+        )
+        fallback_total, _ = ps._fitch_parsimony_sets(
+            tree,
+            sequences,
+            64,
+            return_per_site=False,
+        )
+
+        def fail_where(*_args, **_kwargs):
+            raise AssertionError("sparse score-only path should not use np.where")
+
+        monkeypatch.setattr(module.np, "where", fail_where)
+
+        score_total, score_per_site = ps._fitch_parsimony(
+            tree,
+            sequences,
+            64,
+            return_per_site=False,
+        )
+
+        assert score_total == verbose_total == fallback_total == sum(per_site) == 1
+        assert score_per_site == []
+
     def test_resolve_binary_tree_does_not_import_newick(self, args, monkeypatch):
         ps = ParsimonyScore(args)
         tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
