@@ -964,6 +964,106 @@ class TestRun:
         assert text.count("gene_tree_") == 2
 
     @patch("builtins.print")
+    def test_text_output_two_pcs_skips_generic_row_iteration(
+        self, mocked_print, default_args
+    ):
+        class _Column:
+            def __init__(self, values):
+                self._values = values
+
+            def tolist(self):
+                return self._values
+
+        class TwoPcScores:
+            shape = (2, 2)
+
+            def __getitem__(self, key):
+                rows, column = key
+                assert rows == slice(None, None, None)
+                return _Column(([0.1, 1.1], [0.2, 1.2])[column])
+
+            def __iter__(self):
+                raise AssertionError("2-PC text output should not iterate rows")
+
+        class Labels:
+            def tolist(self):
+                return [0, 1]
+
+            def __iter__(self):
+                raise AssertionError("2-PC text output should bulk-convert labels")
+
+        svc = SpectralDiscordance(default_args)
+        svc._print_text(
+            TwoPcScores(),
+            np.array([0.4, 0.3]),
+            {},
+            Labels(),
+            2,
+            np.array([]),
+            2,
+            2,
+            4,
+            6,
+        )
+
+        mocked_print.assert_called_once()
+        text = mocked_print.call_args.args[0]
+        assert "gene_tree_1       0.1000    0.2000         0" in text
+        assert "gene_tree_2       1.1000    1.2000         1" in text
+        assert text.count("gene_tree_") == 2
+
+    @patch("builtins.print")
+    def test_text_output_four_pcs_skips_generic_row_iteration(
+        self, mocked_print, default_args
+    ):
+        class _Column:
+            def __init__(self, values):
+                self._values = values
+
+            def tolist(self):
+                return self._values
+
+        class FourPcScores:
+            shape = (1, 4)
+
+            def __getitem__(self, key):
+                rows, column = key
+                assert rows == slice(None, None, None)
+                return _Column(([0.1], [0.2], [0.3], [0.4])[column])
+
+            def __iter__(self):
+                raise AssertionError("4-PC text output should not iterate rows")
+
+        class Labels:
+            def tolist(self):
+                return [1]
+
+            def __iter__(self):
+                raise AssertionError("4-PC text output should bulk-convert labels")
+
+        svc = SpectralDiscordance(default_args)
+        svc._print_text(
+            FourPcScores(),
+            np.array([0.4, 0.3, 0.2, 0.1]),
+            {},
+            Labels(),
+            2,
+            np.array([]),
+            4,
+            1,
+            4,
+            6,
+        )
+
+        mocked_print.assert_called_once()
+        text = mocked_print.call_args.args[0]
+        assert (
+            "gene_tree_1       0.1000    0.2000    0.3000    0.4000         1"
+            in text
+        )
+        assert text.count("gene_tree_") == 1
+
+    @patch("builtins.print")
     def test_json_output(self, mocked_print):
         args = Namespace(
             tree=TREE_SIMPLE,
