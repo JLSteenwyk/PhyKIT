@@ -1231,6 +1231,13 @@ class Phykit:
 
     @staticmethod
     def evolutionary_rate_per_site(argv):
+        if len(argv) == 1 and argv[0] and argv[0][0] != "-":
+            _run_service_with_args(
+                _AlignmentJsonDefaultArgs(argv[0]),
+                EvolutionaryRatePerSite,
+            )
+            return
+
         parser = _new_parser(
             description=_dedent(
                 f"""\
