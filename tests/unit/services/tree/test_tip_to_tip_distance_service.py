@@ -267,6 +267,9 @@ class TestTipToTipDistance:
 
         assert text == "a\tb\t1.2346\na\tc\t2.0\nb\tc\t3.3333"
 
+    def test_text_no_combo_threshold_covers_medium_all_pairs_output(self):
+        assert TipToTipDistance._TEXT_NO_COMBO_MIN_TIPS == 512
+
     def test_calculate_tip_to_tip_distance_fast_matches_biopython(self, args):
         service = TipToTipDistance(args)
         tree = Phylo.read(StringIO("(((A:1,B:2):3,C:4):5,D:6);"), "newick")
