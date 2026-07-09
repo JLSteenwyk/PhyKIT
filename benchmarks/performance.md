@@ -1821,6 +1821,7 @@ Results:
 | `InternodeLabeler.run` | balanced 32768-tip tree, label all internal nodes | 0.4292s | 0.2612s | 1.6x |
 | `InternodeLabeler.add_labels_to_tree` | balanced 65536-tip tree, preorder labels on every internal node | 0.1264s | 0.0168s | 7.5x |
 | `InternodeLabeler._add_labels_to_standard_tree` order-preserving child push | balanced 131072-tip tree, direct preorder label assignment, optimized helper baseline | 0.027385s | 0.021706s | 1.26x |
+| `internode_labeler` default CLI parser bypass | direct dispatch of `internode_labeler tree` into a no-op service, 1000 calls; direct command timing against a temp copy of `tree_simple.tre`, 30 runs after 5 warmups | 1.016664s; 0.537791s mean | 0.000390s; 0.478966s mean | 2606.83x; 1.12x |
 | `internode_labeler` module import without eager Bio.Phylo/NumPy | cold subprocess import of internode-labeler command module | 0.156960s | 0.065330s | 2.40x |
 | `internode_labeler` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006050s | 0.005131s | 1.18x |
 | `internode_labeler` module import without `typing` startup | median cold subprocess import after converting the annotation-only typing alias to a built-in postponed annotation | 0.011143s | 0.007092s | 1.57x |

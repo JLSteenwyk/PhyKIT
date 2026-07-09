@@ -156,6 +156,15 @@ class _TreeJsonDefaultArgs:
         self.json = False
 
 
+class _TreeOutputJsonDefaultArgs:
+    __slots__ = ("tree", "output", "json")
+
+    def __init__(self, tree: str) -> None:
+        self.tree = tree
+        self.output = None
+        self.json = False
+
+
 class _TreeVerboseJsonDefaultArgs:
     __slots__ = ("tree", "verbose", "json")
 
@@ -4022,6 +4031,13 @@ class Phykit:
 
     @staticmethod
     def internode_labeler(argv):
+        if len(argv) == 1 and argv[0] and argv[0][0] != "-":
+            _run_service_with_args(
+                _TreeOutputJsonDefaultArgs(argv[0]),
+                InternodeLabeler,
+            )
+            return
+
         parser = _new_parser(
             description=_dedent(
                 f"""\
