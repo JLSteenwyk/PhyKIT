@@ -652,6 +652,24 @@ class PolytomyTest(Tree):
         triplet_groups = groups_of_groups[identifier]
         triplet_count = math.prod(len(group) for group in triplet_groups)
 
+        fast_tree_summary = None
+        if triplet_count >= 2:
+            try:
+                tree = self._read_tree_with_cache(tree_file)
+                prepared_tree = self._prepare_tree_for_triplets(tree, outgroup_taxa)
+                fast_tree_summary = self._evaluate_tree_triplets_fast(
+                    prepared_tree, groups_of_groups
+                )
+                if fast_tree_summary:
+                    tree_counts = summary.setdefault(tree_file, {})
+                    for sisters, count in fast_tree_summary.items():
+                        tree_counts[sisters] = tree_counts.get(sisters, 0) + count
+                    return summary
+            except FileNotFoundError:
+                if triplet_count < 50:
+                    raise
+                fast_tree_summary = {}
+
         # For small datasets, process sequentially
         if triplet_count < 50:
             for triplet in itertools.product(*triplet_groups):
@@ -670,11 +688,14 @@ class PolytomyTest(Tree):
                                 )
         else:
             try:
-                tree = self._read_tree_with_cache(tree_file)
-                prepared_tree = self._prepare_tree_for_triplets(tree, outgroup_taxa)
-                tree_summary = self._evaluate_tree_triplets_fast(
-                    prepared_tree, groups_of_groups
-                )
+                if fast_tree_summary is None:
+                    tree = self._read_tree_with_cache(tree_file)
+                    prepared_tree = self._prepare_tree_for_triplets(tree, outgroup_taxa)
+                    tree_summary = self._evaluate_tree_triplets_fast(
+                        prepared_tree, groups_of_groups
+                    )
+                else:
+                    tree_summary = fast_tree_summary
                 if tree_summary:
                     tree_counts = summary.setdefault(tree_file, {})
                     for sisters, count in tree_summary.items():

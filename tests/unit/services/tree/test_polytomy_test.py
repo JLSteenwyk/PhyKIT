@@ -892,6 +892,27 @@ test2\tseq7;seq8\tseq9;seq10\tseq11;seq12\toutgroup3;outgroup4
         # Should process sequentially for small dataset
         self.polytomy.get_triplet_tree.assert_called()
 
+    def test_examine_all_triplets_small_multi_uses_fast_summary(self):
+        tips = ["seq1", "seq2", "seq3", "seq4", "out1"]
+        tree_file = "test.tre"
+        summary = {}
+        groups_of_groups = {"test": [["seq1", "seq4"], ["seq2"], ["seq3"]]}
+        outgroup_taxa = ["out1"]
+
+        self.polytomy._read_tree_with_cache = Mock(return_value=Mock())
+        self.polytomy._prepare_tree_for_triplets = Mock(return_value=Mock())
+        self.polytomy._evaluate_tree_triplets_fast = Mock(return_value={"0-1": 2})
+        self.polytomy.get_triplet_tree = Mock(
+            side_effect=AssertionError("multi-triplet path should use fast summary")
+        )
+
+        result = self.polytomy.examine_all_triplets_and_sister_pairing(
+            tips, tree_file, summary, groups_of_groups, outgroup_taxa
+        )
+
+        self.assertEqual(result[tree_file]["0-1"], 2)
+        self.polytomy.get_triplet_tree.assert_not_called()
+
     def test_triplet_identifier_lookup_does_not_materialize_keys(self):
         class NoMaterializedKeysDict(dict):
             def keys(self):
