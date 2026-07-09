@@ -119,6 +119,15 @@ class _AlignmentJsonDefaultArgs:
         self.json = False
 
 
+class _FastaVerboseJsonDefaultArgs:
+    __slots__ = ("fasta", "verbose", "json")
+
+    def __init__(self, fasta: str) -> None:
+        self.fasta = fasta
+        self.verbose = False
+        self.json = False
+
+
 def _dedent(text: str) -> str:
     from textwrap import dedent
 
@@ -1330,6 +1339,10 @@ class Phykit:
 
     @staticmethod
     def gc_content(argv):
+        if len(argv) == 1 and argv[0] and argv[0][0] != "-":
+            _run_service_with_args(_FastaVerboseJsonDefaultArgs(argv[0]), GCContent)
+            return
+
         parser = _new_parser(
             description=_dedent(
                 f"""\
