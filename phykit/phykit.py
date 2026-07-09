@@ -1064,6 +1064,13 @@ class Phykit:
 
     @staticmethod
     def compositional_bias_per_site(argv):
+        if len(argv) == 1 and argv[0] and argv[0][0] != "-":
+            _run_service_with_args(
+                _AlignmentJsonDefaultArgs(argv[0]),
+                CompositionalBiasPerSite,
+            )
+            return
+
         parser = _new_parser(
             description=_dedent(
                 f"""\
