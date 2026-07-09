@@ -29,6 +29,7 @@ _DNA_GAP_CODES = None
 _PROTEIN_GAP_CODES = None
 _PROTEIN_GAP_BYTES = b"-?*X"
 _PLOT_DIRECT_MAX_LIMIT = 100_000
+_ASCII_ENTROPY_BLOCK_SIZE = 512
 
 
 def _get_gap_codes(is_protein: bool):
@@ -47,7 +48,7 @@ def _entropy_from_ascii_codes(
     alignment_array,
     valid_mask,
     valid_chars,
-    block_size: int = 8192,
+    block_size: int = _ASCII_ENTROPY_BLOCK_SIZE,
     all_valid: bool = False,
 ) -> list[float]:
     aln_len = alignment_array.shape[1]

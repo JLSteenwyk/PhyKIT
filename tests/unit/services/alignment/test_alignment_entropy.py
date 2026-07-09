@@ -433,6 +433,36 @@ assert "Bio.AlignIO" not in sys.modules
 
         np.testing.assert_allclose(observed, expected)
 
+    def test_entropy_from_ascii_codes_defaults_to_cache_sized_blocks(
+        self, monkeypatch
+    ):
+        width = alignment_entropy_module._ASCII_ENTROPY_BLOCK_SIZE + 1
+        alignment_array = np.tile(
+            np.frombuffer(b"ACDEFGHIKLMNPQRSTVWY", dtype=np.uint8),
+            (3, width // 20 + 1),
+        )[:, :width]
+        valid_chars = np.unique(alignment_array)
+        original_bincount = alignment_entropy_module.np.bincount
+        observed_widths = []
+
+        def bincount_spy(values, *args, **kwargs):
+            observed_widths.append(kwargs["minlength"] // 256)
+            return original_bincount(values, *args, **kwargs)
+
+        monkeypatch.setattr(alignment_entropy_module.np, "bincount", bincount_spy)
+
+        alignment_entropy_module._entropy_from_ascii_codes(
+            alignment_array,
+            None,
+            valid_chars,
+            all_valid=True,
+        )
+
+        assert observed_widths == [
+            alignment_entropy_module._ASCII_ENTROPY_BLOCK_SIZE,
+            1,
+        ]
+
     def test_entropy_from_ascii_codes_all_valid_skips_mask_scan(self, mocker):
         alignment_array = np.array(
             [
