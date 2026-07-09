@@ -40,6 +40,7 @@ class TestEvolutionaryRate:
 
     def test_run_prints_rate(self, mocker, args):
         service = EvolutionaryRate(args)
+        mocker.patch.object(service, "_get_simple_newick_summary", return_value=None)
         mocker.patch.object(
             EvolutionaryRate,
             "read_tree_file_unmodified",
@@ -52,6 +53,7 @@ class TestEvolutionaryRate:
     def test_run_uses_unmodified_tree_read(self, mocker, args):
         tree = _Tree()
         service = EvolutionaryRate(args)
+        mocker.patch.object(service, "_get_simple_newick_summary", return_value=None)
         read_tree = mocker.patch.object(
             service,
             "read_tree_file_unmodified",
@@ -64,9 +66,29 @@ class TestEvolutionaryRate:
         read_tree.assert_called_once_with()
         mocked_print.assert_called_once_with(3.0864)
 
+    def test_run_uses_simple_newick_summary_before_tree_read(self, mocker, args):
+        service = EvolutionaryRate(args)
+        mocker.patch.object(
+            service,
+            "_get_simple_newick_summary",
+            return_value=(("a", "b", "c", "d"), 12.3456, 3.0),
+        )
+        read_tree = mocker.patch.object(
+            service,
+            "read_tree_file_unmodified",
+            side_effect=AssertionError("simple Newick should skip tree parsing"),
+        )
+        mocked_print = mocker.patch("builtins.print")
+
+        service.run()
+
+        read_tree.assert_not_called()
+        mocked_print.assert_called_once_with(3.0864)
+
     def test_run_json_output(self, mocker):
         args = Namespace(tree="/some/path/to/file.tre", json=True)
         service = EvolutionaryRate(args)
+        mocker.patch.object(service, "_get_simple_newick_summary", return_value=None)
         mocker.patch.object(
             EvolutionaryRate,
             "read_tree_file_unmodified",

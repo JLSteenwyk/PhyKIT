@@ -72,6 +72,13 @@ COMMANDS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("dvmc", ("dvmc", str(SAMPLES / "tree_simple.tre"))),
     ("treeness", ("treeness", str(SAMPLES / "Yeasts_2832_eMRC_reference_renamed.tree"))),
     ("total_tree_length", ("total_tree_length", str(SAMPLES / "tree_simple.tre"))),
+    (
+        "evolutionary_rate",
+        (
+            "evolutionary_rate",
+            str(SAMPLES / "12_YPR191W_Anc_7.548_codon_aln.fasta.clipkit.treefile"),
+        ),
+    ),
 )
 
 

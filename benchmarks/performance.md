@@ -1493,6 +1493,7 @@ Results:
 | `Tree` base module import without `hashlib` startup | median cold subprocess import after localizing cache-key hashing to `_get_file_hash` | 0.003903s | 0.000873s | 4.47x |
 | `Tree._get_file_hash` raw stat cache key | 100k cache-key generations for one tree file | 0.000002628s | 0.000001821s | 1.44x |
 | `Tree._scan_simple_newick_summary` command fast path | command profiler, 3 runs after 1 warmup, plain Newick input; `total_tree_length` / `tip_labels` / `treeness` | 0.706072s / 0.665136s / 0.604595s | 0.056479s / 0.062866s / 0.056583s | 12.50x / 10.58x / 10.69x |
+| `EvolutionaryRate.run` simple Newick summary fast path | command profiler, 5 runs after 1 warmup, plain Newick input `12_YPR191W_Anc_7.548_codon_aln.fasta.clipkit.treefile` | 0.457423s | 0.054635s | 8.37x |
 | `TipLabels.run` tip-name extraction | balanced 65536-tip tree, terminal labels before output | 0.135883s | 0.017736s | 7.66x |
 | `TipLabels.run` cached read-only tree path | balanced 32768-tip cached tree, output mocked | 0.112631s | 0.004871s | 23.12x |
 | `TipLabels.run` JSON row literals | 500k terminal labels, JSON row payload construction only, side-by-side previous `dict(taxon=...)` rows | 0.092065s | 0.063262s | 1.45x |

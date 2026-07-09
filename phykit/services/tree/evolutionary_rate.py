@@ -16,10 +16,18 @@ class EvolutionaryRate(Tree):
         self.json_output = parsed["json_output"]
 
     def run(self) -> None:
-        tree = self.read_tree_file_unmodified()
-        total_tree_length, num_terminals = (
-            self.calculate_total_branch_length_and_terminal_count_fast(tree)
+        simple_summary = self._get_simple_newick_summary(
+            self.tree_file_path,
+            "tree_file_path",
         )
+        if simple_summary is not None:
+            tip_names, total_tree_length, _internal_len = simple_summary
+            num_terminals = len(tip_names)
+        else:
+            tree = self.read_tree_file_unmodified()
+            total_tree_length, num_terminals = (
+                self.calculate_total_branch_length_and_terminal_count_fast(tree)
+            )
         evo_rate = round(total_tree_length / num_terminals, 4)
         if self.json_output:
             print_json(dict(evolutionary_rate=evo_rate))
