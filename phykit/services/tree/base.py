@@ -39,6 +39,8 @@ pickle = _LazyPickle()
 
 class Tree(BaseService):
     _PAIRWISE_LCA_DEPTH_THRESHOLD = 64
+    _PAIRWISE_PREALLOC_MIN_PAIRS = 100_000
+    _PAIRWISE_PREALLOC_WITH_COMBOS_MIN_PAIRS = 500_000
     _ORDERED_MAPPING_PRUNE_MIN_SIZE = 200_000
     _ORDERED_NAMES_PRUNE_MIN_SIZE = 50_000
 
@@ -577,6 +579,34 @@ class Tree(BaseService):
             path.reverse()
             tip_paths.append(tuple(path))
 
+        pair_count = len(tips) * (len(tips) - 1) // 2
+        prealloc_min_pairs = (
+            Tree._PAIRWISE_PREALLOC_WITH_COMBOS_MIN_PAIRS
+            if include_combos
+            else Tree._PAIRWISE_PREALLOC_MIN_PAIRS
+        )
+        if pair_count >= prealloc_min_pairs:
+            combos = [None] * pair_count if include_combos else None
+            distances = [0.0] * pair_count
+            out_idx = 0
+            for i in range(len(tips) - 1):
+                tip_a = tips[i]
+                path_a = tip_paths[i]
+                depth_a = depths[tip_indices[i]]
+                for j in range(i + 1, len(tips)):
+                    mrca = 0
+                    for clade_a, clade_b in zip(path_a, tip_paths[j]):
+                        if clade_a != clade_b:
+                            break
+                        mrca = clade_a
+                    if combos is not None:
+                        combos[out_idx] = (tip_a, tips[j])
+                    distances[out_idx] = (
+                        depth_a + depths[tip_indices[j]] - 2 * depths[mrca]
+                    )
+                    out_idx += 1
+            return combos, distances
+
         combos: list[tuple[str, str]] | None = [] if include_combos else None
         distances: list[float] = []
         for i in range(len(tips) - 1):
@@ -637,6 +667,29 @@ class Tree(BaseService):
                     node_b = ancestor_b
 
             return parent_indices[node_a]
+
+        pair_count = len(tips) * (len(tips) - 1) // 2
+        prealloc_min_pairs = (
+            Tree._PAIRWISE_PREALLOC_WITH_COMBOS_MIN_PAIRS
+            if include_combos
+            else Tree._PAIRWISE_PREALLOC_MIN_PAIRS
+        )
+        if pair_count >= prealloc_min_pairs:
+            combos = [None] * pair_count if include_combos else None
+            distances = [0.0] * pair_count
+            out_idx = 0
+            for i in range(len(tips) - 1):
+                tip_a = tips[i]
+                tip_a_idx = tip_indices[i]
+                depth_a = depths[tip_a_idx]
+                for j in range(i + 1, len(tips)):
+                    tip_b_idx = tip_indices[j]
+                    mrca = lca_index(tip_a_idx, tip_b_idx)
+                    if combos is not None:
+                        combos[out_idx] = (tip_a, tips[j])
+                    distances[out_idx] = depth_a + depths[tip_b_idx] - 2 * depths[mrca]
+                    out_idx += 1
+            return combos, distances
 
         combos: list[tuple[str, str]] | None = [] if include_combos else None
         distances: list[float] = []

@@ -1009,6 +1009,31 @@ class TestTreeBase:
         ]
         assert distances == pytest.approx([11.0, 13.0, 7.0, 8.0, 6.0, 8.0])
 
+    def test_calculate_pairwise_tip_distances_fast_preallocates_large_path_results(
+        self, monkeypatch
+    ):
+        service = Tree()
+        tree = Phylo.read(StringIO("(a:1,(b:0.5,c:0.5):0.5);"), "newick")
+        monkeypatch.setattr(Tree, "_PAIRWISE_PREALLOC_MIN_PAIRS", 1)
+        monkeypatch.setattr(Tree, "_PAIRWISE_PREALLOC_WITH_COMBOS_MIN_PAIRS", 1)
+
+        combos, distances = service.calculate_pairwise_tip_distances_fast(
+            tree,
+            ["a", "b", "c"],
+        )
+
+        assert combos == [("a", "b"), ("a", "c"), ("b", "c")]
+        assert distances == pytest.approx([2.0, 2.0, 1.0])
+
+        combos, distances = service.calculate_pairwise_tip_distances_fast(
+            tree,
+            ["a", "b", "c"],
+            include_combos=False,
+        )
+
+        assert combos is None
+        assert distances == pytest.approx([2.0, 2.0, 1.0])
+
     def test_calculate_pairwise_tip_distances_fast_deep_tree_uses_lca_index(self, monkeypatch):
         service = Tree()
         root = Clade()
@@ -1036,6 +1061,52 @@ class TestTreeBase:
             "_pairwise_tip_distances_from_paths",
             staticmethod(fail_path_helper),
         )
+
+        combos, distances = service.calculate_pairwise_tip_distances_fast(tree, tips)
+        expected_combos = [
+            (tips[i], tips[j])
+            for i in range(len(tips) - 1)
+            for j in range(i + 1, len(tips))
+        ]
+        expected_distances = [
+            tree.distance(tip_a, tip_b)
+            for tip_a, tip_b in expected_combos
+        ]
+
+        assert combos == expected_combos
+        assert distances == pytest.approx(expected_distances)
+
+        combos, distances = service.calculate_pairwise_tip_distances_fast(
+            tree,
+            tips,
+            include_combos=False,
+        )
+
+        assert combos is None
+        assert distances == pytest.approx(expected_distances)
+
+    def test_calculate_pairwise_tip_distances_fast_preallocates_large_lca_results(
+        self, monkeypatch
+    ):
+        service = Tree()
+        root = Clade()
+        current = root
+        tips = []
+        for idx in range(7):
+            tip_name = f"tip{idx}"
+            tips.append(tip_name)
+            next_node = Clade(branch_length=1.0)
+            current.clades = [
+                Clade(branch_length=1.0, name=tip_name),
+                next_node,
+            ]
+            current = next_node
+        tips.append("tip7")
+        current.clades = [Clade(branch_length=1.0, name="tip7")]
+        tree = NewickTree(root=root)
+        monkeypatch.setattr(Tree, "_PAIRWISE_LCA_DEPTH_THRESHOLD", 4)
+        monkeypatch.setattr(Tree, "_PAIRWISE_PREALLOC_MIN_PAIRS", 1)
+        monkeypatch.setattr(Tree, "_PAIRWISE_PREALLOC_WITH_COMBOS_MIN_PAIRS", 1)
 
         combos, distances = service.calculate_pairwise_tip_distances_fast(tree, tips)
         expected_combos = [
