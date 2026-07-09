@@ -48,6 +48,12 @@ def print_json(*args, **kwargs):
     return _print_json(*args, **kwargs)
 
 
+def get_alignment_and_format(*args, **kwargs):
+    from ...helpers.files import get_alignment_and_format as _get_alignment_and_format
+
+    return _get_alignment_and_format(*args, **kwargs)
+
+
 def _alignment_size(alignment):
     try:
         return len(alignment)
@@ -69,11 +75,18 @@ class ColumnScore(Alignment):
         self.json_output = parsed["json_output"]
 
     def run(self) -> None:
-        query_records = AlignIO.read(self.fasta, "fasta")
+        query_records, query_format, _ = get_alignment_and_format(self.fasta)
+        if query_format != "fasta":
+            query_records = AlignIO.read(self.fasta, "fasta")
+
         if self.reference == self.fasta:
             reference_records = query_records
         else:
-            reference_records = AlignIO.read(self.reference, "fasta")
+            reference_records, reference_format, _ = get_alignment_and_format(
+                self.reference
+            )
+            if reference_format != "fasta":
+                reference_records = AlignIO.read(self.reference, "fasta")
 
         direct_result = self._calculate_matches_between_alignments_direct(
             reference_records, query_records

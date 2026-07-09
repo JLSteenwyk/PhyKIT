@@ -17,6 +17,7 @@ def test_module_import_does_not_import_numpy_bio_align_or_json_helpers():
     code = """
 import sys
 import phykit.services.alignment.column_score as module
+assert callable(module.get_alignment_and_format)
 assert hasattr(module.AlignIO, "read")
 assert hasattr(module.np, "__getattr__")
 assert "typing" not in sys.modules
@@ -311,8 +312,8 @@ class TestColumnScore:
             [SeqRecord(Seq("AC"), id="r1"), SeqRecord(Seq("GT"), id="r2")]
         )
         mocker.patch(
-            "phykit.services.alignment.column_score.AlignIO.read",
-            side_effect=[query, reference],
+            "phykit.services.alignment.column_score.get_alignment_and_format",
+            side_effect=[(query, "fasta", False), (reference, "fasta", False)],
         )
         mocked_print = mocker.patch("builtins.print")
         service.run()
@@ -328,8 +329,8 @@ class TestColumnScore:
             [SeqRecord(Seq("AC"), id="r1"), SeqRecord(Seq("GT"), id="r2")]
         )
         mocker.patch(
-            "phykit.services.alignment.column_score.AlignIO.read",
-            side_effect=[query, reference],
+            "phykit.services.alignment.column_score.get_alignment_and_format",
+            side_effect=[(query, "fasta", False), (reference, "fasta", False)],
         )
         mocker.patch.object(
             ColumnScore,
@@ -349,15 +350,42 @@ class TestColumnScore:
             [SeqRecord(Seq("AAAA"), id="r1"), SeqRecord(Seq("CCCC"), id="r2")]
         )
         read_mock = mocker.patch(
-            "phykit.services.alignment.column_score.AlignIO.read",
-            return_value=alignment,
+            "phykit.services.alignment.column_score.get_alignment_and_format",
+            return_value=(alignment, "fasta", False),
         )
         mocked_print = mocker.patch("builtins.print")
 
         service.run()
 
-        read_mock.assert_called_once_with("/same/path.fa", "fasta")
+        read_mock.assert_called_once_with("/same/path.fa")
         mocked_print.assert_called_once_with(0.25)
+
+    def test_run_falls_back_to_alignio_when_helper_detects_non_fasta(self, mocker):
+        args = Namespace(fasta="/some/path/to/query.fa", reference="/some/path/to/ref.fa", json=False)
+        service = ColumnScore(args)
+        query = MultipleSeqAlignment(
+            [SeqRecord(Seq("AT"), id="q1"), SeqRecord(Seq("GT"), id="q2")]
+        )
+        reference = MultipleSeqAlignment(
+            [SeqRecord(Seq("AC"), id="r1"), SeqRecord(Seq("GT"), id="r2")]
+        )
+        mocker.patch(
+            "phykit.services.alignment.column_score.get_alignment_and_format",
+            side_effect=[(object(), "phylip", False), (object(), "phylip", False)],
+        )
+        read_mock = mocker.patch(
+            "phykit.services.alignment.column_score.AlignIO.read",
+            side_effect=[query, reference],
+        )
+        mocked_print = mocker.patch("builtins.print")
+
+        service.run()
+
+        assert read_mock.call_args_list == [
+            mocker.call("/some/path/to/query.fa", "fasta"),
+            mocker.call("/some/path/to/ref.fa", "fasta"),
+        ]
+        mocked_print.assert_called_once_with(0.5)
 
     def test_run_json_output(self, mocker):
         args = Namespace(fasta="/some/path/to/query.fa", reference="/some/path/to/ref.fa", json=True)
@@ -369,8 +397,8 @@ class TestColumnScore:
             [SeqRecord(Seq("AC"), id="r1"), SeqRecord(Seq("GT"), id="r2")]
         )
         mocker.patch(
-            "phykit.services.alignment.column_score.AlignIO.read",
-            side_effect=[query, reference],
+            "phykit.services.alignment.column_score.get_alignment_and_format",
+            side_effect=[(query, "fasta", False), (reference, "fasta", False)],
         )
         mocked_json = mocker.patch("phykit.services.alignment.column_score.print_json")
         service.run()

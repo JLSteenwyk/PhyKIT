@@ -49,6 +49,15 @@ COMMANDS: tuple[tuple[str, tuple[str, ...]], ...] = (
         "evolutionary_rate_per_site",
         ("evolutionary_rate_per_site", str(SAMPLES / "test_alignment_0.fa")),
     ),
+    (
+        "column_score",
+        (
+            "column_score",
+            str(SAMPLES / "simple.fa"),
+            "--reference",
+            str(SAMPLES / "simple_reference.fa"),
+        ),
+    ),
     ("alignment_length_no_gaps", ("alignment_length_no_gaps", str(SAMPLES / "simple.fa"))),
     ("tip_labels", ("tip_labels", str(SAMPLES / "tree_simple.tre"))),
     ("dvmc", ("dvmc", str(SAMPLES / "tree_simple.tre"))),
