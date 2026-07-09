@@ -1743,6 +1743,7 @@ Results:
 | `RenameTreeTips` empty id-map short-circuit | balanced 32768-tip tree, empty id map for has/count/replace helper paths | 0.011177500s / 0.006682375s / 0.013954125s | 0.000005042s / 0.000002667s / 0.000003791s | 2216.80x / 2505.73x / 3680.91x |
 | `RenameTreeTips.read_id_map` binary token parser | 50k / 200k / 500k two-column rename rows, side-by-side previous text-mode `line.split()` parser | 0.028986s / 0.146914s / 0.463356s | 0.025624s / 0.132921s / 0.448390s | 1.13x / 1.11x / 1.03x |
 | `RenameTreeTips.read_id_map` text token parser | 500k two-column rename rows, side-by-side previous binary parser with per-token decode, identical whitespace parsing and duplicate-key overwrite | 0.317668s | 0.237988s | 1.33x |
+| `rename_tree_tips` default CLI parser bypass | direct dispatch of `rename_tree_tips tree -i/--idmap idmap` into a no-op service, 1000 calls; direct command timing against a temp copy of `tree_simple.tre`, 30 runs after 5 warmups | 1.674827s / 1.551813s; 0.703492s mean | 0.000479s / 0.000561s; 0.535528s mean | 3496.51x / 2766.16x; 1.31x |
 | `rename_tree_tips` module import without eager Bio.Phylo | cold subprocess import of rename-tree-tips command module | 0.162538s | 0.065407s | 2.49x |
 | `rename_tree_tips` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006052s | 0.004723s | 1.28x |
 | `RootTree.run` | balanced 32768-tip tree, root with one-tip outgroup | 0.3064s | 0.1872s | 1.6x |

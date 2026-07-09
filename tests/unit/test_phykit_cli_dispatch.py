@@ -937,6 +937,70 @@ def test_collapse_branches_option_invocation_keeps_parser(monkeypatch):
     assert calls["ran"] is True
 
 
+@pytest.mark.parametrize("idmap_flag", ["-i", "--idmap"])
+def test_rename_tree_tips_default_invocation_bypasses_parser(
+    monkeypatch,
+    idmap_flag,
+):
+    captured = {}
+
+    class Runner:
+        def __init__(self, args):
+            captured["args"] = args
+
+        def run(self):
+            captured["ran"] = True
+
+    def fail_new_parser(*_args, **_kwargs):
+        raise AssertionError("default rename_tree_tips should not build parser")
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+    monkeypatch.setattr(phykit_module, "RenameTreeTips", Runner)
+
+    phykit_module.Phykit.rename_tree_tips(["tree.tre", idmap_flag, "idmap.txt"])
+
+    args = captured["args"]
+    assert captured["ran"] is True
+    assert args.tree == "tree.tre"
+    assert args.idmap == "idmap.txt"
+    assert args.output is None
+    assert args.json is False
+
+
+def test_rename_tree_tips_option_invocation_keeps_parser(monkeypatch):
+    calls = {"parser": False, "ran": False}
+
+    class FakeParser:
+        def add_argument(self, *args, **kwargs):
+            return None
+
+        def parse_args(self, argv):
+            calls["argv"] = argv
+            return object()
+
+    class Runner:
+        def __init__(self, args):
+            calls["args"] = args
+
+        def run(self):
+            calls["ran"] = True
+
+    def fake_new_parser(*_args, **_kwargs):
+        calls["parser"] = True
+        return FakeParser()
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fake_new_parser)
+    monkeypatch.setattr(phykit_module, "RenameTreeTips", Runner)
+
+    phykit_module.Phykit.rename_tree_tips(
+        ["tree.tre", "-i", "idmap.txt", "-o", "renamed.tre"]
+    )
+
+    assert calls["parser"] is True
+    assert calls["argv"] == ["tree.tre", "-i", "idmap.txt", "-o", "renamed.tre"]
+    assert calls["ran"] is True
+
+
 def test_evolutionary_rate_default_invocation_bypasses_parser(monkeypatch):
     captured = {}
 

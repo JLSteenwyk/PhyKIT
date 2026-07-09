@@ -214,6 +214,16 @@ class _TreeSupportOutputJsonDefaultArgs:
         self.json = False
 
 
+class _TreeIdmapOutputJsonDefaultArgs:
+    __slots__ = ("tree", "idmap", "output", "json")
+
+    def __init__(self, tree: str, idmap: str) -> None:
+        self.tree = tree
+        self.idmap = idmap
+        self.output = None
+        self.json = False
+
+
 class _TwoTreeJsonDefaultArgs:
     __slots__ = ("tree_zero", "tree_one", "json")
 
@@ -7912,6 +7922,20 @@ class Phykit:
 
     @staticmethod
     def rename_tree_tips(argv):
+        if (
+            len(argv) == 3
+            and argv[0]
+            and argv[0][0] != "-"
+            and argv[1] in ("-i", "--idmap")
+            and argv[2]
+            and argv[2][0] != "-"
+        ):
+            _run_service_with_args(
+                _TreeIdmapOutputJsonDefaultArgs(argv[0], argv[2]),
+                RenameTreeTips,
+            )
+            return
+
         parser = _new_parser(
             description=_dedent(
                 f"""\
