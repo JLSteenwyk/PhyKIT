@@ -212,10 +212,11 @@ class PhyloGwas(Alignment):
                 line = line.strip()
                 if not line or line[0] == 35:
                     continue
-                parts = line.split(b"\t", 2)
-                if len(parts) < 2:
+                taxon, separator, rest = line.partition(b"\t")
+                if not separator:
                     continue
-                pheno[parts[0].decode()] = parts[1].decode()
+                value = rest.partition(b"\t")[0]
+                pheno[taxon.decode()] = value.decode()
         return pheno
 
     @staticmethod

@@ -767,6 +767,7 @@ Results:
 | `PhyloGwas.run` phylo-pattern minor-taxa scan | 400 taxa x 50,000 sites with 5000 significant tree-classified sites, side-by-side previous temporary allele-list filter | 2.555218s | 1.682205s | 1.52x |
 | `PhyloGwas.run` shared-taxon setup | 1M alignment taxa x 1M phenotype taxa with 750k overlap, identical sorted shared taxa | 3.113728s | 2.794556s | 1.11x |
 | `PhyloGwas.run` exact shared-taxon setup | 500k alignment taxa x 500k phenotype taxa with identical taxon sets, side-by-side previous intersection-set construction | 0.570533s | 0.099172s | 5.75x |
+| `PhyloGwas._read_phenotype` byte partition parser | 500k phenotype TSV rows with ignored third columns, identical parsed phenotype mapping | 0.673884s | 0.346062s | 1.95x |
 | `PhyloGwas._test_site_categorical` Unicode multiallelic skip | 300k non-ASCII alleles, first three alleles multiallelic, categorical phenotype | 0.036496s | 0.000002125s | 17174.6x |
 | `PhyloGwas._test_site_continuous` Unicode multiallelic skip | 300k non-ASCII alleles, first three alleles multiallelic, continuous phenotype | 0.012269s | 0.000001333s | 9204.1x |
 | `PhyloGwas._test_site_categorical` cached lazy NumPy attributes | 80k repeated byte-column categorical site tests with cached Fisher result, side-by-side previous uncached lazy proxy | 0.000032586s | 0.000018226s | 1.79x |
@@ -4488,6 +4489,8 @@ Profiling summary:
   fields. A follow-up parser pass reads rows in binary mode and decodes only
   the retained first two fields, preserving the same parsed phenotype mapping
   while avoiding text decoding and string allocation for ignored trailing fields.
+  The binary parser now uses tab partitioning instead of bounded split lists,
+  preserving first-two-column semantics while reducing per-row allocations.
   Exact alignment/phenotype taxon matches now return sorted alignment keys
   directly after a key-view equality check, preserving partial-overlap
   intersection behavior while avoiding a large temporary intersection set for

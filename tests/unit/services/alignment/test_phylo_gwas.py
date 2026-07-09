@@ -239,6 +239,14 @@ class TestPhyloGwas:
 
         assert pheno == {"s1": "C", "s2": "B"}
 
+    def test_read_phenotype_does_not_decode_ignored_extra_columns(self, tmp_path):
+        pheno_path = tmp_path / "pheno.tsv"
+        pheno_path.write_bytes(b"s1\tcase\t\xffignored\n")
+
+        pheno = PhyloGwas._read_phenotype(str(pheno_path))
+
+        assert pheno == {"s1": "case"}
+
     def test_sorted_shared_taxa_preserves_sorted_overlap(self):
         seqs = {"sp3": "AAA", "sp1": "AAA", "sp2": "AAA"}
         phenotypes = {"sp2": "case", "sp4": "case", "sp1": "control"}
