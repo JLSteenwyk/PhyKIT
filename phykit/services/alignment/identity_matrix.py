@@ -35,6 +35,7 @@ _NO_INVALID_DIRECT_MIN_LENGTH = 2048
 _NO_INVALID_DIRECT_MIN_TAXA = 100
 _NO_INVALID_DIRECT_SHORT_ALIGNMENT_MIN_TAXA = 150
 _NO_INVALID_DIRECT_MAX_TAXA = 700
+_SHARED_VALID_DIRECT_MAX_TAXA = 600
 _IDENTITY_RUN_CACHE = {}
 _IDENTITY_RUN_CACHE_MAXSIZE = 8
 
@@ -123,6 +124,39 @@ def _all_sequences_identical(sequences: dict[str, str], taxa_names: list[str]) -
         if sequences[name] != first_sequence:
             return False
     return True
+
+
+def _shared_valid_sites(valid_masks):
+    if valid_masks.shape[0] == 0:
+        return None
+    first_mask = valid_masks[0]
+    if not (valid_masks != first_mask).any():
+        return first_mask
+    return None
+
+
+def _direct_ascii_identity_matrix(seq_matrix, seq_len: int) -> np.ndarray:
+    n = seq_matrix.shape[0]
+    matrix = np.empty((n, n), dtype=np.float64)
+    if seq_len == 0:
+        matrix.fill(0.0)
+        np.fill_diagonal(matrix, 1.0)
+        return matrix
+
+    target_bytes = 16 * 1024 * 1024
+    block_size = max(
+        1,
+        min(64, target_bytes // max(1, n * seq_len)),
+    )
+    denominator = float(seq_len)
+    for start in range(0, n, block_size):
+        stop = min(n, start + block_size)
+        match_counts = (
+            seq_matrix[start:stop, None, :] == seq_matrix[None, :, :]
+        ).sum(axis=2, dtype=np.int32)
+        matrix[start:stop] = match_counts / denominator
+    np.fill_diagonal(matrix, 1.0)
+    return matrix
 
 
 class IdentityMatrix(Alignment):
@@ -627,24 +661,18 @@ class IdentityMatrix(Alignment):
             and not any(code in joined_bytes for code in _IDENTITY_INVALID_BYTES)
         )
         if direct_clean_ascii:
-            target_bytes = 16 * 1024 * 1024
-            block_size = max(
-                1,
-                min(64, target_bytes // max(1, n * max(1, seq_len))),
-            )
-            matrix = np.empty((n, n), dtype=np.float64)
-            denominator = float(seq_len)
-            for start in range(0, n, block_size):
-                stop = min(n, start + block_size)
-                match_counts = (
-                    seq_matrix[start:stop, None, :] == seq_matrix[None, :, :]
-                ).sum(axis=2, dtype=np.int32)
-                matrix[start:stop] = match_counts / denominator
-            np.fill_diagonal(matrix, 1.0)
-            return matrix
+            return _direct_ascii_identity_matrix(seq_matrix, seq_len)
 
         invalid = np.frombuffer(_IDENTITY_INVALID_BYTES, dtype=np.uint8)
         valid_masks = ~np.isin(seq_matrix, invalid)
+        if n <= _SHARED_VALID_DIRECT_MAX_TAXA:
+            shared_valid_sites = _shared_valid_sites(valid_masks)
+            if shared_valid_sites is not None:
+                return _direct_ascii_identity_matrix(
+                    seq_matrix[:, shared_valid_sites],
+                    int(np.count_nonzero(shared_valid_sites)),
+                )
+
         # Float masks route dense products through optimized BLAS while
         # preserving exact integer counts for practical alignment lengths.
         valid_i = valid_masks.astype(np.float64, copy=False)

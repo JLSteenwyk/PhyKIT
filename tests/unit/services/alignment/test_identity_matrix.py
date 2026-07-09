@@ -427,6 +427,39 @@ class TestIdentityMatrixUnit:
         assert isin_spy.called
         np.testing.assert_allclose(matrix, np.array([[1.0, 0.875], [0.875, 1.0]]))
 
+    def test_identity_matrix_shared_invalid_columns_use_direct_path(
+        self, tmp_path, monkeypatch
+    ):
+        aln_path = tmp_path / "aln.fa"
+        out_path = tmp_path / "out.png"
+        sequences = {
+            "taxon_A": "A-GT",
+            "taxon_B": "A-GA",
+            "taxon_C": "T-GA",
+        }
+        taxa_names = list(sequences)
+        monkeypatch.setattr(
+            identity_matrix_module.np,
+            "unique",
+            lambda *_args, **_kwargs: pytest.fail(
+                "shared invalid columns should skip symbol-wise matrix path"
+            ),
+        )
+        service = IdentityMatrix(_make_args(aln_path, out_path))
+
+        matrix = service._compute_identity_matrix(sequences, taxa_names)
+
+        np.testing.assert_allclose(
+            matrix,
+            np.array(
+                [
+                    [1.0, 2 / 3, 1 / 3],
+                    [2 / 3, 1.0, 2 / 3],
+                    [1 / 3, 2 / 3, 1.0],
+                ]
+            ),
+        )
+
     def test_identity_matrix_all_invalid_pairs_are_zero_off_diagonal(self):
         service = IdentityMatrix.__new__(IdentityMatrix)
         matrix = service._compute_identity_matrix(
