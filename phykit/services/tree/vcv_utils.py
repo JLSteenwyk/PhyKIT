@@ -213,28 +213,94 @@ def _build_vcv_from_descendant_indices(
     vcv = np.zeros((n, n))
     preorder = []
     stack = [root]
+    scan_ordered_preorder = True
+    try:
+        leftmost = root
+        while leftmost.clades:
+            leftmost = leftmost.clades[0]
+        scan_ordered_preorder = leftmost.name == ordered_names[0]
+    except (AttributeError, IndexError):
+        scan_ordered_preorder = False
+
+    preorder_tip_count = 0
+    ordered_preorder_tips = scan_ordered_preorder
     try:
         pop = stack.pop
         append = stack.append
         extend = stack.extend
         append_preorder = preorder.append
-        while stack:
-            clade = pop()
-            append_preorder(clade)
-            children = clade.clades
-            if children:
-                if len(children) == 2:
-                    append(children[1])
-                    append(children[0])
-                else:
-                    extend(reversed(children))
+        if scan_ordered_preorder:
+            while stack:
+                clade = pop()
+                append_preorder(clade)
+                children = clade.clades
+                if children:
+                    if len(children) == 2:
+                        append(children[1])
+                        append(children[0])
+                    else:
+                        extend(reversed(children))
+                elif ordered_preorder_tips:
+                    idx = name_to_index.get(clade.name)
+                    if idx is not None:
+                        if idx != preorder_tip_count:
+                            ordered_preorder_tips = False
+                        preorder_tip_count += 1
+        else:
+            while stack:
+                clade = pop()
+                append_preorder(clade)
+                children = clade.clades
+                if children:
+                    if len(children) == 2:
+                        append(children[1])
+                        append(children[0])
+                    else:
+                        extend(reversed(children))
     except AttributeError:
         return None
 
+    use_contiguous_slices = ordered_preorder_tips and preorder_tip_count == n
     descendant_indices = {}
     seen_ordered_tips = set()
     asarray = np.asarray
     intp_dtype = np.intp
+    if use_contiguous_slices:
+        for clade in reversed(preorder):
+            children = clade.clades
+            if children:
+                indices = []
+                for child in children:
+                    child_indices = descendant_indices.get(child)
+                    if child_indices:
+                        indices.extend(child_indices)
+            else:
+                idx = name_to_index.get(clade.name)
+                if idx is None:
+                    indices = []
+                elif idx in seen_ordered_tips:
+                    return None
+                else:
+                    seen_ordered_tips.add(idx)
+                    indices = [idx]
+
+            descendant_indices[clade] = indices
+            if clade is root or not indices:
+                continue
+            branch_length = branch_length_getter(clade)
+            if branch_length == 0.0:
+                continue
+            if len(indices) == 1:
+                vcv[indices[0], indices[0]] += branch_length
+                continue
+            first_idx = indices[0]
+            last_idx = indices[-1] + 1
+            vcv[first_idx:last_idx, first_idx:last_idx] += branch_length
+
+        if len(seen_ordered_tips) != n:
+            return None
+        return vcv
+
     for clade in reversed(preorder):
         children = clade.clades
         if children:

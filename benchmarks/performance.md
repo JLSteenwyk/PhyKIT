@@ -1900,6 +1900,7 @@ Results:
 | `build_vcv_matrix` descendant-index accumulation | balanced 2048-tip tree, all terminal names ordered | 0.056182s | 0.048285s | 1.16x |
 | `vcv_utils.build_vcv_matrix` broadcast block indexing | balanced 2048-tip tree, descendant-index VCV branch accumulation | 0.041264s | 0.037537s | 1.10x |
 | `vcv_utils.build_vcv_matrix` single-tip diagonal updates | balanced 2048-tip tree, descendant-index VCV branch accumulation | 0.151061s | 0.054459s | 2.77x |
+| `vcv_utils._build_vcv_from_descendant_indices` contiguous descendant slice fills | balanced 1024-tip preorder / 2048-tip preorder / 2048-tip shuffled taxa, side-by-side previous advanced-index fill with identical VCVs | 0.018995s / 0.077721s / 0.091950s | 0.010317s / 0.019678s / 0.076512s | 1.84x / 3.95x / 1.20x |
 | `build_discordance_vcv` shared-taxa setup | 80 balanced gene trees x 512 taxa plus species tree | 0.0810s | 0.0093s | 8.7x |
 | `build_discordance_vcv` prune step | 10 balanced 1024-tip gene trees, prune to 512 shared taxa before averaging VCVs | 2.7773s | 2.1955s | 1.3x |
 | `build_discordance_vcv` copied gene-tree batch pruning | 10 balanced 1024-tip gene trees, prune copies to 512 shared taxa | 1.0501s | 0.0440s | 23.9x |

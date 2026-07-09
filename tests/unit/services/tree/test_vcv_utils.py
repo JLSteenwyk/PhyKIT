@@ -343,6 +343,42 @@ class TestBuildVcvMatrix:
         ])
         np.testing.assert_allclose(vcv, expected)
 
+    def test_preorder_multi_tip_branches_use_slice_fills(self, monkeypatch):
+        tree = _make_tree(
+            "((A:1.0,B:1.0):2.0,(C:1.0,D:1.0):3.0);"
+        )
+
+        def fail_asarray(*_args, **_kwargs):
+            raise AssertionError(
+                "preorder descendant blocks should avoid index arrays"
+            )
+
+        monkeypatch.setattr(vcv_utils.np, "asarray", fail_asarray)
+        vcv = build_vcv_matrix(tree, ["A", "B", "C", "D"])
+
+        expected = np.array([
+            [3.0, 2.0, 0.0, 0.0],
+            [2.0, 3.0, 0.0, 0.0],
+            [0.0, 0.0, 4.0, 3.0],
+            [0.0, 0.0, 3.0, 4.0],
+        ])
+        np.testing.assert_allclose(vcv, expected)
+
+    def test_shuffled_multi_tip_branches_keep_indexed_fill(self):
+        tree = _make_tree(
+            "((A:1.0,B:1.0):2.0,(C:1.0,D:1.0):3.0);"
+        )
+
+        vcv = build_vcv_matrix(tree, ["A", "C", "B", "D"])
+
+        expected = np.array([
+            [3.0, 0.0, 2.0, 0.0],
+            [0.0, 4.0, 0.0, 3.0],
+            [2.0, 0.0, 3.0, 0.0],
+            [0.0, 3.0, 0.0, 4.0],
+        ])
+        np.testing.assert_allclose(vcv, expected)
+
     def test_transformed_vcv_fast_path_does_not_call_get_path(self, monkeypatch):
         tree = _make_tree("(A:1.0,(B:0.5,C:0.5):0.5);")
 
