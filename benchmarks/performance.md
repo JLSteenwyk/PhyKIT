@@ -2082,6 +2082,7 @@ Results:
 | `lb_score` module import without eager multiprocessing/concurrent futures | cold subprocess import after lazy executor and cpu-count proxies | 0.045831s | 0.030564s | 1.50x |
 | `lb_score` module import without eager pickle/stats/json helpers | cold subprocess import after lazy `pickle` proxy and local forwarding wrappers | 0.030135s | 0.022288s | 1.35x |
 | `lb_score` module import without `typing` startup | median cold subprocess import after converting annotation-only typing aliases to built-in postponed annotations | 0.005367s | 0.003556s | 1.51x |
+| `Phykit.lb_score` default parser bypass | 1000 repeated direct handler calls with service mocked, plus command profiler default `long_branch_score small_Aspergillus_tree.tre`, 15 runs after 3 warmups, text/JSON stdout matched previous branch | 0.764516s / 0.058126s | 0.000401s / 0.052635s | 1906.52x / 1.10x |
 | `Saturation.loop_through_combos_and_calculate_pds_and_pis` | balanced tree with 150 tips x 800 sites, `exclude_gaps=True` | 1.5329s | 0.1745s | 8.8x |
 | `Saturation.loop_through_combos_and_calculate_pds_and_pis` byte sequence arrays | balanced tree with 150 tips x 800 sites, `exclude_gaps=True` | 0.1039s | 0.0957s | 1.1x |
 | `Saturation._gap_mask_for_array` byte lookup | 1200 taxa x 12000 sites, alphabet `ACGT-?NX*` | 0.043702s | 0.017843s | 2.45x |
