@@ -9,6 +9,30 @@ from phykit.phykit import Phykit
 here = Path(__file__)
 
 
+def summary_call(
+    mean,
+    median,
+    twenty_fifth,
+    seventy_fifth,
+    minimum,
+    maximum,
+    standard_deviation,
+    variance,
+):
+    return call(
+        (
+            f"mean: {mean}\n"
+            f"median: {median}\n"
+            f"25th percentile: {twenty_fifth}\n"
+            f"75th percentile: {seventy_fifth}\n"
+            f"minimum: {minimum}\n"
+            f"maximum: {maximum}\n"
+            f"standard deviation: {standard_deviation}\n"
+            f"variance: {variance}"
+        )
+    )
+
+
 @pytest.mark.integration
 class TestTBS(object):
     @patch("builtins.print")
@@ -22,14 +46,10 @@ class TestTBS(object):
             Phykit()
 
         assert mocked_print.mock_calls == [
-            call("mean: 30.2926"),
-            call("median: 19.0396"),
-            call("25th percentile: 12.0015"),
-            call("75th percentile: 30.8813"),
-            call("minimum: 6.8004"),
-            call("maximum: 100.8593"),
-            call("standard deviation: 31.0789"),
-            call("variance: 965.8987")
+            summary_call(
+                "30.2926", "19.0396", "12.0015", "30.8813",
+                "6.8004", "100.8593", "31.0789", "965.8987",
+            )
         ]
 
     @patch("builtins.print")
@@ -43,14 +63,10 @@ class TestTBS(object):
             Phykit()
 
         assert mocked_print.mock_calls == [
-            call("mean: 0.0016"),
-            call("median: 0.0005"),
-            call("25th percentile: 0.0004"),
-            call("75th percentile: 0.0015"),
-            call("minimum: 0.0003"),
-            call("maximum: 0.0075"),
-            call("standard deviation: 0.0023"),
-            call("variance: 0.0")
+            summary_call(
+                "0.0016", "0.0005", "0.0004", "0.0015",
+                "0.0003", "0.0075", "0.0023", "0.0",
+            )
         ]
 
     @patch("builtins.print")
@@ -112,20 +128,18 @@ class TestTBS(object):
             Phykit()
 
         assert mocked_print.mock_calls == [
-            call("mean: 30.2926"),
-            call("median: 19.0396"),
-            call("25th percentile: 12.0015"),
-            call("75th percentile: 30.8813"),
-            call("minimum: 6.8004"),
-            call("maximum: 100.8593"),
-            call("standard deviation: 31.0789"),
-            call("variance: 965.8987")
+            summary_call(
+                "30.2926", "19.0396", "12.0015", "30.8813",
+                "6.8004", "100.8593", "31.0789", "965.8987",
+            )
         ]
 
     @patch("builtins.print")
     def test_terminal_branch_stats_alias(self, mocked_print):
-        with pytest.raises(SystemExit) as pytest_wrapped_e:
-            Phykit()
+        testargs = ["phykit", "tbs"]
+        with patch.object(sys, "argv", testargs):
+            with pytest.raises(SystemExit) as pytest_wrapped_e:
+                Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2
