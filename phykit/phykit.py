@@ -159,9 +159,9 @@ class _TreeJsonDefaultArgs:
 class _TreeVerboseJsonDefaultArgs:
     __slots__ = ("tree", "verbose", "json")
 
-    def __init__(self, tree: str) -> None:
+    def __init__(self, tree: str, *, verbose: bool = False) -> None:
         self.tree = tree
-        self.verbose = False
+        self.verbose = verbose
         self.json = False
 
 
@@ -3990,6 +3990,17 @@ class Phykit:
     def lb_score(argv):
         if len(argv) == 1 and argv[0] and argv[0][0] != "-":
             _run_service_with_args(_TreeVerboseJsonDefaultArgs(argv[0]), LBScore)
+            return
+        if (
+            len(argv) == 2
+            and argv[0]
+            and argv[0][0] != "-"
+            and argv[1] in ("-v", "--verbose")
+        ):
+            _run_service_with_args(
+                _TreeVerboseJsonDefaultArgs(argv[0], verbose=True),
+                LBScore,
+            )
             return
 
         parser = _new_parser(

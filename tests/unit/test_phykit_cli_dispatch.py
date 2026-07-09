@@ -1059,6 +1059,32 @@ def test_lb_score_default_invocation_bypasses_parser(monkeypatch):
     assert args.json is False
 
 
+@pytest.mark.parametrize("verbose_flag", ["-v", "--verbose"])
+def test_lb_score_verbose_invocation_bypasses_parser(monkeypatch, verbose_flag):
+    captured = {}
+
+    class Runner:
+        def __init__(self, args):
+            captured["args"] = args
+
+        def run(self):
+            captured["ran"] = True
+
+    def fail_new_parser(*_args, **_kwargs):
+        raise AssertionError("verbose lb_score should not build parser")
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+    monkeypatch.setattr(phykit_module, "LBScore", Runner)
+
+    phykit_module.Phykit.lb_score(["tree.tre", verbose_flag])
+
+    args = captured["args"]
+    assert captured["ran"] is True
+    assert args.tree == "tree.tre"
+    assert args.verbose is True
+    assert args.json is False
+
+
 def test_lb_score_option_invocation_keeps_parser(monkeypatch):
     calls = {"parser": False, "ran": False}
 
@@ -1084,10 +1110,10 @@ def test_lb_score_option_invocation_keeps_parser(monkeypatch):
     monkeypatch.setattr(phykit_module, "_new_parser", fake_new_parser)
     monkeypatch.setattr(phykit_module, "LBScore", Runner)
 
-    phykit_module.Phykit.lb_score(["tree.tre", "-v"])
+    phykit_module.Phykit.lb_score(["tree.tre", "--json"])
 
     assert calls["parser"] is True
-    assert calls["argv"] == ["tree.tre", "-v"]
+    assert calls["argv"] == ["tree.tre", "--json"]
     assert calls["ran"] is True
 
 
