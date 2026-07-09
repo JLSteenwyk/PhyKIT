@@ -1178,6 +1178,7 @@ class TestTreeColorTrait:
                     [
                         "   # ignored\n",
                         "\n",
+                        "ignored_without_tab\n",
                         "A\t1.0\textra\n",
                         "B\t2.0\n",
                         "C\t3.0\n",
@@ -1218,6 +1219,42 @@ class TestTreeColorTrait:
         assert anc_vals == {0: 2.0}
         assert node_distances == {}
         assert tree_pruned == "tree"
+
+    def test_resolve_tree_color_trait_duplicate_rows_do_not_satisfy_missing_taxa(
+        self, monkeypatch
+    ):
+        class StreamingOnlyFile:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, traceback):
+                return False
+
+            def __iter__(self):
+                return iter(
+                    [
+                        "A\t1.0\n",
+                        "B\t2.0\n",
+                        "B\t2.5\n",
+                    ]
+                )
+
+        svc = PhylogeneticOrdination.__new__(PhylogeneticOrdination)
+
+        def fail_reconstruct(*_args, **_kwargs):
+            raise AssertionError("missing taxa should skip reconstruction")
+
+        monkeypatch.setattr(os.path, "isfile", lambda path: path == "colors.tsv")
+        monkeypatch.setattr("builtins.open", lambda path: StreamingOnlyFile())
+        monkeypatch.setattr(svc, "_reconstruct_ancestral_scores", fail_reconstruct)
+
+        assert svc._resolve_tree_color_trait(
+            "colors.tsv",
+            ["x", "y"],
+            np.zeros((3, 2)),
+            ["A", "B", "C"],
+            "tree",
+        ) == (None, None, None)
 
 
 class TestRun:
@@ -2465,7 +2502,7 @@ class TestParseColorBy:
         Y = np.array([[traits[name][j] for j in range(p)] for name in ordered_names])
 
         color_file = tmp_path / "colors.tsv"
-        lines = ["   # ignored\n"]
+        lines = ["   # ignored\n", "ignored_without_tab\n"]
         lines.extend(
             f"{name}\t{i * 1.5}\textra\n" for i, name in enumerate(ordered_names)
         )

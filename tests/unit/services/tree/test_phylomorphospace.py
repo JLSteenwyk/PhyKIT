@@ -276,6 +276,7 @@ class TestPlot:
         ordered_names = ["a", "b", "c"]
         color_file.write_text(
             "   # ignored\n"
+            "ignored_without_tab\n"
             "a\t1.5\textra\n"
             "b\t2.25\textra\n"
             "c\t3.75\textra\n"

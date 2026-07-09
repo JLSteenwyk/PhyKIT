@@ -2408,6 +2408,7 @@ Results:
 | `Phylomorphospace.run` trait matrix setup | 120k taxa x 12 parsed trait columns, selected x/y axes plus full color matrix | 0.194092s | 0.038694s | 5.02x |
 | `Phylomorphospace`/`PhylogeneticOrdination._parse_color_by` numeric file values | 200k numeric color values, side-by-side previous list comprehension plus `np.array` conversion | 0.029553s | 0.025725s | 1.15x |
 | `Phylomorphospace`/`PhylogeneticOrdination._parse_color_by` bounded color row parsing | 250k external color TSV rows with whitespace-prefixed comments and ignored trailing columns | 0.633684s | 0.548724s | 1.15x |
+| `Phylomorphospace`/`PhylogeneticOrdination._parse_color_by` two-field color split | 1M external color TSV rows, all taxa covered, trailing columns ignored, side-by-side previous double-partition parser | 0.854905s | 0.824560s | 1.04x |
 | `Phylomorphospace._parse_color_by` cached lazy NumPy attributes | 200k numeric external color rows, side-by-side previous uncached lazy proxy with identical numeric vector sum and mode | 0.613215s | 0.355931s | 1.72x |
 | `Phylomorphospace.run` cached read-only tree setup | balanced 32768-tip cached tree, trait parsing, reconstruction, plotting, and output mocked | 0.277017s | 0.000037s | 7486.95x |
 | `phylomorphospace` module import without eager NumPy | cold subprocess import after lazy NumPy proxy and postponed annotations | 0.089377s | 0.031532s | 2.83x |
@@ -2448,6 +2449,7 @@ Results:
 | `PhylogeneticOrdination._format_dimreduce_result` 3-D column value rounding | 100k / 300k taxa x 3 embedding dimensions, identical nested payload after removing redundant builtin-float conversion | 0.454717s / 1.148411s | 0.253950s / 0.988402s | 1.79x / 1.16x |
 | `PhylogeneticOrdination._print_dimreduce_text_output` 3-D embedding text rows | 5k / 100k taxa x 3 embedding dimensions, identical captured text, side-by-side previous generic `embedding.tolist()` row conversion | 0.850666s / 2.130799s | 0.644524s / 1.106308s | 1.32x / 1.93x |
 | `PhylogeneticOrdination._resolve_tree_color_trait` single-pass color file | 300k-row external tree-color TSV, all taxa covered, reconstruction stubbed to isolate parsing | 0.934379s | 0.522889s | 1.79x |
+| `PhylogeneticOrdination._resolve_tree_color_trait` indexed found mask | 1M-row external tree-color TSV, all taxa covered, side-by-side previous set-backed seen-taxon validation | 1.541439s | 1.219012s | 1.26x |
 | `phylogenetic_ordination` module import without eager SciPy linalg/optimize | cold process import for phylogenetic-ordination command module | 0.440223s | 0.168008s | 2.6x |
 | `phylogenetic_ordination` module import without eager NumPy/PGLS helper | cold subprocess import after lazy NumPy proxy, postponed annotations, and localized PGLS import | 0.168008s | 0.032468s | 5.17x |
 | `phylogenetic_ordination` module import without eager pickle/JSON/plot/trait helpers | median cold subprocess import after localizing pickle/PlotConfig and lazy helper wrappers | 0.016052s | 0.005263s | 3.05x |
@@ -8069,6 +8071,12 @@ Profiling summary:
   covered taxa in one file pass before ancestral edge-color reconstruction,
   preserving missing-taxon and nonnumeric-value fallbacks while avoiding a
   second scan of large external color tables.
+  A follow-up pass parses external color files with a bounded two-field split
+  instead of two `partition` calls per row, preserving skipped comments,
+  ignored no-tab rows, and ignored trailing columns. Tree-edge color resolution
+  now tracks covered taxa with an indexed boolean mask rather than a string set,
+  so duplicate rows still count once while reducing validation overhead on large
+  all-covered color files.
   Phylomorphospace branch rendering setup now also uses a direct preorder clade
   traversal when building plot branch segments and branch color values, with the
   generic traversal retained for nonstandard tree objects. That direct preorder

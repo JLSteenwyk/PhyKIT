@@ -654,12 +654,12 @@ class PhylogeneticOrdination(Tree):
                 stripped = line.strip()
                 if not stripped or stripped[0] == "#":
                     continue
-                taxon, sep, rest = stripped.partition("\t")
-                if not sep:
+                parts = stripped.split("\t", 2)
+                if len(parts) < 2:
                     continue
-                idx = name_to_idx.get(taxon)
+                idx = name_to_idx.get(parts[0])
                 if idx is not None:
-                    values[idx] = rest.partition("\t")[0]
+                    values[idx] = parts[1]
 
         missing = [ordered_names[i] for i, v in enumerate(values) if v is None]
         if missing:
@@ -1161,24 +1161,28 @@ class PhylogeneticOrdination(Tree):
             tip_vals = Y[:, col_idx]
         elif os.path.isfile(tree_color_by):
             name_to_idx = {name: i for i, name in enumerate(taxon_names)}
-            tip_vals = np.zeros(len(taxon_names))
-            found = set()
+            n_taxa = len(taxon_names)
+            tip_vals = np.zeros(n_taxa)
+            found = [False] * n_taxa
+            found_count = 0
             with open(tree_color_by) as f:
                 for line in f:
                     stripped = line.strip()
                     if not stripped or stripped[0] == "#":
                         continue
-                    taxon, sep, rest = stripped.partition("\t")
-                    if not sep:
+                    parts = stripped.split("\t", 2)
+                    if len(parts) < 2:
                         continue
-                    idx = name_to_idx.get(taxon)
+                    idx = name_to_idx.get(parts[0])
                     if idx is not None:
                         try:
-                            tip_vals[idx] = float(rest.partition("\t")[0])
+                            tip_vals[idx] = float(parts[1])
                         except ValueError:
                             return None, None, None
-                        found.add(taxon)
-            if len(found) < len(taxon_names):
+                        if not found[idx]:
+                            found[idx] = True
+                            found_count += 1
+            if found_count < n_taxa:
                 return None, None, None
         else:
             return None, None, None

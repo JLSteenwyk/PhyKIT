@@ -279,12 +279,12 @@ class Phylomorphospace(Tree):
                 stripped = line.strip()
                 if not stripped or stripped[0] == "#":
                     continue
-                taxon, sep, rest = stripped.partition("\t")
-                if not sep:
+                parts = stripped.split("\t", 2)
+                if len(parts) < 2:
                     continue
-                idx = name_to_idx.get(taxon)
+                idx = name_to_idx.get(parts[0])
                 if idx is not None:
-                    values[idx] = rest.partition("\t")[0]
+                    values[idx] = parts[1]
 
         missing = [ordered_names[i] for i, v in enumerate(values) if v is None]
         if missing:
