@@ -16,6 +16,8 @@ def print_json(*args, **kwargs):
 _FASTA_WRITE_CHUNK_ROWS = 8192
 _PARTITION_WRITE_CHUNK_ROWS = 8192
 _RANGE_SITE_SAMPLE_MIN_LENGTH = 1_000_000
+_RANGE_SITE_SAMPLE_MID_MIN_LENGTH = 100_000
+_RANGE_SITE_SAMPLE_MAX_COUNT = 50_000
 _RANGE_SITE_SAMPLE_MAX_FRACTION = 0.1
 
 
@@ -308,6 +310,9 @@ class AlignmentSubsample(Alignment):
         if (
             aln_len >= _RANGE_SITE_SAMPLE_MIN_LENGTH
             and n <= aln_len * _RANGE_SITE_SAMPLE_MAX_FRACTION
+        ) or (
+            aln_len >= _RANGE_SITE_SAMPLE_MID_MIN_LENGTH
+            and n <= _RANGE_SITE_SAMPLE_MAX_COUNT
         ):
             return sorted(rng.sample(range(aln_len), k=n))
 

@@ -327,6 +327,42 @@ class TestSitesMode:
 
             assert observed == expected
 
+    def test_sample_site_indices_uses_range_for_mid_sized_sparse_samples(
+        self, monkeypatch
+    ):
+        class RecordingRng:
+            def __init__(self):
+                self.population = None
+                self.k = None
+
+            def sample(self, population, k):
+                self.population = population
+                self.k = k
+                return [3, 1, 2]
+
+        monkeypatch.setattr(
+            alignment_subsample_module,
+            "_RANGE_SITE_SAMPLE_MID_MIN_LENGTH",
+            100,
+        )
+        monkeypatch.setattr(
+            alignment_subsample_module,
+            "_RANGE_SITE_SAMPLE_MAX_COUNT",
+            5,
+        )
+        rng = RecordingRng()
+
+        observed = AlignmentSubsample._sample_site_indices(
+            rng,
+            aln_len=100,
+            n=5,
+            bootstrap=False,
+        )
+
+        assert observed == [1, 2, 3]
+        assert isinstance(rng.population, range)
+        assert rng.k == 5
+
     def test_sites_mode_full_nonbootstrap_reuses_parsed_sequences(
         self, tmp_path, monkeypatch
     ):
