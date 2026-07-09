@@ -374,6 +374,21 @@ class TestGetCladeTipIds:
 
         assert get_clade_tip_ids(tree.root) == expected
 
+    def test_get_clade_tip_ids_falls_back_for_non_list_clades(self):
+        class NonstandardClade:
+            clades = None
+
+            def __init__(self, terminals):
+                self._terminals = terminals
+
+            def get_terminals(self):
+                return self._terminals
+
+        terminals = [object(), object()]
+        clade = NonstandardClade(terminals)
+
+        assert get_clade_tip_ids(clade) == {id(tip) for tip in terminals}
+
     def test_terminal_clades_preserves_mixed_child_order(self, monkeypatch):
         tree = _make_tree("(A:1,(B:1,C:1):1,(D:1,E:1,F:1):1,G:1);")
 

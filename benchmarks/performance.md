@@ -1312,6 +1312,7 @@ Results:
 | `transfer_annotations` module import without `typing` startup | median cold subprocess import after postponing annotations and converting annotation-only typing aliases to built-in annotations | 0.011073s | 0.007502s | 1.48x |
 | `color_annotations.get_clade_tip_ids` | balanced 65536-tip clade, collect terminal object ids for highlighted ranges/clades | 0.1280s | 0.0200s | 6.4x |
 | `color_annotations.get_clade_tip_ids` direct id-set accumulation | balanced 1024 / 4096 / 32768 / 131072-tip clades, side-by-side previous terminal-list materialization plus id-set comprehension | 0.000716s / 0.002474s / 0.024704s / 0.127823s | 0.000298s / 0.001892s / 0.012715s / 0.088849s | 2.40x / 1.31x / 1.94x / 1.44x |
+| `color_annotations.get_clade_tip_ids` direct clades attribute access | balanced 1024 / 4096 / 32768 / 131072-tip clades, side-by-side previous per-node `getattr` lookup while preserving non-list clade fallback | 0.178982s / 0.160708s / 0.133926s / 0.112503s | 0.145943s / 0.099907s / 0.111820s / 0.103102s | 1.23x / 1.61x / 1.20x / 1.09x |
 | `color_annotations.get_clade_branch_ids` | balanced 32768-tip clade, collect highlighted clade descendant node ids | 0.098573s | 0.013878s | 7.10x |
 | `color_annotations.get_clade_branch_ids` unordered child push | balanced 32768-tip clade, descendant id set for highlighted clades, optimized helper baseline | 0.009671s | 0.007221s | 1.34x |
 | `color_annotations.resolve_mrca` early-stop taxa validation | balanced 32768-tip tree, MRCA lookup for first two tips | 0.014703s | 0.0000155s | 946.92x |
@@ -5703,9 +5704,12 @@ Profiling summary:
   highlighted clade tip ids, and rectangular/circular range drawing. MRCA
   validation stops once all requested taxa have been found, avoiding full-tree
   terminal-name materialization for common small annotation lookups while
-  retaining the original fallback for nonstandard clade objects. A later pass
-  also collects highlighted clade branch ids with a direct descendant-node
-  traversal, keeping `find_clades(order="preorder")` only as the fallback. A
+  retaining the original fallback for nonstandard clade objects. Highlighted
+  clade tip-id collection now uses direct `node.clades` access in the standard
+  path, avoiding per-node `getattr` dispatch while preserving the non-list
+  clade fallback. A later pass collects highlighted clade branch ids with a
+  direct descendant-node traversal, keeping `find_clades(order="preorder")`
+  only as the fallback. A
   follow-up branch-id pass localizes stack operations and pushes child lists
   directly because the helper returns a set rather than an ordered traversal.
   A later ordered-traversal pass avoids `reversed(children)` iterator allocation

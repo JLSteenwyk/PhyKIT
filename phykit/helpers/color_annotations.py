@@ -166,7 +166,10 @@ def get_clade_tip_ids(clade) -> set:
     add = ids.add
     while stack:
         node = pop()
-        children = getattr(node, "clades", None)
+        try:
+            children = node.clades
+        except AttributeError:
+            return {id(tip) for tip in clade.get_terminals()}
         if not isinstance(children, list):
             return {id(tip) for tip in clade.get_terminals()}
         if children:
