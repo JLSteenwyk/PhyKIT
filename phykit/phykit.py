@@ -87,9 +87,9 @@ class _PairwiseIdentityDefaultArgs:
         "color_file",
     )
 
-    def __init__(self, alignment: str) -> None:
+    def __init__(self, alignment: str, *, verbose: bool = False) -> None:
         self.alignment = alignment
-        self.verbose = False
+        self.verbose = verbose
         self.exclude_gaps = False
         self.plot = False
         self.plot_output = "pairwise_identity_heatmap.png"
@@ -1618,6 +1618,17 @@ class Phykit:
         if len(argv) == 1 and argv[0] and argv[0][0] != "-":
             _run_service_with_args(
                 _PairwiseIdentityDefaultArgs(argv[0]),
+                PairwiseIdentity,
+            )
+            return
+        if (
+            len(argv) == 2
+            and argv[0]
+            and argv[0][0] != "-"
+            and argv[1] in ("-v", "--verbose")
+        ):
+            _run_service_with_args(
+                _PairwiseIdentityDefaultArgs(argv[0], verbose=True),
                 PairwiseIdentity,
             )
             return

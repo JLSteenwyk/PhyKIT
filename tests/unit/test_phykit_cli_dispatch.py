@@ -848,6 +848,37 @@ def test_pairwise_identity_default_invocation_bypasses_parser(monkeypatch):
     assert args.json is False
 
 
+@pytest.mark.parametrize("verbose_flag", ["-v", "--verbose"])
+def test_pairwise_identity_verbose_invocation_bypasses_parser(
+    monkeypatch, verbose_flag
+):
+    captured = {}
+
+    class Runner:
+        def __init__(self, args):
+            captured["args"] = args
+
+        def run(self):
+            captured["ran"] = True
+
+    def fail_new_parser(*_args, **_kwargs):
+        raise AssertionError("verbose pairwise_identity should not build parser")
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+    monkeypatch.setattr(phykit_module, "PairwiseIdentity", Runner)
+
+    phykit_module.Phykit.pairwise_identity(["alignment.fa", verbose_flag])
+
+    args = captured["args"]
+    assert captured["ran"] is True
+    assert args.alignment == "alignment.fa"
+    assert args.verbose is True
+    assert args.exclude_gaps is False
+    assert args.plot is False
+    assert args.plot_output == "pairwise_identity_heatmap.png"
+    assert args.json is False
+
+
 def test_pairwise_identity_option_invocation_keeps_parser(monkeypatch):
     calls = {"parser": False, "ran": False}
 

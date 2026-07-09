@@ -9,6 +9,30 @@ from phykit.phykit import Phykit
 here = Path(__file__)
 
 
+def summary_call(
+    mean,
+    median,
+    twenty_fifth,
+    seventy_fifth,
+    minimum,
+    maximum,
+    standard_deviation,
+    variance,
+):
+    return call(
+        (
+            f"mean: {mean}\n"
+            f"median: {median}\n"
+            f"25th percentile: {twenty_fifth}\n"
+            f"75th percentile: {seventy_fifth}\n"
+            f"minimum: {minimum}\n"
+            f"maximum: {maximum}\n"
+            f"standard deviation: {standard_deviation}\n"
+            f"variance: {variance}"
+        )
+    )
+
+
 @pytest.mark.integration
 class TestPairwiseIdentity(object):
     @patch("builtins.print")
@@ -22,14 +46,10 @@ class TestPairwiseIdentity(object):
             Phykit()
 
         assert mocked_print.mock_calls == [
-            call("mean: 0.4833"),
-            call("median: 0.5"),
-            call("25th percentile: 0.3333"),
-            call("75th percentile: 0.6667"),
-            call("minimum: 0.1667"),
-            call("maximum: 0.8333"),
-            call("standard deviation: 0.2284"),
-            call("variance: 0.0522")
+            summary_call(
+                "0.4833", "0.5", "0.3333", "0.6667",
+                "0.1667", "0.8333", "0.2284", "0.0522",
+            )
         ]
 
     @patch("builtins.print")
@@ -43,14 +63,10 @@ class TestPairwiseIdentity(object):
             Phykit()
 
         assert mocked_print.mock_calls == [
-            call("mean: 0.7593"),
-            call("median: 0.7778"),
-            call("25th percentile: 0.6944"),
-            call("75th percentile: 0.8611"),
-            call("minimum: 0.5556"),
-            call("maximum: 0.8889"),
-            call("standard deviation: 0.1299"),
-            call("variance: 0.0169")
+            summary_call(
+                "0.7593", "0.7778", "0.6944", "0.8611",
+                "0.5556", "0.8889", "0.1299", "0.0169",
+            )
         ]
 
     @patch("builtins.print")
@@ -64,14 +80,10 @@ class TestPairwiseIdentity(object):
             Phykit()
 
         assert mocked_print.mock_calls == [
-            call("mean: 0.8333"),
-            call("median: 0.8333"),
-            call("25th percentile: 0.6667"),
-            call("75th percentile: 1.0"),
-            call("minimum: 0.6667"),
-            call("maximum: 1.0"),
-            call("standard deviation: 0.1826"),
-            call("variance: 0.0333")
+            summary_call(
+                "0.8333", "0.8333", "0.6667", "1.0",
+                "0.6667", "1.0", "0.1826", "0.0333",
+            )
         ]
 
     @patch("builtins.print")
@@ -85,24 +97,26 @@ class TestPairwiseIdentity(object):
             Phykit()
 
         assert mocked_print.mock_calls == [
-            call("mean: 0.8333"),
-            call("median: 0.8333"),
-            call("25th percentile: 0.6667"),
-            call("75th percentile: 1.0"),
-            call("minimum: 0.6667"),
-            call("maximum: 1.0"),
-            call("standard deviation: 0.1826"),
-            call("variance: 0.0333")
+            summary_call(
+                "0.8333", "0.8333", "0.6667", "1.0",
+                "0.6667", "1.0", "0.1826", "0.0333",
+            )
         ]
 
     @patch("builtins.print")
     def test_pairwise_identity_incorrect_input_file(self, mocked_print):
 
+        testargs = ["phykit", "pairwise_identity", "missing.fa"]
         with pytest.raises(SystemExit) as pytest_wrapped_e:
-            Phykit()
+            with patch.object(sys, "argv", testargs):
+                Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2
+        assert mocked_print.mock_calls == [
+            call("missing.fa corresponds to no such file."),
+            call("Please check file name and pathing"),
+        ]
 
     @patch("builtins.print")
     def test_pairwise_identity_verbose(self, mocked_print):
@@ -141,14 +155,10 @@ class TestPairwiseIdentity(object):
             Phykit()
 
         assert mocked_print.mock_calls == [
-            call("mean: 0.8136"),
-            call("median: 0.8423"),
-            call("25th percentile: 0.8096"),
-            call("75th percentile: 0.8692"),
-            call("minimum: 0.6192"),
-            call("maximum: 0.9269"),
-            call("standard deviation: 0.0831"),
-            call("variance: 0.0069")
+            summary_call(
+                "0.8136", "0.8423", "0.8096", "0.8692",
+                "0.6192", "0.9269", "0.0831", "0.0069",
+            )
         ]
 
     @patch("builtins.print")
@@ -163,14 +173,10 @@ class TestPairwiseIdentity(object):
             Phykit()
 
         assert mocked_print.mock_calls == [
-            call("mean: 0.8136"),
-            call("median: 0.8423"),
-            call("25th percentile: 0.8096"),
-            call("75th percentile: 0.8692"),
-            call("minimum: 0.6192"),
-            call("maximum: 0.9269"),
-            call("standard deviation: 0.0831"),
-            call("variance: 0.0069")
+            summary_call(
+                "0.8136", "0.8423", "0.8096", "0.8692",
+                "0.6192", "0.9269", "0.0831", "0.0069",
+            )
         ]
 
     @patch("builtins.print")
@@ -184,14 +190,10 @@ class TestPairwiseIdentity(object):
             Phykit()
 
         assert mocked_print.mock_calls == [
-            call("mean: 0.8789"),
-            call("median: 0.9154"),
-            call("25th percentile: 0.8462"),
-            call("75th percentile: 0.95"),
-            call("minimum: 0.6462"),
-            call("maximum: 1.0"),
-            call("standard deviation: 0.0968"),
-            call("variance: 0.0094")
+            summary_call(
+                "0.8789", "0.9154", "0.8462", "0.95",
+                "0.6462", "1.0", "0.0968", "0.0094",
+            )
         ]
 
     @patch("builtins.print")
