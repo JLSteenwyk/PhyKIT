@@ -27,6 +27,10 @@ COMMANDS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("alignment_length", ("alignment_length", str(SAMPLES / "test_alignment_0.fa"))),
     ("gc_content", ("gc_content", str(SAMPLES / "test_alignment_0.fa"))),
     ("variable_sites", ("variable_sites", str(SAMPLES / "test_alignment_0.fa"))),
+    (
+        "parsimony_informative_sites",
+        ("parsimony_informative_sites", str(SAMPLES / "test_alignment_0.fa")),
+    ),
     ("alignment_length_no_gaps", ("alignment_length_no_gaps", str(SAMPLES / "simple.fa"))),
     ("tip_labels", ("tip_labels", str(SAMPLES / "tree_simple.tre"))),
     ("dvmc", ("dvmc", str(SAMPLES / "tree_simple.tre"))),

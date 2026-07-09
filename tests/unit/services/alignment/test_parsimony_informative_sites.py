@@ -161,7 +161,7 @@ assert "Bio.AlignIO" not in sys.modules
         assert isclose(pi_sites_per, 50.0, rel_tol=0.001)
 
     def test_parsimony_informative_sites_ascii_path_uses_gap_code_reduction(
-        self, mocker, args
+        self, mocker, monkeypatch, args
     ):
         alignment = MultipleSeqAlignment([
             SeqRecord(Seq("aa"), id="t1"),
@@ -170,6 +170,11 @@ assert "Bio.AlignIO" not in sys.modules
             SeqRecord(Seq("tt"), id="t4"),
         ])
         pi = ParsimonyInformative(args)
+        monkeypatch.setattr(
+            pi_module,
+            "_PARSIMONY_INFORMATIVE_SCALAR_MAX_CELLS",
+            0,
+        )
         gap_codes_spy = mocker.spy(pi_module, "_get_gap_codes")
 
         pi_sites, aln_len, pi_sites_per = pi.calculate_parsimony_informative_sites(
@@ -183,7 +188,7 @@ assert "Bio.AlignIO" not in sys.modules
         assert isclose(pi_sites_per, 50.0, rel_tol=0.001)
 
     def test_parsimony_informative_sites_ascii_path_uses_column_histogram(
-        self, mocker, args
+        self, mocker, monkeypatch, args
     ):
         alignment = MultipleSeqAlignment([
             SeqRecord(Seq("ACD-"), id="t1"),
@@ -193,6 +198,11 @@ assert "Bio.AlignIO" not in sys.modules
             SeqRecord(Seq("ACE-"), id="t5"),
         ])
         pi = ParsimonyInformative(args)
+        monkeypatch.setattr(
+            pi_module,
+            "_PARSIMONY_INFORMATIVE_SCALAR_MAX_CELLS",
+            0,
+        )
         mocker.patch(
             "phykit.services.alignment.parsimony_informative_sites.np.unique",
             side_effect=AssertionError("ASCII path should not scan each unique symbol"),
@@ -240,7 +250,7 @@ assert "Bio.AlignIO" not in sys.modules
         ]
 
     def test_parsimony_informative_clean_dna_skips_valid_mask(
-        self, mocker, args
+        self, mocker, monkeypatch, args
     ):
         alignment = MultipleSeqAlignment([
             SeqRecord(Seq("ACGT"), id="t1"),
@@ -249,6 +259,11 @@ assert "Bio.AlignIO" not in sys.modules
             SeqRecord(Seq("TCGT"), id="t4"),
         ])
         pi = ParsimonyInformative(args)
+        monkeypatch.setattr(
+            pi_module,
+            "_PARSIMONY_INFORMATIVE_SCALAR_MAX_CELLS",
+            0,
+        )
         fast_count = mocker.spy(
             pi_module,
             "_count_clean_dna_parsimony_informative_sites",
@@ -274,7 +289,7 @@ assert "Bio.AlignIO" not in sys.modules
         assert isclose(pi_sites_per, 25.0, rel_tol=0.001)
 
     def test_parsimony_informative_nonstandard_dna_uses_generic_clean_path(
-        self, mocker, args
+        self, mocker, monkeypatch, args
     ):
         alignment = MultipleSeqAlignment([
             SeqRecord(Seq("ABGT"), id="t1"),
@@ -283,6 +298,11 @@ assert "Bio.AlignIO" not in sys.modules
             SeqRecord(Seq("TBGG"), id="t4"),
         ])
         pi = ParsimonyInformative(args)
+        monkeypatch.setattr(
+            pi_module,
+            "_PARSIMONY_INFORMATIVE_SCALAR_MAX_CELLS",
+            0,
+        )
         generic_count = mocker.spy(
             pi_module,
             "_count_ascii_parsimony_informative_sites",
@@ -321,6 +341,39 @@ assert "Bio.AlignIO" not in sys.modules
         assert pi_sites == 1
         assert aln_len == 4
         assert isclose(pi_sites_per, 25.0, rel_tol=0.001)
+
+    def test_parsimony_informative_sites_small_ascii_uses_scalar_path(
+        self, mocker, args
+    ):
+        alignment = MultipleSeqAlignment([
+            SeqRecord(Seq("AC-N"), id="t1"),
+            SeqRecord(Seq("ACGN"), id="t2"),
+            SeqRecord(Seq("TGGN"), id="t3"),
+            SeqRecord(Seq("TG?N"), id="t4"),
+        ])
+        pi = ParsimonyInformative(args)
+        mocker.patch(
+            "phykit.services.alignment.parsimony_informative_sites.np.frombuffer",
+            side_effect=AssertionError(
+                "small PI-site counts should avoid NumPy setup"
+            ),
+        )
+
+        pi_sites, aln_len, pi_sites_per = pi.calculate_parsimony_informative_sites(
+            alignment,
+            is_protein=False,
+        )
+
+        assert pi_sites == 2
+        assert aln_len == 4
+        assert isclose(pi_sites_per, 50.0, rel_tol=0.001)
+
+    def test_parsimony_informative_scalar_path_rejects_uneven_lengths(self):
+        assert pi_module._count_parsimony_informative_sites_scalar(
+            ["ACGT", "ACG"],
+            4,
+            False,
+        ) is None
 
     def test_parsimony_informative_identical_sequences_skip_matrix(
         self, mocker, args
@@ -367,7 +420,9 @@ assert "Bio.AlignIO" not in sys.modules
             is_protein=False,
         ) == (0, 7, 0.0)
 
-    def test_parsimony_informative_sites_unicode_fallback(self, args, mocker):
+    def test_parsimony_informative_sites_unicode_fallback(
+        self, args, mocker, monkeypatch
+    ):
         class DummyAlignment(list):
             def get_alignment_length(self):
                 return 2
@@ -379,6 +434,11 @@ assert "Bio.AlignIO" not in sys.modules
             SimpleNamespace(seq="T\u00dd", id="t4"),
         ])
         pi = ParsimonyInformative(args)
+        monkeypatch.setattr(
+            pi_module,
+            "_PARSIMONY_INFORMATIVE_SCALAR_MAX_CELLS",
+            0,
+        )
         count_nonzero_spy = mocker.spy(pi_module.np, "count_nonzero")
 
         pi_sites, aln_len, pi_sites_per = pi.calculate_parsimony_informative_sites(

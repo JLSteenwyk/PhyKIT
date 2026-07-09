@@ -30,8 +30,11 @@ _DNA_GAP_CODES = None
 _PROTEIN_GAP_CODES = None
 _DNA_GAP_BYTES = b"-?*XN"
 _PROTEIN_GAP_BYTES = b"-?*X"
+_DNA_GAP_CHARS = frozenset("-?*XN")
+_PROTEIN_GAP_CHARS = frozenset("-?*X")
 _DNA_STANDARD_CODES = (65, 67, 71, 84)  # A, C, G, T
 _ASCII_PI_BLOCK_SIZE = 128
+_PARSIMONY_INFORMATIVE_SCALAR_MAX_CELLS = 8192
 
 
 def _get_gap_codes(is_protein: bool):
@@ -81,6 +84,38 @@ def _count_clean_dna_parsimony_informative_sites(alignment_array) -> int | None:
     if int(standard_total.sum()) != alignment_array.size:
         return None
     return int(np.count_nonzero(recurrent >= 2))
+
+
+def _count_parsimony_informative_sites_scalar(
+    sequences: list[str],
+    aln_len: int,
+    is_protein: bool,
+) -> int | None:
+    if (
+        not sequences
+        or (len(sequences) * aln_len) > _PARSIMONY_INFORMATIVE_SCALAR_MAX_CELLS
+    ):
+        return None
+    if any(len(sequence) != aln_len for sequence in sequences):
+        return None
+
+    gap_chars = _PROTEIN_GAP_CHARS if is_protein else _DNA_GAP_CHARS
+    pi_sites = 0
+    for column_idx in range(aln_len):
+        counts = {}
+        recurrent_symbol_count = 0
+        for sequence in sequences:
+            char = sequence[column_idx]
+            if char in gap_chars:
+                continue
+            count = counts.get(char, 0) + 1
+            counts[char] = count
+            if count == 2:
+                recurrent_symbol_count += 1
+                if recurrent_symbol_count >= 2:
+                    pi_sites += 1
+                    break
+    return pi_sites
 
 
 class ParsimonyInformative(Alignment):
@@ -169,6 +204,14 @@ class ParsimonyInformative(Alignment):
             return 0, aln_len, 0.0
         if all_identical:
             return 0, aln_len, 0.0
+
+        scalar_pi_sites = _count_parsimony_informative_sites_scalar(
+            sequences,
+            aln_len,
+            is_protein,
+        )
+        if scalar_pi_sites is not None:
+            return scalar_pi_sites, aln_len, (scalar_pi_sites / aln_len) * 100
 
         try:
             alignment_bytes = "".join(sequences).encode("ascii")
