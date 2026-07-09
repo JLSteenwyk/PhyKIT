@@ -103,6 +103,13 @@ class RenameFastaEntries(Alignment):
     ) -> tuple[int, int]:
         from Bio.SeqIO.FastaIO import SimpleFastaParser
 
+        if not idmap:
+            return self._copy_fasta_file_with_wrapping(
+                output_file_path,
+                fasta_path,
+                SimpleFastaParser,
+            )
+
         renamed_count = 0
         total_records = 0
         missing = object()
@@ -141,6 +148,45 @@ class RenameFastaEntries(Alignment):
                     write(f">{header}\n{wrapped_sequence}\n")
 
         return renamed_count, total_records
+
+    @staticmethod
+    def _copy_fasta_file_with_wrapping(
+        output_file_path: str,
+        fasta_path: str,
+        parser,
+    ) -> tuple[int, int]:
+        total_records = 0
+        with open(fasta_path) as input_file, open(output_file_path, "w") as output_file:
+            write = output_file.write
+            width = _FASTA_WRAP_WIDTH
+            two_line_limit = width * 2
+            batch_min_length = _WRAPPED_FASTA_BATCH_MIN_LENGTH
+            for title, sequence in parser(input_file):
+                total_records += 1
+                sequence_length = len(sequence)
+                if sequence_length == 0:
+                    write(f">{title}\n")
+                elif sequence_length <= width:
+                    write(f">{title}\n{sequence}\n")
+                elif sequence_length <= two_line_limit:
+                    write(f">{title}\n{sequence[:width]}\n{sequence[width:]}\n")
+                elif sequence_length >= batch_min_length:
+                    write(f">{title}\n")
+                    RenameFastaEntries._write_wrapped_fasta_sequence(
+                        output_file,
+                        sequence,
+                        width,
+                    )
+                else:
+                    wrapped_sequence = "\n".join(
+                        [
+                            sequence[idx:idx + width]
+                            for idx in range(0, sequence_length, width)
+                        ]
+                    )
+                    write(f">{title}\n{wrapped_sequence}\n")
+
+        return 0, total_records
 
     @staticmethod
     def _write_wrapped_fasta_sequence(handle, sequence: str, width: int = 60) -> None:

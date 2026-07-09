@@ -156,6 +156,33 @@ class TestRenameFastaEntries:
         assert (renamed_count, total_records) == (1, 1)
         assert output_file.read_text() == ">\nACGT\n"
 
+    def test_replace_ids_in_file_and_write_empty_idmap_copies_headers(
+        self, tmp_path, args
+    ):
+        service = RenameFastaEntries(args)
+        input_file = tmp_path / "input.fa"
+        output_file = tmp_path / "renamed.fa"
+        input_file.write_text(
+            ">a original description\n"
+            f"{'A' * 120}\n"
+            ">b original description\n"
+            "\n"
+        )
+
+        renamed_count, total_records = service.replace_ids_in_file_and_write(
+            str(output_file),
+            str(input_file),
+            {},
+        )
+
+        assert (renamed_count, total_records) == (0, 2)
+        assert output_file.read_text() == (
+            ">a original description\n"
+            f"{'A' * 60}\n"
+            f"{'A' * 60}\n"
+            ">b original description\n"
+        )
+
     def test_replace_ids_in_file_and_write_writes_single_line_sequences_directly(
         self, tmp_path, args
     ):

@@ -669,6 +669,7 @@ Results:
 | `RenameFastaEntries.replace_ids_in_file_and_write` combined record write | 30k FASTA records x 120 bp, 15k renamed | 0.060598s | 0.052972s | 1.14x |
 | `RenameFastaEntries.replace_ids_in_file_and_write` short-sequence no-wrap path | 120k FASTA records x 50 bp, half renamed, identical headers and sequence output | 0.087410s | 0.072161s | 1.21x |
 | `RenameFastaEntries.replace_ids_in_file_and_write` two-line wrapped write | 120k FASTA records x 120 bp, half renamed, identical 60-character wrapped output | 0.244310s | 0.089699s | 2.72x |
+| `RenameFastaEntries.replace_ids_in_file_and_write` empty ID-map copy path | 120k FASTA records x 120 bp, no mapped IDs, identical descriptions and wrapped output | 0.169998s | 0.145539s | 1.17x |
 | `RenameFastaEntries.load_idmap` explicit split loop | 500k two-column ID-map rows, identical whitespace parsing and duplicate-key behavior | 1.323420s | 1.219563s | 1.09x |
 | `RenameFastaEntries.load_idmap` localized split loop | 500k two-column ID-map rows plus duplicate-key overwrite, identical parsed dictionary | 0.570144s | 0.517416s | 1.10x |
 | `RenameFastaEntries._write_wrapped_fasta_sequence` | 25k renamed sequences x 1200 bp, 60-char wrapping | 0.0692s | 0.0597s | 1.2x |
@@ -4423,7 +4424,9 @@ Profiling summary:
   60-character FASTA line width directly, avoiding chunk-list construction while
   preserving falsey mapped identifiers. Common two-line wrapped sequences now
   write their two slices directly, avoiding temporary chunk-list construction
-  while preserving 60-character wrapping and renamed/unrenamed headers. ID-map
+  while preserving 60-character wrapping and renamed/unrenamed headers. Empty
+  ID maps now use a copy-only writer that preserves descriptions and wrapping
+  while skipping per-record ID splitting and map probes. ID-map
   loading now uses an explicit split loop instead of feeding split rows through
   `dict()`, preserving whitespace tokenization and duplicate-key overwrite
   behavior. A subsequent startup pass imports Bio.SeqIO and the FASTA parser
