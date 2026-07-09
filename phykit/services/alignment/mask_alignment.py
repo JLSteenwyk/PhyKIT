@@ -30,6 +30,7 @@ class _LazyNumpy:
 np = _LazyNumpy()
 _DNA_INVALID_LOOKUP = None
 _PROTEIN_INVALID_LOOKUP = None
+_ASCII_ENTROPY_BLOCK_SIZE = 512
 
 
 def _entropy_columns_from_probabilities(probs, log_probs):
@@ -62,7 +63,7 @@ def _column_entropies_from_ascii_codes(
     alignment_array,
     valid_mask,
     valid_symbols,
-    block_size: int = 8192,
+    block_size: int = _ASCII_ENTROPY_BLOCK_SIZE,
 ):
     aln_len = alignment_array.shape[1]
     entropies = np.zeros(aln_len, dtype=np.float64)

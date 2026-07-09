@@ -327,6 +327,41 @@ assert "Bio.AlignIO" not in sys.modules
         assert log_calls
         assert entropies.shape == (alignment_array.shape[1],)
 
+    def test_column_entropies_from_ascii_codes_defaults_to_tuned_blocks(
+        self, monkeypatch
+    ):
+        np = mask_alignment_module.np
+        alphabet = b"ACDEFGHIK"
+        width = mask_alignment_module._ASCII_ENTROPY_BLOCK_SIZE + 1
+        alignment_array = np.array(
+            [
+                [alphabet[(row + col) % len(alphabet)] for col in range(width)]
+                for row in range(3)
+            ],
+            dtype=np.uint8,
+        )
+        valid_symbols = np.unique(alignment_array)
+        original_bincount = mask_alignment_module.np.bincount
+        min_lengths = []
+
+        def bincount_spy(values, *args, **kwargs):
+            min_lengths.append(kwargs.get("minlength"))
+            return original_bincount(values, *args, **kwargs)
+
+        monkeypatch.setattr(mask_alignment_module.np, "bincount", bincount_spy)
+
+        entropies = mask_alignment_module._column_entropies_from_ascii_codes(
+            alignment_array,
+            None,
+            valid_symbols,
+        )
+
+        assert entropies.shape == (width,)
+        assert min_lengths == [
+            mask_alignment_module._ASCII_ENTROPY_BLOCK_SIZE * 256,
+            256,
+        ]
+
     def test_entropy_columns_from_probabilities_matches_explicit_sum(self):
         np = mask_alignment_module.np
         probs = np.array(
