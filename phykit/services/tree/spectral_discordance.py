@@ -461,16 +461,34 @@ class SpectralDiscordance(Tree):
                     f"{label:>10d}"
                 )
         elif show_pcs == 5:
-            for g, row_scores in enumerate(scores):
-                gene_tree = "gene_tree_" + str(g + 1)
+            col1 = scores[:, 0].tolist()
+            col2 = scores[:, 1].tolist()
+            col3 = scores[:, 2].tolist()
+            col4 = scores[:, 3].tolist()
+            col5 = scores[:, 4].tolist()
+            label_values = (
+                labels.tolist()
+                if hasattr(labels, "tolist")
+                else labels
+            )
+            for g, val1, val2, val3, val4, val5, label in zip(
+                range(1, scores.shape[0] + 1),
+                col1,
+                col2,
+                col3,
+                col4,
+                col5,
+                label_values,
+            ):
+                gene_tree = "gene_tree_" + str(g)
                 lines.append(
                     f"  {gene_tree:<14s}"
-                    f"{row_scores[0]:>10.4f}"
-                    f"{row_scores[1]:>10.4f}"
-                    f"{row_scores[2]:>10.4f}"
-                    f"{row_scores[3]:>10.4f}"
-                    f"{row_scores[4]:>10.4f}"
-                    f"{labels[g]:>10d}"
+                    f"{val1:>10.4f}"
+                    f"{val2:>10.4f}"
+                    f"{val3:>10.4f}"
+                    f"{val4:>10.4f}"
+                    f"{val5:>10.4f}"
+                    f"{label:>10d}"
                 )
         else:
             for g in range(scores.shape[0]):

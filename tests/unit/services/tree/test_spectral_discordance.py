@@ -1064,6 +1064,58 @@ class TestRun:
         assert text.count("gene_tree_") == 1
 
     @patch("builtins.print")
+    def test_text_output_five_pcs_skips_row_iteration(
+        self, mocked_print, default_args
+    ):
+        class _Column:
+            def __init__(self, values):
+                self._values = values
+
+            def tolist(self):
+                return self._values
+
+        class FivePcScores:
+            shape = (1, 5)
+
+            def __getitem__(self, key):
+                rows, column = key
+                assert rows == slice(None, None, None)
+                return _Column(([0.1], [0.2], [0.3], [0.4], [0.5])[column])
+
+            def __iter__(self):
+                raise AssertionError("5-PC text output should not iterate rows")
+
+        class Labels:
+            def tolist(self):
+                return [1]
+
+            def __iter__(self):
+                raise AssertionError("5-PC text output should bulk-convert labels")
+
+        svc = SpectralDiscordance(default_args)
+        svc._print_text(
+            FivePcScores(),
+            np.array([0.4, 0.3, 0.2, 0.1, 0.05]),
+            {},
+            Labels(),
+            2,
+            np.array([]),
+            5,
+            1,
+            4,
+            6,
+        )
+
+        mocked_print.assert_called_once()
+        text = mocked_print.call_args.args[0]
+        assert (
+            "gene_tree_1       0.1000    0.2000    0.3000    0.4000"
+            "    0.5000         1"
+            in text
+        )
+        assert text.count("gene_tree_") == 1
+
+    @patch("builtins.print")
     def test_json_output(self, mocked_print):
         args = Namespace(
             tree=TREE_SIMPLE,
