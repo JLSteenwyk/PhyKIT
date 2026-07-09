@@ -204,6 +204,16 @@ class _TreeFactorOutputJsonDefaultArgs:
         self.json = False
 
 
+class _TreeSupportOutputJsonDefaultArgs:
+    __slots__ = ("tree", "support", "output", "json")
+
+    def __init__(self, tree: str, support: float) -> None:
+        self.tree = tree
+        self.support = support
+        self.output = None
+        self.json = False
+
+
 class _TwoTreeJsonDefaultArgs:
     __slots__ = ("tree_zero", "tree_one", "json")
 
@@ -3574,6 +3584,24 @@ class Phykit:
 
     @staticmethod
     def collapse_branches(argv):
+        if (
+            len(argv) == 3
+            and argv[0]
+            and argv[0][0] != "-"
+            and argv[1] in ("-s", "--support")
+            and argv[2]
+        ):
+            try:
+                support = float(argv[2])
+            except ValueError:
+                pass
+            else:
+                _run_service_with_args(
+                    _TreeSupportOutputJsonDefaultArgs(argv[0], support),
+                    CollapseBranches,
+                )
+                return
+
         parser = _new_parser(
             description=_dedent(
                 f"""\
