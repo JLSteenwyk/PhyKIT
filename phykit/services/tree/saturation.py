@@ -517,12 +517,9 @@ class Saturation(Tree):
         if len(combos) != n_tips * (n_tips - 1) // 2:
             return False
 
-        cursor = 0
-        for idx, tip_a in enumerate(combo_tips[:-1]):
-            for tip_b in combo_tips[idx + 1:]:
-                if combos[cursor] != (tip_a, tip_b):
-                    return False
-                cursor += 1
+        for observed, expected in zip(combos, itertools.combinations(combo_tips, 2)):
+            if observed != expected:
+                return False
         return True
 
     @classmethod

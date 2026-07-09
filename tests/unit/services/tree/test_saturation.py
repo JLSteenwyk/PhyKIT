@@ -506,6 +506,30 @@ assert "phykit.helpers.plot_config" not in sys.modules
 
         self.assertIsNone(distances)
 
+    def test_standard_upper_triangle_validator_avoids_tip_slices(self):
+        class NoSliceList(list):
+            def __getitem__(self, item):
+                if isinstance(item, slice):
+                    raise AssertionError("validator should stream expected pairs")
+                return super().__getitem__(item)
+
+        combo_tips = NoSliceList(["seq1", "seq2", "seq3", "seq4"])
+        combos = [
+            ("seq1", "seq2"),
+            ("seq1", "seq3"),
+            ("seq1", "seq4"),
+            ("seq2", "seq3"),
+            ("seq2", "seq4"),
+            ("seq3", "seq4"),
+        ]
+
+        self.assertTrue(
+            self.saturation._combos_are_standard_upper_triangle(
+                combo_tips,
+                combos,
+            )
+        )
+
     def test_standard_upper_triangle_values_trusted_order_skips_validation(self):
         combo_tips = ["seq1", "seq2", "seq3"]
         combos = [("seq1", "seq2"), ("seq1", "seq3"), ("seq2", "seq3")]
