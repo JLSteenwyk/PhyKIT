@@ -151,7 +151,7 @@ def is_protein_alignment(alignment: "MultipleSeqAlignment") -> bool:
 def read_single_column_file_to_list(single_col_file_path: str) -> list:
     try:
         with open(single_col_file_path) as f:
-            return [line.strip() for line in f]
+            return [line.strip() for line in f.read().splitlines()]
     except FileNotFoundError:
         raise PhykitUserError(
             [

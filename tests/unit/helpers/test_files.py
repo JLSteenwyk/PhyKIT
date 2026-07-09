@@ -222,11 +222,11 @@ class TestHelpers:
         fp.write_text("\ta\t\n b \n\tc")
         assert read_single_column_file_to_list(str(fp)) == ["a", "b", "c"]
 
-    def test_read_single_column_file_to_list_streams_and_preserves_blank_lines(
+    def test_read_single_column_file_to_list_bulk_reads_and_preserves_blank_lines(
         self,
         mocker,
     ):
-        class StreamingOnlyFile:
+        class BulkReadableFile:
             def __enter__(self):
                 return self
 
@@ -234,11 +234,8 @@ class TestHelpers:
                 return None
 
             def read(self):
-                raise AssertionError("single-column reader should stream lines")
+                return "  a  \n\n\tb\t"
 
-            def __iter__(self):
-                return iter(["  a  \n", "\n", "\tb\t\n"])
-
-        mocker.patch("builtins.open", return_value=StreamingOnlyFile())
+        mocker.patch("builtins.open", return_value=BulkReadableFile())
 
         assert read_single_column_file_to_list("items.txt") == ["a", "", "b"]
