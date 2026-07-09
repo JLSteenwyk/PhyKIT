@@ -2131,6 +2131,7 @@ Results:
 | `Cophylo` circular clade-color overlay rendering | two balanced 2048-tip trees, all branches highlighted by color-file clade, real Matplotlib Agg overlay render | 1.287788s | 0.057825s | 22.27x |
 | `Cophylo._plot_cophylo_rect` shared color-file parse | 200k mixed label/range/clade color rows, side-by-side previous rectangular two-panel parse of the same file versus one shared parsed color-data dict | 7.194742s | 3.739441s | 1.92x |
 | `Cophylo._plot_cophylo_circular` circular coordinate and terminal-list reuse | two balanced 32768-tip trees, node x positions, parent maps, preorder lists, and tips already available | 0.136640s | 0.093813s | 1.46x |
+| `Cophylo._plot_cophylo` tip-order size reuse | two balanced 4096 / 32768 / 65536-tip trees, dispatch sizing before rectangular/circular plot draw, side-by-side previous two terminal-clade scans | 0.007782s / 0.023438s / 0.057017s | 0.000001750s / 0.000000758s / 0.000001111s | 4446.8x / 30905.9x / 51302.9x |
 | `Cophylo.run` cached tree2 setup | two balanced 32768-tip trees, validation, tip ordering, plotting, and text output mocked | 0.245234s | 0.209092s | 1.17x |
 | `Cophylo.run` default shared-tip mapping | 5 default-mapping setup passes over two 200k-tip name lists, 200k / 100k shared taxa | 3.342252s / 1.595292s | 1.498223s / 0.736646s | 2.23x / 2.17x |
 | `Cophylo._print_text_output` batched summary | 100k captured cophylo text summaries, identical stdout text | 0.099878s | 0.057622s | 1.73x |
@@ -7497,7 +7498,9 @@ Profiling summary:
   tanglegram association connectors now use one figure-level `LineCollection`
   in figure coordinates instead of one cross-axes `ConnectionPatch` per mapped
   taxon, preserving the gray connector styling while reducing large mapped
-  circular plots to one connector artist. Text summary
+  circular plots to one connector artist. Plot dispatch now reuses the already
+  computed tip-order dictionary lengths for figure sizing, avoiding two extra
+  terminal-clade traversals before rectangular or circular drawing. Text summary
   output now batches the five summary lines into one newline-joined print while
   preserving exact stdout text. A later
   color-overlay rendering pass batches rectangular

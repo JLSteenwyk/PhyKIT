@@ -471,6 +471,67 @@ class TestRun:
         finally:
             plt.close("all")
 
+    def test_plot_cophylo_uses_tip_order_lengths_for_size(
+        self, monkeypatch, tmp_path
+    ):
+        pytest.importorskip("matplotlib")
+        import matplotlib
+
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+
+        args = Namespace(
+            tree1=TREE1,
+            tree2=TREE2,
+            output=str(tmp_path / "cophylo.png"),
+            mapping=None,
+            json=False,
+            circular=False,
+            color_file=None,
+            no_title=True,
+            ylabel_fontsize=0,
+        )
+        svc = Cophylo(args)
+        tree1 = Phylo.read(StringIO("((A:1,B:1):1,C:1);"), "newick")
+        tree2 = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        tree1_order = {"A": 0, "B": 1, "C": 2}
+        tree2_order = {"A": 0, "B": 1, "C": 2, "D": 3}
+        mapping = {"A": "A", "B": "B", "C": "C"}
+        observed = {}
+
+        def fail_terminal_scan(*_args, **_kwargs):
+            raise AssertionError("plot dispatch should reuse tip-order lengths")
+
+        def capture_rect(
+            _tree1,
+            _tree2,
+            _mapping,
+            _tree1_order,
+            _tree2_order,
+            _output_path,
+            _config,
+            n_max,
+            _plt,
+        ):
+            observed["n_max"] = n_max
+
+        monkeypatch.setattr(Cophylo, "_terminal_clades", fail_terminal_scan)
+        monkeypatch.setattr(svc, "_plot_cophylo_rect", capture_rect)
+
+        try:
+            svc._plot_cophylo(
+                tree1,
+                tree2,
+                mapping,
+                tree1_order,
+                tree2_order,
+                str(tmp_path / "cophylo_dispatch.png"),
+            )
+        finally:
+            plt.close("all")
+
+        assert observed["n_max"] == 4
+
     def test_plot_cophylo_rect_skips_redundant_tight_layout(self, monkeypatch, tmp_path):
         pytest.importorskip("matplotlib")
         import matplotlib

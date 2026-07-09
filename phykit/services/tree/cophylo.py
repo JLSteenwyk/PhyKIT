@@ -601,9 +601,7 @@ class Cophylo(Tree):
             )
             raise SystemExit(2)
 
-        tips1 = self._terminal_clades(tree1)
-        tips2 = self._terminal_clades(tree2)
-        n_max = max(len(tips1), len(tips2))
+        n_max = max(len(tree1_order), len(tree2_order))
         config = self.plot_config
         config.resolve(n_rows=n_max, n_cols=None)
 
