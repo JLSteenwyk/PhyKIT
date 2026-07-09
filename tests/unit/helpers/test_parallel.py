@@ -515,6 +515,63 @@ class TestNumpyParallel(unittest.TestCase):
                                 [2, 1, 0]])
             np.testing.assert_array_equal(result, expected)
 
+    def test_parallel_pairwise_operation_symmetric_uses_lazy_pair_sequence(self):
+        """Parallel symmetric pairwise operations avoid eager pair tuple lists."""
+        items = list(range(7))
+        expected_pairs = [
+            (i, j, items[i], items[j])
+            for i in range(len(items))
+            for j in range(i + 1, len(items))
+        ]
+
+        with patch('phykit.helpers.parallel.ParallelProcessor.parallel_map') as mock_map:
+            mock_map.return_value = [
+                (i, j, item_i + item_j)
+                for i, j, item_i, item_j in expected_pairs
+            ]
+
+            result = NumpyParallel.parallel_pairwise_operation(
+                items, lambda left, right: left + right, symmetric=True
+            )
+
+        pair_data = mock_map.call_args.args[1]
+        self.assertIsInstance(pair_data, parallel_module._PairSequence)
+        self.assertNotIsInstance(pair_data, list)
+        self.assertEqual(list(pair_data), expected_pairs)
+        self.assertEqual(len(pair_data), len(expected_pairs))
+
+        for i, j, item_i, item_j in expected_pairs:
+            self.assertEqual(result[i, j], item_i + item_j)
+            self.assertEqual(result[j, i], item_i + item_j)
+
+    def test_parallel_pairwise_operation_non_symmetric_uses_lazy_pair_sequence(self):
+        """Parallel non-symmetric pairwise operations avoid eager pair tuple lists."""
+        items = list(range(5))
+        expected_pairs = [
+            (i, j, items[i], items[j])
+            for i in range(len(items))
+            for j in range(len(items))
+        ]
+
+        with patch('phykit.helpers.parallel.ParallelProcessor.parallel_map') as mock_map:
+            mock_map.return_value = [
+                (i, j, item_i - item_j)
+                for i, j, item_i, item_j in expected_pairs
+            ]
+
+            result = NumpyParallel.parallel_pairwise_operation(
+                items, lambda left, right: left - right, symmetric=False
+            )
+
+        pair_data = mock_map.call_args.args[1]
+        self.assertIsInstance(pair_data, parallel_module._PairSequence)
+        self.assertNotIsInstance(pair_data, list)
+        self.assertEqual(list(pair_data), expected_pairs)
+        self.assertEqual(len(pair_data), len(expected_pairs))
+
+        for i, j, item_i, item_j in expected_pairs:
+            self.assertEqual(result[i, j], item_i - item_j)
+
     def test_parallel_pairwise_operation_symmetric_num_workers_one_direct(self):
         """Explicit sequential pairwise operations should avoid pair materialization."""
         items = ["A", "B", "C"]

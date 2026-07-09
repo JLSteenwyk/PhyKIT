@@ -46,6 +46,34 @@ class _LazyExecutor:
         return executor_class(*args, **kwargs)
 
 
+class _PairSequence:
+    def __init__(self, items: list[object], symmetric: bool) -> None:
+        self.items = items
+        self.symmetric = symmetric
+        self.n = len(items)
+        self.length = self.n * (self.n - 1) // 2 if symmetric else self.n * self.n
+
+    def __bool__(self) -> bool:
+        return self.length != 0
+
+    def __len__(self) -> int:
+        return self.length
+
+    def __iter__(self):
+        items = self.items
+        n = self.n
+        if self.symmetric:
+            for i in range(n):
+                item_i = items[i]
+                for j in range(i + 1, n):
+                    yield (i, j, item_i, items[j])
+        else:
+            for i in range(n):
+                item_i = items[i]
+                for j in range(n):
+                    yield (i, j, item_i, items[j])
+
+
 def as_completed(*args, **kwargs):
     from concurrent.futures import as_completed as _as_completed
 
@@ -362,11 +390,7 @@ class NumpyParallel:
                         row_i[j] = operation_func(item_i, items[j])
             return result_matrix
 
-        # Generate pairs
-        pairs = []
-        for i in range(n):
-            for j in range(i + 1 if symmetric else 0, n):
-                pairs.append((i, j, items[i], items[j]))
+        pairs = _PairSequence(items, symmetric)
 
         # Process pairs in parallel
         def process_pair(pair_data):
