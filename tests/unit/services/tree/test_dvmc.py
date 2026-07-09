@@ -98,6 +98,14 @@ class TestDVMC(object):
         expected = 1.0
         assert result == pytest.approx(expected)
 
+    def test_determine_dvmc_standard_tree_handles_mixed_child_counts(self):
+        tree = Phylo.read(StringIO("(A:1,(B:2,C:4):1,D:5):0.5;"), "newick")
+
+        result = DVMC._determine_dvmc_standard_tree(tree)
+
+        expected = np.std(np.array([1.0, 3.0, 5.0, 5.0]), ddof=1)
+        assert result == pytest.approx(expected)
+
     def test_determine_dvmc_fallback_does_not_import_numpy(self, monkeypatch):
         class FallbackTree:
             root = object()

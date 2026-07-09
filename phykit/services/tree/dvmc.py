@@ -67,13 +67,15 @@ class DVMC(Tree):
         total = 0.0
         total_sq = 0.0
         stack = [(root, 0.0)]
+        pop = stack.pop
+        append = stack.append
         try:
             while stack:
-                clade, distance = stack.pop()
+                clade, distance = pop()
                 children = clade.clades
                 if children:
                     for child in children:
-                        stack.append(
+                        append(
                             (
                                 child,
                                 distance + (child.branch_length or 0.0),
