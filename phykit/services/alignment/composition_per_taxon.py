@@ -32,6 +32,8 @@ _IDENTICAL_INDEXED_SCAN_MIN_RECORDS = 200_000
 _IDENTICAL_ROW_TILE_MIN_COUNT = 1_000
 _ASCII_OFFSET_BINCOUNT_MAX_ROWS = 16_384
 _COMPOSITION_SCALAR_MAX_CELLS = 8192
+_NUCLEOTIDE_BYTES = b"ACGTUacgtu-Nn?*"
+_NUCLEOTIDE_CHARS = {"A", "C", "G", "T", "U", "-", "N", "?", "*"}
 
 
 class _IdenticalCompositionOutputRows(list):
@@ -128,6 +130,77 @@ def _composition_per_taxon_scalar(raw_records, invalid_chars):
     return symbols, _composition_output_rows(record_ids, freqs)
 
 
+def _clean_simple_fasta_sequence(sequence_parts):
+    if len(sequence_parts) == 1:
+        sequence = sequence_parts[0]
+    else:
+        sequence = "".join(sequence_parts)
+    if " " in sequence:
+        sequence = sequence.replace(" ", "")
+    if "\r" in sequence:
+        sequence = sequence.replace("\r", "")
+    return sequence
+
+
+def _sequence_has_protein_symbols(sequence: str) -> bool:
+    try:
+        return bool(sequence.encode("ascii").translate(None, _NUCLEOTIDE_BYTES))
+    except UnicodeEncodeError:
+        return bool(set(sequence.upper()) - _NUCLEOTIDE_CHARS)
+
+
+def _read_small_simple_fasta_records(path: str):
+    raw_records = []
+    expected_length = None
+    total_cells = 0
+    is_protein = False
+
+    def append_record(record_id, sequence_parts):
+        nonlocal expected_length, total_cells, is_protein
+        sequence = _clean_simple_fasta_sequence(sequence_parts)
+        sequence_length = len(sequence)
+        if expected_length is None:
+            expected_length = sequence_length
+        elif sequence_length != expected_length:
+            return False
+        total_cells += sequence_length
+        if total_cells > _COMPOSITION_SCALAR_MAX_CELLS:
+            return False
+        if not is_protein and _sequence_has_protein_symbols(sequence):
+            is_protein = True
+        raw_records.append((record_id, sequence))
+        return True
+
+    try:
+        with open(path) as handle:
+            record_id = None
+            sequence_parts = []
+            for line in handle:
+                if not line:
+                    continue
+                if line[0] == ">":
+                    if record_id is not None and not append_record(
+                        record_id,
+                        sequence_parts,
+                    ):
+                        return None
+                    record_id = line[1:].split(None, 1)[0]
+                    sequence_parts = []
+                elif record_id is not None:
+                    sequence_parts.append(line.rstrip())
+                elif line.strip():
+                    return None
+
+            if record_id is not None and not append_record(record_id, sequence_parts):
+                return None
+    except OSError:
+        return None
+
+    if not raw_records:
+        return None
+    return raw_records, is_protein
+
+
 class CompositionPerTaxon(Alignment):
     _INVALID_LOOKUP_CACHE = {}
 
@@ -137,8 +210,16 @@ class CompositionPerTaxon(Alignment):
         self.json_output = parsed["json_output"]
 
     def run(self) -> None:
-        alignment, _, is_protein = self.get_alignment_and_format()
-        symbols, rows = self.calculate_composition_per_taxon(alignment, is_protein)
+        direct_records = _read_small_simple_fasta_records(self.alignment_file_path)
+        if direct_records is None:
+            alignment, _, is_protein = self.get_alignment_and_format()
+            symbols, rows = self.calculate_composition_per_taxon(alignment, is_protein)
+        else:
+            raw_records, is_protein = direct_records
+            symbols, rows = _composition_per_taxon_scalar(
+                raw_records,
+                self.get_gap_chars(is_protein),
+            )
         if not symbols:
             return
 

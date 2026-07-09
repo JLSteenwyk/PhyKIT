@@ -310,6 +310,7 @@ Results:
 | `CompositionPerTaxon.run` JSON payload formatting | 100k taxon rows x 4 composition symbols, mocked calculation rows, side-by-side previous index lookup loop | 0.147151s | 0.137843s | 1.07x |
 | `CompositionPerTaxon.run` identical JSON payload formatting | 100k taxon rows x 4 identical composition symbols, side-by-side previous repeated per-row composition dict formatting | 0.209159s | 0.017419s | 12.01x |
 | `CompositionPerTaxon.run` JSON row literals | 300k taxon rows x 4 composition symbols, side-by-side previous outer `dict(...)` wrapper with identical nested payload rows | 2.735841s | 2.473427s | 1.11x |
+| `CompositionPerTaxon.run` small simple FASTA direct scalar path | 1000 repeated text runs on `test_alignment_0.fa`, stdout suppressed, side-by-side previous format-detect/alignment-reader path | 0.113815s | 0.067164s | 1.69x |
 | `CompositionPerTaxon.calculate_composition_per_taxon` small scalar path | command profiler, 5 runs after 1 warmup, `test_alignment_0.fa` | 0.459681s | 0.114151s | 4.03x |
 | `composition_per_taxon` module import without eager NumPy | cold subprocess import after lazy NumPy proxy and postponed annotations | 0.085520s | 0.023586s | 3.63x |
 | `composition_per_taxon` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006286s | 0.004998s | 1.26x |

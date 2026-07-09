@@ -609,6 +609,63 @@ assert "Bio.SeqIO.FastaIO" not in sys.modules
             "t2\tA:1.0;C:0.0;G:0.0;T:0.0\n"
         )
 
+    def test_run_small_fasta_uses_direct_scalar_path(
+        self,
+        mocker,
+        tmp_path,
+        capsys,
+    ):
+        alignment = tmp_path / "small.fa"
+        alignment.write_text(">t1\nACGT\n>t2\nA-GT\n")
+        svc = CompositionPerTaxon(Namespace(alignment=str(alignment), json=False))
+        get_alignment = mocker.patch.object(
+            CompositionPerTaxon,
+            "get_alignment_and_format",
+            side_effect=AssertionError("small FASTA should use direct scalar path"),
+        )
+
+        svc.run()
+
+        out, _ = capsys.readouterr()
+        assert out == (
+            "t1\tA:0.25;C:0.25;G:0.25;T:0.25\n"
+            "t2\tA:0.3333;C:0.0;G:0.3333;T:0.3333\n"
+        )
+        get_alignment.assert_not_called()
+
+    def test_run_large_fasta_falls_back_to_alignment_reader(self, mocker, tmp_path):
+        alignment = tmp_path / "large.fa"
+        alignment.write_text(">t1\n" + "A" * 5000 + "\n>t2\n" + "C" * 5000 + "\n")
+        svc = CompositionPerTaxon(Namespace(alignment=str(alignment), json=False))
+        get_alignment = mocker.patch.object(
+            CompositionPerTaxon,
+            "get_alignment_and_format",
+            return_value=(object(), "fasta", False),
+        )
+        calculate = mocker.patch.object(
+            CompositionPerTaxon,
+            "calculate_composition_per_taxon",
+            return_value=([], []),
+        )
+
+        svc.run()
+
+        get_alignment.assert_called_once_with()
+        calculate.assert_called_once()
+
+    def test_simple_fasta_reader_classifies_protein_symbols(self, tmp_path):
+        alignment = tmp_path / "protein.fa"
+        alignment.write_text(">p1 description\nACD\n>p2\nAXD\n")
+
+        records, is_protein = (
+            composition_per_taxon_module._read_small_simple_fasta_records(
+                str(alignment)
+            )
+        )
+
+        assert records == [("p1", "ACD"), ("p2", "AXD")]
+        assert is_protein is True
+
     def test_run_text_output_reuses_shared_identical_composition(
         self,
         mocker,
