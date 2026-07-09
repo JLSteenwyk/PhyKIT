@@ -31,6 +31,9 @@ _DNA_GAP_CHARS = {"-", "?", "*", "X", "N"}
 _PROTEIN_GAP_CHARS = {"-", "?", "*", "X"}
 _DNA_GAP_COUNT_CHARS = "-?*XNxn"
 _PROTEIN_GAP_COUNT_CHARS = "-?*Xx"
+_DNA_GAP_COUNT_CHAR_SET = frozenset(_DNA_GAP_COUNT_CHARS)
+_PROTEIN_GAP_COUNT_CHAR_SET = frozenset(_PROTEIN_GAP_COUNT_CHARS)
+_NO_GAP_SCALAR_MAX_CELLS = 8192
 _DENSE_GAP_SCAN_MIN_BYTES = 1_000_000
 _DENSE_GAP_SAMPLE_BYTES = 8192
 _DENSE_GAP_SAMPLE_MIN_FRACTION = 0.03
@@ -108,6 +111,27 @@ def _count_columns_without_gap_bytes_matrix(
     return int(np.count_nonzero(~columns_with_gaps))
 
 
+def _count_no_gap_sites_scalar(
+    sequences: list[str],
+    aln_len: int,
+    is_protein: bool,
+) -> int | None:
+    if not sequences or (len(sequences) * aln_len) > _NO_GAP_SCALAR_MAX_CELLS:
+        return None
+    if any(len(sequence) != aln_len for sequence in sequences):
+        return None
+
+    gap_chars = _PROTEIN_GAP_COUNT_CHAR_SET if is_protein else _DNA_GAP_COUNT_CHAR_SET
+    no_gap_sites = 0
+    for column_idx in range(aln_len):
+        for sequence in sequences:
+            if sequence[column_idx] in gap_chars:
+                break
+        else:
+            no_gap_sites += 1
+    return no_gap_sites
+
+
 class AlignmentLengthNoGaps(Alignment):
     def __init__(self, args) -> None:
         parsed = self.process_args(args)
@@ -177,6 +201,14 @@ class AlignmentLengthNoGaps(Alignment):
                 first_sequence,
                 is_protein,
             )
+
+        scalar_no_gap_sites = _count_no_gap_sites_scalar(
+            sequences,
+            aln_len,
+            is_protein,
+        )
+        if scalar_no_gap_sites is not None:
+            return scalar_no_gap_sites
 
         try:
             alignment_bytes = "".join(sequences).encode("ascii")

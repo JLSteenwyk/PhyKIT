@@ -358,6 +358,7 @@ Results:
 | `AlignmentLengthNoGaps` identical-row no-slice scan | see shared `PairwiseIdentity` rows above for common helper benchmarks | 0.259744s / 0.018993s / 0.082823s | 0.126212s / 0.000004s / 0.038411s | 2.06x / 5301.12x / 2.16x |
 | `AlignmentLengthNoGaps.get_sites_no_gaps_count` cached lazy NumPy attributes | gapped DNA alignments sized 3000 x 5000 / 5000 x 3000, side-by-side previous uncached lazy proxy, identical no-gap site count | 0.027813s / 0.030966s | 0.022778s / 0.025327s | 1.22x / 1.22x |
 | `AlignmentLengthNoGaps.get_sites_no_gaps_count` delayed Unicode gap setup | 20k small clean ASCII / 12k small gappy ASCII / 3k Unicode fallback calls, identical no-gap site counts | 0.155536s / 1.373911s / 0.010183s | 0.105414s / 1.153009s / 0.006459s | 1.48x / 1.19x / 1.58x |
+| `AlignmentLengthNoGaps.get_sites_no_gaps_count` small scalar column scan | command profiler, 7 runs after 1 warmup on `simple.fa`; same-process 100k-call forced byte scan versus scalar path on a 3 x 5 gappy ASCII alignment | 0.071760s / 0.919483s | 0.062304s / 0.767959s | 1.15x / 1.20x |
 | `alignment_length_no_gaps` module import without eager NumPy/Bio.Align | cold subprocess import after lazy NumPy lookup construction and annotation-only Bio.Align import | 0.116950s | 0.024571s | 4.76x |
 | `alignment_length_no_gaps` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.007086s | 0.006015s | 1.18x |
 | `alignment_length_no_gaps` module import without `typing` startup | median cold subprocess import after removing runtime `TYPE_CHECKING` and converting annotation-only typing aliases to built-in annotations | 0.004736s | 0.002167s | 2.18x |
@@ -3705,7 +3706,11 @@ Profiling summary:
   attributes during repeated gapped matrix calculations while preserving import
   deferral. The ASCII path now delays Unicode fallback gap-character setup until
   a Unicode encode failure occurs, avoiding unnecessary `get_gap_chars` work for
-  the common byte-backed clean and gappy paths. The shared `alignment.base` RCV lookup
+  the common byte-backed clean and gappy paths. Small alignments now count
+  gap-free columns with a scalar per-column scan below an 8 KiB cell threshold,
+  avoiding joined byte strings and NumPy startup for tiny command inputs while
+  leaving larger clean, sparse-gapped, and dense-gapped byte paths unchanged.
+  The shared `alignment.base` RCV lookup
   tables now use the same lazy NumPy construction, preserving the module-level
   `np.isin` patch point used by fallback-path tests. A follow-up startup pass
   keeps JSON output behind a module-level forwarding wrapper, preserving the

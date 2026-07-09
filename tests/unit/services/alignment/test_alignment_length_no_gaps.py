@@ -139,7 +139,7 @@ assert "Bio.AlignIO" not in sys.modules
         assert aln.get_sites_no_gaps_count(alignment, 5, is_protein=False) == 2
 
     def test_get_sites_no_gaps_count_ascii_path_uses_gap_byte_positions(
-        self, mocker, args
+        self, mocker, monkeypatch, args
     ):
         alignment = MultipleSeqAlignment(
             [
@@ -149,6 +149,7 @@ assert "Bio.AlignIO" not in sys.modules
             ]
         )
         aln = AlignmentLengthNoGaps(args)
+        monkeypatch.setattr(alg_module, "_NO_GAP_SCALAR_MAX_CELLS", 0)
         gap_column_spy = mocker.spy(alg_module, "_count_columns_without_gap_bytes")
         mocker.patch(
             "phykit.services.alignment.alignment_length_no_gaps.np.frombuffer",
@@ -181,6 +182,7 @@ assert "Bio.AlignIO" not in sys.modules
             ]
         )
         aln = AlignmentLengthNoGaps(args)
+        monkeypatch.setattr(alg_module, "_NO_GAP_SCALAR_MAX_CELLS", 0)
         monkeypatch.setattr(alg_module, "_DENSE_GAP_SCAN_MIN_BYTES", 1)
         monkeypatch.setattr(alg_module, "_DENSE_GAP_SAMPLE_MIN_FRACTION", 0.1)
         matrix_spy = mocker.spy(
@@ -239,6 +241,41 @@ assert "Bio.AlignIO" not in sys.modules
         )
 
         assert aln.get_sites_no_gaps_count(alignment, 5, is_protein=False) == 5
+
+    def test_get_sites_no_gaps_count_small_alignment_uses_scalar_path(
+        self, mocker, args
+    ):
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("AcGtA"), id="a"),
+                SeqRecord(Seq("AnG-A"), id="b"),
+                SeqRecord(Seq("aCGtx"), id="c"),
+            ]
+        )
+        aln = AlignmentLengthNoGaps(args)
+        mocker.patch(
+            "phykit.services.alignment.alignment_length_no_gaps."
+            "_count_columns_without_gap_bytes",
+            side_effect=AssertionError(
+                "small alignment no-gap counts should avoid joined byte scans"
+            ),
+        )
+        mocker.patch(
+            "phykit.services.alignment.alignment_length_no_gaps.np.frombuffer",
+            side_effect=AssertionError(
+                "small alignment no-gap counts should avoid NumPy setup"
+            ),
+        )
+
+        assert aln.get_sites_no_gaps_count(alignment, 5, is_protein=False) == 2
+        assert aln.get_sites_no_gaps_count(alignment, 5, is_protein=True) == 3
+
+    def test_count_no_gap_sites_scalar_rejects_uneven_lengths(self):
+        assert alg_module._count_no_gap_sites_scalar(
+            ["ACGT", "ACG"],
+            4,
+            False,
+        ) is None
 
     def test_get_sites_no_gaps_count_identical_sequences_skip_matrix(
         self, mocker, args
