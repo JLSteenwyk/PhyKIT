@@ -1842,6 +1842,7 @@ Results:
 | `FitDiscrete.run` small real-eigensystem transitions | sample `tree_simple` ER/SYM/ARD text output, side-by-side previous SciPy `expm` transition path with identical stdout | 5.374444s | 3.653641s | 1.47x |
 | `FitDiscrete.run` multi-state ER rate objective | sample `tree_simple` ER/SYM/ARD text output, side-by-side previous ER objective path, identical stdout | 3.350152s | 2.758701s | 1.21x |
 | `FitDiscrete.run` repeated fitted-model cache | seven repeated `fit_discrete` integration invocations on sample `tree_simple` traits in one Python process, preserving fitted output while returning copied cached Q matrices | 49.83s | 5.53s | 9.01x |
+| `FitDiscrete._compute_model_comparison` single-model shortcut | one / three / 1000 fitted model result dictionaries, identical comparison fields versus previous full min/weight/sort path | 0.000002792s / 0.000004988s / 0.000823346s | 0.000000539s / 0.000004282s / 0.000781567s | 5.18x / 1.17x / 1.05x |
 | `FitDiscrete._print_text` batched model table | captured model comparison table with 100k synthetic rows, identical stdout text | 0.182404s | 0.168677s | 1.08x |
 | `FitDiscrete` cached discrete-model helper wrappers | 100k repeated three-state SYM Q-matrix helper calls after helper warmup, side-by-side previous import-on-call wrapper | 0.592543s | 0.375110s | 1.58x |
 | `fit_discrete` module import without eager NumPy/discrete helper | cold subprocess import after lazy helper wrappers and local model constant | 0.090685s | 0.026126s | 3.47x |

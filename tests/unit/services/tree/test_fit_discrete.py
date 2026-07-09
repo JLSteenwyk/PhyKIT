@@ -234,6 +234,28 @@ class TestFitModel:
         # Best model should have highest weight
         assert results[0]["aic_weight"] > results[1]["aic_weight"]
 
+    def test_model_comparison_single_model_sets_deterministic_fields(self, args):
+        fd = FitDiscrete(args)
+        fake_results = [
+            {"model": "ER", "lnL": -10.0, "aic": 22.0, "bic": 23.0, "n_params": 1}
+        ]
+
+        results = fd._compute_model_comparison(fake_results)
+
+        assert results is fake_results
+        assert results == [
+            {
+                "model": "ER",
+                "lnL": -10.0,
+                "aic": 22.0,
+                "bic": 23.0,
+                "n_params": 1,
+                "delta_aic": 0.0,
+                "aic_weight": 1.0,
+                "delta_bic": 0.0,
+            }
+        ]
+
 
 class TestFitDiscreteRun:
     def test_tips_to_prune_for_states_ordered_all_shared_skips_set(self, monkeypatch):

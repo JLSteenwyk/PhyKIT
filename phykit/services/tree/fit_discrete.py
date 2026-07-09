@@ -201,6 +201,13 @@ class FitDiscrete(Tree):
         }
 
     def _compute_model_comparison(self, results):
+        if len(results) == 1:
+            result = results[0]
+            result["delta_aic"] = 0.0
+            result["aic_weight"] = 1.0
+            result["delta_bic"] = 0.0
+            return results
+
         # Delta-AIC and AIC weights
         min_aic = min(r["aic"] for r in results)
         for r in results:
