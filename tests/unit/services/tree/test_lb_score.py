@@ -369,6 +369,24 @@ class TestLBScore(object):
 
         assert result == pytest.approx([3.0, 4.0, 5.0])
 
+    def test_historical_other_taxa_denominator_scans_characters(self):
+        class NoSubtractSet(set):
+            def __sub__(self, other):
+                raise AssertionError("denominator should avoid per-tip set copies")
+
+        tips = NoSubtractSet(["tip0", "t", "i", "p", "0", "tip1"])
+
+        assert LBScore._historical_other_taxa_denominator(
+            "tip0",
+            tips,
+            len(tips),
+        ) == len(set(tips) - set("tip0"))
+        assert LBScore._historical_other_taxa_denominator(
+            "tip1",
+            tips,
+            len(tips),
+        ) == len(set(tips) - set("tip1"))
+
     def test_calculate_lb_score_uses_linear_tree_components(self, mocker, args):
         t = LBScore(args)
         tips = ["tip0", "tip1", "tip2", "tip3"]
@@ -576,7 +594,7 @@ class TestLBScore(object):
         assert observed_fast == pytest.approx(expected_avg_pdis)
 
     def test_historical_denominator_scan_preserves_duplicate_character_quirk(self):
-        tip_count = lb_score_module._DENOMINATOR_SCAN_MIN_TIPS
+        tip_count = 6
         tip_set = {"A", "B", "AABB"}
 
         assert (
@@ -584,21 +602,16 @@ class TestLBScore(object):
             == tip_count - 2
         )
 
-    def test_historical_denominator_large_tip_count_avoids_set_constructor(
-        self,
-        monkeypatch,
-    ):
-        tip_count = lb_score_module._DENOMINATOR_SCAN_MIN_TIPS
-        tip_set = {f"taxon_{idx}" for idx in range(tip_count)}
+    def test_historical_denominator_avoids_per_tip_set_copy(self):
+        class NoSubtractSet(set):
+            def __sub__(self, other):
+                raise AssertionError("denominator should scan tip characters")
 
-        def fail_set(*_args, **_kwargs):
-            raise AssertionError("large denominator path should scan tip characters")
-
-        monkeypatch.setattr(lb_score_module, "set", fail_set, raising=False)
-
+        tip_count = 100
+        tip_set = NoSubtractSet(f"taxon_{idx}" for idx in range(tip_count))
         assert (
             LBScore._historical_other_taxa_denominator(
-                "taxon_5000",
+                "taxon_50",
                 tip_set,
                 tip_count,
             )
