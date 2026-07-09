@@ -130,6 +130,7 @@ Results:
 | `helpers.files._detect_format_by_content` PHYLIP header split | 1M mixed first-line headers, identical detected formats | 2.294802s | 1.625386s | 1.41x |
 | `helpers.files._detect_format_by_content` non-digit PHYLIP split guard | 1.1M mixed / 1.2M unknown alphabetic / 1.2M PHYLIP-like first-line headers, side-by-side previous unconditional fallback split | 0.645016s / 1.085943s / 0.794824s | 0.597260s / 0.906384s / 0.799032s | 1.08x / 1.20x / 0.99x |
 | `helpers.files._detect_format_by_content` cached first-character dispatch | 1.2M mixed first-line headers, identical detected formats | 1.137648s | 0.920282s | 1.24x |
+| `helpers.files._detect_format_by_content` whitespace-guarded first-line trim | 120k mixed first-line headers with one leading-whitespace FASTA case, fake file object, identical detected formats | 0.105362s | 0.093455s | 1.13x |
 | `helpers.files.get_alignment_and_format` cached format detection | 5k / 20k / 50k repeated cached reads of one small FASTA alignment, identical alignment object, format, and protein flag | 0.212114s / 0.770213s / 1.959285s | 0.069316s / 0.145590s / 0.358173s | 3.06x / 5.29x / 5.47x |
 | `helpers.files.get_alignment_and_format` cached fallback format values | 500k fallback format-loop iterations after detected-format miss, side-by-side previous `FileFormat` enum-member iteration | 3.132085s | 0.422285s | 7.42x |
 | `alignment.base` module import without eager Bio.AlignIO | cold subprocess import after lazy shared alignment reader | 0.154313s | 0.113593s | 1.36x |
@@ -3414,6 +3415,9 @@ Profiling summary:
   for unknown alphabetic headers while leaving numeric PHYLIP-like detection
   unchanged. A later detector pass caches the stripped first character for all
   prefix checks, preserving FASTA, CLUSTAL, Stockholm, and PHYLIP detection.
+  A follow-up only trims the first line when it begins with whitespace,
+  preserving leading-whitespace FASTA compatibility while avoiding an
+  unconditional trim allocation on common clean headers.
   The fallback format loop now reuses cached format strings instead
   of iterating `FileFormat` enum members after a detected-format miss.
   Repeated cached alignment reads

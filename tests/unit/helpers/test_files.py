@@ -59,6 +59,11 @@ class TestFormatDetection:
         aln.write_text(">a\nACGT\n>b\nACGT\n")
         assert _detect_format_by_content(str(aln)) == "fasta"
 
+    def test_detect_format_fasta_with_leading_whitespace(self, tmp_path: Path):
+        aln = tmp_path / "test.fa"
+        aln.write_text("  >a\nACGT\n")
+        assert _detect_format_by_content(str(aln)) == "fasta"
+
     def test_detect_format_clustal(self, tmp_path: Path):
         aln = tmp_path / "test.aln"
         aln.write_text("CLUSTAL W(1.82)\n\n")

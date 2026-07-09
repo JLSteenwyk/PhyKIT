@@ -37,7 +37,9 @@ def _get_file_hash(file_path: str) -> str:
 def _detect_format_by_content(file_path: str) -> str | None:
     """Attempt to detect file format by examining file content."""
     with open(file_path) as f:
-        first_line = f.readline().strip()
+        first_line = f.readline()
+        if first_line and first_line[0].isspace():
+            first_line = first_line.strip()
         first_char = first_line[:1]
 
         # Quick format detection based on first line
