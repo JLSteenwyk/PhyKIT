@@ -139,6 +139,34 @@ class TestAlignmentReadAndType:
         assert alignment.get_alignment_length() == 4
         assert is_protein is True
 
+    def test_get_alignment_and_format_fasta_preserves_seqrecord_fields(
+        self, tmp_path: Path
+    ):
+        aln = tmp_path / "described.fa"
+        aln.write_text(">a first record\nAC GT\n>b\nACGT\n")
+        alignment, fmt, is_protein = get_alignment_and_format(str(aln))
+
+        assert fmt == "fasta"
+        assert is_protein is False
+        assert [record.id for record in alignment] == ["a", "b"]
+        assert [record.name for record in alignment] == ["a", "b"]
+        assert [record.description for record in alignment] == [
+            "a first record",
+            "b",
+        ]
+        assert [str(record.seq) for record in alignment] == ["ACGT", "ACGT"]
+
+    def test_get_alignment_and_format_fasta_rejects_unequal_lengths(
+        self, tmp_path: Path
+    ):
+        aln = tmp_path / "unequal.fa"
+        aln.write_text(">a\nACGT\n>b\nACG\n")
+
+        with pytest.raises(PhykitUserError) as excinfo:
+            get_alignment_and_format(str(aln))
+
+        assert excinfo.value.code == 2
+
     def test_get_alignment_and_format_reuses_cached_format_detection(
         self,
         tmp_path: Path,
@@ -164,6 +192,24 @@ class TestAlignmentReadAndType:
         assert first_format == second_format == "fasta"
         assert first_is_protein is second_is_protein is False
         detect.assert_called_once_with(str(aln))
+
+    def test_get_alignment_and_format_fasta_does_not_import_alignio(
+        self,
+        tmp_path: Path,
+    ):
+        aln = tmp_path / "test.fa"
+        aln.write_text(">a\nACGT\n>b\nACGT\n")
+        code = f"""
+import sys
+from phykit.helpers.files import get_alignment_and_format
+alignment, fmt, is_protein = get_alignment_and_format({str(aln)!r})
+assert fmt == "fasta"
+assert len(alignment) == 2
+assert is_protein is False
+assert "Bio.AlignIO" not in sys.modules
+assert "Bio.Align" not in sys.modules
+"""
+        subprocess.run([sys.executable, "-c", code], check=True)
 
     def test_get_alignment_and_format_unknown_format_exits(self, tmp_path: Path):
         bad = tmp_path / "bad.aln"

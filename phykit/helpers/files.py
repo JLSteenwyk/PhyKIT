@@ -27,6 +27,27 @@ class FileFormat(Enum):
 _FILE_FORMAT_VALUES = tuple(file_format.value for file_format in FileFormat)
 
 
+class _FastaRecord:
+    __slots__ = ("id", "name", "description", "seq")
+
+    def __init__(self, record_id: str, description: str, sequence: str) -> None:
+        self.id = record_id
+        self.name = record_id
+        self.description = description
+        self.seq = sequence
+
+
+class _FastaAlignment(list):
+    __slots__ = ("_alignment_length",)
+
+    def __init__(self, records: list[_FastaRecord], alignment_length: int) -> None:
+        super().__init__(records)
+        self._alignment_length = alignment_length
+
+    def get_alignment_length(self) -> int:
+        return self._alignment_length
+
+
 def _get_file_hash(file_path: str) -> str:
     """Calculate a hash for file content to use as cache key."""
     # Use file path, size, and modification time for cache key
@@ -67,6 +88,60 @@ def _cached_detect_format_by_content(
 ) -> str | None:
     return _detect_format_by_content(file_path)
 
+
+def _clean_fasta_sequence(sequence_parts: list[str]) -> str:
+    if len(sequence_parts) == 1:
+        sequence = sequence_parts[0]
+    else:
+        sequence = "".join(sequence_parts)
+    if " " in sequence:
+        sequence = sequence.replace(" ", "")
+    if "\r" in sequence:
+        sequence = sequence.replace("\r", "")
+    return sequence
+
+
+def _read_fasta_alignment(file_path: str) -> _FastaAlignment:
+    records = []
+    expected_length = None
+
+    with open(file_path) as handle:
+        record_id = None
+        description = None
+        sequence_parts = []
+
+        for line in handle:
+            if not line:
+                continue
+            if line[0] == ">":
+                if record_id is not None:
+                    sequence = _clean_fasta_sequence(sequence_parts)
+                    sequence_length = len(sequence)
+                    if expected_length is None:
+                        expected_length = sequence_length
+                    elif sequence_length != expected_length:
+                        raise ValueError("Sequences must all be the same length")
+                    records.append(_FastaRecord(record_id, description, sequence))
+                description = line[1:].strip()
+                record_id = description.split(None, 1)[0] if description else ""
+                sequence_parts = []
+            elif record_id is not None:
+                sequence_parts.append(line.rstrip())
+
+        if record_id is not None:
+            sequence = _clean_fasta_sequence(sequence_parts)
+            sequence_length = len(sequence)
+            if expected_length is None:
+                expected_length = sequence_length
+            elif sequence_length != expected_length:
+                raise ValueError("Sequences must all be the same length")
+            records.append(_FastaRecord(record_id, description, sequence))
+
+    if expected_length is None:
+        raise ValueError("No records found in handle")
+
+    return _FastaAlignment(records, expected_length)
+
 @lru_cache(maxsize=32)
 def _cached_alignment_read(
     file_hash: str,
@@ -74,6 +149,10 @@ def _cached_alignment_read(
     file_format: str,
 ) -> tuple["MultipleSeqAlignment", bool]:
     """Cached reading of alignment files."""
+    if file_format == "fasta":
+        alignment = _read_fasta_alignment(file_path)
+        return alignment, is_protein_alignment(alignment)
+
     from Bio import AlignIO
 
     with open(file_path) as f:

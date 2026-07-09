@@ -137,6 +137,7 @@ Results:
 | `helpers.files._detect_format_by_content` cached first-character dispatch | 1.2M mixed first-line headers, identical detected formats | 1.137648s | 0.920282s | 1.24x |
 | `helpers.files._detect_format_by_content` whitespace-guarded first-line trim | 120k mixed first-line headers with one leading-whitespace FASTA case, fake file object, identical detected formats | 0.105362s | 0.093455s | 1.13x |
 | `helpers.files.get_alignment_and_format` cached format detection | 5k / 20k / 50k repeated cached reads of one small FASTA alignment, identical alignment object, format, and protein flag | 0.212114s / 0.770213s / 1.959285s | 0.069316s / 0.145590s / 0.358173s | 3.06x / 5.29x / 5.47x |
+| `helpers.files.get_alignment_and_format` local FASTA alignment reader | command profiler, 5 runs after 1 warmup, representative FASTA input; `alignment_length_no_gaps` / `variable_sites` / `gc_content` / `alignment_length` | 0.825490s / 0.811101s / 0.666997s / 0.060002s | 0.132719s / 0.400935s / 0.429555s / 0.055173s | 6.22x / 2.02x / 1.55x / 1.09x |
 | `helpers.files.get_alignment_and_format` cached fallback format values | 500k fallback format-loop iterations after detected-format miss, side-by-side previous `FileFormat` enum-member iteration | 3.132085s | 0.422285s | 7.42x |
 | `alignment.base` module import without eager Bio.AlignIO | cold subprocess import after lazy shared alignment reader | 0.154313s | 0.113593s | 1.36x |
 | `alignment.base` module import without eager NumPy lookup tables | cold subprocess import after lazy RCV NumPy lookup construction | 0.076903s | 0.022717s | 3.39x |
@@ -3430,6 +3431,10 @@ Profiling summary:
   now cache the detected format under the same path/size/mtime key used for the
   parsed alignment cache, avoiding a header re-read while preserving
   modification invalidation.
+  FASTA alignment reads now use a local lightweight record/alignment parser for
+  the shared `get_alignment_and_format` path, preserving first-token record IDs,
+  sequence whitespace cleanup, equal-length validation, and cached object reuse
+  while avoiding `Bio.AlignIO` startup for user-facing FASTA commands.
   `AlignmentEntropy.run` now batches verbose per-site text rows into one
   newline-joined print while preserving summary,
   JSON, plot, and stdout text behavior. A later nonverbose summary pass defers
