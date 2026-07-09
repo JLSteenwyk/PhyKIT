@@ -1461,6 +1461,7 @@ Results:
 | `TerminalBranchStats.run` verbose JSON row literals | 500k terminal branch rows, side-by-side previous `dict(length=..., taxon=...)` formatter | 0.475153s | 0.378884s | 1.25x |
 | `TerminalBranchStats.run` non-verbose skipped length-list return | 1M terminal branch lengths, stats helper mocked, identical summary payload | 0.068538458s | 0.000000317s | 216448.85x |
 | `TerminalBranchStats.run` cached read-only tree path | balanced 32768-tip cached tree with varied terminal lengths, non-verbose summary output mocked | 0.108551s | 0.003696s | 29.37x |
+| `TerminalBranchStats.run` simple Newick terminal-branch scan | side-by-side direct command timing, 5 runs after 1 warmup, plain Newick input `small_Aspergillus_tree.tre`, summary/verbose/JSON stdout and stderr matched previous commit | 0.492727s / 0.402194s | 0.048663s / 0.059193s | 10.12x / 6.79x |
 | `terminal_branch_stats` module import without eager Bio.Phylo | cold subprocess import of terminal-branch-stats command module | 0.169211s | 0.118903s | 1.42x |
 | `terminal_branch_stats` module import without eager stats NumPy | cold subprocess import after lazy shared summary helper | 0.118903s | 0.070102s | 1.70x |
 | `terminal_branch_stats` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.010540s | 0.009028s | 1.17x |

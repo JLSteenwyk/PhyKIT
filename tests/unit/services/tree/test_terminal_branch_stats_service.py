@@ -260,6 +260,44 @@ class TestTerminalBranchStats:
 
         assert lengths.tolist() == [1.0, 2.0, 4.0]
 
+    def test_scan_simple_newick_terminal_branches_preserves_order(self, tmp_path):
+        tree_file = tmp_path / "tree.tre"
+        tree_file.write_text("((A:1,B:2):3,(C,D:4):5);\n")
+
+        lengths, rows = TerminalBranchStats._scan_simple_newick_terminal_branches(
+            str(tree_file)
+        )
+
+        assert lengths == [1.0, 2.0, 4.0]
+        assert rows == [[1.0, "A"], [2.0, "B"], [4.0, "D"]]
+
+    def test_scan_simple_newick_terminal_branches_rejects_annotations(self, tmp_path):
+        tree_file = tmp_path / "tree.tre"
+        tree_file.write_text("((A:1,B:2):3[comment],C:4);\n")
+
+        result = TerminalBranchStats._scan_simple_newick_terminal_branches(
+            str(tree_file)
+        )
+
+        assert result is None
+
+    def test_run_uses_simple_newick_fast_path(self, tmp_path, mocker, capsys):
+        tree_file = tmp_path / "tree.tre"
+        tree_file.write_text("((A:1.12345,B:2):3,C:4);\n")
+        service = TerminalBranchStats(
+            Namespace(tree=str(tree_file), verbose=True, json=False)
+        )
+        mocker.patch.object(
+            service,
+            "read_tree_file_unmodified",
+            side_effect=AssertionError("simple Newick fast path should be used"),
+        )
+
+        service.run()
+
+        out, _ = capsys.readouterr()
+        assert out == "1.1235 A\n2.0 B\n4.0 C\n"
+
     def test_run_non_verbose_prints_summary(self, mocker):
         args = Namespace(tree="/some/path/to/file.tre", verbose=False, json=False)
         tree = _Tree([])

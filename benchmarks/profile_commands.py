@@ -109,6 +109,10 @@ COMMANDS: tuple[tuple[str, tuple[str, ...]], ...] = (
         "long_branch_score_verbose",
         ("long_branch_score", str(SAMPLES / "small_Aspergillus_tree.tre"), "--verbose"),
     ),
+    (
+        "terminal_branch_stats",
+        ("terminal_branch_stats", str(SAMPLES / "small_Aspergillus_tree.tre")),
+    ),
 )
 
 
