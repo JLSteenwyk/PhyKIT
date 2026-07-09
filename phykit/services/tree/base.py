@@ -102,6 +102,14 @@ class Tree(BaseService):
         return Tree._scan_simple_newick_summary(file_path)
 
     @staticmethod
+    @lru_cache(maxsize=32)
+    def _cached_simple_newick_terminal_distance_stats(
+        file_path: str,
+        file_hash: str,
+    ):
+        return Tree._scan_simple_newick_terminal_distance_stats(file_path)
+
+    @staticmethod
     def _get_file_hash(file_path: str) -> str:
         """Get a hash based on file path, size, and modification time."""
         try:
@@ -260,6 +268,149 @@ class Tree(BaseService):
         try:
             file_hash = self._get_file_hash(tree_path)
             return self._cached_simple_newick_summary(tree_path, file_hash)
+        except FileNotFoundError:
+            path = getattr(self, attr_name)
+            raise PhykitUserError(
+                [
+                    f"{path} corresponds to no such file or directory.",
+                    "Please check filename and pathing",
+                ],
+                code=2,
+            )
+
+    @staticmethod
+    def _scan_simple_newick_terminal_distance_stats(file_path: str):
+        with open(file_path) as handle:
+            text = handle.read()
+
+        if not text or any(char in text for char in "'\"[]"):
+            return None
+
+        text_len = len(text)
+        whitespace = " \t\r\n"
+        delimiters = "(),:;"
+
+        def skip_ws(index):
+            while index < text_len and text[index] in whitespace:
+                index += 1
+            return index
+
+        def parse_label(index):
+            index = skip_ws(index)
+            start = index
+            while (
+                index < text_len
+                and text[index] not in delimiters
+                and text[index] not in whitespace
+            ):
+                index += 1
+            return index, index != start
+
+        def parse_length(index):
+            index = skip_ws(index)
+            if index >= text_len or text[index] != ":":
+                return index, 0.0
+
+            index += 1
+            index = skip_ws(index)
+            start = index
+            while index < text_len and text[index] not in ",);" and text[index] not in whitespace:
+                index += 1
+            number = text[start:index]
+            if not number:
+                return None
+            try:
+                length = float(number)
+            except ValueError:
+                return None
+            return skip_ws(index), length
+
+        def parse_node(index):
+            index = skip_ws(index)
+            if index >= text_len:
+                return None
+
+            if text[index] == "(":
+                index += 1
+                distances = []
+                while True:
+                    parsed = parse_node(index)
+                    if parsed is None:
+                        return None
+                    child_distances, _child_length, index = parsed
+                    distances.extend(child_distances)
+                    index = skip_ws(index)
+                    if index >= text_len:
+                        return None
+                    char = text[index]
+                    if char == ",":
+                        index += 1
+                        continue
+                    if char == ")":
+                        index += 1
+                        break
+                    return None
+
+                index, _has_label = parse_label(index)
+                parsed_length = parse_length(index)
+                if parsed_length is None:
+                    return None
+                index, branch_length = parsed_length
+                if branch_length:
+                    distances = [distance + branch_length for distance in distances]
+                return distances, branch_length, index
+
+            index, has_label = parse_label(index)
+            if not has_label:
+                return None
+            parsed_length = parse_length(index)
+            if parsed_length is None:
+                return None
+            index, branch_length = parsed_length
+            return [branch_length], branch_length, index
+
+        try:
+            parsed = parse_node(0)
+        except RecursionError:
+            return None
+        if parsed is None:
+            return None
+
+        distances, root_branch_length, index = parsed
+        index = skip_ws(index)
+        if index >= text_len or text[index] != ";":
+            return None
+        index = skip_ws(index + 1)
+        if index != text_len:
+            return None
+
+        if root_branch_length:
+            distances = [
+                distance - root_branch_length
+                for distance in distances
+            ]
+        count = len(distances)
+        if count < 2:
+            return None
+
+        total = 0.0
+        total_sq = 0.0
+        for distance in distances:
+            total += distance
+            total_sq += distance * distance
+        return count, total, total_sq
+
+    def _get_simple_newick_terminal_distance_stats(
+        self,
+        tree_path: str,
+        attr_name: str,
+    ):
+        try:
+            file_hash = self._get_file_hash(tree_path)
+            return self._cached_simple_newick_terminal_distance_stats(
+                tree_path,
+                file_hash,
+            )
         except FileNotFoundError:
             path = getattr(self, attr_name)
             raise PhykitUserError(

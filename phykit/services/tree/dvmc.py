@@ -18,8 +18,18 @@ class DVMC(Tree):
         self.json_output = parsed["json_output"]
 
     def run(self):
-        tree = self.read_tree_file_unmodified()
-        dvmc = self.determine_dvmc(tree)
+        summary = self._get_simple_newick_terminal_distance_stats(
+            self.tree_file_path,
+            "tree_file_path",
+        )
+        if summary is None:
+            tree = self.read_tree_file_unmodified()
+            dvmc = self.determine_dvmc(tree)
+        else:
+            count, total, total_sq = summary
+            avg_dist = total / count
+            squared_diff_sum = total_sq - count * (avg_dist * avg_dist)
+            dvmc = math.sqrt(squared_diff_sum / (count - 1))
         if self.json_output:
             print_json(dict(dvmc=round(dvmc, 4)))
             return

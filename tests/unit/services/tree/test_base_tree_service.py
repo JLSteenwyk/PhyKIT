@@ -219,6 +219,31 @@ class TestTreeBase:
 
         assert Tree._scan_simple_newick_summary(str(tree_path)) is None
 
+    def test_scan_simple_newick_terminal_distance_stats_matches_biophylo(
+        self,
+        tmp_path,
+    ):
+        tree_path = tmp_path / "simple.tre"
+        tree_path.write_text("((a:1,b:2):3,c:4)root:5;")
+        summary = Tree._scan_simple_newick_terminal_distance_stats(str(tree_path))
+        tree = Phylo.read(str(tree_path), "newick")
+        distances = [tree.distance(term) for term in tree.get_terminals()]
+
+        assert summary is not None
+        count, total, total_sq = summary
+        assert count == len(distances)
+        assert total == sum(distances)
+        assert total_sq == sum(distance * distance for distance in distances)
+
+    def test_scan_simple_newick_terminal_distance_stats_rejects_complex_syntax(
+        self,
+        tmp_path,
+    ):
+        tree_path = tmp_path / "complex.tre"
+        tree_path.write_text("('a b':1,b[comment]:2);")
+
+        assert Tree._scan_simple_newick_terminal_distance_stats(str(tree_path)) is None
+
     def test_calculate_total_branch_length_and_terminal_count_fast(self, monkeypatch):
         tree = NewickTree(
             root=Clade(
@@ -538,6 +563,27 @@ class TestTreeBase:
 
         assert first is second
         assert first == (("a", "b"), 3.0, 0.0)
+
+    def test_get_simple_newick_terminal_distance_stats_uses_cached_file_hash(
+        self,
+        tmp_path,
+    ):
+        tree_path = tmp_path / "tree.tre"
+        tree_path.write_text("(a:1,b:2);")
+        Tree._cached_simple_newick_terminal_distance_stats.cache_clear()
+
+        service = Tree(tree_file_path=str(tree_path))
+        first = service._get_simple_newick_terminal_distance_stats(
+            str(tree_path),
+            "tree_file_path",
+        )
+        second = service._get_simple_newick_terminal_distance_stats(
+            str(tree_path),
+            "tree_file_path",
+        )
+
+        assert first is second
+        assert first == (2, 3.0, 5.0)
 
     def test_read_tree1_file_not_found_exits(self, capsys):
         service = Tree(tree1_file_path="/missing/tree1.tre")

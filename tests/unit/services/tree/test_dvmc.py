@@ -160,6 +160,11 @@ class TestDVMC(object):
     def test_run_json_output(self, tree_simple, monkeypatch):
         captured = {}
         d = DVMC(Namespace(tree="x.tre", json=True))
+        monkeypatch.setattr(
+            d,
+            "_get_simple_newick_terminal_distance_stats",
+            lambda *_args: None,
+        )
         monkeypatch.setattr(d, "read_tree_file_unmodified", lambda: tree_simple)
         monkeypatch.setattr(dvmc_module, "print_json", lambda payload: captured.setdefault("payload", payload))
 
@@ -170,6 +175,11 @@ class TestDVMC(object):
 
     def test_run_uses_unmodified_tree_read(self, tree_simple, mocker):
         d = DVMC(Namespace(tree="x.tre", json=False))
+        mocker.patch.object(
+            d,
+            "_get_simple_newick_terminal_distance_stats",
+            return_value=None,
+        )
         read_tree = mocker.patch.object(
             d,
             "read_tree_file_unmodified",
@@ -182,8 +192,34 @@ class TestDVMC(object):
         read_tree.assert_called_once_with()
         mocked_print.assert_called_once()
 
+    def test_run_uses_simple_newick_terminal_distance_summary(
+        self,
+        mocker,
+        tmp_path,
+    ):
+        tree_path = tmp_path / "tree.tre"
+        tree_path.write_text("((A:1,B:2):1,C:4):0.5;")
+        d = DVMC(Namespace(tree=str(tree_path), json=False))
+        read_tree = mocker.patch.object(
+            d,
+            "read_tree_file_unmodified",
+            side_effect=AssertionError("simple Newick should use summary path"),
+        )
+        mocked_print = mocker.patch("builtins.print")
+
+        d.run()
+
+        read_tree.assert_not_called()
+        expected = np.std(np.array([2.0, 3.0, 4.0]), ddof=1)
+        mocked_print.assert_called_once_with(round(expected, 4))
+
     def test_run_terminal_output(self, tree_simple, monkeypatch, capsys):
         d = DVMC(Namespace(tree="x.tre", json=False))
+        monkeypatch.setattr(
+            d,
+            "_get_simple_newick_terminal_distance_stats",
+            lambda *_args: None,
+        )
         monkeypatch.setattr(d, "read_tree_file_unmodified", lambda: tree_simple)
 
         d.run()

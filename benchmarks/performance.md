@@ -1716,6 +1716,7 @@ Results:
 | `DVMC.determine_dvmc` scalar terminal-distance stats | balanced 65536-tip tree with varied terminal branch lengths | 0.014995s | 0.013724s | 1.09x |
 | `DVMC.determine_dvmc` NumPy-free fallback stats | cold subprocess fallback tree with 200k terminal distances and identical scalar result | 0.129657s | 0.051419s | 2.52x |
 | `DVMC._determine_dvmc_standard_tree` localized stack operations | balanced 65536-tip tree with varied root-to-tip lengths, five repeated traversals per timing sample | 0.051043s | 0.032551s | 1.57x |
+| `DVMC.run` simple Newick terminal-distance summary | command profiler, 5 runs after 1 warmup, `tree_simple.tre` plain Newick input | 0.705227s | 0.066285s | 10.64x |
 | `dvmc` module import without eager Bio.Phylo/NumPy | cold subprocess import of DVMC command module | 0.166131s | 0.064778s | 2.56x |
 | `dvmc` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006003s | 0.004850s | 1.24x |
 | `dvmc` module import without `typing` startup | median cold subprocess import after converting the annotation-only typing alias to a built-in postponed annotation | 0.007384s | 0.005897s | 1.25x |
@@ -6373,7 +6374,11 @@ Profiling summary:
   preserving the same terminal-distance statistics with less per-node method
   lookup overhead. A subsequent startup
   pass removes the remaining annotation-only `typing` import with a built-in
-  postponed annotation, so command discovery no longer loads `typing`.
+  postponed annotation, so command discovery no longer loads `typing`. Plain
+  Newick files now use a cached terminal-distance text summary before tree
+  parsing, preserving rounded DVMC output while skipping Bio.Phylo startup; quoted
+  labels, bracket comments, invalid numbers, deep-recursion cases, and other
+  complex syntax fall back to the existing parsed-tree path.
 - `RobinsonFouldsDistance.calculate_robinson_foulds_distance` now compares
   rooted descendant split sets using compact per-tip integer ids for standard
   trees, preserving the public name-based `get_all_bipartitions()` API and the
