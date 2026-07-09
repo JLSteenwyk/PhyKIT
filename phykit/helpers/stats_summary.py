@@ -75,7 +75,7 @@ def _calculate_small_sequence_statistics(values):
         return _SMALL_STATS_FALLBACK
 
     try:
-        if count >= 64:
+        if count >= 48:
             first_value = values[0]
             if (
                 type(first_value) is int
