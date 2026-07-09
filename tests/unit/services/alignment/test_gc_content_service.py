@@ -269,6 +269,30 @@ assert "phykit.helpers.files" not in sys.modules
             4,
         )
 
+    def test_calculate_gc_total_value_invalid_ascii_uses_byte_counts(
+        self, args, monkeypatch, mocker
+    ):
+        service = GCContent(args)
+        records = _alignment(
+            [
+                SeqRecord(Seq("gcN-"), id="a"),
+                SeqRecord(Seq("AT??"), id="b"),
+            ]
+        )
+        monkeypatch.setattr(gc_content_module, "_GC_TOTAL_BYTE_COUNT_MIN_BYTES", 1)
+        count_nonzero = mocker.patch(
+            "phykit.services.alignment.gc_content.np.count_nonzero",
+            side_effect=AssertionError(
+                "invalid ASCII total GC should not use lookup reductions"
+            ),
+        )
+
+        assert service.calculate_gc_total_value(records, is_protein=False) == round(
+            2 / 4,
+            4,
+        )
+        count_nonzero.assert_not_called()
+
     def test_calculate_gc_total_value_no_gap_ascii_skips_valid_lookup(
         self, args, mocker
     ):

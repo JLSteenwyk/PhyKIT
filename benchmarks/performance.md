@@ -9644,3 +9644,13 @@ Profiling summary:
   branch-end-to-tip decays once per tip path and accumulates each branch's
   regime-specific alpha/sigma contribution with descendant-tip outer products.
   A later pass applies the same direct diagonal update for one-tip branches.
+- `GCContent._gc_total_from_ascii` now keeps the existing NumPy flat-count path
+  for clean and small invalid alignments, but uses direct byte `translate` and
+  `count` calls for all-ASCII total GC summaries with invalid symbols once the
+  joined alignment is at least 2 MB. Local microbenchmarks against the previous
+  flat NumPy reduction path measured:
+  `100 x 10,000` with 5% invalid symbols, 0.002296s -> 0.002303s (1.00x,
+  below threshold); `100 x 100,000` with 5% invalid symbols, 0.039390s ->
+  0.028562s (1.38x); `120 x 100,000` with mixed invalid symbols, 0.052064s ->
+  0.034978s (1.49x); and `100 x 500,000` with 5% invalid symbols, 0.287356s ->
+  0.215638s (1.33x).

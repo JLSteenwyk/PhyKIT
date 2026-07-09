@@ -45,6 +45,7 @@ _PROTEIN_INVALID_CHARS = "-?*X"
 _DNA_INVALID_COUNT_CHARS = "-?*XNxn"
 _PROTEIN_INVALID_COUNT_CHARS = "-?*Xx"
 _INVALID_SCAN_BYTES = 4096
+_GC_TOTAL_BYTE_COUNT_MIN_BYTES = 2_000_000
 
 
 def _get_valid_lookup(is_protein: bool):
@@ -214,9 +215,23 @@ def _gc_total_from_ascii(records, is_protein: bool):
     except UnicodeEncodeError:
         return None
 
-    seq_array = np.frombuffer(alignment_bytes, dtype=np.uint8)
     invalid_bytes = _PROTEIN_INVALID_BYTES if is_protein else _DNA_INVALID_BYTES
-    if _has_invalid_bytes(alignment_bytes, invalid_bytes):
+    seq_array = np.frombuffer(alignment_bytes, dtype=np.uint8)
+    has_invalid_bytes = _has_invalid_bytes(alignment_bytes, invalid_bytes)
+    if (
+        has_invalid_bytes
+        and len(alignment_bytes) >= _GC_TOTAL_BYTE_COUNT_MIN_BYTES
+    ):
+        valid_count = len(alignment_bytes.translate(None, invalid_bytes))
+        gc_count = (
+            alignment_bytes.count(b"G")
+            + alignment_bytes.count(b"C")
+            + alignment_bytes.count(b"g")
+            + alignment_bytes.count(b"c")
+        )
+        return valid_count, gc_count
+
+    if has_invalid_bytes:
         valid_lookup = _get_valid_lookup(is_protein)
         valid_count = int(np.count_nonzero(valid_lookup[seq_array]))
     else:
