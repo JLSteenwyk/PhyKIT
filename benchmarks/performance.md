@@ -260,6 +260,7 @@ Results:
 | `alignment_entropy` module import without eager NumPy lookup tables | cold subprocess import after lazy NumPy lookup construction | 0.078578s | 0.029387s | 2.67x |
 | `alignment_entropy` module import without eager JSON/plot config helpers | median cold subprocess import after lazy JSON wrapper and localized `PlotConfig` import | 0.011941s | 0.005361s | 2.23x |
 | `alignment_entropy` module import without shared `hashlib`/`typing` startup | median cold subprocess import after localizing helper hashing and replacing annotation-only typing aliases | 0.006227s | 0.001422s | 4.38x |
+| `AlignmentEntropy.process_args` no-plot config elision | `python -m timeit`, 7 repeats of 2000 no-plot `AlignmentEntropy` constructions, text and JSON CLI stdout/stderr matched previous commit | 0.000004400s | 0.000001580s | 2.78x |
 | `SumOfPairsScore.determine_number_of_matches_and_total_pairs` | 180 taxa x 1200 sites, complete equal-length pair set, alphabet `ACGT-` | 0.1360s | 0.0025s | 54.4x |
 | `SumOfPairsScore.run` complete equal-length setup | 1200 taxa x 300 sites, complete equal-length pair set from reference IDs | 0.447407s | 0.000721s | 620.5x |
 | `SumOfPairsScore._calculate_equal_length_complete_records` identical records | 1200 taxa x 1000 sites, complete equal-length query/reference records, side-by-side previous matrix stack path | 0.001236s | 0.000309s | 4.00x |
