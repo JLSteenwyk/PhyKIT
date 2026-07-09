@@ -325,6 +325,52 @@ class TestInternalBranchStats(object):
 
         assert lengths.tolist() == [7.0, 3.0, 6.0]
 
+    def test_scan_simple_newick_internal_branches_preserves_preorder(self, tmp_path):
+        tree_file = tmp_path / "tree.tre"
+        tree_file.write_text("((A:1,B:2):3,(C:4,D:5):6):7;\n")
+
+        lengths, rows = InternalBranchStats._scan_simple_newick_internal_branches(
+            str(tree_file)
+        )
+
+        assert lengths == [7.0, 3.0, 6.0]
+        assert rows == [
+            (7.0, ["A", "B", "C", "D"]),
+            (3.0, ["A", "B"]),
+            (6.0, ["C", "D"]),
+        ]
+
+    def test_scan_simple_newick_internal_branches_rejects_annotations(self, tmp_path):
+        tree_file = tmp_path / "tree.tre"
+        tree_file.write_text("((A:1,B:2):3[comment],C:4);\n")
+
+        result = InternalBranchStats._scan_simple_newick_internal_branches(
+            str(tree_file)
+        )
+
+        assert result is None
+
+    def test_run_verbose_uses_simple_newick_scan(self, mocker, capsys):
+        t = InternalBranchStats(Namespace(tree="x.tre", verbose=True, json=False))
+        mocker.patch.object(
+            t,
+            "_scan_simple_newick_internal_branches",
+            return_value=(
+                [1.23456, 2.0],
+                [(1.23456, ["A", "B"]), (2.0, ["C"])],
+            ),
+        )
+        mocker.patch.object(
+            t,
+            "read_tree_file_unmodified",
+            side_effect=AssertionError("simple Newick fast path should be used"),
+        )
+
+        t.run()
+
+        out, _ = capsys.readouterr()
+        assert out == "1.2346 A;B\n2.0 C\n"
+
     def test_run_verbose_json(self, mocker):
         tree = object()
         t = InternalBranchStats(Namespace(tree="x.tre", verbose=True, json=True))

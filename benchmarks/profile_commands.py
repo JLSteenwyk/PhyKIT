@@ -83,6 +83,10 @@ COMMANDS: tuple[tuple[str, tuple[str, ...]], ...] = (
         "bipartition_support_stats",
         ("bipartition_support_stats", str(SAMPLES / "small_Aspergillus_tree.tre")),
     ),
+    (
+        "internal_branch_stats",
+        ("internal_branch_stats", str(SAMPLES / "small_Aspergillus_tree.tre")),
+    ),
 )
 
 

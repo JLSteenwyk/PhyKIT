@@ -50,11 +50,23 @@ class InternalBranchStats(Tree):
         self.json_output = parsed["json_output"]
 
     def run(self):
-        tree = self.read_tree_file_unmodified()
-        stats, lengths_and_names \
-            = self.calculate_internal_branch_stats(
-                tree, include_names=self.verbose
-            )
+        simple_result = self._scan_simple_newick_internal_branches(
+            self.tree_file_path
+        )
+        if simple_result is not None:
+            internal_branch_lengths, lengths_and_names = simple_result
+            if not internal_branch_lengths:
+                print("Calculating internal branch statistics requires a phylogeny with branch lengths.")
+                sys.exit(2)
+            stats = calculate_summary_statistics_from_arr(internal_branch_lengths)
+            if not self.verbose:
+                lengths_and_names = []
+        else:
+            tree = self.read_tree_file_unmodified()
+            stats, lengths_and_names \
+                = self.calculate_internal_branch_stats(
+                    tree, include_names=self.verbose
+                )
 
         if self.json_output:
             if self.verbose:
@@ -92,6 +104,130 @@ class InternalBranchStats(Tree):
             verbose=args.verbose,
             json_output=getattr(args, "json", False),
         )
+
+    @staticmethod
+    def _scan_simple_newick_internal_branches(file_path: str):
+        try:
+            with open(file_path) as handle:
+                text = handle.read()
+        except OSError:
+            return None
+
+        if not text or any(char in text for char in "'\"[]"):
+            return None
+
+        text_len = len(text)
+        whitespace = " \t\r\n"
+        delimiters = "(),:;"
+
+        def skip_ws(index):
+            while index < text_len and text[index] in whitespace:
+                index += 1
+            return index
+
+        def parse_label(index):
+            index = skip_ws(index)
+            start = index
+            while (
+                index < text_len
+                and text[index] not in delimiters
+                and text[index] not in whitespace
+            ):
+                index += 1
+            return text[start:index], index
+
+        def parse_length(index):
+            index = skip_ws(index)
+            if index >= text_len or text[index] != ":":
+                return index, None
+            index += 1
+            index = skip_ws(index)
+            start = index
+            while (
+                index < text_len
+                and text[index] not in ",);"
+                and text[index] not in whitespace
+            ):
+                index += 1
+            if start == index:
+                return None
+            try:
+                length = float(text[start:index])
+            except ValueError:
+                return None
+            return skip_ws(index), length
+
+        def parse_node(index):
+            index = skip_ws(index)
+            if index >= text_len:
+                return None
+
+            if text[index] == "(":
+                index += 1
+                child_entries = []
+                names = []
+                while True:
+                    parsed = parse_node(index)
+                    if parsed is None:
+                        return None
+                    child_names, entries, index = parsed
+                    names.extend(child_names)
+                    child_entries.extend(entries)
+
+                    index = skip_ws(index)
+                    if index >= text_len:
+                        return None
+                    if text[index] == ",":
+                        index += 1
+                        continue
+                    if text[index] == ")":
+                        index += 1
+                        break
+                    return None
+
+                _label, index = parse_label(index)
+                parsed_length = parse_length(index)
+                if parsed_length is None:
+                    return None
+                index, branch_length = parsed_length
+
+                if branch_length is None:
+                    return names, child_entries, index
+                return (
+                    names,
+                    [(branch_length, names)] + child_entries,
+                    index,
+                )
+
+            label, index = parse_label(index)
+            if not label:
+                return None
+            parsed_length = parse_length(index)
+            if parsed_length is None:
+                return None
+            index, _branch_length = parsed_length
+            return [label], [], index
+
+        try:
+            parsed = parse_node(0)
+        except RecursionError:
+            return None
+        if parsed is None:
+            return None
+        _names, entries, index = parsed
+        index = skip_ws(index)
+        if index >= text_len or text[index] != ";":
+            return None
+        index = skip_ws(index + 1)
+        if index != text_len:
+            return None
+
+        lengths = []
+        lengths_and_names = []
+        for length, names in entries:
+            lengths.append(length)
+            lengths_and_names.append((length, names))
+        return lengths, lengths_and_names
 
     def get_internal_branch_lengths(
         self,
