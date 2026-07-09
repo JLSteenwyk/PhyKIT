@@ -958,6 +958,7 @@ Results:
 | `SpuriousSequence._median_branch_length` partition threshold | 512 / 1024 / 2048 branch lengths, side-by-side sorted median path vs NumPy partition median with identical medians; threshold set at first winning size | 0.000038s / 0.000077s / 0.000157s | 0.000041s / 0.000051s / 0.000076s | 0.93x / 1.50x / 2.06x |
 | `SpuriousSequence._median_branch_length` cached lazy NumPy proxy | 1000 repeated medians over 2048 branch lengths, side-by-side previous uncached lazy NumPy proxy | 0.070326s | 0.055441s | 1.27x |
 | `SpuriousSequence.run` batched text output | 50k flagged terminal rows, mocked tree/read and identical stdout text | 0.087150s | 0.031513s | 2.77x |
+| `SpuriousSequence.run` generator-joined text rows | 200k terminal branch rows with mixed flagged/unflagged lengths, identical joined stdout text, side-by-side previous append-loop row builder | 0.160779s | 0.118913s | 1.35x |
 | `SpuriousSequence.run` no-hit output fast path | 100k / 500k mocked terminal branch rows below threshold, side-by-side previous empty JSON and text row scans with identical output payload/text | JSON: 0.002749410s / 0.011800677s; text: 0.002857457s / 0.012784354s | JSON: 0.001388460s / 0.006522125s; text: 0.001165718s / 0.006966344s | JSON: 1.98x / 1.81x; text: 2.45x / 1.84x |
 | `SpuriousSequence.run` JSON row construction | 500k mocked flagged terminal rows, identical row dictionaries | 0.748736s | 0.589699s | 1.27x |
 | `SpuriousSequence.run` cached read-only tree path | balanced 32768-tip cached tree with 1% long terminal branches, output mocked | 0.122502s | 0.005828s | 21.02x |
@@ -5037,6 +5038,9 @@ Profiling summary:
   materializing empty text or JSON rows, preserving `length >= threshold`
   semantics with a NaN fallback while avoiding row scans for common default
   threshold cases with no spurious terminals.
+  Text rows for flagged terminals are now fed directly to the final newline join
+  with a generator, preserving filtering and row order while avoiding the
+  append-loop list construction.
 - `DensityMap._terminal_clades` applies the same direct terminal traversal to
   plot y-order setup and the final tip count, avoiding Bio.Phylo terminal-list
   materialization while preserving terminal order. The direct preorder and

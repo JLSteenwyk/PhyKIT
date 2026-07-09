@@ -72,15 +72,14 @@ class SpuriousSequence(Tree):
             print("None")
             return
 
-        lines = []
-        for name, length in name_and_branch_len.items():
-            if length >= threshold:
-                lines.append(
-                    f"{name}\t{round(length, 4)}\t{rounded_threshold}\t{rounded_median}"
-                )
-
         try:
-            print("\n".join(lines))
+            print(
+                "\n".join(
+                    f"{name}\t{round(length, 4)}\t{rounded_threshold}\t{rounded_median}"
+                    for name, length in name_and_branch_len.items()
+                    if length >= threshold
+                )
+            )
         except BrokenPipeError:
             pass
 

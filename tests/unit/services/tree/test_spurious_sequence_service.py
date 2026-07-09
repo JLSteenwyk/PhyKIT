@@ -269,6 +269,7 @@ class TestSpuriousSequence:
         mocked_print = mocker.patch("builtins.print")
         service.run()
         mocked_print.assert_called_once_with("a\t10.0\t5.0\t2.5\nb\t8.0\t5.0\t2.5")
+        assert "c" not in mocked_print.call_args.args[0]
 
     def test_run_json_payload(self, mocker):
         args = Namespace(tree="/some/path/to/file.tre", factor=2, json=True)
