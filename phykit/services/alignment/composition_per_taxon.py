@@ -30,6 +30,7 @@ np = _LazyNumpy()
 _COMPOSITION_ROW_ZIP_MIN_COUNT = 50_000
 _IDENTICAL_INDEXED_SCAN_MIN_RECORDS = 200_000
 _IDENTICAL_ROW_TILE_MIN_COUNT = 1_000
+_ASCII_OFFSET_BINCOUNT_MAX_ROWS = 16_384
 
 
 class _IdenticalCompositionOutputRows(list):
@@ -72,6 +73,16 @@ def _identical_composition_output_rows(record_ids, freqs):
             for record_id in record_ids
         ]
     return _IdenticalCompositionOutputRows(rows, freqs)
+
+
+def _row_symbol_counts_from_ascii_codes(alignment_array, symbol_values):
+    n_rows = alignment_array.shape[0]
+    row_offsets = np.arange(n_rows, dtype=np.uint32)[:, None] * 256
+    encoded = (alignment_array + row_offsets).ravel()
+    return np.bincount(
+        encoded,
+        minlength=n_rows * 256,
+    ).reshape(n_rows, 256)[:, symbol_values].astype(np.float64, copy=False)
 
 
 class CompositionPerTaxon(Alignment):
@@ -302,7 +313,16 @@ class CompositionPerTaxon(Alignment):
             return symbols, _composition_output_rows(record_ids, freqs)
 
         if alignment_array.dtype == np.uint8:
-            if len(symbol_values) <= 8 or (
+            if (
+                valid_mask is None
+                and len(symbol_values) > 8
+                and len(sequences) <= _ASCII_OFFSET_BINCOUNT_MAX_ROWS
+            ):
+                counts = _row_symbol_counts_from_ascii_codes(
+                    alignment_array,
+                    symbol_values,
+                )
+            elif len(symbol_values) <= 8 or (
                 len(sequences) >= 1024 and aln_len <= 512
             ):
                 counts = np.array(

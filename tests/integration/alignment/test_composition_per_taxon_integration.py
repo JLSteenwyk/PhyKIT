@@ -26,11 +26,13 @@ class TestCompositionPerTaxon(object):
         with patch.object(sys, "argv", testargs):
             Phykit()
         assert mocked_print.mock_calls == [
-            call(expected_result_0),
-            call(expected_result_1),
-            call(expected_result_2),
-            call(expected_result_3),
-            call(expected_result_4),
+            call("\n".join([
+                expected_result_0,
+                expected_result_1,
+                expected_result_2,
+                expected_result_3,
+                expected_result_4,
+            ])),
         ]
 
     @patch("builtins.print")
@@ -48,11 +50,13 @@ class TestCompositionPerTaxon(object):
         with patch.object(sys, "argv", testargs):
             Phykit()
         assert mocked_print.mock_calls == [
-            call(expected_result_0),
-            call(expected_result_1),
-            call(expected_result_2),
-            call(expected_result_3),
-            call(expected_result_4),
+            call("\n".join([
+                expected_result_0,
+                expected_result_1,
+                expected_result_2,
+                expected_result_3,
+                expected_result_4,
+            ])),
         ]
 
     @patch("builtins.print")

@@ -249,7 +249,7 @@ assert "Bio.SeqIO.FastaIO" not in sys.modules
         assert np.allclose(by_taxon["t1"], np.array([0.25, 0.25, 0.25, 0.25]))
         assert np.allclose(by_taxon["t2"], np.array([1.0, 0.0, 0.0, 0.0]))
 
-    def test_calculate_composition_per_taxon_ascii_large_alphabet_uses_bincount(self, args, mocker):
+    def test_calculate_composition_per_taxon_ascii_large_alphabet_uses_offset_bincount(self, args, mocker):
         svc = CompositionPerTaxon(args)
         alignment = MultipleSeqAlignment(
             [
@@ -258,11 +258,16 @@ assert "Bio.SeqIO.FastaIO" not in sys.modules
             ]
         )
         bincount_spy = mocker.spy(composition_per_taxon_module.np, "bincount")
+        offset_spy = mocker.spy(
+            composition_per_taxon_module,
+            "_row_symbol_counts_from_ascii_codes",
+        )
 
         symbols, rows = svc.calculate_composition_per_taxon(alignment, is_protein=True)
         by_taxon = {taxon: vals for taxon, vals in rows}
 
-        assert bincount_spy.call_count == len(alignment)
+        assert bincount_spy.call_count == 1
+        offset_spy.assert_called_once()
         assert symbols == list("ACDEFGHIKLMNPQRSTVWY")
         assert np.allclose(by_taxon["t1"], np.full(20, 0.05))
 
@@ -288,7 +293,7 @@ assert "Bio.SeqIO.FastaIO" not in sys.modules
         assert symbols == list("ACDEFGHIKLMNPQRSTVWY")
         assert np.allclose(by_taxon["t1"], np.full(20, 0.05))
 
-    def test_calculate_composition_per_taxon_large_short_protein_uses_symbol_counts(
+    def test_calculate_composition_per_taxon_large_short_protein_uses_offset_bincount(
         self, args, mocker
     ):
         svc = CompositionPerTaxon(args)
@@ -300,6 +305,10 @@ assert "Bio.SeqIO.FastaIO" not in sys.modules
             ]
         )
         bincount_spy = mocker.spy(composition_per_taxon_module.np, "bincount")
+        offset_spy = mocker.spy(
+            composition_per_taxon_module,
+            "_row_symbol_counts_from_ascii_codes",
+        )
 
         symbols, rows = svc.calculate_composition_per_taxon(
             alignment,
@@ -307,7 +316,8 @@ assert "Bio.SeqIO.FastaIO" not in sys.modules
         )
         by_taxon = {taxon: vals for taxon, vals in rows}
 
-        bincount_spy.assert_not_called()
+        assert bincount_spy.call_count == 1
+        offset_spy.assert_called_once()
         assert symbols == list(protein)
         assert np.allclose(by_taxon["t0"], np.full(20, 0.05))
 
