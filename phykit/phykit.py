@@ -629,6 +629,13 @@ class Phykit:
 
     @staticmethod
     def alignment_length_no_gaps(argv):
+        if len(argv) == 1 and argv[0] and argv[0][0] != "-":
+            _run_service_with_args(
+                _AlignmentJsonDefaultArgs(argv[0]),
+                AlignmentLengthNoGaps,
+            )
+            return
+
         parser = _new_parser(
             description=_dedent(
                 f"""\
