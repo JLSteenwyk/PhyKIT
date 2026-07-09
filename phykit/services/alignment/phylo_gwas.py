@@ -284,7 +284,10 @@ class PhyloGwas(Alignment):
     def _valid_ascii_columns(
         alignment_matrix: np.ndarray, ambiguous_lookup: np.ndarray
     ) -> np.ndarray:
-        return ~ambiguous_lookup[alignment_matrix].any(axis=0)
+        ambiguous = ambiguous_lookup[alignment_matrix]
+        if not ambiguous.any():
+            return np.ones(alignment_matrix.shape[1], dtype=bool)
+        return ~ambiguous.any(axis=0)
 
     @staticmethod
     def _biallelic_valid_ascii_columns(

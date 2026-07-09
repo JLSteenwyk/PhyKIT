@@ -771,6 +771,7 @@ Results:
 | `PhyloGwas._test_site_categorical` Unicode multiallelic skip | 300k non-ASCII alleles, first three alleles multiallelic, categorical phenotype | 0.036496s | 0.000002125s | 17174.6x |
 | `PhyloGwas._test_site_continuous` Unicode multiallelic skip | 300k non-ASCII alleles, first three alleles multiallelic, continuous phenotype | 0.012269s | 0.000001333s | 9204.1x |
 | `PhyloGwas._test_site_categorical` cached lazy NumPy attributes | 80k repeated byte-column categorical site tests with cached Fisher result, side-by-side previous uncached lazy proxy | 0.000032586s | 0.000018226s | 1.79x |
+| `PhyloGwas._valid_ascii_columns` all-valid matrix shortcut | 1000 taxa x 12000 sites, clean DNA / gappy DNA ASCII matrices, identical valid-column masks | 0.121870s / 0.130372s | 0.120357s / 0.122030s | 1.01x / 1.07x |
 | `PhyloGwas._binary_alleles_from_unicode_site` two-allele ordering | 21k non-ASCII biallelic sites with mixed major/minor and equal-count cases, identical allele ordering | 0.876059s | 0.761983s | 1.15x |
 | `PhyloGwas` categorical site-result row construction | 1M mocked categorical GWAS site results, identical row dictionaries | 2.008253s | 1.780623s | 1.13x |
 | `PhyloGwas` continuous site-result row construction | 1M mocked continuous GWAS site results, identical row dictionaries | 0.701279s | 0.440898s | 1.59x |
@@ -4491,6 +4492,9 @@ Profiling summary:
   while avoiding text decoding and string allocation for ignored trailing fields.
   The binary parser now uses tab partitioning instead of bounded split lists,
   preserving first-two-column semantics while reducing per-row allocations.
+  ASCII valid-column detection now checks for any ambiguous byte before running
+  the per-column reduction, returning an all-true mask directly for clean
+  matrices while preserving mixed-column masks for ambiguous alignments.
   Exact alignment/phenotype taxon matches now return sorted alignment keys
   directly after a key-view equality check, preserving partial-overlap
   intersection behavior while avoiding a large temporary intersection set for

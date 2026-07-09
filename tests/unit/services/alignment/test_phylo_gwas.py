@@ -323,6 +323,27 @@ class TestPhyloGwas:
 
         assert valid_columns.tolist() == [True, False, False, False, False, True]
 
+    def test_valid_ascii_columns_all_valid_uses_full_matrix_shortcut(
+        self, monkeypatch
+    ):
+        sequences = ["ACGTAC", "ATGTTC", "AGGTGC"]
+        matrix = PhyloGwas._build_ascii_alignment_matrix(sequences, 6)
+        lookup = PhyloGwas._ascii_ambiguity_lookup()
+        assert matrix is not None
+        calls = []
+        real_ones = phylo_gwas_module.np.ones
+
+        def counting_ones(*args, **kwargs):
+            calls.append((args, kwargs))
+            return real_ones(*args, **kwargs)
+
+        monkeypatch.setattr(phylo_gwas_module.np, "ones", counting_ones)
+
+        valid_columns = PhyloGwas._valid_ascii_columns(matrix, lookup)
+
+        assert valid_columns.tolist() == [True] * 6
+        assert calls
+
     def test_biallelic_valid_ascii_columns_rejects_non_testable_columns(self):
         sequences = ["AAAC", "AAC?", "AGGT", "AGTT"]
         matrix = PhyloGwas._build_ascii_alignment_matrix(sequences, 4)
