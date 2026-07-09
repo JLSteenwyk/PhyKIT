@@ -104,6 +104,11 @@ COMMANDS: tuple[tuple[str, tuple[str, ...]], ...] = (
         ),
     ),
     ("patristic_distances", ("patristic_distances", str(SAMPLES / "tree_simple.tre"))),
+    ("long_branch_score", ("long_branch_score", str(SAMPLES / "small_Aspergillus_tree.tre"))),
+    (
+        "long_branch_score_verbose",
+        ("long_branch_score", str(SAMPLES / "small_Aspergillus_tree.tre"), "--verbose"),
+    ),
 )
 
 

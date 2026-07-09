@@ -416,6 +416,69 @@ class TestLBScore(object):
         assert len(lb_scores) == len(tips)
         assert pairwise_spy.call_count == 0
 
+    def test_simple_newick_lb_components_match_tree_fast_path(self, tmp_path, args):
+        tree_file = tmp_path / "tree.tre"
+        tree_file.write_text("((A:1,B:2):3,(C:4,D:5):6):7;\n")
+        t = LBScore(args)
+        tree = Tree(
+            root=Clade(
+                clades=[
+                    Clade(
+                        branch_length=3.0,
+                        clades=[
+                            Clade(branch_length=1.0, name="A"),
+                            Clade(branch_length=2.0, name="B"),
+                        ],
+                    ),
+                    Clade(
+                        branch_length=6.0,
+                        clades=[
+                            Clade(branch_length=4.0, name="C"),
+                            Clade(branch_length=5.0, name="D"),
+                        ],
+                    ),
+                ],
+            )
+        )
+        expected_tips, expected_lbis = t.calculate_lb_score(tree)
+
+        observed_tips, observed_lbis = LBScore._calculate_simple_newick_lb_score(
+            str(tree_file)
+        )
+
+        assert observed_tips == expected_tips
+        assert observed_lbis == pytest.approx(expected_lbis)
+
+    def test_simple_newick_lb_scan_rejects_annotations(self, tmp_path):
+        tree_file = tmp_path / "tree.tre"
+        tree_file.write_text("((A:1,B:2):3[comment],C:4);\n")
+
+        assert LBScore._calculate_simple_newick_lb_score(str(tree_file)) is None
+
+    def test_simple_newick_lb_scan_rejects_duplicate_names(self, tmp_path):
+        tree_file = tmp_path / "tree.tre"
+        tree_file.write_text("((A:1,A:2):3,C:4);\n")
+
+        assert LBScore._calculate_simple_newick_lb_score(str(tree_file)) is None
+
+    def test_run_uses_simple_newick_fast_path(self, tmp_path, mocker):
+        tree_file = tmp_path / "tree.tre"
+        tree_file.write_text("((A:1,B:2):3,(C:4,D:5):6):7;\n")
+        t = LBScore(Namespace(tree=str(tree_file), verbose=False, json=False))
+        mocker.patch.object(
+            t,
+            "read_tree_file_unmodified",
+            side_effect=AssertionError("simple Newick fast path should be used"),
+        )
+        mocked_summary = mocker.patch(
+            "phykit.services.tree.lb_score.print_summary_statistics"
+        )
+
+        t.run()
+
+        stats = mocked_summary.call_args.args[0]
+        assert stats["minimum"] < stats["maximum"]
+
     def test_calculate_lb_components_fast_matches_pairwise_cache(self, args):
         t = LBScore(args)
         tips = ["tip0", "tip1", "tip2", "tip3"]

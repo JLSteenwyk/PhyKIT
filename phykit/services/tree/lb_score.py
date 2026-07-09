@@ -116,8 +116,13 @@ class LBScore(Tree):
         self.json_output = parsed["json_output"]
 
     def run(self) -> None:
-        tree = self.read_tree_file_unmodified()
-        tips, LBis = self.calculate_lb_score(tree)
+        simple_result = self._calculate_simple_newick_lb_score(self.tree_file_path)
+        if simple_result is not None:
+            tips, LBis = simple_result
+        else:
+            tree = self.read_tree_file_unmodified()
+            tips, LBis = self.calculate_lb_score(tree)
+
         if self.json_output:
             if self.verbose:
                 rows = [
@@ -326,8 +331,8 @@ class LBScore(Tree):
 
         return avg_PDis
 
+    @staticmethod
     def calculate_lb_score_per_taxa(
-        self,
         avg_PDis: list[float],
         avg_dist: float
     ) -> list[float]:
@@ -341,6 +346,210 @@ class LBScore(Tree):
 
         scale = 100.0 / avg_dist
         return [(avg_PDi * scale) - 100.0 for avg_PDi in avg_PDis]
+
+    @staticmethod
+    def _scan_simple_newick_tree(file_path: str):
+        try:
+            with open(file_path) as handle:
+                text = handle.read()
+        except OSError:
+            return None
+
+        if not text or any(char in text for char in "'\"[]"):
+            return None
+
+        text_len = len(text)
+        whitespace = " \t\r\n"
+        delimiters = "(),:;"
+
+        def skip_ws(index):
+            while index < text_len and text[index] in whitespace:
+                index += 1
+            return index
+
+        def parse_label(index):
+            index = skip_ws(index)
+            start = index
+            while (
+                index < text_len
+                and text[index] not in delimiters
+                and text[index] not in whitespace
+            ):
+                index += 1
+            return text[start:index], index
+
+        def parse_length(index):
+            index = skip_ws(index)
+            if index >= text_len or text[index] != ":":
+                return index, 0.0
+            index += 1
+            index = skip_ws(index)
+            start = index
+            while (
+                index < text_len
+                and text[index] not in ",);"
+                and text[index] not in whitespace
+            ):
+                index += 1
+            if start == index:
+                return None
+            try:
+                length = float(text[start:index])
+            except ValueError:
+                return None
+            return skip_ws(index), length
+
+        def parse_node(index):
+            index = skip_ws(index)
+            if index >= text_len:
+                return None
+
+            if text[index] == "(":
+                index += 1
+                children = []
+                while True:
+                    parsed = parse_node(index)
+                    if parsed is None:
+                        return None
+                    child, index = parsed
+                    children.append(child)
+
+                    index = skip_ws(index)
+                    if index >= text_len:
+                        return None
+                    if text[index] == ",":
+                        index += 1
+                        continue
+                    if text[index] == ")":
+                        index += 1
+                        break
+                    return None
+
+                _label, index = parse_label(index)
+                parsed_length = parse_length(index)
+                if parsed_length is None:
+                    return None
+                index, branch_length = parsed_length
+                return {"children": children, "name": None, "length": branch_length}, index
+
+            label, index = parse_label(index)
+            if not label:
+                return None
+            parsed_length = parse_length(index)
+            if parsed_length is None:
+                return None
+            index, branch_length = parsed_length
+            return {"children": [], "name": label, "length": branch_length}, index
+
+        try:
+            parsed = parse_node(0)
+        except RecursionError:
+            return None
+        if parsed is None:
+            return None
+        root, index = parsed
+        index = skip_ws(index)
+        if index >= text_len or text[index] != ";":
+            return None
+        index = skip_ws(index + 1)
+        if index != text_len:
+            return None
+        return root
+
+    @staticmethod
+    def _calculate_simple_newick_lb_components(file_path: str):
+        root = LBScore._scan_simple_newick_tree(file_path)
+        if root is None:
+            return None
+
+        tips = []
+        tip_nodes = []
+        nodes = []
+        stack = [root]
+        while stack:
+            node = stack.pop()
+            nodes.append(node)
+            children = node["children"]
+            if children:
+                for child in reversed(children):
+                    stack.append(child)
+            else:
+                tips.append(node["name"])
+                tip_nodes.append(node)
+
+        tip_count = len(tips)
+        if tip_count < 2 or len(tips) != len(set(tips)):
+            return None
+
+        subtree_tip_counts = {}
+        subtree_distance_sums = {}
+        for node in reversed(nodes):
+            children = node["children"]
+            node_id = id(node)
+            if children:
+                child_tip_count = 0
+                child_distance_sum = 0.0
+                for child in children:
+                    child_id = id(child)
+                    child_count = subtree_tip_counts[child_id]
+                    child_tip_count += child_count
+                    child_distance_sum += (
+                        subtree_distance_sums[child_id]
+                        + child["length"] * child_count
+                    )
+                subtree_tip_counts[node_id] = child_tip_count
+                subtree_distance_sums[node_id] = child_distance_sum
+            else:
+                subtree_tip_counts[node_id] = 1
+                subtree_distance_sums[node_id] = 0.0
+
+        if subtree_tip_counts[id(root)] != tip_count:
+            return None
+
+        total_pairwise_distance = 0.0
+        distance_sums_by_node = {id(root): subtree_distance_sums[id(root)]}
+        stack = [root]
+        while stack:
+            node = stack.pop()
+            parent_distance_sum = distance_sums_by_node[id(node)]
+            for child in node["children"]:
+                child_id = id(child)
+                child_count = subtree_tip_counts[child_id]
+                branch_length = child["length"]
+                total_pairwise_distance += (
+                    branch_length
+                    * child_count
+                    * (tip_count - child_count)
+                )
+                distance_sums_by_node[child_id] = (
+                    parent_distance_sum
+                    + branch_length * (tip_count - 2 * child_count)
+                )
+                stack.append(child)
+
+        avg_dist = total_pairwise_distance / (tip_count * (tip_count - 1) / 2)
+        tip_set = set(tips)
+        avg_PDis = []
+        for tip, node in zip(tips, tip_nodes):
+            denominator = LBScore._historical_other_taxa_denominator(
+                tip,
+                tip_set,
+                tip_count,
+            )
+            avg_PDis.append(
+                distance_sums_by_node[id(node)] / denominator if denominator else 0
+            )
+
+        return tips, avg_dist, avg_PDis
+
+    @staticmethod
+    def _calculate_simple_newick_lb_score(file_path: str):
+        components = LBScore._calculate_simple_newick_lb_components(file_path)
+        if components is None:
+            return None
+        tips, avg_dist, avg_PDis = components
+        LBis = LBScore.calculate_lb_score_per_taxa(avg_PDis, avg_dist)
+        return tips, LBis
 
     @staticmethod
     def _historical_other_taxa_denominator(

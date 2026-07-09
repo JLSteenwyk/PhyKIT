@@ -2048,6 +2048,7 @@ Results:
 | `LBScore.run` verbose text output | 200k taxon LB-score rows, mocked tree/read and identical stdout text | 0.119431s | 0.093329s | 1.28x |
 | `LBScore._format_verbose_text_rows` preallocated text rows | 200k mocked taxon LB-score rows, side-by-side previous list-comprehension formatter with identical text | 0.301655s | 0.240724s | 1.25x |
 | `LBScore.run` verbose JSON row construction | 500k mocked taxon LB-score rows, identical row dictionaries | 0.577324s | 0.423637s | 1.36x |
+| `LBScore.run` simple Newick score scan | side-by-side direct command timing, 5 runs after 1 warmup, plain Newick input `small_Aspergillus_tree.tre`, summary/verbose/JSON and zero-branch behavior matched previous commit | 0.482152s / 0.545144s | 0.069160s / 0.054209s | 6.97x / 10.06x |
 | `LBScore.run` cached read-only tree setup | balanced 32768-tip cached tree, LB calculation and output mocked | 0.381093s | 0.000095s | 4002.74x |
 | `LBScore` parallel setup CPU-count reuse | 10k / 100k / 1M repeated parallel batch/worker setup calculations through the lazy multiprocessing proxy | 0.033809625s / 0.536945916s / 4.925987792s | 0.015429042s / 0.377355917s / 2.955985875s | 2.19x / 1.42x / 1.67x |
 | `LBScore._LazyMultiprocessing.cpu_count` cached module | 10k / 100k / 1M repeated `cpu_count()` calls through the lazy multiprocessing proxy after first resolution | 0.007399000s / 0.166889208s / 1.547549083s | 0.007472167s / 0.142180875s / 1.086053833s | 0.99x / 1.17x / 1.42x |
