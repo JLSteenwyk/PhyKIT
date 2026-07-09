@@ -588,6 +588,7 @@ Results:
 | `CreateConcatenationMatrix._build_occupancy_state_matrix` batched gene lookup | 800 taxa x 220 genes x 180 sites, 80% present, occupancy plot state matrix | 0.249490s | 0.061994s | 4.0x |
 | `CreateConcatenationMatrix._build_occupancy_state_matrix` cached lazy NumPy attributes | 800 taxa x 24 genes x 180 sites, 85% present, side-by-side previous uncached lazy NumPy proxy | 0.039713s | 0.016847s | 2.36x |
 | `CreateConcatenationMatrix._build_occupancy_state_matrix` complete-gene direct fill | 200 taxa x 200 genes x 100 sites / 1000 taxa x 100 genes x 80 sites, all taxa present in every gene | 0.068878s / 0.131284s | 0.023015s / 0.041990s | 2.99x / 3.13x |
+| `CreateConcatenationMatrix._build_complete_occupancy_state_matrix` taxon sequence-list reuse | 1200 taxa x 400 genes x 40 sites, all taxa present in every gene, side-by-side previous per-gene dictionary lookup path | 0.271561s | 0.204746s | 1.33x |
 | `CreateConcatenationMatrix._plot_concatenation_occupancy` gene-boundary rendering | 4096 gene boundary lines, real Matplotlib Agg render | 0.796482s | 0.055704s | 14.30x |
 | `CreateConcatenationMatrix._plot_concatenation_occupancy` represented-row counts | 6000 taxa x 4000 concatenated-position state matrix, side-by-side previous boolean `np.sum(..., axis=1)` | 0.010258s | 0.007614s | 1.35x |
 | `CreateConcatenationMatrix._plot_concatenation_occupancy` redundant tight layout pass | repeated 40-taxon x 8-gene occupancy PNG render with legend and boundary lines, explicit `Figure.tight_layout()` removed while retaining `savefig(..., bbox_inches="tight")` | 3.806079s | 2.924941s | 1.30x |
@@ -4238,7 +4239,10 @@ Profiling summary:
   occupancy matrices now take a direct full-matrix slice path when every gene
   contains exactly the requested taxa, avoiding per-gene taxon-to-row lookups
   and indexed scatter while leaving mixed-missingness matrices on the existing
-  path.
+  path. The complete-gene builder now caches ordered per-taxon sequence-list
+  handles once and iterates transposed gene blocks, avoiding repeated
+  dictionary lookups for every taxon in every gene while preserving the same
+  matrix states and gene boundaries.
 - `CreateConcatenationMatrix.add_to_occupancy_info` rebuilt and sorted the full
   taxa set for every occupancy row. The optimized main concatenation workflow
   reuses the already sorted taxa list and total taxon count while keeping direct

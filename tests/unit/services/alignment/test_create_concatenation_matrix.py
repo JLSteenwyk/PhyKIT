@@ -837,6 +837,56 @@ class TestCreateConcatenationMatrix:
         )
         assert gene_boundaries == [2, 4]
 
+    def test_build_complete_occupancy_state_matrix_caches_taxon_sequence_lists(self):
+        class CountingSequences(dict):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.lookups = 0
+
+            def __getitem__(self, key):
+                self.lookups += 1
+                return super().__getitem__(key)
+
+        concatenated_seqs = CountingSequences(
+            {
+                "A": ["AC", "NN", "TT"],
+                "B": ["--", "GG", "CC"],
+            }
+        )
+
+        state_matrix, gene_boundaries = (
+            CreateConcatenationMatrix._build_complete_occupancy_state_matrix(
+                taxa=["A", "B"],
+                concatenated_seqs=concatenated_seqs,
+                gene_lengths=[2, 2, 2],
+            )
+        )
+
+        assert concatenated_seqs.lookups == 2
+        np.testing.assert_array_equal(
+            state_matrix,
+            np.array(
+                [
+                    [2, 2, 1, 1, 2, 2],
+                    [1, 1, 2, 2, 2, 2],
+                ],
+                dtype=np.uint8,
+            ),
+        )
+        assert gene_boundaries == [2, 4, 6]
+
+    def test_build_complete_occupancy_state_matrix_preserves_empty_taxa_boundaries(self):
+        state_matrix, gene_boundaries = (
+            CreateConcatenationMatrix._build_complete_occupancy_state_matrix(
+                taxa=[],
+                concatenated_seqs={},
+                gene_lengths=[2, 3],
+            )
+        )
+
+        assert state_matrix.shape == (0, 5)
+        assert gene_boundaries == [2, 5]
+
     def test_build_occupancy_state_matrix_ignores_unrequested_present_taxa(self):
         state_matrix, gene_boundaries = (
             CreateConcatenationMatrix._build_occupancy_state_matrix(

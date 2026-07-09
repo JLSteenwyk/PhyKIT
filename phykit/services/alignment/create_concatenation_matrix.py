@@ -275,16 +275,23 @@ class CreateConcatenationMatrix(Alignment):
         concatenated_seqs: dict[str, list[str]],
         gene_lengths: list[int],
     ) -> tuple[np.ndarray, list[int]]:
+        taxa_count = len(taxa)
         total_len = int(sum(gene_lengths))
-        state_matrix = np.zeros((len(taxa), total_len), dtype=np.uint8)
+        state_matrix = np.zeros((taxa_count, total_len), dtype=np.uint8)
         gene_boundaries = []
         cursor = 0
+        if taxa_count == 0:
+            for gene_len in gene_lengths:
+                cursor += gene_len
+                gene_boundaries.append(cursor)
+            return state_matrix, gene_boundaries
+
         lookup = _occupancy_state_lookup()
-        for gene_idx, gene_len in enumerate(gene_lengths):
+        taxon_seq_lists = [concatenated_seqs[taxon] for taxon in taxa]
+        for gene_len, sequences in zip(gene_lengths, zip(*taxon_seq_lists)):
             start = cursor
             end = cursor + gene_len
             gene_boundaries.append(end)
-            sequences = [concatenated_seqs[taxon][gene_idx] for taxon in taxa]
             if gene_len and all(len(sequence) == gene_len for sequence in sequences):
                 try:
                     sequence_array = np.frombuffer(
@@ -296,7 +303,7 @@ class CreateConcatenationMatrix(Alignment):
 
                 if sequence_array is not None:
                     state_matrix[:, start:end] = lookup[sequence_array].reshape(
-                        len(sequences),
+                        taxa_count,
                         gene_len,
                     )
                     cursor = end
