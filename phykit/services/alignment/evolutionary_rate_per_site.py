@@ -26,6 +26,7 @@ _PROTEIN_GAP_LOOKUP = None
 _GAP_DELETE_TABLES = {}
 _PLOT_DIRECT_MAX_LIMIT = 100_000
 _ASCII_COUNT_BLOCK_SIZE = 512
+_ERPS_SCALAR_MAX_CELLS = 8192
 
 
 def _column_sum_squares(counts: np.ndarray) -> np.ndarray:
@@ -118,6 +119,42 @@ def _prepare_evolutionary_rate_row_plot_series(rows):
     sites = np.array([row["site"] for row in rows], dtype=np.int32)
     rates = np.array([row["evolutionary_rate"] for row in rows], dtype=np.float64)
     return sites, rates
+
+
+def _evolutionary_rate_per_site_scalar(
+    raw_sequences: list[str],
+    aln_len: int,
+    is_protein: bool,
+):
+    gap_chars = frozenset("-?*X" if is_protein else "-?*XN")
+    counts_by_site = [dict() for _ in range(aln_len)]
+    observed_valid = False
+
+    for sequence in raw_sequences:
+        if len(sequence) != aln_len:
+            return None
+        for idx, char in enumerate(sequence.upper()):
+            if char in gap_chars:
+                continue
+            observed_valid = True
+            counts = counts_by_site[idx]
+            counts[char] = counts.get(char, 0) + 1
+
+    if not observed_valid:
+        return [0] * aln_len
+
+    pic_values = []
+    for counts in counts_by_site:
+        if not counts:
+            pic_values.append(0.0)
+            continue
+        total = 0
+        sum_squares = 0
+        for count in counts.values():
+            total += count
+            sum_squares += count * count
+        pic_values.append(1 - (sum_squares / (total * total)))
+    return pic_values
 
 
 class EvolutionaryRatePerSite(Alignment):
@@ -292,6 +329,16 @@ class EvolutionaryRatePerSite(Alignment):
 
         if all_identical:
             return [0.0] * aln_len
+
+        if num_records * aln_len <= _ERPS_SCALAR_MAX_CELLS:
+            scalar_values = _evolutionary_rate_per_site_scalar(
+                raw_sequences,
+                aln_len,
+                is_protein,
+            )
+            if scalar_values is not None:
+                return scalar_values
+
         sequences = [sequence.upper() for sequence in raw_sequences]
 
         gap_chars = {char.upper() for char in self.get_gap_chars(is_protein)}

@@ -45,6 +45,10 @@ COMMANDS: tuple[tuple[str, tuple[str, ...]], ...] = (
         "parsimony_informative_sites",
         ("parsimony_informative_sites", str(SAMPLES / "test_alignment_0.fa")),
     ),
+    (
+        "evolutionary_rate_per_site",
+        ("evolutionary_rate_per_site", str(SAMPLES / "test_alignment_0.fa")),
+    ),
     ("alignment_length_no_gaps", ("alignment_length_no_gaps", str(SAMPLES / "simple.fa"))),
     ("tip_labels", ("tip_labels", str(SAMPLES / "tree_simple.tre"))),
     ("dvmc", ("dvmc", str(SAMPLES / "tree_simple.tre"))),

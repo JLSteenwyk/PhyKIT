@@ -545,6 +545,52 @@ assert "phykit.helpers.plot_config" not in sys.modules
         assert round(protein_values[1], 4) == 0.6667
         assert protein_values[2:] == [0.0, 0.0]
 
+    def test_calculate_evolutionary_rate_per_site_small_alignment_uses_scalar_path(
+        self, mocker, args
+    ):
+        service = EvolutionaryRatePerSite(args)
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("ACGT"), id="t1"),
+                SeqRecord(Seq("ACGA"), id="t2"),
+                SeqRecord(Seq("TCGT"), id="t3"),
+            ]
+        )
+        mocker.patch(
+            "phykit.services.alignment.evolutionary_rate_per_site.np.frombuffer",
+            side_effect=AssertionError("small ERPS should avoid NumPy matrix setup"),
+        )
+
+        values = service.calculate_evolutionary_rate_per_site(
+            alignment,
+            is_protein=False,
+        )
+
+        assert values == pytest.approx([4 / 9, 0.0, 0.0, 4 / 9])
+
+    def test_calculate_evolutionary_rate_per_site_scalar_path_preserves_gap_sites(
+        self, mocker, args
+    ):
+        service = EvolutionaryRatePerSite(args)
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("A--T"), id="t1"),
+                SeqRecord(Seq("A--G"), id="t2"),
+                SeqRecord(Seq("N--G"), id="t3"),
+            ]
+        )
+        mocker.patch(
+            "phykit.services.alignment.evolutionary_rate_per_site.np.frombuffer",
+            side_effect=AssertionError("small ERPS should avoid NumPy matrix setup"),
+        )
+
+        values = service.calculate_evolutionary_rate_per_site(
+            alignment,
+            is_protein=False,
+        )
+
+        assert values == pytest.approx([0.0, 0.0, 0.0, 4 / 9])
+
     def test_calculate_evolutionary_rate_per_site_ascii_path_uses_lookup(self, mocker, args):
         service = EvolutionaryRatePerSite(args)
         alignment = MultipleSeqAlignment(
@@ -553,6 +599,10 @@ assert "phykit.helpers.plot_config" not in sys.modules
                 SeqRecord(Seq("ACxT"), id="t2"),
                 SeqRecord(Seq("AG-T"), id="t3"),
             ]
+        )
+        mocker.patch(
+            "phykit.services.alignment.evolutionary_rate_per_site._ERPS_SCALAR_MAX_CELLS",
+            0,
         )
         mocker.patch(
             "phykit.services.alignment.evolutionary_rate_per_site.np.isin",
@@ -579,6 +629,7 @@ assert "phykit.helpers.plot_config" not in sys.modules
                 SeqRecord(Seq("TCGT"), id="t3"),
             ]
         )
+        monkeypatch.setattr(erps_module, "_ERPS_SCALAR_MAX_CELLS", 0)
 
         def fail_sum(*_args, **_kwargs):
             raise AssertionError("small-alphabet ERPS counts should use ndarray.sum")
@@ -604,6 +655,10 @@ assert "phykit.helpers.plot_config" not in sys.modules
             ]
         )
         mocker.patch(
+            "phykit.services.alignment.evolutionary_rate_per_site._ERPS_SCALAR_MAX_CELLS",
+            0,
+        )
+        mocker.patch(
             "phykit.services.alignment.evolutionary_rate_per_site.np.isin",
             side_effect=AssertionError("ASCII protein path should use byte counts"),
         )
@@ -618,7 +673,9 @@ assert "phykit.helpers.plot_config" not in sys.modules
         assert values[0] == pytest.approx(0.9)
         assert values[1] == 0.0
 
-    def test_calculate_evolutionary_rate_per_site_unicode_fallback(self, args):
+    def test_calculate_evolutionary_rate_per_site_unicode_fallback(
+        self, monkeypatch, args
+    ):
         class DummyAlignment(list):
             def get_alignment_length(self):
                 return 2
@@ -631,6 +688,7 @@ assert "phykit.helpers.plot_config" not in sys.modules
                 SimpleNamespace(seq="T\u00d1", id="t3"),
             ]
         )
+        monkeypatch.setattr(erps_module, "_ERPS_SCALAR_MAX_CELLS", 0)
 
         values = service.calculate_evolutionary_rate_per_site(
             alignment,
