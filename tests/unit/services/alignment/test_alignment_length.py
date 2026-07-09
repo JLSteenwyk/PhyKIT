@@ -86,6 +86,12 @@ class TestAlignmentLength(object):
         mocked_get_alignment_and_format.assert_not_called()
         mocked_print.assert_called_once_with(4)
 
+    def test_get_fasta_alignment_length_counts_clean_wrapped_fasta(self, tmp_path):
+        path = tmp_path / "alignment.fa"
+        path.write_text(">a\nACGT\nAC\n>b\nTGCA\nTG\n")
+
+        assert AlignmentLength._get_fasta_alignment_length(str(path)) == 6
+
     def test_alignment_length_fast_fasta_path_counts_wrapped_spaced_sequences(
         self, mocker, tmp_path
     ):

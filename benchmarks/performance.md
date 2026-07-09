@@ -332,6 +332,7 @@ Results:
 | `AlignmentLength._get_fasta_alignment_length` direct scanner | 50k wrapped FASTA records x 304 bp, side-by-side previous `SimpleFastaParser` length helper | 0.068333s | 0.046054s | 1.48x |
 | `AlignmentLength._get_fasta_alignment_length` binary direct scanner | 50k wrapped ASCII FASTA records x 304 bp, side-by-side previous text direct scanner | 0.026663s | 0.024407s | 1.09x |
 | `AlignmentLength._get_fasta_alignment_length` clean-line no-allocation scanner | 50k FASTA records x 304 clean ASCII bp, side-by-side previous binary scanner; spaced/trailing-whitespace lines preserved through cleanup fallback | 0.059296s | 0.052155s | 1.14x |
+| `AlignmentLength._get_fasta_alignment_length` local scanner constants | 50k wrapped ASCII FASTA records x 304 bp, side-by-side previous clean-line scanner | 0.034794s | 0.026371s | 1.32x |
 | `alignment_length` module import without eager FASTA parser | cold subprocess import after lazy Bio.SeqIO.FastaIO import | 0.219706s | 0.117138s | 1.88x |
 | `alignment_length` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006248s | 0.005071s | 1.23x |
 | `alignment_length` module import without `typing` startup | median cold subprocess import after postponing annotations and converting annotation-only typing aliases to built-in annotations | 0.002915s | 0.001239s | 2.35x |
@@ -3642,7 +3643,8 @@ Profiling summary:
   later clean-line scanner pass avoids allocating a stripped bytes object for
   the common no-space sequence-line path while preserving the prior whitespace
   cleanup branch for internal spaces, carriage returns, and trailing
-  whitespace.
+  whitespace. A later local-binding pass keeps the same direct scanner branches
+  but binds hot-loop constants once per call to reduce repeated global lookups.
 - `AlignmentLengthNoGaps.get_sites_no_gaps_count` baseline time constructed a
   Unicode character matrix and called `np.isin` once per alignment column. The
   optimized path uppercases sequences once, builds a byte-backed alignment

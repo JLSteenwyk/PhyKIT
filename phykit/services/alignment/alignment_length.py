@@ -39,6 +39,10 @@ class AlignmentLength(Alignment):
 
     @staticmethod
     def _get_fasta_alignment_length(path: str) -> int | None:
+        fasta_header_byte = _FASTA_HEADER_BYTE
+        space_byte = _SPACE_BYTE
+        carriage_return_byte = _CARRIAGE_RETURN_BYTE
+        trailing_whitespace_bytes = _TRAILING_WHITESPACE_BYTES
         try:
             with open(path, "rb") as handle:
                 first_line = handle.readline()
@@ -48,7 +52,7 @@ class AlignmentLength(Alignment):
                 aln_len = None
                 seq_len = 0
                 for line in handle:
-                    if line[0] == _FASTA_HEADER_BYTE:
+                    if line[0] == fasta_header_byte:
                         if aln_len is None:
                             aln_len = seq_len
                         elif seq_len != aln_len:
@@ -64,17 +68,17 @@ class AlignmentLength(Alignment):
                         line_len -= 1
 
                     if (
-                        _SPACE_BYTE in line
-                        or _CARRIAGE_RETURN_BYTE in line
+                        space_byte in line
+                        or carriage_return_byte in line
                         or (
                             line_len
-                            and line[line_len - 1] in _TRAILING_WHITESPACE_BYTES
+                            and line[line_len - 1] in trailing_whitespace_bytes
                         )
                     ):
                         sequence_line = line.rstrip()
-                        if _SPACE_BYTE in sequence_line:
+                        if space_byte in sequence_line:
                             sequence_line = sequence_line.replace(b" ", b"")
-                        if _CARRIAGE_RETURN_BYTE in sequence_line:
+                        if carriage_return_byte in sequence_line:
                             sequence_line = sequence_line.replace(b"\r", b"")
                         seq_len += len(sequence_line)
                     else:
