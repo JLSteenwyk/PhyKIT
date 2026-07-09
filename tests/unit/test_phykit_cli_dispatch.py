@@ -1034,6 +1034,70 @@ def test_patristic_distances_option_invocation_keeps_parser(monkeypatch):
     assert calls["ran"] is True
 
 
+def test_last_common_ancestor_subtree_default_invocation_bypasses_parser(
+    monkeypatch,
+):
+    captured = {}
+
+    class Runner:
+        def __init__(self, args):
+            captured["args"] = args
+
+        def run(self):
+            captured["ran"] = True
+
+    def fail_new_parser(*_args, **_kwargs):
+        raise AssertionError(
+            "default last_common_ancestor_subtree should not build parser"
+        )
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+    monkeypatch.setattr(phykit_module, "LastCommonAncestorSubtree", Runner)
+
+    phykit_module.Phykit.last_common_ancestor_subtree(["tree.tre", "taxa.txt"])
+
+    args = captured["args"]
+    assert captured["ran"] is True
+    assert args.tree == "tree.tre"
+    assert args.list_of_taxa == "taxa.txt"
+    assert args.output is None
+    assert args.json is False
+
+
+def test_last_common_ancestor_subtree_option_invocation_keeps_parser(monkeypatch):
+    calls = {"parser": False, "ran": False}
+
+    class FakeParser:
+        def add_argument(self, *args, **kwargs):
+            return None
+
+        def parse_args(self, argv):
+            calls["argv"] = argv
+            return object()
+
+    class Runner:
+        def __init__(self, args):
+            calls["args"] = args
+
+        def run(self):
+            calls["ran"] = True
+
+    def fake_new_parser(*_args, **_kwargs):
+        calls["parser"] = True
+        return FakeParser()
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fake_new_parser)
+    monkeypatch.setattr(phykit_module, "LastCommonAncestorSubtree", Runner)
+
+    phykit_module.Phykit.last_common_ancestor_subtree(
+        ["tree.tre", "taxa.txt", "-o", "out.tre"]
+    )
+
+    assert calls["parser"] is True
+    assert calls["argv"] == ["tree.tre", "taxa.txt", "-o", "out.tre"]
+    assert calls["ran"] is True
+
+
 def test_rf_distance_default_invocation_bypasses_parser(monkeypatch):
     captured = {}
 

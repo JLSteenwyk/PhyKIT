@@ -184,6 +184,16 @@ class _TreeTaxaJsonDefaultArgs:
         self.json = False
 
 
+class _TreeTaxaOutputJsonDefaultArgs:
+    __slots__ = ("tree", "list_of_taxa", "output", "json")
+
+    def __init__(self, tree: str, list_of_taxa: str) -> None:
+        self.tree = tree
+        self.list_of_taxa = list_of_taxa
+        self.output = None
+        self.json = False
+
+
 class _TwoTreeJsonDefaultArgs:
     __slots__ = ("tree_zero", "tree_one", "json")
 
@@ -3965,6 +3975,19 @@ class Phykit:
 
     @staticmethod
     def last_common_ancestor_subtree(argv):
+        if (
+            len(argv) == 2
+            and argv[0]
+            and argv[0][0] != "-"
+            and argv[1]
+            and argv[1][0] != "-"
+        ):
+            _run_service_with_args(
+                _TreeTaxaOutputJsonDefaultArgs(argv[0], argv[1]),
+                LastCommonAncestorSubtree,
+            )
+            return
+
         parser = _new_parser(
             description=_dedent(
                 f"""\
