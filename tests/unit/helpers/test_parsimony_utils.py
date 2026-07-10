@@ -358,6 +358,33 @@ class TestSankoffPolytomies:
         assert scores == [0]
         assert not detect_changes(tree, node_states, parent_map)
 
+    def test_multiple_characters_are_reconstructed_independently(self):
+        tree = _make_tree("(A:1,B:1,C:1,D:1):0;")
+        tip_states = {
+            "A": ["0", "0"],
+            "B": ["0", "1"],
+            "C": ["1", "1"],
+            "D": ["1", "1"],
+        }
+
+        node_costs, states_by_char, scores = sankoff_downpass(tree, tip_states)
+        parent_map = build_parent_map(tree)
+        node_states = sankoff_uppass(
+            tree,
+            node_costs,
+            states_by_char,
+            parent_map,
+        )
+        changes = detect_changes(tree, node_states, parent_map)
+        mapped_per_char = [0, 0]
+        for branch_changes in changes.values():
+            for char_index, _old, _new in branch_changes:
+                mapped_per_char[char_index] += 1
+
+        assert scores == [2, 1]
+        assert node_states[id(tree.root)] == ["0", "1"]
+        assert mapped_per_char == scores
+
 
 # ---------------------------------------------------------------------------
 # fitch_downpass
