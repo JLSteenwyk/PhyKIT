@@ -184,6 +184,27 @@ class _TreesConsensusDefaultArgs:
         self.json = False
 
 
+class _TreesConsensusNetworkDefaultArgs:
+    __slots__ = (
+        "trees",
+        "threshold",
+        "missing_taxa",
+        "max_splits",
+        "histogram",
+        "plot_output",
+        "json",
+    )
+
+    def __init__(self, trees: str) -> None:
+        self.trees = trees
+        self.threshold = 0.1
+        self.missing_taxa = "allow"
+        self.max_splits = 30
+        self.histogram = None
+        self.plot_output = None
+        self.json = False
+
+
 class _TreeVerboseJsonDefaultArgs:
     __slots__ = ("tree", "verbose", "json")
 
@@ -6760,6 +6781,18 @@ class Phykit:
 
     @staticmethod
     def consensus_network(argv):
+        if (
+            len(argv) == 2
+            and argv[0] in ("-t", "--trees")
+            and argv[1]
+            and argv[1][0] != "-"
+        ):
+            _run_service_with_args(
+                _TreesConsensusNetworkDefaultArgs(argv[1]),
+                ConsensusNetwork,
+            )
+            return
+
         parser = _new_parser(
             description=_dedent(
                 f"""\

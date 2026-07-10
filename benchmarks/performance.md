@@ -2078,6 +2078,7 @@ Results:
 | `ConsensusNetwork.run` batched text split output | 100k filtered split rows, captured stdout and identical text | 0.064258s | 0.050664s | 1.27x |
 | `ConsensusNetwork._parse_trees_from_source` source cleanup | 500k path-like rows with comments/blanks, cleanup before tree parsing | 0.091090s | 0.067767s | 1.34x |
 | `ConsensusNetwork._parse_trees_from_source` path-list resolver | 50k existing relative tree paths, tree parsing mocked | 0.720531s | 0.507855s | 1.42x |
+| `consensus_network` default CLI parser bypass | direct dispatch of `consensus_network -t/--trees trees.nwk` into a no-op service, 1000 calls; direct command timing against a three-tree Newick file, 30 runs after 5 warmups, stdout matched | 2.529402s / 2.218516s; 0.615678s mean | 0.000832s / 0.001140s; 0.510406s mean | 3040.15x / 1946.07x; 1.21x |
 | `consensus_network` module import without eager Bio.Phylo | cold subprocess import after lazy `Phylo.read` and `Consensus.majority_consensus` proxies | 0.121535s | 0.032077s | 3.79x |
 | `consensus_network` module import without eager JSON/plot helpers | median cold subprocess import after localizing PlotConfig and lazy JSON wrapper | 0.023345s | 0.006703s | 3.48x |
 | `consensus_network` module import without `typing` startup | median cold subprocess import after converting annotation-only typing aliases to built-in postponed annotations | 0.006103s | 0.004336s | 1.41x |
