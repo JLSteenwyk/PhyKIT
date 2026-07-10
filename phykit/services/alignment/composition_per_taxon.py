@@ -89,6 +89,25 @@ def _row_symbol_counts_from_ascii_codes(alignment_array, symbol_values):
     ).reshape(n_rows, 256)[:, symbol_values].astype(np.float64, copy=False)
 
 
+def _bounded_ascii_count_dtype(max_count: int):
+    if max_count <= 0xFFFF:
+        return np.uint16
+    if max_count <= 0xFFFFFFFF:
+        return np.uint32
+    return np.uint64
+
+
+def _bounded_ascii_row_symbol_counts(alignment_array, symbol_values):
+    count_dtype = _bounded_ascii_count_dtype(alignment_array.shape[1])
+    return np.array(
+        [
+            (alignment_array == symbol).sum(axis=1, dtype=count_dtype)
+            for symbol in symbol_values
+        ],
+        dtype=np.float64,
+    ).T
+
+
 def _composition_per_taxon_scalar(raw_records, invalid_chars):
     if not raw_records:
         return [], []
@@ -411,15 +430,20 @@ class CompositionPerTaxon(Alignment):
             ).reshape(len(sequences), aln_len)
             invalid_lookup = self._invalid_lookup_for_chars(invalid_chars)
             invalid_codes = tuple(ord(char) for char in invalid_chars)
+            count_dtype = _bounded_ascii_count_dtype(aln_len)
             if any(code in alignment_bytes for code in invalid_codes):
                 valid_mask = ~invalid_lookup[alignment_array]
-                valid_lengths = np.count_nonzero(valid_mask, axis=1)
+                valid_lengths = valid_mask.sum(axis=1, dtype=count_dtype)
                 valid_symbols_raw = np.unique(
                     alignment_array[valid_mask]
                 )
             else:
                 valid_mask = None
-                valid_lengths = np.full(len(sequences), aln_len, dtype=np.intp)
+                valid_lengths = np.full(
+                    len(sequences),
+                    aln_len,
+                    dtype=count_dtype,
+                )
                 if (
                     not is_protein
                     and not alignment_bytes.translate(None, _DNA_ALPHABET_BYTES)
@@ -467,13 +491,10 @@ class CompositionPerTaxon(Alignment):
             elif len(symbol_values) <= 8 or (
                 len(sequences) >= 1024 and aln_len <= 512
             ):
-                counts = np.array(
-                    [
-                        np.count_nonzero(alignment_array == symbol, axis=1)
-                        for symbol in symbol_values
-                    ],
-                    dtype=np.float64,
-                ).T
+                counts = _bounded_ascii_row_symbol_counts(
+                    alignment_array,
+                    symbol_values,
+                )
             else:
                 counts = np.zeros((len(sequences), len(symbol_values)), dtype=np.float64)
                 for row_idx, row in enumerate(alignment_array):

@@ -268,7 +268,9 @@ assert "Bio.SeqIO.FastaIO" not in sys.modules
         assert np.allclose(rows[1][1], np.array([0.0, 0.0, 0.5, 0.5]))
         assert np.allclose(rows[2][1], np.full(4, 0.25))
 
-    def test_calculate_composition_per_taxon_ascii_small_alphabet_skips_bincount(self, args, mocker):
+    def test_calculate_composition_per_taxon_ascii_small_alphabet_skips_bincount(
+        self, args, mocker, monkeypatch
+    ):
         svc = CompositionPerTaxon(args)
         alignment = MultipleSeqAlignment(
             [
@@ -276,15 +278,46 @@ assert "Bio.SeqIO.FastaIO" not in sys.modules
                 SeqRecord(Seq("AA--NN??"), id="t2"),
             ]
         )
+        monkeypatch.setattr(
+            composition_per_taxon_module,
+            "_COMPOSITION_SCALAR_MAX_CELLS",
+            0,
+        )
         bincount_spy = mocker.spy(composition_per_taxon_module.np, "bincount")
+        bounded_count_spy = mocker.spy(
+            composition_per_taxon_module,
+            "_bounded_ascii_row_symbol_counts",
+        )
 
         symbols, rows = svc.calculate_composition_per_taxon(alignment, is_protein=False)
         by_taxon = {taxon: vals for taxon, vals in rows}
 
         bincount_spy.assert_not_called()
+        bounded_count_spy.assert_called_once()
         assert symbols == ["A", "C", "G", "T"]
         assert np.allclose(by_taxon["t1"], np.array([0.25, 0.25, 0.25, 0.25]))
         assert np.allclose(by_taxon["t2"], np.array([1.0, 0.0, 0.0, 0.0]))
+
+    @pytest.mark.parametrize("num_sites", [0xFFFF, 0x10000])
+    def test_bounded_ascii_row_symbol_counts_do_not_overflow(self, num_sites):
+        alignment_array = np.full((2, num_sites), ord("A"), dtype=np.uint8)
+        symbol_values = np.array([ord("A"), ord("C")], dtype=np.uint8)
+
+        observed = composition_per_taxon_module._bounded_ascii_row_symbol_counts(
+            alignment_array,
+            symbol_values,
+        )
+
+        np.testing.assert_array_equal(
+            observed,
+            np.array(
+                [
+                    [num_sites, 0],
+                    [num_sites, 0],
+                ],
+                dtype=np.float64,
+            ),
+        )
 
     def test_calculate_composition_per_taxon_ascii_large_alphabet_uses_offset_bincount(
         self, args, mocker, monkeypatch
@@ -338,7 +371,11 @@ assert "Bio.SeqIO.FastaIO" not in sys.modules
         )
         by_taxon = {taxon: vals for taxon, vals in rows}
 
-        full_spy.assert_called_once_with(2, 20, dtype=composition_per_taxon_module.np.intp)
+        full_spy.assert_called_once_with(
+            2,
+            20,
+            dtype=composition_per_taxon_module.np.uint16,
+        )
         assert symbols == list("ACDEFGHIKLMNPQRSTVWY")
         assert np.allclose(by_taxon["t1"], np.full(20, 0.05))
 

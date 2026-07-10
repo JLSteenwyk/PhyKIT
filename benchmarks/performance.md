@@ -307,9 +307,11 @@ Results:
 | `CompositionPerTaxon.calculate_composition_per_taxon` uint8 row bincounts | 800 taxa x 4000 sites, alphabet `ACGT-?NX*` | 0.0947s | 0.0406s | 2.3x |
 | `CompositionPerTaxon.calculate_composition_per_taxon` invalid lookup | 2000 taxa x 5000 sites, alphabet `ACGT-?NX*` | 0.143750s | 0.122099s | 1.18x |
 | `CompositionPerTaxon.calculate_composition_per_taxon` small-alphabet counts | 2000 taxa x 5000 sites, alphabet `ACGT-?NX*` | 0.115404s | 0.083495s | 1.38x |
+| `CompositionPerTaxon._bounded_ascii_row_symbol_counts` bounded accumulators | 500 taxa x 50000 clean `ACGT` sites, four observed symbols, 15 alternating kernel runs after warmup | 0.024393s | 0.008703s | 2.80x |
 | `CompositionPerTaxon.calculate_composition_per_taxon` short protein count strategy | 50k taxa x 50 sites, alphabet `ACDEFGHIKLMNPQRSTVWY-X?` | 0.120957s | 0.049710s | 2.43x |
 | `CompositionPerTaxon.calculate_composition_per_taxon` no-gap DNA valid lengths | 2000 taxa x 5000 sites, alphabet `ACGT`, side-by-side previous full valid-mask path | 0.054157s | 0.039753s | 1.36x |
 | `composition_per_taxon` clean nucleotide symbol discovery | paired full CLI runs of 500 taxa x 50000 clean `ACGT` sites; 15 runs after 3 warmups, byte-identical 23232-byte text and 93518-byte JSON output | 0.269884s | 0.225458s | 1.20x |
+| `composition_per_taxon` bounded ASCII row counts | 500 taxa x 50000 clean `ACGT` / gappy `ACGTN-` sites, full CLI, 15 alternating runs after 3 warmups | 0.230551s / 0.369456s | 0.202045s / 0.342803s | 1.14x / 1.08x |
 | `CompositionPerTaxon.calculate_composition_per_taxon` no-gap protein valid lengths | 2000 taxa x 5000 sites, 20 amino-acid symbols, side-by-side previous full valid-mask path | 0.069665s | 0.047561s | 1.46x |
 | `CompositionPerTaxon.calculate_composition_per_taxon` single valid-symbol shortcut | 3000 taxa x 10000 sites, conserved ASCII DNA alignment, side-by-side previous count/frequency path | 0.109004s | 0.099306s | 1.10x |
 | `CompositionPerTaxon.calculate_composition_per_taxon` identical multi-symbol shortcut | 1200 taxa x 12000 identical protein sites, lowercase/uppercase variants, side-by-side previous matrix path | 0.055857s | 0.006509s | 8.58x |
@@ -3698,6 +3700,12 @@ Profiling summary:
   `ACGTU` nucleotide alignments now discover only their present symbols with
   bounded byte membership checks instead of a full matrix `unique` reduction.
   Paired full CLI runs improved by 1.20x with byte-identical text and JSON output.
+  Small-alphabet ASCII row counts and gap-bearing valid-length totals now reduce
+  into the smallest unsigned accumulator that can represent the alignment
+  length, using `uint16` through 65,535 sites and wider types above that
+  boundary. This avoids machine-width count outputs without overflow; clean and
+  gap-bearing paired CLI text and JSON outputs matched the previous commit byte
+  for byte.
   Identical alignments with multiple valid symbols now compute one composition
   vector from the normalized first sequence and copy it for each taxon, avoiding
   full alignment-matrix counting while preserving per-row arrays and output
