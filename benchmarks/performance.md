@@ -726,6 +726,7 @@ Results:
 | `rename_fasta_entries` module import without eager Bio.SeqIO | cold subprocess import after lazy Bio.SeqIO/FastaIO imports | 0.186867s | 0.117185s | 1.59x |
 | `rename_fasta_entries` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006248s | 0.005029s | 1.24x |
 | `rename_fasta_entries` module import without `typing` startup | median cold subprocess import after removing runtime `TYPE_CHECKING` and converting annotation-only typing aliases to built-in annotations | 0.002786s | 0.000976s | 2.86x |
+| `rename_fasta_entries` default CLI parser bypass | direct dispatch of `rename_fasta_entries fasta -i/--idmap idmap` into a no-op service, 1000 calls; direct command timing against temporary copies of `simple.fa` and its ID map, 30 runs after 5 warmups, stdout and generated FASTA matched | 0.235509s / 0.214955s; 0.396236s command mean | 0.000563s / 0.000638s; 0.374966s command mean | 418.31x / 336.92x; 1.06x command |
 | `Faidx.run` multi-entry text output | 50k indexed FASTA entries x 120 bp, in-memory text stream | 0.015406s | 0.009832s | 1.57x |
 | `Faidx.run` text block list comprehension | 100k requested FASTA entries x 120 bp, side-by-side previous append-loop block assembly with identical captured stdout | 0.083998s | 0.046744s | 1.80x |
 | `Faidx.run` streaming FASTA fetch | 50k FASTA records x 120 bp, three requested entries | 0.333717s | 0.145065s | 2.30x |

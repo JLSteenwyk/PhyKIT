@@ -167,6 +167,16 @@ class _FastaEntryJsonDefaultArgs:
         self.json = False
 
 
+class _RenameFastaDefaultArgs:
+    __slots__ = ("fasta", "idmap", "output", "json")
+
+    def __init__(self, fasta: str, idmap: str) -> None:
+        self.fasta = fasta
+        self.idmap = idmap
+        self.output = None
+        self.json = False
+
+
 class _TreeJsonDefaultArgs:
     __slots__ = ("tree", "json")
 
@@ -2287,6 +2297,20 @@ class Phykit:
 
     @staticmethod
     def rename_fasta_entries(argv):
+        if (
+            len(argv) == 3
+            and argv[0]
+            and argv[2]
+            and argv[0][0] != "-"
+            and argv[1] in ("-i", "--idmap")
+            and argv[2][0] != "-"
+        ):
+            _run_service_with_args(
+                _RenameFastaDefaultArgs(argv[0], argv[2]),
+                RenameFastaEntries,
+            )
+            return
+
         parser = _new_parser(
             description=_dedent(
                 f"""\
