@@ -47,6 +47,19 @@ _CHI2_SCALAR_MAX_STATISTIC = 1000.0
 _CHDTRC = None
 
 
+def _bounded_ascii_count_dtype(max_count: int):
+    if max_count <= 0xFFFF:
+        return np.uint16
+    if max_count <= 0xFFFFFFFF:
+        return np.uint32
+    return np.uint64
+
+
+def _bounded_ascii_column_counts(mask):
+    count_dtype = _bounded_ascii_count_dtype(mask.shape[0])
+    return mask.sum(axis=0, dtype=count_dtype)
+
+
 def print_json(*args, **kwargs):
     from ...helpers.json_output import print_json as _print_json
 
@@ -338,14 +351,18 @@ class PhyloGwas(Alignment):
 
     @staticmethod
     def _biallelic_valid_ascii_columns(
-        alignment_matrix: np.ndarray, ambiguous_lookup: np.ndarray
+        alignment_matrix: np.ndarray,
+        ambiguous_lookup: Optional[np.ndarray],
+        valid_ascii_columns: Optional[np.ndarray] = None,
     ) -> np.ndarray:
         lower = alignment_matrix.min(axis=0)
         upper = alignment_matrix.max(axis=0)
-        lower_counts = np.count_nonzero(alignment_matrix == lower, axis=0)
-        upper_counts = np.count_nonzero(alignment_matrix == upper, axis=0)
+        lower_counts = _bounded_ascii_column_counts(alignment_matrix == lower)
+        upper_counts = _bounded_ascii_column_counts(alignment_matrix == upper)
+        if valid_ascii_columns is None:
+            valid_ascii_columns = ~ambiguous_lookup[alignment_matrix].any(axis=0)
         return (
-            ~ambiguous_lookup[alignment_matrix].any(axis=0)
+            valid_ascii_columns
             & (lower != upper)
             & ((lower_counts + upper_counts) == alignment_matrix.shape[0])
         )
@@ -1024,7 +1041,9 @@ class PhyloGwas(Alignment):
             )
         ):
             valid_ascii_columns = self._biallelic_valid_ascii_columns(
-                alignment_matrix, ambiguous_lookup
+                alignment_matrix,
+                ambiguous_lookup,
+                valid_ascii_columns,
             )
 
         # Detect phenotype type

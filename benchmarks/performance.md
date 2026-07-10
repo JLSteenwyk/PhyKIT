@@ -855,6 +855,8 @@ Results:
 | `PhyloGwas._write_csv` tuple-row writer | 100k categorical GWAS rows with ignored extra fields and quoted gene names | 0.222516s | 0.170786s | 1.30x |
 | `PhyloGwas._write_csv` required-field fast path | 100k categorical GWAS rows with ignored extra fields and quoted gene names, side-by-side previous `get()` row writer with incomplete-row fallback preserved | 0.698594s | 0.646321s | 1.08x |
 | `PhyloGwas.run` ASCII biallelic column prefilter | 400 taxa x 50,000 sites, continuous phenotype scan, 90% invariant / 5% multiallelic / 5% biallelic ASCII columns | 0.352346s | 0.119668s | 2.94x |
+| `PhyloGwas` reused-validity bounded biallelic prefilter | 400 taxa x 50000 sites / 2500 taxa x 10000 sites, 90% invariant / 5% multiallelic / 5% biallelic plus sparse ambiguous columns, 15 alternating pipeline runs after 3 warmups | 0.065209s / 0.098722s | 0.042098s / 0.057186s | 1.55x / 1.73x |
+| `phylo_gwas` reused-validity bounded biallelic prefilter | same 400 x 50000 / 2500 x 10000 multi-group categorical fixtures, full text CLI including Manhattan PNG rendering, 10 alternating runs after 2 warmups | 0.774852s / 0.756643s | 0.755276s / 0.728501s | 1.03x / 1.04x |
 | `PhyloGwas.run` phylo-pattern minor-taxa scan | 400 taxa x 50,000 sites with 5000 significant tree-classified sites, side-by-side previous temporary allele-list filter | 2.555218s | 1.682205s | 1.52x |
 | `PhyloGwas.run` tree phylo-pattern setup without pruning | 8192-tip balanced tree with every 64th tip absent from shared alignment/phenotype taxa, side-by-side previous `tree.prune()` plus clade-index build | 1.118381s | 0.116832s | 9.57x |
 | `PhyloGwas.run` shared-taxon setup | 1M alignment taxa x 1M phenotype taxa with 750k overlap, identical sorted shared taxa | 3.113728s | 2.794556s | 1.11x |
@@ -4819,7 +4821,13 @@ Profiling summary:
   per-column ambiguity check. A subsequent pass samples unambiguous ASCII
   columns and, when invariant or multiallelic columns are present, builds a
   stricter biallelic mask so those columns never enter the per-site association
-  tests; all-biallelic scans keep the lighter non-ambiguous mask. The non-ASCII
+  tests; all-biallelic scans keep the lighter non-ambiguous mask. The strict
+  prefilter now reuses that precomputed non-ambiguous mask instead of rebuilding
+  the full ambiguity matrix, while direct two-argument helper calls retain the
+  original fallback. Lower/upper allele masks are reduced with an unsigned
+  accumulator bounded by the taxon count, using `uint16` through 65,535 taxa
+  and wider types above that boundary. Text, JSON, diagnostics, and rendered
+  Manhattan PNG bytes match the previous implementation exactly. The non-ASCII
   fallback now checks ambiguous symbols inline while building the allele list,
   avoiding one helper call per shared taxon. Unicode biallelic site handling now
   orders the two observed allele keys with a direct comparison instead of

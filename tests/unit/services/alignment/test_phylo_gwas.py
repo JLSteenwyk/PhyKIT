@@ -355,6 +355,45 @@ class TestPhyloGwas:
 
         assert valid_columns.tolist() == [False, True, False, False]
 
+    def test_biallelic_valid_ascii_columns_reuses_valid_column_mask(self):
+        sequences = ["AAAC", "AAC?", "AGGT", "AGTT"]
+        matrix = PhyloGwas._build_ascii_alignment_matrix(sequences, 4)
+        lookup = PhyloGwas._ascii_ambiguity_lookup()
+        assert matrix is not None
+        valid_ascii_columns = PhyloGwas._valid_ascii_columns(matrix, lookup)
+
+        observed = PhyloGwas._biallelic_valid_ascii_columns(
+            matrix,
+            None,
+            valid_ascii_columns,
+        )
+
+        assert observed.tolist() == [False, True, False, False]
+
+    @pytest.mark.parametrize(
+        ("taxa", "expected_dtype"),
+        [(0xFFFF, "uint16"), (0x10000, "uint32")],
+    )
+    def test_bounded_biallelic_counts_preserve_taxon_count(
+        self, taxa, expected_dtype
+    ):
+        matrix = np.full((taxa, 1), ord("A"), dtype=np.uint8)
+        matrix[taxa // 2 :, 0] = ord("G")
+        valid_ascii_columns = np.ones(1, dtype=bool)
+
+        counts = phylo_gwas_module._bounded_ascii_column_counts(
+            np.ones((taxa, 1), dtype=bool)
+        )
+        observed = PhyloGwas._biallelic_valid_ascii_columns(
+            matrix,
+            None,
+            valid_ascii_columns,
+        )
+
+        assert counts.tolist() == [taxa]
+        assert counts.dtype == np.dtype(expected_dtype)
+        assert observed.tolist() == [True]
+
     def test_extract_column_alleles_non_ascii_fallback(self):
         sequences = ["AαG", "AβG"]
         assert PhyloGwas._build_ascii_alignment_matrix(sequences, 3) is None
