@@ -1,16 +1,86 @@
+from __future__ import annotations
+
 import math
 from collections import Counter
 from io import StringIO
+import os
 from pathlib import Path
-from typing import Dict, List, Set, Tuple
-
-from Bio import Phylo
-from Bio.Phylo import Consensus
 
 from .base import Tree
 from ...errors import PhykitUserError
-from ...helpers.json_output import print_json
-from ...helpers.plot_config import PlotConfig
+
+
+_path_exists = os.path.exists
+_path_isabs = os.path.isabs
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
+
+
+def _position_extent(positions):
+    iterator = iter(positions)
+    try:
+        min_x, min_y = next(iterator)
+    except StopIteration:
+        return 0
+    max_x = min_x
+    max_y = min_y
+    for x, y in iterator:
+        if x < min_x:
+            min_x = x
+        elif x > max_x:
+            max_x = x
+        if y < min_y:
+            min_y = y
+        elif y > max_y:
+            max_y = y
+    x_extent = max_x - min_x
+    y_extent = max_y - min_y
+    return x_extent if x_extent >= y_extent else y_extent
+
+
+def _all_tip_sets_identical(tip_sets) -> bool:
+    iterator = iter(tip_sets)
+    first_tip_set = next(iterator, None)
+    if first_tip_set is None:
+        return True
+    for tip_set in iterator:
+        if tip_set != first_tip_set:
+            return False
+    return True
+
+
+def _shared_tip_set(tip_sets) -> set[str]:
+    iterator = iter(tip_sets)
+    shared = set(next(iterator, ()))
+    for tip_set in iterator:
+        shared.intersection_update(tip_set)
+        if not shared:
+            break
+    return shared
+
+
+class _LazyPhylo:
+    def read(self, *args, **kwargs):
+        from Bio import Phylo as _Phylo
+
+        self.read = _Phylo.read
+        return self.read(*args, **kwargs)
+
+
+class _LazyConsensus:
+    def majority_consensus(self, *args, **kwargs):
+        from Bio.Phylo import Consensus as _Consensus
+
+        self.majority_consensus = _Consensus.majority_consensus
+        return self.majority_consensus(*args, **kwargs)
+
+
+Phylo = _LazyPhylo()
+Consensus = _LazyConsensus()
 
 
 class ConsensusNetwork(Tree):
@@ -25,7 +95,9 @@ class ConsensusNetwork(Tree):
         self.json_output = parsed["json_output"]
         self.plot_config = parsed["plot_config"]
 
-    def process_args(self, args) -> Dict[str, str]:
+    def process_args(self, args) -> dict[str, str]:
+        from ...helpers.plot_config import PlotConfig
+
         return dict(
             trees=args.trees,
             threshold=args.threshold,
@@ -44,7 +116,13 @@ class ConsensusNetwork(Tree):
     def _parse_trees_from_source(self, trees_path: str):
         source = Path(trees_path)
         try:
-            lines = source.read_text().splitlines()
+            with source.open() as handle:
+                cleaned = [
+                    stripped
+                    for line in handle
+                    if (stripped := line.strip())
+                    and stripped[0] != "#"
+                ]
         except FileNotFoundError:
             raise PhykitUserError(
                 [
@@ -54,7 +132,6 @@ class ConsensusNetwork(Tree):
                 code=2,
             )
 
-        cleaned = [line.strip() for line in lines if line.strip() and not line.strip().startswith("#")]
         if not cleaned:
             raise PhykitUserError(["No trees found in input."], code=2)
 
@@ -68,11 +145,11 @@ class ConsensusNetwork(Tree):
             return trees
 
         trees = []
+        parent_str = str(source.parent)
+        parent_prefix = "" if parent_str == "." else parent_str + os.sep
         for line in cleaned:
-            tree_path = Path(line)
-            if not tree_path.is_absolute():
-                tree_path = source.parent / tree_path
-            if not tree_path.exists():
+            tree_path = line if _path_isabs(line) else parent_prefix + line
+            if not _path_exists(tree_path):
                 raise PhykitUserError(
                     [
                         f"{tree_path} corresponds to no such file or directory.",
@@ -80,28 +157,36 @@ class ConsensusNetwork(Tree):
                     ],
                     code=2,
                 )
-            trees.append(Phylo.read(str(tree_path), "newick"))
+            trees.append(Phylo.read(tree_path, "newick"))
 
         return trees
 
     @staticmethod
-    def _tips(tree) -> Set[str]:
+    def _tips(tree) -> set[str]:
+        tip_names = Tree.calculate_terminal_names_fast(tree)
+        if tip_names is not None:
+            return set(tip_names)
         return {tip.name for tip in tree.get_terminals()}
 
     @staticmethod
-    def _prune_to_taxa(tree, taxa: Set[str]):
-        remove = [tip.name for tip in tree.get_terminals() if tip.name not in taxa]
+    def _prune_to_taxa(tree, taxa: set[str]):
+        terminals = Tree.calculate_terminal_clades_fast(tree)
+        if terminals is None:
+            terminals = tree.get_terminals()
+        remove = [tip for tip in terminals if tip.name not in taxa]
+        if len(remove) < len(terminals):
+            target_ids = {id(tip) for tip in remove}
+            if Tree._prune_terminal_objects_batch_standard_tree(tree, target_ids):
+                return tree
         for tip in remove:
             tree.prune(tip)
         return tree
 
-    def _normalize_taxa(self, trees: List):
+    def _normalize_taxa(self, trees: list):
         tip_sets = [self._tips(tree) for tree in trees]
-        shared_taxa = set.intersection(*tip_sets)
-
-        identical = all(tip_set == tip_sets[0] for tip_set in tip_sets[1:])
-        if identical:
-            return trees, False, tip_sets[0]
+        first_tip_set = tip_sets[0]
+        if _all_tip_sets_identical(tip_sets):
+            return trees, False, first_tip_set
 
         if self.missing_taxa == "error":
             raise PhykitUserError(
@@ -124,6 +209,7 @@ class ConsensusNetwork(Tree):
             return trees, False, union_taxa
 
         # shared mode
+        shared_taxa = _shared_tip_set(tip_sets)
         if len(shared_taxa) < 3:
             raise PhykitUserError(
                 [
@@ -143,28 +229,155 @@ class ConsensusNetwork(Tree):
 
     @staticmethod
     def _canonical_split(taxa_side: frozenset, all_taxa: frozenset) -> frozenset:
-        complement = all_taxa - taxa_side
-        if len(taxa_side) < len(complement):
+        taxa_side_len = len(taxa_side)
+        all_taxa_len = len(all_taxa)
+        if taxa_side_len * 2 < all_taxa_len:
             return taxa_side
-        if len(taxa_side) > len(complement):
+        complement = all_taxa - taxa_side
+        if taxa_side_len * 2 > all_taxa_len:
             return complement
         # Equal size: return the lexicographically smaller side
-        if sorted(taxa_side) < sorted(complement):
+        if not taxa_side:
+            return taxa_side
+        if min(taxa_side) < min(complement):
             return taxa_side
         return complement
 
     @staticmethod
-    def _extract_splits_from_tree(tree, all_taxa: frozenset) -> Set[frozenset]:
+    def _mask_to_split(mask: int, names: tuple[str, ...]) -> frozenset:
+        taxa = []
+        while mask:
+            bit = mask & -mask
+            taxa.append(names[bit.bit_length() - 1])
+            mask ^= bit
+        return frozenset(taxa)
+
+    @staticmethod
+    def _canonical_split_mask(
+        mask: int,
+        all_mask: int,
+        n_taxa: int,
+        names: tuple[str, ...],
+    ) -> int:
+        complement = all_mask ^ mask
+        side_size = mask.bit_count()
+        complement_size = n_taxa - side_size
+        if side_size < complement_size:
+            return mask
+        if side_size > complement_size:
+            return complement
+
+        # ``names`` is sorted and masks are disjoint, so the first differing
+        # taxon is the side with the lower set bit.
+        if (mask & -mask) < (complement & -complement):
+            return mask
+        return complement
+
+    @staticmethod
+    def _extract_split_masks_from_tree(
+        tree,
+        taxon_to_bit: dict[str, int],
+        names: tuple[str, ...],
+    ):
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            return None
+
+        n_taxa = len(names)
+        all_mask = (1 << n_taxa) - 1
+        split_masks = set()
+        masks_by_id = {}
+        clades = []
+        stack = [root]
+
+        try:
+            pop = stack.pop
+            extend = stack.extend
+            append_clade = clades.append
+            while stack:
+                clade = pop()
+                append_clade(clade)
+                children = clade.clades
+                if children:
+                    extend(children)
+
+            for clade in reversed(clades):
+                children = clade.clades
+                if not children:
+                    try:
+                        masks_by_id[id(clade)] = 1 << taxon_to_bit[clade.name]
+                    except KeyError:
+                        return None
+                    continue
+
+                n_children = len(children)
+                if n_children == 2:
+                    mask = (
+                        masks_by_id[id(children[0])]
+                        | masks_by_id[id(children[1])]
+                    )
+                else:
+                    mask = 0
+                    for child in children:
+                        mask |= masks_by_id[id(child)]
+                masks_by_id[id(clade)] = mask
+
+                # Skip polytomous nodes (>2 children = unresolved branching),
+                # but allow trifurcating roots (standard unrooted Newick).
+                if n_children > 2:
+                    is_root = clade == root
+                    if not (is_root and n_children == 3):
+                        continue
+
+                # Skip trivial splits (single taxon or all-but-one), plus the
+                # root-level all-taxa clade.
+                split_size = mask.bit_count()
+                if split_size <= 1 or split_size >= n_taxa - 1:
+                    continue
+                if mask == all_mask:
+                    continue
+
+                split_masks.add(
+                    ConsensusNetwork._canonical_split_mask(
+                        mask,
+                        all_mask,
+                        n_taxa,
+                        names,
+                    )
+                )
+        except AttributeError:
+            return None
+
+        return split_masks
+
+    @staticmethod
+    def _extract_splits_from_tree_legacy(
+        tree,
+        all_taxa: frozenset,
+    ) -> set[frozenset]:
         splits = set()
-        for clade in tree.get_nonterminals():
+        clade_taxa = {}
+
+        for clade in tree.find_clades(order="postorder"):
+            if clade.is_terminal():
+                tips = frozenset([clade.name])
+                clade_taxa[id(clade)] = tips
+                continue
+
+            tips = frozenset().union(
+                *(clade_taxa[id(child)] for child in clade.clades)
+            )
+            clade_taxa[id(clade)] = tips
+
             # Skip polytomous nodes (>2 children = unresolved branching),
             # but allow trifurcating roots (standard unrooted Newick).
             n_children = len(clade.clades)
             if n_children > 2:
-                is_root = (clade == tree.root)
+                is_root = clade == tree.root
                 if not (is_root and n_children == 3):
                     continue
-            tips = frozenset(tip.name for tip in clade.get_terminals())
             # Skip trivial splits (single taxon or all-but-one)
             if len(tips) <= 1 or len(tips) >= len(all_taxa) - 1:
                 continue
@@ -176,8 +389,24 @@ class ConsensusNetwork(Tree):
         return splits
 
     @staticmethod
-    def _count_splits(trees: List, all_taxa: frozenset,
-                      allow_mode: bool = False) -> Tuple[Counter, Counter]:
+    def _extract_splits_from_tree(tree, all_taxa: frozenset) -> set[frozenset]:
+        names = tuple(sorted(all_taxa))
+        split_masks = ConsensusNetwork._extract_split_masks_from_tree(
+            tree,
+            {name: index for index, name in enumerate(names)},
+            names,
+        )
+        if split_masks is not None:
+            return {
+                ConsensusNetwork._mask_to_split(mask, names)
+                for mask in split_masks
+            }
+
+        return ConsensusNetwork._extract_splits_from_tree_legacy(tree, all_taxa)
+
+    @staticmethod
+    def _count_splits(trees: list, all_taxa: frozenset,
+                      allow_mode: bool = False) -> tuple[Counter, Counter]:
         """Count splits across trees.
 
         Returns (split_counts, split_possible) where split_possible[s]
@@ -191,7 +420,7 @@ class ConsensusNetwork(Tree):
         if allow_mode:
             # Precompute taxon sets for all trees
             tree_taxa_list = [
-                frozenset(t.name for t in tree.get_terminals())
+                frozenset(ConsensusNetwork._tips(tree))
                 for tree in trees
             ]
 
@@ -200,17 +429,7 @@ class ConsensusNetwork(Tree):
                 tree_splits = ConsensusNetwork._extract_splits_from_tree(
                     tree, tree_taxa
                 )
-                for split in tree_splits:
-                    counter[split] += 1
-
-            # For normalization: each split was found in counter[split]
-            # trees. The "possible" count is the number of trees that
-            # contain ALL taxa on both sides. Since we extracted each
-            # split from a tree that had all its taxa, the split count
-            # IS the possible count (a tree can only produce a split if
-            # it contains all the relevant taxa).
-            for split in counter:
-                possible[split] = counter[split]
+                counter.update(tree_splits)
 
             # Actually, we should count how many trees COULD have
             # produced the split but didn't. A more accurate approach:
@@ -224,17 +443,38 @@ class ConsensusNetwork(Tree):
             # The simplest correct normalization for incomplete
             # taxon sampling: frequency = count / n_trees.
             # This is what most software does.
-            for split in counter:
-                possible[split] = len(trees)
+            possible = Counter(dict.fromkeys(counter, len(trees)))
         else:
+            names = tuple(sorted(all_taxa))
+            taxon_to_bit = {name: index for index, name in enumerate(names)}
+            mask_counter = Counter()
+            use_mask_counter = True
             for tree in trees:
-                tree_splits = ConsensusNetwork._extract_splits_from_tree(
-                    tree, all_taxa
+                split_masks = ConsensusNetwork._extract_split_masks_from_tree(
+                    tree,
+                    taxon_to_bit,
+                    names,
                 )
-                for split in tree_splits:
-                    counter[split] += 1
-            for split in counter:
-                possible[split] = len(trees)
+                if split_masks is None:
+                    use_mask_counter = False
+                    break
+                mask_counter.update(split_masks)
+
+            if use_mask_counter:
+                counter.update(
+                    {
+                        ConsensusNetwork._mask_to_split(mask, names): count
+                        for mask, count in mask_counter.items()
+                    }
+                )
+            else:
+                for tree in trees:
+                    tree_splits = ConsensusNetwork._extract_splits_from_tree(
+                        tree, all_taxa
+                    )
+                    counter.update(tree_splits)
+
+            possible = Counter(dict.fromkeys(counter, len(trees)))
 
         return counter, possible
 
@@ -242,7 +482,7 @@ class ConsensusNetwork(Tree):
     def _filter_splits(
         split_counts: Counter, n_trees: int, threshold: float,
         split_possible: Counter = None,
-    ) -> List[Tuple[frozenset, int, float]]:
+    ) -> list[tuple[frozenset, int, float]]:
         results = []
         for split, count in split_counts.items():
             if split_possible and split in split_possible:
@@ -260,10 +500,12 @@ class ConsensusNetwork(Tree):
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _compute_circular_ordering(trees: List, all_taxa: frozenset) -> List[str]:
+    def _compute_circular_ordering(trees: list, all_taxa: frozenset) -> list[str]:
         try:
             consensus = Consensus.majority_consensus(trees, cutoff=0.5)
-            ordering = [tip.name for tip in consensus.get_terminals()]
+            ordering = Tree.calculate_terminal_names_fast(consensus)
+            if ordering is None:
+                ordering = [tip.name for tip in consensus.get_terminals()]
             if set(ordering) == set(all_taxa):
                 return ordering
         except Exception:
@@ -275,31 +517,53 @@ class ConsensusNetwork(Tree):
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _is_circular_split(split, ordering):
-        """Check if a split has exactly 2 boundary gaps in the circular ordering."""
+    def _circular_gap_positions(split, ordering):
+        """Return the two circular boundary gap positions, or None."""
         n = len(ordering)
-        gaps = 0
-        for i in range(n):
-            curr = ordering[i]
-            nxt = ordering[(i + 1) % n]
-            if (curr in split) != (nxt in split):
-                gaps += 1
-        return gaps == 2
+        if n == 0:
+            return None
+        gap_positions = []
+        first_in_split = ordering[0] in split
+        previous_in_split = first_in_split
+        for i in range(1, n):
+            current_in_split = ordering[i] in split
+            if previous_in_split != current_in_split:
+                gap_positions.append(i - 1)
+                if len(gap_positions) > 2:
+                    return None
+            previous_in_split = current_in_split
+        if previous_in_split != first_in_split:
+            gap_positions.append(n - 1)
+        if len(gap_positions) == 2:
+            return (gap_positions[0], gap_positions[1])
+        return None
 
     @staticmethod
-    def _compute_split_directions(ordering, circular_splits):
+    def _is_circular_split(split, ordering):
+        """Check if a split has exactly 2 boundary gaps in the circular ordering."""
+        return ConsensusNetwork._circular_gap_positions(split, ordering) is not None
+
+    @staticmethod
+    def _compute_split_directions(ordering, circular_splits,
+                                  gap_positions_by_split=None):
         """Compute 2D direction vectors for each circular split."""
         n = len(ordering)
-        angles = {taxon: 2 * math.pi * i / n for i, taxon in enumerate(ordering)}
+        cos_by_taxon = {}
+        sin_by_taxon = {}
+        for i, taxon in enumerate(ordering):
+            angle = 2 * math.pi * i / n
+            cos_by_taxon[taxon] = math.cos(angle)
+            sin_by_taxon[taxon] = math.sin(angle)
         directions = {}
         for split, count, freq in circular_splits:
-            gap_positions = []
-            for i in range(n):
-                curr = ordering[i]
-                nxt = ordering[(i + 1) % n]
-                if (curr in split) != (nxt in split):
-                    gap_positions.append(i)
-            if len(gap_positions) != 2:
+            if gap_positions_by_split is None:
+                gap_positions = ConsensusNetwork._circular_gap_positions(
+                    split,
+                    ordering,
+                )
+            else:
+                gap_positions = gap_positions_by_split.get(split)
+            if gap_positions is None:
                 continue
             # Gap midpoint angles on the unit circle
             g1 = math.pi * (2 * gap_positions[0] + 1) / n
@@ -317,8 +581,14 @@ class ConsensusNetwork(Tree):
             else:
                 dx, dy = 1.0, 0.0
             # Orient toward the canonical (positive / smaller) side
-            cx_split = sum(math.cos(angles[t]) for t in split) / len(split)
-            cy_split = sum(math.sin(angles[t]) for t in split) / len(split)
+            cx_total = 0.0
+            cy_total = 0.0
+            for taxon in split:
+                cx_total += cos_by_taxon[taxon]
+                cy_total += sin_by_taxon[taxon]
+            center_scale = 1.0 / len(split)
+            cx_split = cx_total * center_scale
+            cy_split = cy_total * center_scale
             if dx * cx_split + dy * cy_split < 0:
                 dx = -dx
                 dy = -dy
@@ -336,11 +606,21 @@ class ConsensusNetwork(Tree):
         n_splits = len(splits_list)
         if n_splits == 0:
             return {}, set(), [], [], []
+        bit_values = [1 << idx for idx in range(n_splits)]
         # Each taxon's sign vector: +1 if in canonical side, -1 otherwise
         taxon_signs = {}
+        taxon_masks = []
         for taxon in all_taxa:
-            signs = tuple(1 if taxon in sp else -1 for sp in splits_list)
-            taxon_signs[taxon] = signs
+            sign_mask = 0
+            signs = []
+            for split_idx, sp in enumerate(splits_list):
+                if taxon in sp:
+                    signs.append(1)
+                    sign_mask |= bit_values[split_idx]
+                else:
+                    signs.append(-1)
+            taxon_signs[taxon] = tuple(signs)
+            taxon_masks.append(sign_mask)
         # Pairwise forbidden sign combinations
         forbidden = {}
         for i in range(n_splits):
@@ -360,50 +640,80 @@ class ConsensusNetwork(Tree):
                     fb.add((-1, -1))
                 if fb:
                     forbidden[(i, j)] = fb
-        # Enumerate valid sign vectors
-        valid_nodes = set()
-        for combo in range(2 ** n_splits):
-            signs = tuple(1 if (combo >> j) & 1 else -1 for j in range(n_splits))
-            valid = True
-            for (i, j), fb_pairs in forbidden.items():
-                if (signs[i], signs[j]) in fb_pairs:
-                    valid = False
-                    break
-            if valid:
-                valid_nodes.add(signs)
+        valid_masks = set()
+        constraints_by_split = [[] for _ in range(n_splits)]
+        for (i, j), fb_pairs in forbidden.items():
+            constraints_by_split[j].append((i, fb_pairs))
+
+        signs = [-1] * n_splits
+
+        def add_valid_signs(split_idx, sign_mask):
+            if split_idx == n_splits:
+                valid_masks.add(sign_mask)
+                return
+            bit_value = bit_values[split_idx]
+            for sign, next_mask in (
+                (-1, sign_mask),
+                (1, sign_mask | bit_value),
+            ):
+                valid = True
+                for prev_idx, fb_pairs in constraints_by_split[split_idx]:
+                    if (signs[prev_idx], sign) in fb_pairs:
+                        valid = False
+                        break
+                if valid:
+                    signs[split_idx] = sign
+                    add_valid_signs(split_idx + 1, next_mask)
+
+        add_valid_signs(0, 0)
         # Ensure taxon sign vectors are included
-        for signs in taxon_signs.values():
-            valid_nodes.add(signs)
-        # Edges: connect nodes differing in exactly one split
+        valid_masks.update(taxon_masks)
+
+        signs_cache = {}
+
+        def mask_to_signs(mask):
+            try:
+                return signs_cache[mask]
+            except KeyError:
+                sign_tuple = tuple(1 if mask & bit else -1 for bit in bit_values)
+                signs_cache[mask] = sign_tuple
+                return sign_tuple
+
+        valid_nodes = {mask_to_signs(mask) for mask in valid_masks}
         edges = []
-        valid_list = list(valid_nodes)
-        for i in range(len(valid_list)):
-            for j in range(i + 1, len(valid_list)):
-                s1 = valid_list[i]
-                s2 = valid_list[j]
-                diff = [k for k in range(n_splits) if s1[k] != s2[k]]
-                if len(diff) == 1:
-                    edges.append((s1, s2, diff[0]))
+        for mask in valid_masks:
+            node = mask_to_signs(mask)
+            for split_idx, bit_value in enumerate(bit_values):
+                flipped = mask ^ bit_value
+                if flipped in valid_masks and mask < flipped:
+                    edges.append((node, mask_to_signs(flipped), split_idx))
         return taxon_signs, valid_nodes, edges, splits_list, weights
 
-    def _draw_network(self, ordering: List[str], filtered_splits, all_taxa: frozenset, output_path: str):
+    def _draw_network(self, ordering: list[str], filtered_splits, all_taxa: frozenset, output_path: str):
         """Draw a planar splits graph using matplotlib."""
         import matplotlib
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
+        from matplotlib.collections import LineCollection
 
         n = len(ordering)
         angles = {taxon: 2 * math.pi * i / n for i, taxon in enumerate(ordering)}
 
         # Filter to circular splits only
-        circular_splits = [
-            (split, count, freq)
-            for split, count, freq in filtered_splits
-            if self._is_circular_split(split, ordering)
-        ]
+        circular_splits = []
+        gap_positions_by_split = {}
+        for split, count, freq in filtered_splits:
+            gap_positions = self._circular_gap_positions(split, ordering)
+            if gap_positions is not None:
+                circular_splits.append((split, count, freq))
+                gap_positions_by_split[split] = gap_positions
 
         # Compute direction vectors
-        directions = self._compute_split_directions(ordering, circular_splits)
+        directions = self._compute_split_directions(
+            ordering,
+            circular_splits,
+            gap_positions_by_split,
+        )
 
         # Keep only splits that have computed directions
         circular_splits = [
@@ -440,6 +750,8 @@ class ConsensusNetwork(Tree):
 
         if not splits_list:
             # No splits: place taxa evenly on a circle
+            point_x = []
+            point_y = []
             for taxon in ordering:
                 angle = angles[taxon]
                 x = math.cos(angle)
@@ -452,7 +764,10 @@ class ConsensusNetwork(Tree):
                             fontsize=label_fontsize, rotation=rotation,
                             rotation_mode="anchor")
                 else:
-                    ax.plot(x, y, "o", color="black", markersize=2)
+                    point_x.append(x)
+                    point_y.append(y)
+            if point_x:
+                ax.scatter(point_x, point_y, color="black", s=4)
         else:
             # Compute node positions: pos = sum(sign_i * weight_i * dir_i) / 2
             node_positions = {}
@@ -465,19 +780,25 @@ class ConsensusNetwork(Tree):
                 node_positions[node] = (x, y)
 
             # Pendant edge length proportional to graph extent
-            all_x = [p[0] for p in node_positions.values()]
-            all_y = [p[1] for p in node_positions.values()]
-            extent = max(
-                max(all_x) - min(all_x) if all_x else 0,
-                max(all_y) - min(all_y) if all_y else 0,
-            )
+            extent = _position_extent(node_positions.values())
             pendant_len = max(0.15, extent * 0.3)
 
             # Draw internal edges
+            internal_segments = []
             for s1, s2, split_idx in edges:
                 x1, y1 = node_positions[s1]
                 x2, y2 = node_positions[s2]
-                ax.plot([x1, x2], [y1, y2], "-", color="black", linewidth=1.5, zorder=2)
+                internal_segments.append(((x1, y1), (x2, y2)))
+            if internal_segments:
+                ax.add_collection(
+                    LineCollection(
+                        internal_segments,
+                        colors="black",
+                        linewidths=1.5,
+                        zorder=2,
+                    ),
+                    autolim=True,
+                )
 
             # Find taxa on split boundaries (participating in displayed splits)
             boundary_taxa = set()
@@ -490,6 +811,9 @@ class ConsensusNetwork(Tree):
                         boundary_taxa.add(nxt)
 
             # Draw pendant edges and taxon labels
+            pendant_segments = []
+            pendant_widths = []
+            pendant_colors = []
             for taxon in ordering:
                 angle = angles[taxon]
                 if taxon in taxon_signs and taxon_signs[taxon] in node_positions:
@@ -506,10 +830,10 @@ class ConsensusNetwork(Tree):
 
                 tx = nx + plen * math.cos(angle)
                 ty = ny + plen * math.sin(angle)
-                ax.plot([nx, tx], [ny, ty], "-", color="black",
-                        linewidth=0.8 if taxon not in boundary_taxa else 1.5,
-                        alpha=0.3 if taxon not in boundary_taxa else 1.0,
-                        zorder=2)
+                is_boundary = taxon in boundary_taxa
+                pendant_segments.append(((nx, ny), (tx, ty)))
+                pendant_widths.append(1.5 if is_boundary else 0.8)
+                pendant_colors.append((0.0, 0.0, 0.0, 1.0 if is_boundary else 0.3))
 
                 if label_fontsize > 0 and (taxon in boundary_taxa or n <= 50):
                     lx = tx + 0.03 * math.cos(angle)
@@ -520,6 +844,17 @@ class ConsensusNetwork(Tree):
                     ax.text(lx, ly, taxon, ha=ha, va="center",
                             fontsize=label_fontsize, rotation=rotation,
                             rotation_mode="anchor", zorder=4)
+            if pendant_segments:
+                ax.add_collection(
+                    LineCollection(
+                        pendant_segments,
+                        colors=pendant_colors,
+                        linewidths=pendant_widths,
+                        zorder=2,
+                    ),
+                    autolim=True,
+                )
+            ax.autoscale_view()
 
             # Frequency labels on internal edges (one per split)
             labeled_splits = set()
@@ -541,7 +876,6 @@ class ConsensusNetwork(Tree):
         if config.show_title:
             ax.set_title(config.title or "Consensus Splits Network", fontsize=config.title_fontsize or 14, pad=20)
 
-        plt.tight_layout()
         plt.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
         plt.close()
 
@@ -574,7 +908,6 @@ class ConsensusNetwork(Tree):
                 fontsize=config.title_fontsize or 14,
             )
 
-        fig.tight_layout()
         fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
 
@@ -621,16 +954,25 @@ class ConsensusNetwork(Tree):
                 )
             )
         else:
-            print(f"Number of input trees: {n_trees}")
-            print(f"Number of taxa: {len(all_taxa)}")
-            print(f"Threshold: {self.threshold}")
+            lines = [
+                f"Number of input trees: {n_trees}",
+                f"Number of taxa: {len(all_taxa)}",
+                f"Threshold: {self.threshold}",
+            ]
             if pruned:
-                print("Pruned to shared taxa: yes")
-            print(f"Total unique splits: {len(split_counts)}")
-            print(f"Splits above threshold: {len(filtered)}")
-            print("---")
-            for split, count, freq in filtered:
-                print(f"{self._format_split(split)}\t{count}/{n_trees}\t{freq:.4f}")
+                lines.append("Pruned to shared taxa: yes")
+            lines.extend(
+                [
+                    f"Total unique splits: {len(split_counts)}",
+                    f"Splits above threshold: {len(filtered)}",
+                    "---",
+                ]
+            )
+            lines.extend(
+                f"{self._format_split(split)}\t{count}/{n_trees}\t{freq:.4f}"
+                for split, count, freq in filtered
+            )
+            print("\n".join(lines))
 
         if self.histogram:
             self._draw_histogram(split_counts, n_trees, self.histogram)

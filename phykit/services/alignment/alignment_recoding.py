@@ -1,11 +1,16 @@
+from __future__ import annotations
+
 from os import path
 import sys
-from typing import Dict, List
 
-from Bio.Align import MultipleSeqAlignment
 
 from .base import Alignment
-from ...helpers.json_output import print_json
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
 
 here = path.dirname(__file__)
 
@@ -21,7 +26,7 @@ class AlignmentRecoding(Alignment):
 
         recoding_table = self.read_recoding_table(self.code)
 
-        recoded_alignment = self.recode_alignment(
+        recoded_alignment = self._recode_alignment_strings(
             alignment, recoding_table, is_protein
         )
 
@@ -30,40 +35,75 @@ class AlignmentRecoding(Alignment):
                 dict(
                     code=self.code,
                     taxa=[
-                        dict(taxon=taxon, sequence="".join(seq))
+                        {"taxon": taxon, "sequence": seq}
                         for taxon, seq in recoded_alignment.items()
                     ],
                 )
             )
             return
 
-        for k, v in recoded_alignment.items():
-            print(f">{k}\n{''.join(v)}")
+        if recoded_alignment:
+            blocks = []
+            append = blocks.append
+            for taxon, sequence in recoded_alignment.items():
+                append(f">{taxon}\n{sequence}")
+            print("\n".join(blocks))
 
     def recode_alignment(
         self,
         alignment: MultipleSeqAlignment,
-        recoding_table: Dict[str, str],
+        recoding_table: dict[str, str],
         is_protein: bool,
-    ) -> Dict[str, List[str]]:
+    ) -> dict[str, list[str]]:
 
-        gap_chars = self.get_gap_chars(is_protein)
+        recoded_alignment = self._recode_alignment_strings(
+            alignment,
+            recoding_table,
+            is_protein,
+        )
+
+        return {
+            taxon: list(sequence)
+            for taxon, sequence in recoded_alignment.items()
+        }
+
+    def _recode_alignment_strings(
+        self,
+        alignment: MultipleSeqAlignment,
+        recoding_table: dict[str, str],
+        is_protein: bool,
+    ) -> dict[str, str]:
+        translate_table = self._build_translation_table(
+            recoding_table,
+            self.get_gap_chars(is_protein),
+        )
         recoded_alignment = dict()
 
         for record in alignment:
-            recoded_sequence = [
-                recoding_table.get(base.upper(), base)
-                if base not in gap_chars else base
-                for base in record.seq
-            ]
-            recoded_alignment[record.id] = recoded_sequence
+            recoded_alignment[record.id] = str(record.seq).translate(translate_table)
 
         return recoded_alignment
+
+    @staticmethod
+    def _build_translation_table(
+        recoding_table: dict[str, str],
+        gap_chars: list[str],
+    ) -> dict[int, str]:
+        gap_chars_set = set(gap_chars)
+        translate_table: dict[int, str] = {}
+        for original, recoded in recoding_table.items():
+            upper_original = original.upper()
+            if upper_original not in gap_chars_set:
+                translate_table[ord(upper_original)] = recoded
+            lower_original = upper_original.lower()
+            if lower_original not in gap_chars_set:
+                translate_table[ord(lower_original)] = recoded
+        return translate_table
 
     def read_recoding_table(
         self,
         recoding: str
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         """
         return translation table with codons as keys and amino acids as values
         """
@@ -89,7 +129,7 @@ class AlignmentRecoding(Alignment):
         try:
             with open(path.join(here, pathing)) as code:
                 for line in code:
-                    parts = line.split()
+                    parts = line.split(None, 2)
                     recoding_table[parts[1].upper()] = parts[0].upper()
         except FileNotFoundError:
             print(f"Recoding table file '{pathing}' not found.")

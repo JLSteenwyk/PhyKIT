@@ -1,34 +1,91 @@
-import sys
-from typing import Dict, List, Union
-import multiprocessing as mp
-from functools import partial
+from __future__ import annotations
 
-from Bio import Phylo
+import sys
 
 from .base import Tree
-from ...helpers.json_output import print_json
 
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
+
+
+class _LazyPhylo:
+    _module = None
+
+    def _load(self):
+        module = self._module
+        if module is None:
+            from Bio import Phylo as _Phylo
+
+            module = _Phylo
+            self._module = module
+        return module
+
+    def read(self, *args, **kwargs):
+        read = self._load().read
+        self.read = read
+        return read(*args, **kwargs)
+
+
+Phylo = _LazyPhylo()
+
+
+class _LazyMultiprocessing:
+    _module = None
+
+    def _load(self):
+        module = self._module
+        if module is None:
+            import multiprocessing as module
+
+            self._module = module
+        return module
+
+    def cpu_count(self):
+        return self._load().cpu_count()
+
+    def Pool(self, *args, **kwargs):
+        return self._load().Pool(*args, **kwargs)
+
+
+mp = _LazyMultiprocessing()
 
 class HiddenParalogyCheck(Tree):
+    MP_MIN_CLADES = 128
+
     def __init__(self, args) -> None:
         parsed = self.process_args(args)
         super().__init__(tree_file_path=parsed["tree_file_path"], clade=parsed["clade"])
         self.json_output = parsed["json_output"]
 
     @staticmethod
-    def _process_clade_batch(clade_batch, tree_file_path, master_tree_tips):
+    def _process_clade_batch(
+        clade_batch, tree_file_path, master_tree_tips, exact_clades=None
+    ):
         """Process a batch of clades in parallel."""
         batch_results = []
+        if exact_clades is None:
+            try:
+                batch_tree = Phylo.read(tree_file_path, "newick")
+                exact_clades = HiddenParalogyCheck._build_exact_clade_index(batch_tree)
+            except (ValueError, AttributeError, FileNotFoundError):
+                exact_clades = None
 
         for clade in clade_batch:
-            # Read a fresh copy of the tree for each clade
-            tree = Phylo.read(tree_file_path, "newick")
-            clade_of_interest = set(clade).intersection(master_tree_tips)
+            clade_of_interest = master_tree_tips.intersection(clade)
 
             if len(clade_of_interest) <= 1:
                 batch_results.append(["insufficient_taxon_representation"])
                 continue
 
+            if exact_clades is not None and frozenset(clade_of_interest) in exact_clades:
+                batch_results.append(["monophyletic", []])
+                continue
+
+            # Read a fresh copy for each non-exact clade to preserve rooting behavior.
+            tree = Phylo.read(tree_file_path, "newick")
             diff_tips = master_tree_tips - clade_of_interest
 
             # Root and find common ancestor
@@ -36,8 +93,13 @@ class HiddenParalogyCheck(Tree):
                 tree.root_with_outgroup(list(diff_tips))
                 subtree = tree.common_ancestor(clade_of_interest)
 
-                # Get terminal names efficiently
-                common_ancestor_tips = set(tip.name for tip in subtree.get_terminals())
+                common_ancestor_tips = (
+                    HiddenParalogyCheck._terminal_names_direct(subtree)
+                )
+                if common_ancestor_tips is None:
+                    common_ancestor_tips = set(
+                        tip.name for tip in subtree.get_terminals()
+                    )
 
                 diff_tips_between_clade_and_curr_tree = \
                     clade_of_interest.symmetric_difference(common_ancestor_tips)
@@ -54,29 +116,37 @@ class HiddenParalogyCheck(Tree):
 
     def run(self) -> None:
         # Read the master tree once to get all tip names
-        master_tree = self.read_tree_file()
+        master_tree = self.read_tree_file_unmodified()
         master_tree_tips = frozenset(self.get_tip_names_from_tree(master_tree))
+        exact_clades = self._build_exact_clade_index(master_tree)
 
         # Read clades
         clades = self.read_clades_file(self.clade)
 
-        # For small datasets, process sequentially
-        if len(clades) < 10:
+        # For small and medium clade lists, process startup and pickling overhead
+        # dominates the exact-clade and cached sequential paths.
+        if len(clades) < self.MP_MIN_CLADES:
             res_arr = []
             for clade in clades:
-                # Read a fresh tree for each clade instead of deep copying
-                tree = Phylo.read(self.tree_file_path, "newick")
-                clade_of_interest = set(clade).intersection(master_tree_tips)
+                clade_of_interest = master_tree_tips.intersection(clade)
 
                 if len(clade_of_interest) <= 1:
                     res_arr.append(["insufficient_taxon_representation"])
                     continue
 
+                if exact_clades is not None and frozenset(clade_of_interest) in exact_clades:
+                    res_arr.append(["monophyletic", []])
+                    continue
+
+                # Read a fresh tree for each non-exact clade to preserve rooting behavior.
+                tree = Phylo.read(self.tree_file_path, "newick")
                 diff_tips = master_tree_tips - clade_of_interest
                 tree.root_with_outgroup(list(diff_tips))
 
                 subtree = tree.common_ancestor(clade_of_interest)
-                common_ancestor_tips = set(self.get_tip_names_from_tree(subtree))
+                common_ancestor_tips = self._terminal_names_direct(subtree)
+                if common_ancestor_tips is None:
+                    common_ancestor_tips = set(self.get_tip_names_from_tree(subtree))
 
                 diff_tips_between_clade_and_curr_tree = \
                     clade_of_interest.symmetric_difference(common_ancestor_tips)
@@ -87,6 +157,8 @@ class HiddenParalogyCheck(Tree):
                 ])
         else:
             # Use multiprocessing for larger datasets
+            from functools import partial
+
             num_workers = min(mp.cpu_count(), 8)
             batch_size = max(1, len(clades) // num_workers)
 
@@ -98,7 +170,8 @@ class HiddenParalogyCheck(Tree):
             process_func = partial(
                 self._process_clade_batch,
                 tree_file_path=self.tree_file_path,
-                master_tree_tips=master_tree_tips
+                master_tree_tips=master_tree_tips,
+                exact_clades=exact_clades,
             )
 
             with mp.Pool(processes=num_workers) as pool:
@@ -111,38 +184,112 @@ class HiddenParalogyCheck(Tree):
 
         self.print_results(res_arr)
 
-    def process_args(self, args) -> Dict[str, str]:
+    @staticmethod
+    def _terminal_names_direct(clade):
+        try:
+            clade.clades
+        except AttributeError:
+            return None
+
+        names = set()
+        stack = [clade]
+        try:
+            add_name = names.add
+            pop_stack = stack.pop
+            extend_stack = stack.extend
+            while stack:
+                node = pop_stack()
+                children = node.clades
+                if children:
+                    extend_stack(children)
+                else:
+                    add_name(node.name)
+        except (AttributeError, TypeError):
+            return None
+        return names
+
+    @staticmethod
+    def _build_exact_clade_index(tree):
+        try:
+            clade_tips = {}
+            exact_clades = set()
+            postorder = HiddenParalogyCheck._postorder_clades_direct(tree)
+            if postorder is None:
+                postorder = tree.find_clades(order="postorder")
+
+            for clade in postorder:
+                if clade.is_terminal():
+                    tips = frozenset([clade.name])
+                else:
+                    children = clade.clades
+                    if len(children) == 2:
+                        tips = (
+                            clade_tips[id(children[0])]
+                            | clade_tips[id(children[1])]
+                        )
+                    else:
+                        tips = frozenset().union(
+                            *(clade_tips[id(child)] for child in children)
+                        )
+                clade_tips[id(clade)] = tips
+                exact_clades.add(tips)
+            return exact_clades
+        except (AttributeError, KeyError, TypeError):
+            return None
+
+    @staticmethod
+    def _postorder_clades_direct(tree):
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            return None
+
+        clades = []
+        stack = [root]
+        try:
+            while stack:
+                clade = stack.pop()
+                clades.append(clade)
+                stack.extend(clade.clades)
+        except AttributeError:
+            return None
+        clades.reverse()
+        return clades
+
+    def process_args(self, args) -> dict[str, str]:
         return dict(
             tree_file_path=args.tree,
             clade=args.clade,
             json_output=getattr(args, "json", False),
         )
 
-    def read_clades_file(self, clades: str) -> List[List[str]]:
+    def read_clades_file(self, clades: str) -> list[list[str]]:
         try:
             with open(clades) as file:
-                return [line.split() for line in file.readlines()]
+                return [line.split() for line in file]
         except FileNotFoundError:
             print("Clade file not found. Please check the path.")
             sys.exit(2)
 
-    def print_results(self, res_arr: List[List[Union[List, str]]]) -> None:
+    def print_results(self, res_arr: list[list[list | str]]) -> None:
         if self.json_output:
             rows = []
+            append_row = rows.append
             for idx, res in enumerate(res_arr, start=1):
-                status = res[0]
                 unexpected = []
                 if len(res) > 1 and isinstance(res[1], list):
                     unexpected = sorted(res[1])
-                rows.append(
-                    dict(
-                        clade_index=idx,
-                        status=status,
-                        unexpected_taxa=unexpected,
-                    )
+                append_row(
+                    {
+                        "clade_index": idx,
+                        "status": res[0],
+                        "unexpected_taxa": unexpected,
+                    }
                 )
             print_json(dict(rows=rows, clades=rows))
             return
 
-        for res in res_arr:
-            print(res[0])
+        lines = [res[0] for res in res_arr]
+        if lines:
+            sys.stdout.write("\n".join(lines) + "\n")

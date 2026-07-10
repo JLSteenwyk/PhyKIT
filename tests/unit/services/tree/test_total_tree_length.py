@@ -1,8 +1,22 @@
 import pytest
+import subprocess
+import sys
 from argparse import Namespace
 from math import isclose
 
 from phykit.services.tree.total_tree_length import TotalTreeLength
+
+
+def test_module_import_does_not_import_json_or_typing():
+    code = """
+import sys
+import phykit.services.tree.total_tree_length as module
+assert callable(module.print_json)
+assert "json" not in sys.modules
+assert "typing" not in sys.modules
+assert "phykit.helpers.json_output" not in sys.modules
+"""
+    subprocess.run([sys.executable, "-c", code], check=True)
 
 
 @pytest.fixture
@@ -28,6 +42,39 @@ class TestTotalTreeLength(object):
         # Verify the cached read was called with the correct parameters
         mock_get_hash.assert_called_with(args.tree)
         mock_cached_read.assert_called_with(args.tree, "newick", "test_hash")
+
+    def test_run_uses_unmodified_tree_read(self, mocker, args):
+        tree = object()
+        t = TotalTreeLength(args)
+        mocker.patch.object(t, "_get_simple_newick_summary", return_value=None)
+        read_tree = mocker.patch.object(
+            t,
+            "read_tree_file_unmodified",
+            return_value=tree,
+        )
+        mocker.patch.object(t, "calculate_total_tree_length", return_value=12.34567)
+        mocked_print = mocker.patch("builtins.print")
+
+        t.run()
+
+        read_tree.assert_called_once_with()
+        mocked_print.assert_called_once_with(12.3457)
+
+    def test_run_uses_simple_newick_summary(self, mocker, tmp_path):
+        tree_path = tmp_path / "tree.tre"
+        tree_path.write_text("(a:1,b:2);")
+        t = TotalTreeLength(Namespace(tree=str(tree_path), json=False))
+        read_tree = mocker.patch.object(
+            t,
+            "read_tree_file_unmodified",
+            side_effect=AssertionError("simple Newick should use summary path"),
+        )
+        mocked_print = mocker.patch("builtins.print")
+
+        t.run()
+
+        read_tree.assert_not_called()
+        mocked_print.assert_called_once_with(3.0)
 
     def test_calculate_total_tree_length_zero_branch_len(
         self, tree_zero_branch_length, args

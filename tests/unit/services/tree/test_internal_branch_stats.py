@@ -1,9 +1,43 @@
 import pytest
+import subprocess
+import sys
 from argparse import Namespace
 from math import isclose
+from io import StringIO
+
+from Bio import Phylo
+from Bio.Phylo.BaseTree import TreeMixin
 
 from phykit.services.tree.internal_branch_stats import InternalBranchStats
 import phykit.services.tree.internal_branch_stats as internal_branch_stats_module
+
+
+def test_module_import_defers_json_helper_and_heavy_tree_dependencies():
+    code = """
+import importlib
+import sys
+
+module = importlib.import_module("phykit.services.tree.internal_branch_stats")
+assert callable(module.print_json)
+assert hasattr(module.np, "__getattr__")
+assert "json" not in sys.modules
+assert "typing" not in sys.modules
+assert "phykit.helpers.json_output" not in sys.modules
+assert "phykit.helpers.stats_summary" not in sys.modules
+assert "Bio.Phylo" not in sys.modules
+assert "numpy" not in sys.modules
+"""
+    subprocess.run([sys.executable, "-c", code], check=True)
+
+
+def test_lazy_numpy_caches_resolved_attributes():
+    lazy_np = internal_branch_stats_module._LazyNumpy()
+
+    fromiter_attr = lazy_np.fromiter
+
+    assert lazy_np.__dict__["fromiter"] is fromiter_attr
+    assert lazy_np.fromiter is fromiter_attr
+    assert lazy_np._module is not None
 
 
 @pytest.fixture
@@ -63,6 +97,169 @@ class TestInternalBranchStats(object):
         assert len(lengths) == len(lengths_and_names)
         assert isinstance(lengths_and_names[0][1], list)
 
+    def test_get_internal_branch_lengths_matches_terminal_scan(self, tree_simple, args):
+        t = InternalBranchStats(args)
+        lengths, lengths_and_names = t.get_internal_branch_lengths(tree_simple)
+
+        expected_lengths = []
+        expected_rows = []
+        for internal_branch in tree_simple.get_nonterminals():
+            if internal_branch.branch_length is not None:
+                expected_lengths.append(internal_branch.branch_length)
+                expected_rows.append(
+                    (
+                        internal_branch.branch_length,
+                        [term.name for term in internal_branch.get_terminals()],
+                    )
+                )
+
+        assert lengths == expected_lengths
+        assert lengths_and_names == expected_rows
+
+    def test_get_internal_branch_lengths_can_skip_terminal_names(self, tree_simple, args):
+        t = InternalBranchStats(args)
+        lengths_with_names, _ = t.get_internal_branch_lengths(tree_simple)
+        lengths, lengths_and_names = t.get_internal_branch_lengths(
+            tree_simple, include_names=False
+        )
+
+        assert lengths == lengths_with_names
+        assert lengths_and_names == []
+
+    def test_get_internal_branch_lengths_uses_direct_traversal(self, monkeypatch, args):
+        t = InternalBranchStats(args)
+        tree = Phylo.read(StringIO("((A:1,B:2):3,(C:4,D:5):6):7;"), "newick")
+
+        def fail_generic_traversal(*_args, **_kwargs):
+            raise AssertionError("generic tree traversal should not be used")
+
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_generic_traversal)
+        monkeypatch.setattr(TreeMixin, "get_nonterminals", fail_generic_traversal)
+
+        lengths, lengths_and_names = t.get_internal_branch_lengths(tree)
+
+        assert lengths == [7.0, 3.0, 6.0]
+        assert lengths_and_names == [
+            (7.0, ["A", "B", "C", "D"]),
+            (3.0, ["A", "B"]),
+            (6.0, ["C", "D"]),
+        ]
+
+    def test_get_internal_branch_lengths_matches_generic_reference_with_direct_path(
+        self, monkeypatch, args
+    ):
+        t = InternalBranchStats(args)
+        tree = Phylo.read(
+            StringIO("((A:1,B:2):3,(C:4,(D:5,E:6):7):8):9;"),
+            "newick",
+        )
+        expected_lengths = []
+        expected_rows = []
+        for internal_branch in tree.get_nonterminals():
+            if internal_branch.branch_length is not None:
+                expected_lengths.append(internal_branch.branch_length)
+                expected_rows.append(
+                    (
+                        internal_branch.branch_length,
+                        [term.name for term in internal_branch.get_terminals()],
+                    )
+                )
+
+        def fail_generic_traversal(*_args, **_kwargs):
+            raise AssertionError("standard tree helper should use direct traversal")
+
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_generic_traversal)
+        monkeypatch.setattr(TreeMixin, "get_nonterminals", fail_generic_traversal)
+
+        lengths, rows = t.get_internal_branch_lengths(tree)
+
+        assert lengths == expected_lengths
+        assert rows == expected_rows
+
+    def test_get_internal_branch_lengths_without_names_uses_direct_traversal(
+        self, monkeypatch, args
+    ):
+        t = InternalBranchStats(args)
+        tree = Phylo.read(StringIO("((A:1,B:2):3,(C:4,D:5):6):7;"), "newick")
+
+        def fail_generic_traversal(*_args, **_kwargs):
+            raise AssertionError("generic tree traversal should not be used")
+
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_generic_traversal)
+        monkeypatch.setattr(TreeMixin, "get_nonterminals", fail_generic_traversal)
+
+        lengths, lengths_and_names = t.get_internal_branch_lengths(
+            tree, include_names=False
+        )
+
+        assert lengths == [7.0, 3.0, 6.0]
+        assert lengths_and_names == []
+
+    def test_get_internal_branch_lengths_without_names_handles_mixed_child_counts(
+        self, monkeypatch, args
+    ):
+        t = InternalBranchStats(args)
+        tree = Phylo.read(
+            StringIO("(A:1,(B:2,C:3,D:4):5,(E:6,F:7):8):9;"),
+            "newick",
+        )
+
+        def fail_generic_traversal(*_args, **_kwargs):
+            raise AssertionError("standard tree helper should use direct traversal")
+
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_generic_traversal)
+        monkeypatch.setattr(TreeMixin, "get_nonterminals", fail_generic_traversal)
+
+        lengths, lengths_and_names = t.get_internal_branch_lengths(
+            tree, include_names=False
+        )
+
+        assert lengths == [9.0, 5.0, 8.0]
+        assert lengths_and_names == []
+
+    def test_internal_branch_lengths_verbose_preserves_order_without_reversed(self):
+        class NoReversedList(list):
+            def __reversed__(self):
+                raise AssertionError("verbose path should push children directly")
+
+        class Clade:
+            def __init__(self, name=None, branch_length=None, clades=None):
+                self.name = name
+                self.branch_length = branch_length
+                self.clades = NoReversedList(clades or [])
+
+        tree = type(
+            "Tree",
+            (),
+            {
+                "root": Clade(
+                    branch_length=7.0,
+                    clades=[
+                        Clade(
+                            branch_length=3.0,
+                            clades=[Clade("A", 1.0), Clade("B", 2.0)],
+                        ),
+                        Clade(
+                            branch_length=6.0,
+                            clades=[Clade("C", 4.0), Clade("D", 5.0)],
+                        ),
+                    ],
+                )
+            },
+        )()
+
+        lengths, rows = InternalBranchStats._get_internal_branch_lengths_direct(
+            tree,
+            include_names=True,
+        )
+
+        assert lengths == [7.0, 3.0, 6.0]
+        assert rows == [
+            (7.0, ["A", "B", "C", "D"]),
+            (3.0, ["A", "B"]),
+            (6.0, ["C", "D"]),
+        ]
+
     def test_calculate_internal_branch_stats_without_lengths_exits(self, capsys):
         from Bio import Phylo
         from io import StringIO
@@ -75,10 +272,114 @@ class TestInternalBranchStats(object):
         out, _ = capsys.readouterr()
         assert "requires a phylogeny with branch lengths" in out
 
-    def test_run_verbose_json(self, mocker):
-        t = InternalBranchStats(Namespace(tree="x.tre", verbose=True, json=True))
-        mocker.patch.object(InternalBranchStats, "read_tree_file", return_value=object())
+    def test_calculate_internal_branch_stats_nonverbose_uses_array_path(
+        self, mocker, args
+    ):
+        t = InternalBranchStats(args)
+        tree = Phylo.read(StringIO("((A:1,B:2):3,(C:4,D:5):6):7;"), "newick")
         mocker.patch.object(
+            InternalBranchStats,
+            "get_internal_branch_lengths",
+            side_effect=AssertionError("non-verbose direct path should be used"),
+        )
+        mocked_stats = mocker.patch(
+            "phykit.services.tree.internal_branch_stats.calculate_summary_statistics_from_arr",
+            return_value={"mean": 16 / 3},
+        )
+
+        stats, lengths_and_names = t.calculate_internal_branch_stats(
+            tree,
+            include_names=False,
+        )
+
+        assert stats == {"mean": 16 / 3}
+        assert lengths_and_names == []
+        stats_arg = mocked_stats.call_args.args[0]
+        assert stats_arg.tolist() == [7.0, 3.0, 6.0]
+
+    def test_internal_branch_lengths_array_preserves_order_without_reversed(self):
+        class NoReversedList(list):
+            def __reversed__(self):
+                raise AssertionError("array path should push children directly")
+
+        class Clade:
+            def __init__(self, branch_length=None, clades=None):
+                self.branch_length = branch_length
+                self.clades = NoReversedList(clades or [])
+
+        tree = type(
+            "Tree",
+            (),
+            {
+                "root": Clade(
+                    7.0,
+                    [
+                        Clade(3.0, [Clade(1.0), Clade(2.0)]),
+                        Clade(6.0, [Clade(4.0), Clade(5.0)]),
+                    ],
+                )
+            },
+        )()
+
+        lengths = InternalBranchStats._get_internal_branch_lengths_array_direct(tree)
+
+        assert lengths.tolist() == [7.0, 3.0, 6.0]
+
+    def test_scan_simple_newick_internal_branches_preserves_preorder(self, tmp_path):
+        tree_file = tmp_path / "tree.tre"
+        tree_file.write_text("((A:1,B:2):3,(C:4,D:5):6):7;\n")
+
+        lengths, rows = InternalBranchStats._scan_simple_newick_internal_branches(
+            str(tree_file)
+        )
+
+        assert lengths == [7.0, 3.0, 6.0]
+        assert rows == [
+            (7.0, ["A", "B", "C", "D"]),
+            (3.0, ["A", "B"]),
+            (6.0, ["C", "D"]),
+        ]
+
+    def test_scan_simple_newick_internal_branches_rejects_annotations(self, tmp_path):
+        tree_file = tmp_path / "tree.tre"
+        tree_file.write_text("((A:1,B:2):3[comment],C:4);\n")
+
+        result = InternalBranchStats._scan_simple_newick_internal_branches(
+            str(tree_file)
+        )
+
+        assert result is None
+
+    def test_run_verbose_uses_simple_newick_scan(self, mocker, capsys):
+        t = InternalBranchStats(Namespace(tree="x.tre", verbose=True, json=False))
+        mocker.patch.object(
+            t,
+            "_scan_simple_newick_internal_branches",
+            return_value=(
+                [1.23456, 2.0],
+                [(1.23456, ["A", "B"]), (2.0, ["C"])],
+            ),
+        )
+        mocker.patch.object(
+            t,
+            "read_tree_file_unmodified",
+            side_effect=AssertionError("simple Newick fast path should be used"),
+        )
+
+        t.run()
+
+        out, _ = capsys.readouterr()
+        assert out == "1.2346 A;B\n2.0 C\n"
+
+    def test_run_verbose_json(self, mocker):
+        tree = object()
+        t = InternalBranchStats(Namespace(tree="x.tre", verbose=True, json=True))
+        mocker.patch.object(
+            InternalBranchStats,
+            "read_tree_file_unmodified",
+            return_value=tree,
+        )
+        mocked_stats = mocker.patch.object(
             InternalBranchStats,
             "calculate_internal_branch_stats",
             return_value=({"mean": 1.0}, [(1.23456, ["A", "B"])]),
@@ -89,11 +390,17 @@ class TestInternalBranchStats(object):
         assert payload["verbose"] is True
         assert payload["rows"] == payload["branches"]
         assert payload["rows"][0] == {"length": 1.2346, "terminals": ["A", "B"]}
+        mocked_stats.assert_called_once_with(tree, include_names=True)
 
     def test_run_nonverbose_json(self, mocker):
+        tree = object()
         t = InternalBranchStats(Namespace(tree="x.tre", verbose=False, json=True))
-        mocker.patch.object(InternalBranchStats, "read_tree_file", return_value=object())
         mocker.patch.object(
+            InternalBranchStats,
+            "read_tree_file_unmodified",
+            return_value=tree,
+        )
+        mocked_stats = mocker.patch.object(
             InternalBranchStats,
             "calculate_internal_branch_stats",
             return_value=({"mean": 1.0}, [(1.2, ["A"])]),
@@ -101,10 +408,54 @@ class TestInternalBranchStats(object):
         mocked_json = mocker.patch.object(internal_branch_stats_module, "print_json")
         t.run()
         mocked_json.assert_called_once_with({"verbose": False, "summary": {"mean": 1.0}})
+        mocked_stats.assert_called_once_with(tree, include_names=False)
+
+    def test_run_uses_unmodified_tree_read(self, mocker):
+        tree = object()
+        t = InternalBranchStats(Namespace(tree="x.tre", verbose=False, json=False))
+        read_tree = mocker.patch.object(
+            t,
+            "read_tree_file_unmodified",
+            return_value=tree,
+        )
+        mocker.patch.object(
+            t,
+            "calculate_internal_branch_stats",
+            return_value=({"mean": 1.0}, []),
+        )
+        mocker.patch.object(internal_branch_stats_module, "print_summary_statistics")
+
+        t.run()
+
+        read_tree.assert_called_once_with()
+
+    def test_run_verbose_prints_lengths_and_names(self, mocker, capsys):
+        tree = object()
+        t = InternalBranchStats(Namespace(tree="x.tre", verbose=True, json=False))
+        mocker.patch.object(
+            InternalBranchStats,
+            "read_tree_file_unmodified",
+            return_value=tree,
+        )
+        mocked_stats = mocker.patch.object(
+            InternalBranchStats,
+            "calculate_internal_branch_stats",
+            return_value=({"mean": 1.0}, [(1.23456, ["A", "B"]), (2.0, ["C"])]),
+        )
+
+        t.run()
+
+        out, _ = capsys.readouterr()
+        assert out == "1.2346 A;B\n2.0 C\n"
+        mocked_stats.assert_called_once_with(tree, include_names=True)
 
     def test_run_verbose_print_handles_broken_pipe(self, mocker):
         t = InternalBranchStats(Namespace(tree="x.tre", verbose=True, json=False))
-        mocker.patch.object(InternalBranchStats, "read_tree_file", return_value=object())
+        mocker.patch.object(
+            InternalBranchStats,
+            "read_tree_file_unmodified",
+            return_value=object(),
+        )
         mocker.patch.object(
             InternalBranchStats,
             "calculate_internal_branch_stats",
@@ -115,7 +466,11 @@ class TestInternalBranchStats(object):
 
     def test_run_nonverbose_prints_summary(self, mocker):
         t = InternalBranchStats(Namespace(tree="x.tre", verbose=False, json=False))
-        mocker.patch.object(InternalBranchStats, "read_tree_file", return_value=object())
+        mocker.patch.object(
+            InternalBranchStats,
+            "read_tree_file_unmodified",
+            return_value=object(),
+        )
         mocker.patch.object(
             InternalBranchStats,
             "calculate_internal_branch_stats",

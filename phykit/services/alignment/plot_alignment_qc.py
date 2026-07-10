@@ -1,13 +1,64 @@
-import sys
-from argparse import Namespace
-from typing import Dict
+from __future__ import annotations
 
-import numpy as np
+import sys
 
 from .base import Alignment
-from .alignment_outlier_taxa import AlignmentOutlierTaxa
-from ...helpers.json_output import print_json
-from ...helpers.plot_config import PlotConfig
+
+
+class _LazyNumpy:
+    _module = None
+
+    def __getattr__(self, name):
+        module = self._module
+        if module is None:
+            import numpy as _np
+
+            module = _np
+            self._module = module
+
+        value = getattr(module, name)
+        setattr(self, name, value)
+        return value
+
+
+np = _LazyNumpy()
+_ROBUST_SIGMA_EQUAL_CHECK_MIN_SIZE = 100_000
+_PLOT_DIRECT_MAX_LIMIT = 100_000
+
+
+def AlignmentOutlierTaxa(*args, **kwargs):
+    from .alignment_outlier_taxa import AlignmentOutlierTaxa as _AlignmentOutlierTaxa
+
+    return _AlignmentOutlierTaxa(*args, **kwargs)
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
+
+
+def _robust_feature_center_and_sigma(finite_vals) -> tuple[float, float]:
+    if finite_vals.size >= _ROBUST_SIGMA_EQUAL_CHECK_MIN_SIZE:
+        first = finite_vals[0]
+        if (
+            first == finite_vals[finite_vals.size // 2]
+            and first == finite_vals[-1]
+            and finite_vals.min() == finite_vals.max()
+        ):
+            return float(first), 0.0
+
+    median = float(np.median(finite_vals))
+    mad = float(np.median(np.abs(finite_vals - median)))
+    if mad > 0:
+        return median, 1.4826 * mad
+    return median, float(np.std(finite_vals))
+
+
+def _plot_max(values):
+    if values.size <= _PLOT_DIRECT_MAX_LIMIT:
+        return values.max()
+    return np.max(values)
 
 
 class PlotAlignmentQC(Alignment):
@@ -27,7 +78,9 @@ class PlotAlignmentQC(Alignment):
         self.json_output = parsed["json_output"]
         self.plot_config = parsed["plot_config"]
 
-    def process_args(self, args) -> Dict[str, object]:
+    def process_args(self, args) -> dict[str, object]:
+        from ...helpers.plot_config import PlotConfig
+
         return dict(
             alignment_file_path=args.alignment,
             output=args.output,
@@ -44,7 +97,9 @@ class PlotAlignmentQC(Alignment):
             plot_config=PlotConfig.from_args(args),
         )
 
-    def _get_outlier_result(self, alignment, is_protein: bool) -> Dict[str, object]:
+    def _get_outlier_result(self, alignment, is_protein: bool) -> dict[str, object]:
+        from argparse import Namespace
+
         svc = AlignmentOutlierTaxa(
             Namespace(
                 alignment=self.alignment_file_path,
@@ -58,6 +113,167 @@ class PlotAlignmentQC(Alignment):
             )
         )
         return svc.calculate_outliers(alignment, is_protein)
+
+    @staticmethod
+    def _prepare_plot_arrays(rows, outliers, features):
+        n_rows = len(rows)
+        flagged_taxa = {row["taxon"] for row in outliers}
+        taxa = []
+        taxa_append = taxa.append
+        occupancies = np.empty(n_rows, dtype=float)
+        gap_rates = np.empty(n_rows, dtype=float)
+        composition_distances = np.empty(n_rows, dtype=float)
+        long_branch_proxies = np.empty(n_rows, dtype=float)
+        rcvt = np.empty(n_rows, dtype=float)
+        entropy_burden = np.empty(n_rows, dtype=float)
+        has_flagged_taxa = bool(flagged_taxa)
+        flagged_mask = (
+            np.empty(n_rows, dtype=bool)
+            if has_flagged_taxa
+            else np.zeros(n_rows, dtype=bool)
+        )
+        nan = np.nan
+
+        if has_flagged_taxa:
+            for idx, row in enumerate(rows):
+                taxon = row["taxon"]
+                taxa_append(taxon)
+                flagged_mask[idx] = taxon in flagged_taxa
+                occupancies[idx] = row["occupancy"]
+                gap_rates[idx] = row["gap_rate"]
+                composition_distances[idx] = row["composition_distance"]
+                long_branch_proxy = row["long_branch_proxy"]
+                long_branch_proxies[idx] = (
+                    nan if long_branch_proxy is None else long_branch_proxy
+                )
+                rcvt[idx] = row["rcvt"]
+                entropy_burden[idx] = row["entropy_burden"]
+        else:
+            for idx, row in enumerate(rows):
+                taxa_append(row["taxon"])
+                occupancies[idx] = row["occupancy"]
+                gap_rates[idx] = row["gap_rate"]
+                composition_distances[idx] = row["composition_distance"]
+                long_branch_proxy = row["long_branch_proxy"]
+                long_branch_proxies[idx] = (
+                    nan if long_branch_proxy is None else long_branch_proxy
+                )
+                rcvt[idx] = row["rcvt"]
+                entropy_burden[idx] = row["entropy_burden"]
+
+        feature_vals = {
+            "gap_rate": gap_rates,
+            "occupancy": occupancies,
+            "composition_distance": composition_distances,
+            "long_branch_proxy": long_branch_proxies,
+            "rcvt": rcvt,
+            "entropy_burden": entropy_burden,
+        }
+        return {
+            "taxa": taxa,
+            "occupancies": occupancies,
+            "gap_rates": gap_rates,
+            "composition_distances": composition_distances,
+            "long_branch_proxies": long_branch_proxies,
+            "flagged_taxa": flagged_taxa,
+            "flagged_mask": flagged_mask,
+            "feature_vals": {
+                feature: feature_vals[feature]
+                for feature in features
+            },
+        }
+
+    @staticmethod
+    def _plot_composition_distance_panel(
+        ax, rows, flagged_taxa, thresholds, normal_color, flagged_color,
+        legend_handles, comp_values=None, branch_values=None, flagged_mask=None,
+    ) -> None:
+        if comp_values is None:
+            comp_values = np.array(
+                [row["composition_distance"] for row in rows], dtype=float
+            )
+        if branch_values is None:
+            branch_values = np.array(
+                [
+                    np.nan
+                    if row["long_branch_proxy"] is None
+                    else row["long_branch_proxy"]
+                    for row in rows
+                ],
+                dtype=float,
+            )
+        if flagged_mask is None:
+            flagged_mask = np.array(
+                [row["taxon"] in flagged_taxa for row in rows], dtype=bool
+            )
+
+        normal_mask = ~flagged_mask
+        if normal_mask.any():
+            ax.scatter(
+                comp_values[normal_mask],
+                branch_values[normal_mask],
+                c=normal_color,
+                s=24,
+                alpha=0.85,
+            )
+        if flagged_mask.any():
+            ax.scatter(
+                comp_values[flagged_mask],
+                branch_values[flagged_mask],
+                c=flagged_color,
+                s=24,
+                alpha=0.85,
+            )
+            for idx in np.flatnonzero(flagged_mask):
+                ax.text(
+                    comp_values[idx],
+                    branch_values[idx],
+                    rows[idx]["taxon"],
+                    fontsize=7,
+                    color=flagged_color,
+                    ha="left",
+                    va="bottom",
+                )
+
+        comp_thr = thresholds["composition_distance"]
+        dist_thr = thresholds["long_branch_proxy"]
+        if comp_thr is not None:
+            ax.axvline(comp_thr, color="black", linestyle="--", linewidth=1)
+            ax.axvspan(
+                comp_thr,
+                max(comp_thr + 0.1, float(np.nanmax(comp_values) + 0.05)),
+                color=flagged_color,
+                alpha=0.06,
+            )
+        if dist_thr is not None:
+            ax.axhline(dist_thr, color="black", linestyle="--", linewidth=1)
+            finite_branch_values = branch_values[np.isfinite(branch_values)]
+            upper = (
+                max(dist_thr + 0.1, float(_plot_max(finite_branch_values) + 0.05))
+                if finite_branch_values.size
+                else dist_thr + 0.1
+            )
+            ax.axhspan(dist_thr, upper, color=flagged_color, alpha=0.06)
+        ax.set_title(f"Comp Dist vs Long-Branch (thr={comp_thr}, {dist_thr})")
+        ax.set_xlabel("Composition Distance")
+        ax.set_ylabel("Long-Branch Proxy")
+        ax.legend(handles=legend_handles, fontsize=8, loc="upper left")
+
+    @staticmethod
+    def _flag_colors(flagged_mask, normal_color, flagged_color):
+        if not flagged_mask.any():
+            return normal_color
+        if flagged_mask.all():
+            return flagged_color
+        return np.where(flagged_mask, flagged_color, normal_color)
+
+    @staticmethod
+    def _ordered_heatmap_data(z_data, taxa, flagged_mask):
+        if not flagged_mask.any():
+            return z_data, taxa
+
+        heat_order = np.argsort(~flagged_mask)
+        return z_data[heat_order, :], [taxa[i] for i in heat_order]
 
     def run(self) -> None:
         try:
@@ -74,12 +290,16 @@ class PlotAlignmentQC(Alignment):
         rows = result["rows"]
         thresholds = result["thresholds"]
 
-        taxa = [row["taxon"] for row in rows]
-        occupancies = np.array([row["occupancy"] for row in rows], dtype=float)
-        gap_rates = np.array([row["gap_rate"] for row in rows], dtype=float)
-
-        flagged_taxa = {row["taxon"] for row in result["outliers"]}
-        flagged_mask = np.array([taxon in flagged_taxa for taxon in taxa], dtype=bool)
+        plot_arrays = self._prepare_plot_arrays(
+            rows,
+            result["outliers"],
+            result["features"],
+        )
+        taxa = plot_arrays["taxa"]
+        occupancies = plot_arrays["occupancies"]
+        gap_rates = plot_arrays["gap_rates"]
+        flagged_taxa = plot_arrays["flagged_taxa"]
+        flagged_mask = plot_arrays["flagged_mask"]
 
         # panel 1/2 ordering for easier visual scanning
         order = np.argsort(occupancies)
@@ -87,6 +307,7 @@ class PlotAlignmentQC(Alignment):
         occupancy_ordered = occupancies[order]
         gap_ordered = gap_rates[order]
         flagged_ordered = flagged_mask[order]
+        x_positions = np.arange(len(taxa_ordered))
 
         fig, axes = plt.subplots(2, 2, figsize=(self.width, self.height))
         flagged_color = "#ca0020"
@@ -97,65 +318,42 @@ class PlotAlignmentQC(Alignment):
         ]
 
         ax = axes[0, 0]
-        colors = [flagged_color if is_flagged else normal_color for is_flagged in flagged_ordered]
-        ax.bar(np.arange(len(taxa_ordered)), occupancy_ordered, color=colors)
+        colors = self._flag_colors(flagged_ordered, normal_color, flagged_color)
+        ax.bar(x_positions, occupancy_ordered, color=colors)
         occ_thr = thresholds["occupancy"]
         if occ_thr is not None:
             ax.axhline(occ_thr, color="black", linestyle="--", linewidth=1)
             ax.axhspan(0.0, occ_thr, color=flagged_color, alpha=0.08)
         ax.set_title(f"Occupancy Per Taxon (thr={occ_thr})")
         ax.set_ylabel("Occupancy")
-        ax.set_xticks(np.arange(len(taxa_ordered)))
+        ax.set_xticks(x_positions)
         ax.set_xticklabels(taxa_ordered, rotation=90, fontsize=7)
         ax.legend(handles=legend_handles, fontsize=8, loc="lower right")
 
         ax = axes[0, 1]
-        ax.bar(np.arange(len(taxa_ordered)), gap_ordered, color=colors)
+        ax.bar(x_positions, gap_ordered, color=colors)
         gap_thr = thresholds["gap_rate"]
         if gap_thr is not None:
             ax.axhline(gap_thr, color="black", linestyle="--", linewidth=1)
-            ax.axhspan(gap_thr, max(1.0, float(np.max(gap_ordered) + 0.05)), color=flagged_color, alpha=0.08)
+            ax.axhspan(gap_thr, max(1.0, float(_plot_max(gap_ordered) + 0.05)), color=flagged_color, alpha=0.08)
         ax.set_title(f"Gap Rate Per Taxon (thr={gap_thr})")
         ax.set_ylabel("Gap Rate")
-        ax.set_xticks(np.arange(len(taxa_ordered)))
+        ax.set_xticks(x_positions)
         ax.set_xticklabels(taxa_ordered, rotation=90, fontsize=7)
 
         ax = axes[1, 0]
-        for row in rows:
-            x = row["composition_distance"]
-            y = row["long_branch_proxy"] if row["long_branch_proxy"] is not None else np.nan
-            color = flagged_color if row["taxon"] in flagged_taxa else normal_color
-            ax.scatter(x, y, c=color, s=24, alpha=0.85)
-            if row["taxon"] in flagged_taxa:
-                ax.text(x, y, row["taxon"], fontsize=7, color=flagged_color, ha="left", va="bottom")
-        comp_thr = thresholds["composition_distance"]
-        dist_thr = thresholds["long_branch_proxy"]
-        if comp_thr is not None:
-            ax.axvline(comp_thr, color="black", linestyle="--", linewidth=1)
-            ax.axvspan(comp_thr, max(comp_thr + 0.1, float(np.nanmax([r["composition_distance"] for r in rows]) + 0.05)), color=flagged_color, alpha=0.06)
-        if dist_thr is not None:
-            ax.axhline(dist_thr, color="black", linestyle="--", linewidth=1)
-            long_vals = [r["long_branch_proxy"] for r in rows if r["long_branch_proxy"] is not None]
-            upper = max(dist_thr + 0.1, float(np.max(long_vals) + 0.05)) if long_vals else dist_thr + 0.1
-            ax.axhspan(dist_thr, upper, color=flagged_color, alpha=0.06)
-        ax.set_title(f"Comp Dist vs Long-Branch (thr={comp_thr}, {dist_thr})")
-        ax.set_xlabel("Composition Distance")
-        ax.set_ylabel("Long-Branch Proxy")
-        ax.legend(handles=legend_handles, fontsize=8, loc="upper left")
+        self._plot_composition_distance_panel(
+            ax, rows, flagged_taxa, thresholds,
+            normal_color, flagged_color, legend_handles,
+            plot_arrays["composition_distances"],
+            plot_arrays["long_branch_proxies"],
+            flagged_mask,
+        )
 
         # Panel 4: robust z-score heatmap (taxa x features)
         ax = axes[1, 1]
         features = result["features"]
-        feature_vals = {
-            "gap_rate": np.array([row["gap_rate"] for row in rows], dtype=float),
-            "occupancy": np.array([row["occupancy"] for row in rows], dtype=float),
-            "composition_distance": np.array([row["composition_distance"] for row in rows], dtype=float),
-            "long_branch_proxy": np.array(
-                [np.nan if row["long_branch_proxy"] is None else row["long_branch_proxy"] for row in rows], dtype=float
-            ),
-            "rcvt": np.array([row["rcvt"] for row in rows], dtype=float),
-            "entropy_burden": np.array([row["entropy_burden"] for row in rows], dtype=float),
-        }
+        feature_vals = plot_arrays["feature_vals"]
 
         z_data = np.zeros((len(rows), len(features)), dtype=float)
         for col_idx, feature in enumerate(features):
@@ -164,9 +362,7 @@ class PlotAlignmentQC(Alignment):
             finite_vals = values[finite_mask]
             if finite_vals.size < 2:
                 continue
-            median = float(np.median(finite_vals))
-            mad = float(np.median(np.abs(finite_vals - median)))
-            sigma = 1.4826 * mad if mad > 0 else float(np.std(finite_vals))
+            median, sigma = _robust_feature_center_and_sigma(finite_vals)
             if sigma <= 0:
                 continue
             if feature == "occupancy":
@@ -174,9 +370,7 @@ class PlotAlignmentQC(Alignment):
             else:
                 z_data[:, col_idx] = (values - median) / sigma
 
-        heat_order = np.argsort(~flagged_mask)
-        z_plot = z_data[heat_order, :]
-        taxa_heat = [taxa[i] for i in heat_order]
+        z_plot, taxa_heat = self._ordered_heatmap_data(z_data, taxa, flagged_mask)
         im = ax.imshow(z_plot, aspect="auto", cmap="RdBu_r", vmin=-3, vmax=3)
         ax.set_title("Per-Taxon Feature Robust Z-Scores")
         ax.set_yticks(np.arange(len(taxa_heat)))
@@ -192,7 +386,14 @@ class PlotAlignmentQC(Alignment):
             f"Alignment QC: taxa={n_taxa}, sites={aln_len}, outliers={len(result['outliers'])}",
             fontsize=12,
         )
-        fig.tight_layout(rect=[0, 0, 1, 0.97])
+        fig.subplots_adjust(
+            left=0.08,
+            right=0.96,
+            top=0.90,
+            bottom=0.18,
+            hspace=0.65,
+            wspace=0.33,
+        )
         fig.savefig(self.output, dpi=self.dpi, bbox_inches="tight")
         plt.close(fig)
 

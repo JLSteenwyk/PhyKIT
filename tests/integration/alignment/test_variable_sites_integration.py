@@ -61,11 +61,21 @@ class TestVariableSites(object):
 
     @patch("builtins.print")
     def test_variable_sites_incorrect_input_file(self, mocked_print):
+        testargs = [
+            "phykit",
+            "variable_sites",
+            "missing.fa",
+        ]
         with pytest.raises(SystemExit) as pytest_wrapped_e:
-            Phykit()
+            with patch.object(sys, "argv", testargs):
+                Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2
+        assert mocked_print.mock_calls == [
+            call("missing.fa corresponds to no such file."),
+            call("Please check file name and pathing"),
+        ]
 
     @patch("builtins.print")
     def test_variable_sites_json(self, mocked_print):

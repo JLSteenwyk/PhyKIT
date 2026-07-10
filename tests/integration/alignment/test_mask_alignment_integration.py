@@ -25,11 +25,17 @@ class TestMaskAlignment(object):
         with patch.object(sys, "argv", testargs):
             Phykit()
         assert mocked_print.mock_calls == [
-            call(">1\nAGAT"),
-            call(">2\nAGAT"),
-            call(">3\nAGTA"),
-            call(">4\nAATA"),
-            call(">5\nAAT-"),
+            call(
+                "\n".join(
+                    [
+                        ">1\nAGAT",
+                        ">2\nAGAT",
+                        ">3\nAGTA",
+                        ">4\nAATA",
+                        ">5\nAAT-",
+                    ]
+                )
+            ),
         ]
 
     @patch("builtins.print")
@@ -44,11 +50,17 @@ class TestMaskAlignment(object):
         with patch.object(sys, "argv", testargs):
             Phykit()
         assert mocked_print.mock_calls == [
-            call(">1\nAT"),
-            call(">2\nA-"),
-            call(">3\nA-"),
-            call(">4\nA-"),
-            call(">5\nA-"),
+            call(
+                "\n".join(
+                    [
+                        ">1\nAT",
+                        ">2\nA-",
+                        ">3\nA-",
+                        ">4\nA-",
+                        ">5\nA-",
+                    ]
+                )
+            ),
         ]
 
     @patch("builtins.print")

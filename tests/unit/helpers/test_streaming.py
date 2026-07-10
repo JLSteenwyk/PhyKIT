@@ -3,9 +3,12 @@ Unit tests for streaming utilities
 """
 
 import unittest
-from unittest.mock import patch, MagicMock, mock_open
+from unittest.mock import patch, MagicMock
 import tempfile
 import os
+import subprocess
+import sys
+import itertools
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
@@ -13,6 +16,19 @@ from phykit.helpers.streaming import (
     StreamingFastaReader,
     MemoryEfficientAlignmentProcessor
 )
+
+
+def test_module_import_does_not_import_biopython():
+    code = """
+import sys
+import phykit.helpers.streaming
+
+assert "typing" not in sys.modules
+assert "Bio" not in sys.modules
+assert "Bio.SeqIO" not in sys.modules
+assert "Bio.SeqRecord" not in sys.modules
+"""
+    subprocess.run([sys.executable, "-c", code], check=True)
 
 
 class TestStreamingFastaReader(unittest.TestCase):
@@ -80,30 +96,44 @@ class TestStreamingFastaReader(unittest.TestCase):
         self.assertEqual(len(chunks), 1)
         self.assertEqual(len(chunks[0]), 3)
 
+    def test_stream_chunks_batches_with_islice(self):
+        """Test chunking uses iterator batches while preserving records."""
+        original_islice = itertools.islice
+        calls = []
+
+        def tracking_islice(iterator, chunk_size):
+            calls.append(chunk_size)
+            return original_islice(iterator, chunk_size)
+
+        with patch("itertools.islice", tracking_islice):
+            chunks = list(self.reader.stream_chunks())
+
+        self.assertEqual([[record.id for record in chunk] for chunk in chunks], [
+            ["seq1", "seq2"],
+            ["seq3"],
+        ])
+        self.assertEqual(calls, [2, 2, 2])
+
     def test_get_sequence_count(self):
         """Test counting sequences without loading entire file"""
         count = self.reader.get_sequence_count()
         self.assertEqual(count, 3)
 
-    @patch('os.path.getsize')
-    @patch('builtins.open', new_callable=mock_open, read_data=b'>seq1\nATCG\n>seq2\nGCTA\n')
-    @patch('mmap.mmap')
-    def test_get_sequence_count_with_mmap(self, mock_mmap_obj, mock_file, mock_getsize):
-        """Test sequence counting using memory mapping"""
-        # Mock file size
-        mock_getsize.return_value = 100
+    def test_get_sequence_count_across_chunk_boundary(self):
+        """Test sequence counting when a header marker spans chunks"""
+        with patch("phykit.helpers.streaming._COUNT_CHUNK_SIZE", 9):
+            reader = StreamingFastaReader(self.temp_file.name)
+            count = reader.get_sequence_count()
 
-        # Setup mock mmap
-        mock_mmap_instance = MagicMock()
-        mock_mmap_instance.readline.side_effect = [
-            b'>seq1\n', b'ATCG\n', b'>seq2\n', b'GCTA\n', b''
-        ]
-        mock_mmap_obj.return_value.__enter__.return_value = mock_mmap_instance
+        self.assertEqual(count, 3)
 
-        reader = StreamingFastaReader("dummy.fasta")
-        count = reader.get_sequence_count()
+    def test_get_sequence_count_when_chunk_starts_with_header(self):
+        """Test sequence counting when a chunk begins with a header."""
+        with patch("phykit.helpers.streaming._COUNT_CHUNK_SIZE", 15):
+            reader = StreamingFastaReader(self.temp_file.name)
+            count = reader.get_sequence_count()
 
-        self.assertEqual(count, 2)
+        self.assertEqual(count, 3)
 
     def test_get_sequence_at_position(self):
         """Test getting specific sequence by position"""
@@ -175,19 +205,7 @@ class TestMemoryEfficientAlignmentProcessor(unittest.TestCase):
         seq2 = SeqRecord(Seq("ATCGATCG"), id="seq2")
         seq3 = SeqRecord(Seq("ANCG-TCG"), id="seq3")
 
-        # Mock stream_sequences to return sequences twice
-        # (once for getting dimensions, once for column processing)
-        mock_reader.stream_sequences.side_effect = [
-            iter([seq1, seq2, seq3]),  # First call for dimensions
-            iter([seq1, seq2, seq3]),  # For column 0
-            iter([seq1, seq2, seq3]),  # For column 1
-            iter([seq1, seq2, seq3]),  # For column 2
-            iter([seq1, seq2, seq3]),  # For column 3
-            iter([seq1, seq2, seq3]),  # For column 4
-            iter([seq1, seq2, seq3]),  # For column 5
-            iter([seq1, seq2, seq3]),  # For column 6
-            iter([seq1, seq2, seq3]),  # For column 7
-        ]
+        mock_reader.stream_sequences.return_value = iter([seq1, seq2, seq3])
 
         stats = MemoryEfficientAlignmentProcessor.calculate_column_stats_streaming(
             "dummy.fasta"
@@ -210,6 +228,7 @@ class TestMemoryEfficientAlignmentProcessor(unittest.TestCase):
         self.assertTrue(stats['variable_sites'][1])
         # Column 4: -, A, - - has gaps
         self.assertGreater(stats['gap_counts'][4], 0)
+        mock_reader.stream_sequences.assert_called_once()
 
     def test_calculate_column_stats_streaming_real_file(self):
         """Test column stats calculation with real file"""
@@ -256,6 +275,27 @@ class TestMemoryEfficientAlignmentProcessor(unittest.TestCase):
         self.assertEqual(len(results), 2)
         self.assertEqual(results[0], 2)  # First batch has 2 sequences
         self.assertEqual(results[1], 2)  # Second batch has 2 sequences
+
+    @patch('phykit.helpers.streaming.StreamingFastaReader')
+    def test_process_large_alignment_in_batches_does_not_enumerate_chunks(
+        self, mock_reader_class
+    ):
+        """Test batch processing does not build unused chunk indices."""
+        mock_reader = MagicMock()
+        mock_reader_class.return_value = mock_reader
+        mock_reader.stream_chunks.return_value = iter([[1], [2]])
+
+        with patch(
+            "builtins.enumerate",
+            side_effect=AssertionError("batch processor should not enumerate"),
+        ):
+            results = MemoryEfficientAlignmentProcessor.process_large_alignment_in_batches(
+                "dummy.fasta",
+                len,
+                batch_size=1,
+            )
+
+        self.assertEqual(results, [1, 1])
 
     def test_process_large_alignment_with_aggregation(self):
         """Test processing with custom aggregation function"""

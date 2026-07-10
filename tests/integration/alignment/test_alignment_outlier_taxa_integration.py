@@ -22,7 +22,7 @@ class TestAlignmentOutlierTaxa:
         with patch.object(sys, "argv", testargs):
             Phykit()
 
-        printed = [call.args[0] for call in mocked_print.call_args_list]
+        printed = mocked_print.call_args.args[0].splitlines()
         assert (
             printed[0]
             == "features_evaluated\tgap_rate,occupancy,composition_distance,long_branch_proxy,rcvt,entropy_burden"
@@ -44,7 +44,7 @@ class TestAlignmentOutlierTaxa:
         with patch.object(sys, "argv", testargs):
             Phykit()
 
-        printed = [call.args[0] for call in mocked_print.call_args_list]
+        printed = mocked_print.call_args.args[0].splitlines()
         assert any(line.startswith("taxon_d\t") for line in printed)
 
     @patch("builtins.print")

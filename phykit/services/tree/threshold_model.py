@@ -1,16 +1,117 @@
-import sys
-from typing import Dict, List, Tuple
+from __future__ import annotations
 
-import numpy as np
-from scipy.stats import truncnorm
+import math
+import sys
 
 from .base import Tree
-from ...helpers.json_output import print_json
-from ...helpers.plot_config import PlotConfig
 from ...errors import PhykitUserError
 
 
+class _LazyNumpy:
+    _module = None
+
+    def __getattr__(self, name):
+        module = self._module
+        if module is None:
+            import numpy as _np
+
+            module = _np
+            self._module = module
+        value = getattr(module, name)
+        setattr(self, name, value)
+        return value
+
+
+np = _LazyNumpy()
+
+
+_NDTR = None
+_NDTRI = None
+_CHO_FACTOR = None
+_CHO_SOLVE = None
+_INF = math.inf
+_NEG_INF = -math.inf
+_LOG_2PI = math.log(2.0 * math.pi)
+_INV_SQRT2 = 1.0 / math.sqrt(2.0)
+_TEXT_REPORT_TEMPLATE = (
+    "Trait 1: %s (%s%s)\n"
+    "Trait 2: %s (%s%s)\n"
+    "MCMC: %d generations, sampled every %d, burn-in %d%%\n"
+    "---\n"
+    "Posterior correlation (r): %.4f (95%% HPD: %.3f, %.3f)\n"
+    "Posterior sigma2_1: %.4f (95%% HPD: %.3f, %.3f)\n"
+    "Posterior sigma2_2: %.4f (95%% HPD: %.3f, %.3f)\n"
+    "Acceptance rates: r=%.3f, sigma2_1=%.3f, sigma2_2=%.3f, "
+    "a1=%.3f, a2=%.3f"
+)
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
+
+
+def ndtr(*args, **kwargs):
+    global _NDTR
+    if _NDTR is None:
+        from scipy.special import ndtr as _ndtr
+
+        _NDTR = _ndtr
+
+    return _NDTR(*args, **kwargs)
+
+
+def ndtri(*args, **kwargs):
+    global _NDTRI
+    if _NDTRI is None:
+        from scipy.special import ndtri as _ndtri
+
+        _NDTRI = _ndtri
+
+    return _NDTRI(*args, **kwargs)
+
+
+def cho_factor(*args, **kwargs):
+    global _CHO_FACTOR
+    if _CHO_FACTOR is None:
+        from scipy.linalg import cho_factor as _cho_factor
+
+        _CHO_FACTOR = _cho_factor
+
+    return _CHO_FACTOR(*args, **kwargs)
+
+
+def cho_solve(*args, **kwargs):
+    global _CHO_SOLVE
+    if _CHO_SOLVE is None:
+        from scipy.linalg import cho_solve as _cho_solve
+
+        _CHO_SOLVE = _cho_solve
+
+    return _CHO_SOLVE(*args, **kwargs)
+
+
+def _normal_cdf(z):
+    return 0.5 * math.erfc(-z * _INV_SQRT2)
+
+
+def _truncnorm_rvs(lower_z, upper_z, loc, scale, rng):
+    from scipy.stats import truncnorm
+
+    return truncnorm.rvs(
+        lower_z,
+        upper_z,
+        loc=loc,
+        scale=scale,
+        random_state=rng,
+    )
+
+
 class ThresholdModel(Tree):
+    _FLOAT_TINY = sys.float_info.min
+    _ONE_MINUS_EPS = 1.0 - sys.float_info.epsilon
+
     def __init__(self, args) -> None:
         parsed = self.process_args(args)
         super().__init__(tree_file_path=parsed["tree_file_path"])
@@ -25,7 +126,9 @@ class ThresholdModel(Tree):
         self.json_output = parsed["json_output"]
         self.plot_config = parsed["plot_config"]
 
-    def process_args(self, args) -> Dict[str, str]:
+    def process_args(self, args) -> dict[str, str]:
+        from ...helpers.plot_config import PlotConfig
+
         traits_str = getattr(args, "traits", None)
         types_str = getattr(args, "types", None)
         if not traits_str:
@@ -86,7 +189,7 @@ class ThresholdModel(Tree):
         )
 
     def run(self) -> None:
-        tree = self.read_tree_file()
+        tree = self.read_tree_file_unmodified()
         self.validate_tree(tree, min_tips=3, require_branch_lengths=True, context="threshold model")
 
         tree_tips = self.get_tip_names_from_tree(tree)
@@ -100,13 +203,13 @@ class ThresholdModel(Tree):
         )
 
         # Prune tree to shared taxa
-        shared_set = set(ordered_names)
-        tips_to_prune = [t for t in tree_tips if t not in shared_set]
+        tips_to_prune = self._tips_to_prune_for_ordered_names(
+            tree_tips,
+            ordered_names,
+        )
         if tips_to_prune:
-            for tip_name in tips_to_prune:
-                tips = [t for t in tree.get_terminals() if t.name == tip_name]
-                if tips:
-                    tree.prune(tips[0])
+            tree = self._fast_copy(tree)
+            self._prune_tree_to_taxa(tree, ordered_names)
 
         C = self._build_vcv_matrix(tree, ordered_names)
 
@@ -140,7 +243,105 @@ class ThresholdModel(Tree):
     def _parse_multi_trait_file(path, trait1, trait2, type1, type2, tree_tips):
         try:
             with open(path) as f:
-                lines = f.readlines()
+                header_line = f.readline()
+                if not header_line:
+                    raise PhykitUserError(
+                        ["Trait file is empty."],
+                        code=2,
+                    )
+
+                # Parse header
+                header = header_line.strip().split("\t")
+                if len(header) < 2:
+                    raise PhykitUserError(
+                        [
+                            "Trait file header must have at least 2 tab-separated columns.",
+                            f"Got: {header_line.strip()}",
+                        ],
+                        code=2,
+                    )
+
+                # Find column indices (first column is taxon name)
+                col_names = header[1:]  # skip taxon column
+                try:
+                    idx1 = col_names.index(trait1) + 1
+                except ValueError:
+                    raise PhykitUserError(
+                        [
+                            f"Trait '{trait1}' not found in header.",
+                            f"Available traits: {', '.join(col_names)}",
+                        ],
+                        code=2,
+                    )
+                try:
+                    idx2 = col_names.index(trait2) + 1
+                except ValueError:
+                    raise PhykitUserError(
+                        [
+                            f"Trait '{trait2}' not found in header.",
+                            f"Available traits: {', '.join(col_names)}",
+                        ],
+                        code=2,
+                    )
+
+                required_columns = len(header)
+                trait1_dict = {}
+                trait2_dict = {}
+                trait1_discrete_values = set() if type1 == "discrete" else None
+                trait2_discrete_values = set() if type2 == "discrete" else None
+                parse_float = float
+                tree_tip_count = len(tree_tips)
+                ordered_tree_tip_match = tree_tip_count >= 3
+                ordered_tree_tip_idx = 0
+                for line_num, line in enumerate(f, 2):
+                    line = line.strip()
+                    if not line or line[0] == "#":
+                        continue
+                    parts = line.split("\t", required_columns)
+                    if len(parts) < required_columns:
+                        raise PhykitUserError(
+                            [
+                                f"Line {line_num} has {len(parts)} columns; "
+                                f"expected {required_columns}.",
+                            ],
+                            code=2,
+                        )
+                    taxon = parts[0]
+                    if ordered_tree_tip_match:
+                        if (
+                            ordered_tree_tip_idx >= tree_tip_count
+                            or taxon != tree_tips[ordered_tree_tip_idx]
+                        ):
+                            ordered_tree_tip_match = False
+                        ordered_tree_tip_idx += 1
+                    val1_str = parts[idx1]
+                    val2_str = parts[idx2]
+                    try:
+                        val1 = parse_float(val1_str)
+                        trait1_dict[taxon] = val1
+                        if trait1_discrete_values is not None:
+                            trait1_discrete_values.add(val1)
+                    except ValueError:
+                        raise PhykitUserError(
+                            [
+                                f"Non-numeric value '{val1_str}' for trait '{trait1}' "
+                                f"taxon '{taxon}' on line {line_num}.",
+                            ],
+                            code=2,
+                        )
+                    try:
+                        val2 = parse_float(val2_str)
+                        trait2_dict[taxon] = val2
+                        if trait2_discrete_values is not None:
+                            trait2_discrete_values.add(val2)
+                    except ValueError:
+                        raise PhykitUserError(
+                            [
+                                f"Non-numeric value '{val2_str}' for trait '{trait2}' "
+                                f"taxon '{taxon}' on line {line_num}.",
+                            ],
+                            code=2,
+                        )
         except FileNotFoundError:
             raise PhykitUserError(
                 [
@@ -150,92 +351,12 @@ class ThresholdModel(Tree):
                 code=2,
             )
 
-        if not lines:
-            raise PhykitUserError(
-                ["Trait file is empty."],
-                code=2,
-            )
-
-        # Parse header
-        header = lines[0].strip().split("\t")
-        if len(header) < 2:
-            raise PhykitUserError(
-                [
-                    "Trait file header must have at least 2 tab-separated columns.",
-                    f"Got: {lines[0].strip()}",
-                ],
-                code=2,
-            )
-
-        # Find column indices (first column is taxon name)
-        col_names = header[1:]  # skip taxon column
-        try:
-            idx1 = col_names.index(trait1)
-        except ValueError:
-            raise PhykitUserError(
-                [
-                    f"Trait '{trait1}' not found in header.",
-                    f"Available traits: {', '.join(col_names)}",
-                ],
-                code=2,
-            )
-        try:
-            idx2 = col_names.index(trait2)
-        except ValueError:
-            raise PhykitUserError(
-                [
-                    f"Trait '{trait2}' not found in header.",
-                    f"Available traits: {', '.join(col_names)}",
-                ],
-                code=2,
-            )
-
-        trait1_dict = {}
-        trait2_dict = {}
-        for line_num, line in enumerate(lines[1:], 2):
-            line = line.strip()
-            if not line or line.startswith("#"):
-                continue
-            parts = line.split("\t")
-            if len(parts) < len(header):
-                raise PhykitUserError(
-                    [
-                        f"Line {line_num} has {len(parts)} columns; "
-                        f"expected {len(header)}.",
-                    ],
-                    code=2,
-                )
-            taxon = parts[0]
-            val1_str = parts[idx1 + 1]  # +1 for taxon column
-            val2_str = parts[idx2 + 1]
-            try:
-                trait1_dict[taxon] = float(val1_str)
-            except ValueError:
-                raise PhykitUserError(
-                    [
-                        f"Non-numeric value '{val1_str}' for trait '{trait1}' "
-                        f"taxon '{taxon}' on line {line_num}.",
-                    ],
-                    code=2,
-                )
-            try:
-                trait2_dict[taxon] = float(val2_str)
-            except ValueError:
-                raise PhykitUserError(
-                    [
-                        f"Non-numeric value '{val2_str}' for trait '{trait2}' "
-                        f"taxon '{taxon}' on line {line_num}.",
-                    ],
-                    code=2,
-                )
-
         # Validate discrete traits are binary
-        for tname, ttype, tdict in [
-            (trait1, type1, trait1_dict),
-            (trait2, type2, trait2_dict),
+        for tname, vals in [
+            (trait1, trait1_discrete_values),
+            (trait2, trait2_discrete_values),
         ]:
-            if ttype == "discrete":
-                vals = set(tdict.values())
+            if vals is not None:
                 if vals != {0.0, 1.0} and vals != {0.0} and vals != {1.0}:
                     raise PhykitUserError(
                         [
@@ -245,8 +366,24 @@ class ThresholdModel(Tree):
                         code=2,
                     )
 
+        if (
+            ordered_tree_tip_match
+            and ordered_tree_tip_idx == tree_tip_count
+            and len(trait1_dict) == tree_tip_count
+            and len(trait2_dict) == tree_tip_count
+        ):
+            return trait1_dict, trait2_dict, sorted(tree_tips)
+
         tree_tip_set = set(tree_tips)
-        trait_taxa_set = set(trait1_dict.keys())
+        if (
+            len(tree_tip_set) >= 3
+            and len(tree_tip_set) == len(trait1_dict)
+            and tree_tip_set == trait1_dict.keys()
+            and tree_tip_set == trait2_dict.keys()
+        ):
+            return trait1_dict, trait2_dict, sorted(tree_tip_set)
+
+        trait_taxa_set = set(trait1_dict)
         shared = sorted(tree_tip_set & trait_taxa_set)
 
         tree_only = tree_tip_set - trait_taxa_set
@@ -281,59 +418,171 @@ class ThresholdModel(Tree):
         return t1, t2, shared
 
     @staticmethod
-    def _build_vcv_matrix(tree, ordered_names: List[str]) -> np.ndarray:
-        n = len(ordered_names)
-        vcv = np.zeros((n, n))
+    def _build_vcv_matrix(tree, ordered_names: list[str]) -> np.ndarray:
+        from .vcv_utils import build_vcv_matrix
 
-        root_to_tip = {}
-        for name in ordered_names:
-            root_to_tip[name] = tree.distance(tree.root, name)
+        return build_vcv_matrix(tree, ordered_names)
 
-        for i in range(n):
-            for j in range(i, n):
-                if i == j:
-                    vcv[i, j] = root_to_tip[ordered_names[i]]
-                else:
-                    d_ij = tree.distance(ordered_names[i], ordered_names[j])
-                    shared_path = (
-                        root_to_tip[ordered_names[i]]
-                        + root_to_tip[ordered_names[j]]
-                        - d_ij
-                    ) / 2.0
-                    vcv[i, j] = shared_path
-                    vcv[j, i] = shared_path
+    @staticmethod
+    def _prune_tree_to_taxa(tree, taxa_to_keep) -> None:
+        taxa_to_keep = set(taxa_to_keep)
+        terminal_by_name = Tree._terminal_by_name_fast(tree)
+        if terminal_by_name is None:
+            for tip in list(tree.get_terminals()):
+                if tip.name not in taxa_to_keep:
+                    tree.prune(tip)
+            return
 
-        return vcv
+        targets = [
+            tip for name, tip in terminal_by_name.items() if name not in taxa_to_keep
+        ]
+        if not targets:
+            return
+
+        if (
+            len(targets) < len(terminal_by_name)
+            and all(hasattr(target, "clades") for target in targets)
+            and Tree._prune_terminal_objects_batch_standard_tree(
+                tree,
+                {id(target) for target in targets},
+            )
+        ):
+            return
+
+        for target in targets:
+            tree.prune(target)
 
     @staticmethod
     def _initialize_liabilities(trait_values, trait_type, ordered_names, rng):
         n = len(ordered_names)
-        liabilities = np.zeros(n)
         if trait_type == "continuous":
-            for i, name in enumerate(ordered_names):
-                liabilities[i] = trait_values[name]
-        else:
-            # discrete: state 0 -> negative, state 1 -> positive
-            for i, name in enumerate(ordered_names):
-                state = int(trait_values[name])
-                if state == 0:
-                    # Draw from truncated normal on (-inf, 0)
-                    liabilities[i] = truncnorm.rvs(
-                        -np.inf, 0, loc=0, scale=1, random_state=rng
-                    )
-                else:
-                    # Draw from truncated normal on (0, inf)
-                    liabilities[i] = truncnorm.rvs(
-                        0, np.inf, loc=0, scale=1, random_state=rng
-                    )
-        return liabilities
+            return np.fromiter(
+                (trait_values[name] for name in ordered_names),
+                dtype=float,
+                count=n,
+            )
+
+        states = np.fromiter(
+            (int(trait_values[name]) for name in ordered_names),
+            dtype=np.int8,
+            count=n,
+        )
+        lower_z = np.where(states == 0, -np.inf, 0.0)
+        upper_z = np.where(states == 0, 0.0, np.inf)
+        return np.asarray(_truncnorm_rvs(lower_z, upper_z, 0, 1, rng), dtype=float)
+
+    @staticmethod
+    def _sample_truncated_normal(mu, sd, lower, upper, rng):
+        """Sample one normal value truncated to [lower, upper] by inverse CDF."""
+        if lower == _NEG_INF and upper == 0.0:
+            return ThresholdModel._sample_truncated_normal_below_zero(mu, sd, rng)
+        if lower == 0.0 and upper == _INF:
+            return ThresholdModel._sample_truncated_normal_above_zero(mu, sd, rng)
+
+        global _NDTRI
+        if _NDTRI is None:
+            from scipy.special import ndtri as _ndtri
+
+            _NDTRI = _ndtri
+        _ndtri = _NDTRI
+
+        lower_z = (lower - mu) / sd
+        upper_z = (upper - mu) / sd
+        lower_cdf = 0.0 if lower_z == _NEG_INF else _normal_cdf(lower_z)
+        upper_cdf = 1.0 if upper_z == _INF else _normal_cdf(upper_z)
+
+        interval = upper_cdf - lower_cdf
+        if interval <= 0 or not math.isfinite(interval):
+            return _truncnorm_rvs(lower_z, upper_z, mu, sd, rng)
+
+        u = lower_cdf + rng.random() * interval
+        if u < ThresholdModel._FLOAT_TINY:
+            u = ThresholdModel._FLOAT_TINY
+        elif u > ThresholdModel._ONE_MINUS_EPS:
+            u = ThresholdModel._ONE_MINUS_EPS
+        return float(mu + sd * _ndtri(u))
+
+    @staticmethod
+    def _sample_truncated_normal_below_zero(mu, sd, rng):
+        global _NDTRI
+        if _NDTRI is None:
+            from scipy.special import ndtri as _ndtri
+
+            _NDTRI = _ndtri
+        _ndtri = _NDTRI
+
+        upper_z = -mu / sd
+        upper_cdf = _normal_cdf(upper_z)
+        if upper_cdf <= 0.0 or not math.isfinite(upper_cdf):
+            return _truncnorm_rvs(_NEG_INF, upper_z, mu, sd, rng)
+
+        u = rng.random() * upper_cdf
+        if u < ThresholdModel._FLOAT_TINY:
+            u = ThresholdModel._FLOAT_TINY
+        elif u > ThresholdModel._ONE_MINUS_EPS:
+            u = ThresholdModel._ONE_MINUS_EPS
+        return float(mu + sd * _ndtri(u))
+
+    @staticmethod
+    def _sample_truncated_normal_above_zero(mu, sd, rng):
+        global _NDTRI
+        if _NDTRI is None:
+            from scipy.special import ndtri as _ndtri
+
+            _NDTRI = _ndtri
+        _ndtri = _NDTRI
+
+        lower_z = -mu / sd
+        lower_cdf = _normal_cdf(lower_z)
+        interval = 1.0 - lower_cdf
+        if interval <= 0.0 or not math.isfinite(interval):
+            return _truncnorm_rvs(lower_z, _INF, mu, sd, rng)
+
+        u = lower_cdf + rng.random() * interval
+        if u < ThresholdModel._FLOAT_TINY:
+            u = ThresholdModel._FLOAT_TINY
+        elif u > ThresholdModel._ONE_MINUS_EPS:
+            u = ThresholdModel._ONE_MINUS_EPS
+        return float(mu + sd * _ndtri(u))
 
     @staticmethod
     def _log_likelihood_bivariate_bm(
         x1, x2, C_inv, sigma2_1, sigma2_2, r, a1, a2, logdet_C, n
     ):
+        stats = ThresholdModel._bivariate_quadratic_stats(x1, x2, C_inv)
+        return ThresholdModel._log_likelihood_bivariate_bm_from_stats(
+            stats, sigma2_1, sigma2_2, r, a1, a2, logdet_C, n
+        )
+
+    @staticmethod
+    def _bivariate_quadratic_stats(x1, x2, C_inv):
+        """Precompute C_inv quadratic terms independent of BM parameters."""
+        C_inv_x1 = C_inv @ x1
+        C_inv_x2 = C_inv @ x2
+        one_C_one = float(C_inv.sum())
+        return ThresholdModel._bivariate_quadratic_stats_from_products(
+            x1, x2, C_inv_x1, C_inv_x2, one_C_one
+        )
+
+    @staticmethod
+    def _bivariate_quadratic_stats_from_products(
+        x1, x2, C_inv_x1, C_inv_x2, one_C_one
+    ):
+        return (
+            float(x1 @ C_inv_x1),
+            float(x1 @ C_inv_x2),
+            float(x2 @ C_inv_x2),
+            float(C_inv_x1.sum()),
+            float(C_inv_x2.sum()),
+            one_C_one,
+        )
+
+    @staticmethod
+    def _log_likelihood_bivariate_bm_from_stats(
+        stats, sigma2_1, sigma2_2, r, a1, a2, logdet_C, n
+    ):
         # Guard against non-finite parameters
-        if not (np.isfinite(sigma2_1) and np.isfinite(sigma2_2)):
+        if not (math.isfinite(sigma2_1) and math.isfinite(sigma2_2)):
             return -np.inf
         if sigma2_1 <= 0 or sigma2_2 <= 0:
             return -np.inf
@@ -341,13 +590,13 @@ class ThresholdModel(Tree):
         # Bivariate BM: V = Sigma kron C
         # Sigma = [[sigma2_1, r*sqrt(s1*s2)], [r*sqrt(s1*s2), sigma2_2]]
         # Use log-space arithmetic to avoid overflow
-        log_s1s2 = np.log(sigma2_1) + np.log(sigma2_2)
-        if not np.isfinite(log_s1s2):
+        log_s1s2 = math.log(sigma2_1) + math.log(sigma2_2)
+        if not math.isfinite(log_s1s2):
             return -np.inf
 
-        cov12 = r * np.exp(0.5 * log_s1s2)
+        cov12 = r * math.exp(0.5 * log_s1s2)
         det_Sigma = sigma2_1 * sigma2_2 * (1.0 - r * r)
-        if det_Sigma <= 0 or not np.isfinite(det_Sigma):
+        if det_Sigma <= 0 or not math.isfinite(det_Sigma):
             return -np.inf
 
         # Inverse of Sigma
@@ -355,32 +604,38 @@ class ThresholdModel(Tree):
         S_inv_01 = -cov12 / det_Sigma
         S_inv_11 = sigma2_1 / det_Sigma
 
-        if not (np.isfinite(S_inv_00) and np.isfinite(S_inv_01) and np.isfinite(S_inv_11)):
+        if not (
+            math.isfinite(S_inv_00)
+            and math.isfinite(S_inv_01)
+            and math.isfinite(S_inv_11)
+        ):
             return -np.inf
 
-        # Residuals
-        r1 = x1 - a1
-        r2 = x2 - a2
-
         # Quadratic form: sum_ij S_inv[i,j] * r_i' C_inv r_j
-        q1 = float(r1 @ C_inv @ r1)
-        q12 = float(r1 @ C_inv @ r2)
-        q2 = float(r2 @ C_inv @ r2)
+        x1_C_x1, x1_C_x2, x2_C_x2, one_C_x1, one_C_x2, one_C_one = stats
+        q1 = x1_C_x1 - 2.0 * a1 * one_C_x1 + a1 * a1 * one_C_one
+        q12 = (
+            x1_C_x2
+            - a2 * one_C_x1
+            - a1 * one_C_x2
+            + a1 * a2 * one_C_one
+        )
+        q2 = x2_C_x2 - 2.0 * a2 * one_C_x2 + a2 * a2 * one_C_one
 
-        if not (np.isfinite(q1) and np.isfinite(q12) and np.isfinite(q2)):
+        if not (math.isfinite(q1) and math.isfinite(q12) and math.isfinite(q2)):
             return -np.inf
 
         quad = S_inv_00 * q1 + 2.0 * S_inv_01 * q12 + S_inv_11 * q2
-        if not np.isfinite(quad):
+        if not math.isfinite(quad):
             return -np.inf
 
         # Log determinant: log|V| = log|Sigma kron C| = n*log|Sigma| + 2*logdet_C
-        log_det_Sigma = np.log(det_Sigma)
+        log_det_Sigma = math.log(det_Sigma)
         log_det_V = n * log_det_Sigma + 2.0 * logdet_C
 
-        ll = -0.5 * (2 * n * np.log(2 * np.pi) + log_det_V + quad)
+        ll = -0.5 * (2 * n * _LOG_2PI + log_det_V + quad)
 
-        if not np.isfinite(ll):
+        if not math.isfinite(ll):
             return -np.inf
 
         return float(ll)
@@ -388,7 +643,7 @@ class ThresholdModel(Tree):
     @staticmethod
     def _sample_liabilities_gibbs(
         liabilities, states, C, C_inv, sigma2, r, other_liabs,
-        other_sigma2, a, other_a, rng
+        other_sigma2, a, other_a, rng, gibbs_context=None
     ):
         """Sample liabilities from their full conditional (truncated normal).
 
@@ -404,42 +659,123 @@ class ThresholdModel(Tree):
         """
         n = len(liabilities)
         new_liabilities = liabilities.copy()
+        residuals = new_liabilities - a
+        global _NDTR, _NDTRI
+        if _NDTR is None:
+            from scipy.special import ndtr as _ndtr_loaded
+
+            _NDTR = _ndtr_loaded
+        if _NDTRI is None:
+            from scipy.special import ndtri as _ndtri_loaded
+
+            _NDTRI = _ndtri_loaded
+        _ndtr = _NDTR
+        _ndtri = _NDTRI
+        float_tiny = ThresholdModel._FLOAT_TINY
+        one_minus_eps = ThresholdModel._ONE_MINUS_EPS
+        if gibbs_context is None:
+            c_inv_diag = C_inv.diagonal()
+            sd_cond_by_tip = None
+            valid_tip = None
+        else:
+            c_inv_diag = gibbs_context["c_inv_diag"]
+            sd_cond_by_tip = gibbs_context["sd_cond"]
+            valid_tip = gibbs_context["valid"]
 
         for i in range(n):
-            c_ii_inv = C_inv[i, i]
+            if valid_tip is not None and not valid_tip[i]:
+                continue
+            c_ii_inv = c_inv_diag[i]
             if c_ii_inv <= 1e-15:
                 continue
 
             # Conditional variance and mean from the tree MVN
-            var_cond = sigma2 / c_ii_inv
-            if var_cond <= 0 or not np.isfinite(var_cond):
-                continue
+            if sd_cond_by_tip is None:
+                var_cond = sigma2 / c_ii_inv
+                if var_cond <= 0 or not math.isfinite(var_cond):
+                    continue
+                sd_cond = math.sqrt(var_cond)
+                if sd_cond <= 0 or not math.isfinite(sd_cond):
+                    continue
+            else:
+                sd_cond = sd_cond_by_tip[i]
 
-            residuals = new_liabilities - a
             row_sum = float(C_inv[i, :] @ residuals) - c_ii_inv * residuals[i]
             mu_cond = a - row_sum / c_ii_inv
-
-            sd_cond = np.sqrt(var_cond)
-            if sd_cond <= 0 or not np.isfinite(sd_cond):
-                continue
 
             state = int(states[i])
             if state == 0:
                 # Truncated to (-inf, 0)
-                b_std = (0 - mu_cond) / sd_cond
-                new_liabilities[i] = truncnorm.rvs(
-                    -np.inf, b_std, loc=mu_cond, scale=sd_cond,
-                    random_state=rng
-                )
+                upper_z = -mu_cond / sd_cond
+                upper_cdf = _ndtr(upper_z)
+                if upper_cdf <= 0.0 or not math.isfinite(upper_cdf):
+                    new_value = _truncnorm_rvs(
+                        _NEG_INF, upper_z, mu_cond, sd_cond, rng
+                    )
+                else:
+                    u = rng.random() * upper_cdf
+                    if u < float_tiny:
+                        u = float_tiny
+                    elif u > one_minus_eps:
+                        u = one_minus_eps
+                    new_value = float(mu_cond + sd_cond * _ndtri(u))
             else:
                 # Truncated to (0, inf)
-                a_std = (0 - mu_cond) / sd_cond
-                new_liabilities[i] = truncnorm.rvs(
-                    a_std, np.inf, loc=mu_cond, scale=sd_cond,
-                    random_state=rng
-                )
+                lower_z = -mu_cond / sd_cond
+                lower_cdf = _ndtr(lower_z)
+                interval = 1.0 - lower_cdf
+                if interval <= 0.0 or not math.isfinite(interval):
+                    new_value = _truncnorm_rvs(
+                        lower_z, _INF, mu_cond, sd_cond, rng
+                    )
+                else:
+                    u = lower_cdf + rng.random() * interval
+                    if u < float_tiny:
+                        u = float_tiny
+                    elif u > one_minus_eps:
+                        u = one_minus_eps
+                    new_value = float(mu_cond + sd_cond * _ndtri(u))
+            new_liabilities[i] = new_value
+            residuals[i] = new_value - a
 
         return new_liabilities
+
+    @staticmethod
+    def _prepare_gibbs_context(C_inv, sigma2):
+        c_inv_diag = C_inv.diagonal().copy()
+        valid = (c_inv_diag > 1e-15) & np.isfinite(c_inv_diag)
+        sd_cond = np.zeros_like(c_inv_diag, dtype=float)
+        if sigma2 > 0 and np.isfinite(sigma2):
+            sd_cond[valid] = np.sqrt(sigma2 / c_inv_diag[valid])
+            valid &= np.isfinite(sd_cond) & (sd_cond > 0)
+        else:
+            valid[:] = False
+        return {
+            "c_inv_diag": c_inv_diag,
+            "sd_cond": sd_cond,
+            "valid": valid,
+        }
+
+    @staticmethod
+    def _vcv_inverse_and_logdet(C):
+        try:
+            factor = cho_factor(C, lower=True, check_finite=False)
+            C_inv = cho_solve(
+                factor,
+                np.eye(C.shape[0], dtype=C.dtype),
+                check_finite=False,
+            )
+            logdet_C = 2.0 * float(np.log(np.diagonal(factor[0])).sum())
+            return C_inv, logdet_C
+        except (np.linalg.LinAlgError, FloatingPointError, ValueError):
+            C_inv = np.linalg.inv(C)
+            sign, logdet_C = np.linalg.slogdet(C)
+            if sign <= 0:
+                raise PhykitUserError(
+                    ["VCV matrix is not positive definite."],
+                    code=2,
+                )
+            return C_inv, logdet_C
 
     @staticmethod
     def _run_mcmc(
@@ -447,13 +783,7 @@ class ThresholdModel(Tree):
         ordered_names, C, ngen, sample, burnin_frac, rng
     ):
         n = len(ordered_names)
-        C_inv = np.linalg.inv(C)
-        sign, logdet_C = np.linalg.slogdet(C)
-        if sign <= 0:
-            raise PhykitUserError(
-                ["VCV matrix is not positive definite."],
-                code=2,
-            )
+        C_inv, logdet_C = ThresholdModel._vcv_inverse_and_logdet(C)
 
         # Initialize liabilities
         x1 = ThresholdModel._initialize_liabilities(
@@ -474,7 +804,7 @@ class ThresholdModel(Tree):
         # For discrete traits, sigma2 is fixed at 1 and a is fixed at 0
         # for identifiability (threshold=0, sigma2=1 pins the liability scale).
         # Only continuous traits have their sigma2 and a estimated.
-        mean_diag_C = float(np.mean(np.diag(C)))
+        mean_diag_C = float(np.trace(C) / n)
         if mean_diag_C <= 0:
             mean_diag_C = 1.0
 
@@ -483,21 +813,25 @@ class ThresholdModel(Tree):
             sigma2_1 = 1.0
             a1 = 0.0
         else:
-            var_x1 = float(np.var(x1)) if float(np.var(x1)) > 0 else 1.0
+            var_x1 = float(x1.var())
+            var_x1 = var_x1 if var_x1 > 0 else 1.0
             sigma2_1 = var_x1 / mean_diag_C
             sigma2_1 = max(sigma2_1, 1e-10)
-            a1 = float(np.mean(x1))
+            a1 = float(x1.mean())
 
         if type2 == "discrete":
             sigma2_2 = 1.0
             a2 = 0.0
         else:
-            var_x2 = float(np.var(x2)) if float(np.var(x2)) > 0 else 1.0
+            var_x2 = float(x2.var())
+            var_x2 = var_x2 if var_x2 > 0 else 1.0
             sigma2_2 = var_x2 / mean_diag_C
             sigma2_2 = max(sigma2_2, 1e-10)
-            a2 = float(np.mean(x2))
+            a2 = float(x2.mean())
 
         r = 0.0
+        log_sigma2_1 = math.log(sigma2_1)
+        log_sigma2_2 = math.log(sigma2_2)
 
         # Proposal variances (only used for estimated parameters)
         prop_var = {
@@ -507,12 +841,23 @@ class ThresholdModel(Tree):
             "a1": 0.5,
             "a2": 0.5,
         }
+        prop_sd = {key: math.sqrt(value) for key, value in prop_var.items()}
 
         # Which parameters to update via MH
         update_sigma2_1 = (type1 == "continuous")
         update_sigma2_2 = (type2 == "continuous")
         update_a1 = (type1 == "continuous")
         update_a2 = (type2 == "continuous")
+        gibbs_context1 = (
+            ThresholdModel._prepare_gibbs_context(C_inv, sigma2_1)
+            if type1 == "discrete"
+            else None
+        )
+        gibbs_context2 = (
+            ThresholdModel._prepare_gibbs_context(C_inv, sigma2_2)
+            if type2 == "discrete"
+            else None
+        )
 
         # Acceptance counters
         accept = {k: 0 for k in prop_var}
@@ -530,8 +875,14 @@ class ThresholdModel(Tree):
         samples_a1 = []
         samples_a2 = []
 
-        current_ll = ThresholdModel._log_likelihood_bivariate_bm(
-            x1, x2, C_inv, sigma2_1, sigma2_2, r, a1, a2, logdet_C, n
+        one_C_one = float(C_inv.sum())
+        C_inv_x1 = C_inv @ x1
+        C_inv_x2 = C_inv @ x2
+        quad_stats = ThresholdModel._bivariate_quadratic_stats_from_products(
+            x1, x2, C_inv_x1, C_inv_x2, one_C_one
+        )
+        current_ll = ThresholdModel._log_likelihood_bivariate_bm_from_stats(
+            quad_stats, sigma2_1, sigma2_2, r, a1, a2, logdet_C, n
         )
 
         # Adaptive tuning interval
@@ -542,65 +893,75 @@ class ThresholdModel(Tree):
             if type1 == "discrete":
                 x1 = ThresholdModel._sample_liabilities_gibbs(
                     x1, states1, C, C_inv, sigma2_1, r,
-                    x2, sigma2_2, a1, a2, rng
+                    x2, sigma2_2, a1, a2, rng, gibbs_context1
                 )
-                current_ll = ThresholdModel._log_likelihood_bivariate_bm(
-                    x1, x2, C_inv, sigma2_1, sigma2_2, r, a1, a2, logdet_C, n
+                C_inv_x1 = C_inv @ x1
+                quad_stats = ThresholdModel._bivariate_quadratic_stats_from_products(
+                    x1, x2, C_inv_x1, C_inv_x2, one_C_one
+                )
+                current_ll = ThresholdModel._log_likelihood_bivariate_bm_from_stats(
+                    quad_stats, sigma2_1, sigma2_2, r, a1, a2, logdet_C, n
                 )
 
             if type2 == "discrete":
                 x2 = ThresholdModel._sample_liabilities_gibbs(
                     x2, states2, C, C_inv, sigma2_2, r,
-                    x1, sigma2_1, a2, a1, rng
+                    x1, sigma2_1, a2, a1, rng, gibbs_context2
                 )
-                current_ll = ThresholdModel._log_likelihood_bivariate_bm(
-                    x1, x2, C_inv, sigma2_1, sigma2_2, r, a1, a2, logdet_C, n
+                C_inv_x2 = C_inv @ x2
+                quad_stats = ThresholdModel._bivariate_quadratic_stats_from_products(
+                    x1, x2, C_inv_x1, C_inv_x2, one_C_one
+                )
+                current_ll = ThresholdModel._log_likelihood_bivariate_bm_from_stats(
+                    quad_stats, sigma2_1, sigma2_2, r, a1, a2, logdet_C, n
                 )
 
             # Metropolis step: sigma2_1 (only for continuous traits)
             if update_sigma2_1:
                 attempt["log_sigma2_1"] += 1
-                log_s1_prop = np.log(sigma2_1) + rng.normal(0, np.sqrt(prop_var["log_sigma2_1"]))
-                s1_prop = np.exp(log_s1_prop)
-                if np.isfinite(s1_prop) and s1_prop > 0:
-                    prop_ll = ThresholdModel._log_likelihood_bivariate_bm(
-                        x1, x2, C_inv, s1_prop, sigma2_2, r, a1, a2, logdet_C, n
+                log_s1_prop = log_sigma2_1 + rng.normal(0, prop_sd["log_sigma2_1"])
+                s1_prop = math.exp(log_s1_prop)
+                if math.isfinite(s1_prop) and s1_prop > 0:
+                    prop_ll = ThresholdModel._log_likelihood_bivariate_bm_from_stats(
+                        quad_stats, s1_prop, sigma2_2, r, a1, a2, logdet_C, n
                     )
-                    log_alpha = prop_ll - current_ll + log_s1_prop - np.log(sigma2_1)
-                    if np.isfinite(log_alpha) and np.log(rng.random()) < log_alpha:
+                    log_alpha = prop_ll - current_ll + log_s1_prop - log_sigma2_1
+                    if math.isfinite(log_alpha) and math.log(rng.random()) < log_alpha:
                         sigma2_1 = s1_prop
+                        log_sigma2_1 = log_s1_prop
                         current_ll = prop_ll
                         accept["log_sigma2_1"] += 1
 
             # Metropolis step: sigma2_2 (only for continuous traits)
             if update_sigma2_2:
                 attempt["log_sigma2_2"] += 1
-                log_s2_prop = np.log(sigma2_2) + rng.normal(0, np.sqrt(prop_var["log_sigma2_2"]))
-                s2_prop = np.exp(log_s2_prop)
-                if np.isfinite(s2_prop) and s2_prop > 0:
-                    prop_ll = ThresholdModel._log_likelihood_bivariate_bm(
-                        x1, x2, C_inv, sigma2_1, s2_prop, r, a1, a2, logdet_C, n
+                log_s2_prop = log_sigma2_2 + rng.normal(0, prop_sd["log_sigma2_2"])
+                s2_prop = math.exp(log_s2_prop)
+                if math.isfinite(s2_prop) and s2_prop > 0:
+                    prop_ll = ThresholdModel._log_likelihood_bivariate_bm_from_stats(
+                        quad_stats, sigma2_1, s2_prop, r, a1, a2, logdet_C, n
                     )
-                    log_alpha = prop_ll - current_ll + log_s2_prop - np.log(sigma2_2)
-                    if np.isfinite(log_alpha) and np.log(rng.random()) < log_alpha:
+                    log_alpha = prop_ll - current_ll + log_s2_prop - log_sigma2_2
+                    if math.isfinite(log_alpha) and math.log(rng.random()) < log_alpha:
                         sigma2_2 = s2_prop
+                        log_sigma2_2 = log_s2_prop
                         current_ll = prop_ll
                         accept["log_sigma2_2"] += 1
 
             # Metropolis step: r (normal proposal with reflection on [-1,1])
             attempt["r"] += 1
-            r_prop = r + rng.normal(0, np.sqrt(prop_var["r"]))
+            r_prop = r + rng.normal(0, prop_sd["r"])
             # Reflect into [-1, 1]
             while r_prop < -1 or r_prop > 1:
                 if r_prop < -1:
                     r_prop = -2 - r_prop
                 if r_prop > 1:
                     r_prop = 2 - r_prop
-            prop_ll = ThresholdModel._log_likelihood_bivariate_bm(
-                x1, x2, C_inv, sigma2_1, sigma2_2, r_prop, a1, a2, logdet_C, n
+            prop_ll = ThresholdModel._log_likelihood_bivariate_bm_from_stats(
+                quad_stats, sigma2_1, sigma2_2, r_prop, a1, a2, logdet_C, n
             )
             log_alpha = prop_ll - current_ll
-            if np.isfinite(log_alpha) and np.log(rng.random()) < log_alpha:
+            if math.isfinite(log_alpha) and math.log(rng.random()) < log_alpha:
                 r = r_prop
                 current_ll = prop_ll
                 accept["r"] += 1
@@ -608,12 +969,12 @@ class ThresholdModel(Tree):
             # Metropolis step: a1 (only for continuous traits)
             if update_a1:
                 attempt["a1"] += 1
-                a1_prop = a1 + rng.normal(0, np.sqrt(prop_var["a1"]))
-                prop_ll = ThresholdModel._log_likelihood_bivariate_bm(
-                    x1, x2, C_inv, sigma2_1, sigma2_2, r, a1_prop, a2, logdet_C, n
+                a1_prop = a1 + rng.normal(0, prop_sd["a1"])
+                prop_ll = ThresholdModel._log_likelihood_bivariate_bm_from_stats(
+                    quad_stats, sigma2_1, sigma2_2, r, a1_prop, a2, logdet_C, n
                 )
                 log_alpha = prop_ll - current_ll
-                if np.isfinite(log_alpha) and np.log(rng.random()) < log_alpha:
+                if math.isfinite(log_alpha) and math.log(rng.random()) < log_alpha:
                     a1 = a1_prop
                     current_ll = prop_ll
                     accept["a1"] += 1
@@ -621,12 +982,12 @@ class ThresholdModel(Tree):
             # Metropolis step: a2 (only for continuous traits)
             if update_a2:
                 attempt["a2"] += 1
-                a2_prop = a2 + rng.normal(0, np.sqrt(prop_var["a2"]))
-                prop_ll = ThresholdModel._log_likelihood_bivariate_bm(
-                    x1, x2, C_inv, sigma2_1, sigma2_2, r, a1, a2_prop, logdet_C, n
+                a2_prop = a2 + rng.normal(0, prop_sd["a2"])
+                prop_ll = ThresholdModel._log_likelihood_bivariate_bm_from_stats(
+                    quad_stats, sigma2_1, sigma2_2, r, a1, a2_prop, logdet_C, n
                 )
                 log_alpha = prop_ll - current_ll
-                if np.isfinite(log_alpha) and np.log(rng.random()) < log_alpha:
+                if math.isfinite(log_alpha) and math.log(rng.random()) < log_alpha:
                     a2 = a2_prop
                     current_ll = prop_ll
                     accept["a2"] += 1
@@ -640,6 +1001,7 @@ class ThresholdModel(Tree):
                             prop_var[key] *= 0.5
                         elif rate > 0.35:
                             prop_var[key] *= 1.5
+                        prop_sd[key] = math.sqrt(prop_var[key])
                         accept[key] = 0
                         attempt[key] = 0
 
@@ -678,6 +1040,12 @@ class ThresholdModel(Tree):
     @staticmethod
     def _compute_hpd(samples, credible_mass=0.95):
         sorted_samples = np.sort(samples)
+        return ThresholdModel._compute_hpd_from_sorted(
+            sorted_samples, credible_mass
+        )
+
+    @staticmethod
+    def _compute_hpd_from_sorted(sorted_samples, credible_mass=0.95):
         n = len(sorted_samples)
         interval_size = int(np.ceil(credible_mass * n))
         if interval_size >= n:
@@ -686,6 +1054,20 @@ class ThresholdModel(Tree):
         widths = sorted_samples[interval_size:] - sorted_samples[:n - interval_size]
         best = int(np.argmin(widths))
         return float(sorted_samples[best]), float(sorted_samples[best + interval_size])
+
+    @staticmethod
+    def _median_from_sorted(sorted_samples):
+        n = len(sorted_samples)
+        mid = n // 2
+        if n % 2:
+            return float(sorted_samples[mid])
+        return float((sorted_samples[mid - 1] + sorted_samples[mid]) / 2.0)
+
+    @staticmethod
+    def _sample_mean(samples):
+        if hasattr(samples, "mean"):
+            return float(samples.mean())
+        return float(np.mean(samples))
 
     @staticmethod
     def _summarize_posterior(mcmc_result):
@@ -700,10 +1082,13 @@ class ThresholdModel(Tree):
                     "hpd_upper": float("nan"),
                 }
                 continue
-            hpd_lo, hpd_hi = ThresholdModel._compute_hpd(samples)
+            sorted_samples = np.sort(samples)
+            hpd_lo, hpd_hi = ThresholdModel._compute_hpd_from_sorted(
+                sorted_samples
+            )
             summary[param] = {
-                "mean": float(np.mean(samples)),
-                "median": float(np.median(samples)),
+                "mean": ThresholdModel._sample_mean(samples),
+                "median": ThresholdModel._median_from_sorted(sorted_samples),
                 "hpd_lower": hpd_lo,
                 "hpd_upper": hpd_hi,
             }
@@ -712,43 +1097,44 @@ class ThresholdModel(Tree):
 
     def _output_text(self, summary):
         try:
-            print(
-                f"Trait 1: {self.traits[0]} ({self.types[0]}"
-                + (", 2 states: 0, 1" if self.types[0] == "discrete" else "")
-                + ")"
-            )
-            print(
-                f"Trait 2: {self.traits[1]} ({self.types[1]}"
-                + (", 2 states: 0, 1" if self.types[1] == "discrete" else "")
-                + ")"
-            )
-            print(
-                f"MCMC: {self.ngen} generations, sampled every "
-                f"{self.sample}, burn-in {int(self.burnin * 100)}%"
-            )
-            print("---")
             r_s = summary["r"]
-            print(
-                f"Posterior correlation (r): {r_s['mean']:.4f} "
-                f"(95% HPD: {r_s['hpd_lower']:.3f}, {r_s['hpd_upper']:.3f})"
-            )
             s1 = summary["sigma2_1"]
-            print(
-                f"Posterior sigma2_1: {s1['mean']:.4f} "
-                f"(95% HPD: {s1['hpd_lower']:.3f}, {s1['hpd_upper']:.3f})"
-            )
             s2 = summary["sigma2_2"]
-            print(
-                f"Posterior sigma2_2: {s2['mean']:.4f} "
-                f"(95% HPD: {s2['hpd_lower']:.3f}, {s2['hpd_upper']:.3f})"
-            )
             rates = summary["acceptance_rates"]
+            trait1_type = self.types[0]
+            trait2_type = self.types[1]
+            trait1_states = (
+                ", 2 states: 0, 1" if trait1_type == "discrete" else ""
+            )
+            trait2_states = (
+                ", 2 states: 0, 1" if trait2_type == "discrete" else ""
+            )
             print(
-                f"Acceptance rates: r={rates.get('r', 0):.3f}, "
-                f"sigma2_1={rates.get('log_sigma2_1', 0):.3f}, "
-                f"sigma2_2={rates.get('log_sigma2_2', 0):.3f}, "
-                f"a1={rates.get('a1', 0):.3f}, "
-                f"a2={rates.get('a2', 0):.3f}"
+                _TEXT_REPORT_TEMPLATE % (
+                    self.traits[0],
+                    trait1_type,
+                    trait1_states,
+                    self.traits[1],
+                    trait2_type,
+                    trait2_states,
+                    self.ngen,
+                    self.sample,
+                    int(self.burnin * 100),
+                    r_s["mean"],
+                    r_s["hpd_lower"],
+                    r_s["hpd_upper"],
+                    s1["mean"],
+                    s1["hpd_lower"],
+                    s1["hpd_upper"],
+                    s2["mean"],
+                    s2["hpd_lower"],
+                    s2["hpd_upper"],
+                    rates.get("r", 0),
+                    rates.get("log_sigma2_1", 0),
+                    rates.get("log_sigma2_2", 0),
+                    rates.get("a1", 0),
+                    rates.get("a2", 0),
+                )
             )
         except BrokenPipeError:
             pass
@@ -811,7 +1197,7 @@ class ThresholdModel(Tree):
 
         for row, (param, label) in enumerate(params):
             samples = mcmc_result[param]
-            mean_val = float(np.mean(samples))
+            mean_val = ThresholdModel._sample_mean(samples)
             hpd_lo, hpd_hi = ThresholdModel._compute_hpd(samples)
 
             # --- Left: trace plot ---
@@ -862,6 +1248,5 @@ class ThresholdModel(Tree):
             axes[0, 0].set_title(config.title or "Trace", fontsize=config.title_fontsize)
             axes[0, 1].set_title(config.title or "Posterior", fontsize=config.title_fontsize)
 
-        fig.tight_layout()
         fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)

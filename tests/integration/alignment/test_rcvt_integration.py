@@ -3,7 +3,6 @@ import sys
 import json
 from mock import patch, call
 from pathlib import Path
-from textwrap import dedent
 
 from phykit.phykit import Phykit
 
@@ -14,20 +13,12 @@ here = Path(__file__)
 class TestRCVT(object):
     @patch("builtins.print")
     def test_rcvt0(self, mocked_print):
-        expected_result_0 = dedent(
-            """1\t0.056"""
-        )
-        expected_result_1 = dedent(
-            """2\t0.04"""
-        )
-        expected_result_2 = dedent(
-            """3\t0.04"""  
-        )
-        expected_result_3 = dedent(
-            """4\t0.056"""
-        )
-        expected_result_4 = dedent(
-            """5\t0.1"""  
+        expected_result = (
+            "1\t0.056\n"
+            "2\t0.04\n"
+            "3\t0.04\n"
+            "4\t0.056\n"
+            "5\t0.1"
         )
         testargs = [
             "phykit",
@@ -36,27 +27,15 @@ class TestRCVT(object):
         ]
         with patch.object(sys, "argv", testargs):
             Phykit()
-        assert mocked_print.mock_calls == [
-            call(expected_result_0),
-            call(expected_result_1),
-            call(expected_result_2),
-            call(expected_result_3),
-            call(expected_result_4),
-        ]
+        assert mocked_print.mock_calls == [call(expected_result)]
 
     @patch("builtins.print")
     def test_rcvt1(self, mocked_print):
-        expected_result_0 = dedent(
-            """1\t0.0781"""
-        )
-        expected_result_1 = dedent(
-            """2\t0.0556"""
-        )
-        expected_result_2 = dedent(
-            """3\t0.0278"""  
-        )
-        expected_result_3 = dedent(
-            """4\t0.1094"""
+        expected_result = (
+            "1\t0.0781\n"
+            "2\t0.0556\n"
+            "3\t0.0278\n"
+            "4\t0.1094"
         )
         testargs = [
             "phykit",
@@ -65,26 +44,15 @@ class TestRCVT(object):
         ]
         with patch.object(sys, "argv", testargs):
             Phykit()
-        assert mocked_print.mock_calls == [
-            call(expected_result_0),
-            call(expected_result_1),
-            call(expected_result_2),
-            call(expected_result_3),
-        ]
+        assert mocked_print.mock_calls == [call(expected_result)]
 
     @patch("builtins.print")
     def test_rcvt2(self, mocked_print):
-        expected_result_0 = dedent(
-            """1\t0.0417"""
-        )
-        expected_result_1 = dedent(
-            """2\t0.0417"""
-        )
-        expected_result_2 = dedent(
-            """3\t0.0417"""  
-        )
-        expected_result_3 = dedent(
-            """4\t0.125"""
+        expected_result = (
+            "1\t0.0417\n"
+            "2\t0.0417\n"
+            "3\t0.0417\n"
+            "4\t0.125"
         )
         testargs = [
             "phykit",
@@ -93,26 +61,15 @@ class TestRCVT(object):
         ]
         with patch.object(sys, "argv", testargs):
             Phykit()
-        assert mocked_print.mock_calls == [
-            call(expected_result_0),
-            call(expected_result_1),
-            call(expected_result_2),
-            call(expected_result_3),
-        ]
+        assert mocked_print.mock_calls == [call(expected_result)]
 
     @patch("builtins.print")
     def test_rcvt_alias(self, mocked_print):
-        expected_result_0 = dedent(
-            """1\t0.0417"""
-        )
-        expected_result_1 = dedent(
-            """2\t0.0417"""
-        )
-        expected_result_2 = dedent(
-            """3\t0.0417"""  
-        )
-        expected_result_3 = dedent(
-            """4\t0.125"""
+        expected_result = (
+            "1\t0.0417\n"
+            "2\t0.0417\n"
+            "3\t0.0417\n"
+            "4\t0.125"
         )
         testargs = [
             "phykit",
@@ -121,12 +78,7 @@ class TestRCVT(object):
         ]
         with patch.object(sys, "argv", testargs):
             Phykit()
-        assert mocked_print.mock_calls == [
-            call(expected_result_0),
-            call(expected_result_1),
-            call(expected_result_2),
-            call(expected_result_3),
-        ]
+        assert mocked_print.mock_calls == [call(expected_result)]
 
     @patch("builtins.print")
     def test_rcvt_incorrect_input_file(self, mocked_print):

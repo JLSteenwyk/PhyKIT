@@ -1,7 +1,6 @@
 """Lazy service factory declarations for CLI command handlers."""
 
 import importlib
-from typing import Dict
 
 
 class _LazyServiceFactory:
@@ -129,7 +128,7 @@ TraitCorrelation = _LazyServiceFactory("phykit.services.tree.trait_correlation",
 TraitRateMap = _LazyServiceFactory("phykit.services.tree.trait_rate_map", "TraitRateMap")
 TreeSpace = _LazyServiceFactory("phykit.services.tree.tree_space", "TreeSpace")
 
-SERVICE_FACTORIES: Dict[str, _LazyServiceFactory] = {
+SERVICE_FACTORIES: dict[str, _LazyServiceFactory] = {
     name: value
     for name, value in locals().items()
     if isinstance(value, _LazyServiceFactory)

@@ -1,8 +1,31 @@
 from argparse import Namespace
+from io import StringIO
+import subprocess
+import sys
 
 import pytest
+from Bio import Phylo
+from Bio.Phylo.BaseTree import Clade, Tree, TreeMixin
 
 from phykit.services.tree.monophyly_check import MonophylyCheck
+
+
+def test_module_import_does_not_import_biophylo_or_numpy():
+    code = """
+import sys
+import phykit.services.tree.monophyly_check as module
+
+assert callable(module.print_json)
+assert callable(module.read_single_column_file_to_list)
+assert "json" not in sys.modules
+assert "Bio.Phylo" not in sys.modules
+assert "numpy" not in sys.modules
+assert "typing" not in sys.modules
+assert "phykit.helpers.json_output" not in sys.modules
+assert "phykit.helpers.stats_summary" not in sys.modules
+assert "phykit.helpers.files" not in sys.modules
+"""
+    subprocess.run([sys.executable, "-c", code], check=True)
 
 
 @pytest.fixture
@@ -34,6 +57,41 @@ class TestMonophylyCheck:
         assert stats["maximum"] == 90
         assert stats["minimum"] == 80
 
+    def test_get_bootstrap_statistics_uses_direct_traversal(self, args, monkeypatch):
+        service = MonophylyCheck(args)
+        tree = Phylo.read(StringIO("((A:1,B:1)90:1,(C:1,D:1)80:1)95;"), "newick")
+
+        def fail_get_nonterminals(*_args, **_kwargs):
+            raise AssertionError("standard clades should use direct traversal")
+
+        monkeypatch.setattr(TreeMixin, "get_nonterminals", fail_get_nonterminals)
+
+        stats = service.get_bootstrap_statistics(tree.root)
+
+        assert round(stats["mean"], 4) == 88.3333
+        assert stats["maximum"] == 95
+        assert stats["minimum"] == 80
+
+    def test_get_bootstrap_statistics_handles_mixed_child_counts(
+        self, args, monkeypatch
+    ):
+        service = MonophylyCheck(args)
+        tree = Phylo.read(
+            StringIO("(A:1,(B:1,C:1)70:1,(D:1,E:1,F:1)90:1)80;"),
+            "newick",
+        )
+
+        def fail_get_nonterminals(*_args, **_kwargs):
+            raise AssertionError("standard clades should use direct traversal")
+
+        monkeypatch.setattr(TreeMixin, "get_nonterminals", fail_get_nonterminals)
+
+        stats = service.get_bootstrap_statistics(tree.root)
+
+        assert round(stats["mean"], 4) == 80.0
+        assert stats["maximum"] == 90
+        assert stats["minimum"] == 70
+
     def test_populate_res_arr_monophyletic(self, args):
         service = MonophylyCheck(args)
         stats = {"mean": 90.0, "maximum": 100.0, "minimum": 80.0, "standard_deviation": 10.0}
@@ -46,17 +104,23 @@ class TestMonophylyCheck:
         service = MonophylyCheck(args)
         mocked_json = mocker.patch("phykit.services.tree.monophyly_check.print_json")
         service.print_results(
-            [["not_monophyletic", 95.0, 100.0, 85.0, 7.0, ["z", "a"]]]
+            [
+                ["not_monophyletic", 95.0, 100.0, 85.0, 7.0, ["z", "a"]],
+                ["insufficient_taxon_representation"],
+            ]
         )
         payload = mocked_json.call_args.args[0]
         assert payload["rows"] == payload["results"]
         assert payload["rows"][0]["status"] == "not_monophyletic"
+        assert payload["rows"][0]["mean_support"] == 95.0
+        assert payload["rows"][0]["stdev_support"] == 7.0
         assert payload["rows"][0]["offending_taxa"] == ["a", "z"]
+        assert payload["rows"][1] == {"status": "insufficient_taxon_representation"}
 
     def test_run_insufficient_taxa_exits(self, mocker):
         args = Namespace(tree="/some/path/to/file.tre", list_of_taxa="/some/path/to/taxa.txt")
         service = MonophylyCheck(args)
-        mocker.patch.object(MonophylyCheck, "read_tree_file", return_value=object())
+        mocker.patch.object(MonophylyCheck, "read_tree_file_unmodified", return_value=object())
         mocker.patch(
             "phykit.services.tree.monophyly_check.read_single_column_file_to_list",
             return_value=["only_one_taxon"],
@@ -70,11 +134,13 @@ class TestMonophylyCheck:
         args = Namespace(tree="/some/path/to/file.tre", list_of_taxa="/some/path/to/taxa.txt")
         service = MonophylyCheck(args)
 
+        cached_tree = mocker.Mock()
         root_tree = mocker.Mock()
         clade_tree = mocker.Mock()
         root_tree.common_ancestor.return_value = clade_tree
 
-        mocker.patch.object(service, "read_tree_file", return_value=root_tree)
+        mocker.patch.object(service, "read_tree_file_unmodified", return_value=cached_tree)
+        mocker.patch.object(service, "_fast_copy", return_value=root_tree)
         mocker.patch(
             "phykit.services.tree.monophyly_check.read_single_column_file_to_list",
             return_value=["a", "b", "c"],
@@ -94,14 +160,272 @@ class TestMonophylyCheck:
 
         service.run()
 
+        cached_tree.root_with_outgroup.assert_not_called()
         root_tree.root_with_outgroup.assert_called_once_with(["d"])
         mocked_print_results.assert_called_once()
         res_arr = mocked_print_results.call_args.args[0]
         assert res_arr[0][0] == "monophyletic"
 
+    def test_run_reuses_unmodified_tree(self, mocker):
+        args = Namespace(tree="/some/path/to/file.tre", list_of_taxa="/some/path/to/taxa.txt")
+        service = MonophylyCheck(args)
+        tree = object()
+        clade = object()
+        taxa = frozenset({"a", "b"})
+
+        mocker.patch.object(
+            service,
+            "read_tree_file",
+            side_effect=AssertionError("run should not copy the cached tree"),
+        )
+        read_unmodified = mocker.patch.object(
+            service, "read_tree_file_unmodified", return_value=tree
+        )
+        mocker.patch(
+            "phykit.services.tree.monophyly_check.read_single_column_file_to_list",
+            return_value=["a", "b"],
+        )
+        mocker.patch.object(service, "get_tip_names_from_tree", return_value=["a", "b", "c"])
+        resolve = mocker.patch.object(service, "_resolve_interest_clade", return_value=(clade, taxa))
+        mocker.patch.object(
+            service,
+            "get_bootstrap_statistics",
+            return_value={"mean": 90.0, "maximum": 100.0, "minimum": 80.0, "standard_deviation": 10.0},
+        )
+        mocker.patch.object(service, "print_results")
+
+        service.run()
+
+        read_unmodified.assert_called_once_with()
+        resolve.assert_called_once_with(tree, taxa, frozenset({"a", "b", "c"}))
+
+    def test_run_uses_simple_newick_fast_path(self, tmp_path, mocker):
+        tree_file = tmp_path / "tree.tre"
+        tree_file.write_text("(((A:1,B:1)90:1,(C:1,D:1)80:1)95:1,E:1)100;\n")
+        args = Namespace(tree=str(tree_file), list_of_taxa="/some/path/to/taxa.txt")
+        service = MonophylyCheck(args)
+        mocker.patch(
+            "phykit.services.tree.monophyly_check.read_single_column_file_to_list",
+            return_value=["A", "B", "C", "D"],
+        )
+        mocker.patch.object(
+            service,
+            "read_tree_file_unmodified",
+            side_effect=AssertionError("simple Newick fast path should be used"),
+        )
+        mocked_print = mocker.patch.object(service, "print_results")
+
+        service.run()
+
+        rows = mocked_print.call_args.args[0]
+        assert rows == [["monophyletic", 88.33333333333333, 95, 80, 7.637626158259734, []]]
+
+    def test_simple_newick_monophyly_root_nonmonophyletic(self, tmp_path):
+        tree_file = tmp_path / "tree.tre"
+        tree_file.write_text("((A:1,B:1)90:1,(C:1,D:1)80:1)95;\n")
+        simple_tree = MonophylyCheck._scan_simple_newick_tree(str(tree_file))
+
+        rows = MonophylyCheck._resolve_simple_newick_monophyly(
+            simple_tree,
+            ["A", "C"],
+        )
+
+        assert rows[0][0] == "not_monophyletic"
+        assert rows[0][1:5] == [88.33333333333333, 95, 80, 7.637626158259734]
+        assert sorted(rows[0][5]) == ["B", "D"]
+
+    def test_simple_newick_monophyly_falls_back_for_nonroot_partial_lca(self, tmp_path):
+        tree_file = tmp_path / "tree.tre"
+        tree_file.write_text("(((A:1,C:1,E:1)90:1,B:1)80:1,D:1)95;\n")
+        simple_tree = MonophylyCheck._scan_simple_newick_tree(str(tree_file))
+
+        rows = MonophylyCheck._resolve_simple_newick_monophyly(
+            simple_tree,
+            ["A", "C"],
+        )
+
+        assert rows is None
+
+    def test_simple_newick_tree_scan_rejects_annotations(self, tmp_path):
+        tree_file = tmp_path / "tree.tre"
+        tree_file.write_text("((A:1,B:1)90[comment]:1,C:1);\n")
+
+        assert MonophylyCheck._scan_simple_newick_tree(str(tree_file)) is None
+
+    def test_resolve_interest_clade_copies_before_reroot(self, mocker, args):
+        service = MonophylyCheck(args)
+        cached_tree = mocker.Mock()
+        copied_tree = mocker.Mock()
+        clade = mocker.Mock()
+        copied_tree.common_ancestor.return_value = clade
+
+        mocker.patch.object(service, "_find_exact_clade_by_taxa", return_value=None)
+        mocker.patch.object(service, "shared_tips", return_value=["a", "b"])
+        copy_tree = mocker.patch.object(service, "_fast_copy", return_value=copied_tree)
+        mocker.patch.object(service, "get_tip_names_from_tree", return_value=["a", "b"])
+
+        resolved, tips = service._resolve_interest_clade(
+            cached_tree,
+            frozenset({"a", "b"}),
+            frozenset({"a", "b", "c"}),
+        )
+
+        copy_tree.assert_called_once_with(cached_tree)
+        cached_tree.root_with_outgroup.assert_not_called()
+        copied_tree.root_with_outgroup.assert_called_once_with(["c"])
+        assert sorted(copied_tree.common_ancestor.call_args.args[0]) == ["a", "b"]
+        assert resolved is clade
+        assert tips == frozenset({"a", "b"})
+
+    def test_resolve_interest_clade_skips_shared_tip_recalculation(
+        self, mocker, args
+    ):
+        service = MonophylyCheck(args)
+        cached_tree = mocker.Mock()
+        copied_tree = mocker.Mock()
+        clade = mocker.Mock()
+        copied_tree.common_ancestor.return_value = clade
+
+        mocker.patch.object(service, "_find_exact_clade_by_taxa", return_value=None)
+        mocker.patch.object(
+            service,
+            "shared_tips",
+            side_effect=AssertionError("taxa already intersect tree tips"),
+        )
+        mocker.patch.object(service, "_fast_copy", return_value=copied_tree)
+        mocker.patch.object(service, "get_tip_names_from_tree", return_value=["a", "b"])
+
+        resolved, tips = service._resolve_interest_clade(
+            cached_tree,
+            frozenset({"a", "b"}),
+            frozenset({"a", "b", "c"}),
+        )
+
+        copied_tree.root_with_outgroup.assert_called_once_with(["c"])
+        assert sorted(copied_tree.common_ancestor.call_args.args[0]) == ["a", "b"]
+        assert resolved is clade
+        assert tips == frozenset({"a", "b"})
+
+    def test_resolve_interest_clade_skips_reroot_for_exact_clade(self, monkeypatch, args):
+        service = MonophylyCheck(args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+
+        def fail_root_with_outgroup(*_args, **_kwargs):
+            raise AssertionError("root_with_outgroup should not be called")
+
+        def fail_common_ancestor(*_args, **_kwargs):
+            raise AssertionError("common_ancestor should not be called")
+
+        monkeypatch.setattr(tree, "root_with_outgroup", fail_root_with_outgroup)
+        monkeypatch.setattr(tree, "common_ancestor", fail_common_ancestor)
+
+        clade, tips = service._resolve_interest_clade(
+            tree, frozenset(["A", "B"]), frozenset(["A", "B", "C", "D"])
+        )
+
+        assert sorted(t.name for t in clade.get_terminals()) == ["A", "B"]
+        assert tips == frozenset(["A", "B"])
+
+    def test_resolve_interest_clade_all_tree_tips_returns_root_without_search(
+        self, mocker, args
+    ):
+        service = MonophylyCheck(args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        all_tips = frozenset(["A", "B", "C", "D"])
+        find_exact = mocker.patch.object(
+            MonophylyCheck,
+            "_find_exact_clade_by_taxa",
+            side_effect=AssertionError("all-tip input should use root shortcut"),
+        )
+        copy_tree = mocker.patch.object(
+            service,
+            "_fast_copy",
+            side_effect=AssertionError("all-tip input should not reroot a copy"),
+        )
+
+        clade, tips = service._resolve_interest_clade(tree, all_tips, all_tips)
+
+        assert clade is tree.root
+        assert tips == all_tips
+        find_exact.assert_not_called()
+        copy_tree.assert_not_called()
+
+    def test_find_exact_clade_uses_count_path(self, monkeypatch, args):
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        expected = tree.root.clades[0]
+
+        def fail_is_terminal(*_args, **_kwargs):
+            raise AssertionError("count path should not call is_terminal")
+
+        monkeypatch.setattr(Clade, "is_terminal", fail_is_terminal)
+
+        clade = MonophylyCheck._find_exact_clade_by_taxa(tree, frozenset(["A", "B"]))
+
+        assert clade is expected
+
+    def test_find_exact_clade_uses_direct_traversal(self, monkeypatch, args):
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        expected = tree.root.clades[0]
+
+        def fail_find_clades(*_args, **_kwargs):
+            raise AssertionError("standard tree path should not use find_clades")
+
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_find_clades)
+
+        clade = MonophylyCheck._find_exact_clade_by_taxa(tree, frozenset(["A", "B"]))
+
+        assert clade is expected
+
+    def test_find_exact_clade_direct_handles_mixed_child_counts(self, monkeypatch, args):
+        tree = Phylo.read(StringIO("(((A:1):1,(B:1,C:1,D:1):1):1,E:1);"), "newick")
+        expected = tree.root.clades[0]
+
+        def fail_find_clades(*_args, **_kwargs):
+            raise AssertionError("standard tree path should not use find_clades")
+
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_find_clades)
+
+        clade = MonophylyCheck._find_exact_clade_by_taxa(
+            tree,
+            frozenset(["A", "B", "C", "D"]),
+        )
+
+        assert clade is expected
+
+    def test_find_exact_clade_direct_handles_deep_ladder(self, monkeypatch, args):
+        root = Clade()
+        current = root
+        taxa = []
+        for index in range(1200):
+            name = f"T{index}"
+            taxa.append(name)
+            next_internal = Clade()
+            current.clades = [Clade(name=name), next_internal]
+            current = next_internal
+        current.clades = [Clade(name="T1200")]
+        taxa.append("T1200")
+        tree = Tree(root=root)
+
+        def fail_find_clades(*_args, **_kwargs):
+            raise AssertionError("standard tree path should not use find_clades")
+
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_find_clades)
+
+        clade = MonophylyCheck._find_exact_clade_by_taxa(tree, frozenset(taxa))
+
+        assert clade is root
+
+    def test_find_exact_clade_duplicate_names_use_set_fallback(self, args):
+        tree = Phylo.read(StringIO("((A:1,A:1):1,B:1);"), "newick")
+
+        clade = MonophylyCheck._find_exact_clade_by_taxa(tree, frozenset(["A", "B"]))
+
+        assert clade is tree.root
+
     def test_print_results_text_paths(self, mocker, args):
         service = MonophylyCheck(args)
         service.json_output = False
+        mocked_write = mocker.patch("phykit.services.tree.monophyly_check.sys.stdout.write")
         mocked_print = mocker.patch("builtins.print")
 
         service.print_results(
@@ -112,7 +436,9 @@ class TestMonophylyCheck:
             ]
         )
 
-        calls = [c.args[0] for c in mocked_print.call_args_list]
-        assert any("not_monophyletic" in c and "a;z" in c for c in calls)
-        assert any(c.startswith("monophyletic\t92.0") for c in calls)
-        assert "insufficient_taxon_representation" in calls
+        mocked_print.assert_not_called()
+        mocked_write.assert_called_once_with(
+            "not_monophyletic\t95.0\t100.0\t85.0\t7.0\ta;z\n"
+            "monophyletic\t92.0\t100.0\t90.0\t3.0\n"
+            "insufficient_taxon_representation\n"
+        )

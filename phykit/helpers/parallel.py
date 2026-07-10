@@ -2,11 +2,101 @@
 Parallel processing utilities for batch operations
 """
 
-import multiprocessing as mp
-from typing import List, Any, Callable, Optional, Tuple
-import numpy as np
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
+from __future__ import annotations
+
 import sys
+
+
+class _LazyMultiprocessing:
+    def cpu_count(self):
+        import multiprocessing as _mp
+
+        return _mp.cpu_count()
+
+
+class _LazyNumpy:
+    def __init__(self):
+        self._module = None
+
+    def __getattr__(self, name):
+        module = self._module
+        if module is None:
+            import numpy as _np
+
+            module = _np
+            self._module = module
+
+        value = getattr(module, name)
+        setattr(self, name, value)
+        return value
+
+
+class _LazyExecutor:
+    def __init__(self, name: str) -> None:
+        self._name = name
+        self._executor_class = None
+
+    def __call__(self, *args, **kwargs):
+        executor_class = self._executor_class
+        if executor_class is None:
+            from concurrent import futures
+
+            executor_class = getattr(futures, self._name)
+            self._executor_class = executor_class
+        return executor_class(*args, **kwargs)
+
+
+class _PairSequence:
+    def __init__(self, items: list[object], symmetric: bool) -> None:
+        self.items = items
+        self.symmetric = symmetric
+        self.n = len(items)
+        self.length = self.n * (self.n - 1) // 2 if symmetric else self.n * self.n
+
+    def __bool__(self) -> bool:
+        return self.length != 0
+
+    def __len__(self) -> int:
+        return self.length
+
+    def __iter__(self):
+        items = self.items
+        n = self.n
+        if self.symmetric:
+            for i in range(n):
+                item_i = items[i]
+                for j in range(i + 1, n):
+                    yield (i, j, item_i, items[j])
+        else:
+            for i in range(n):
+                item_i = items[i]
+                for j in range(n):
+                    yield (i, j, item_i, items[j])
+
+
+def as_completed(*args, **kwargs):
+    from concurrent.futures import as_completed as _as_completed
+
+    return _as_completed(*args, **kwargs)
+
+
+mp = _LazyMultiprocessing()
+np = _LazyNumpy()
+ProcessPoolExecutor = _LazyExecutor("ProcessPoolExecutor")
+ThreadPoolExecutor = _LazyExecutor("ThreadPoolExecutor")
+_CPU_COUNT = None
+
+
+def _cpu_count() -> int:
+    global _CPU_COUNT
+    if _CPU_COUNT is None:
+        _CPU_COUNT = mp.cpu_count()
+    return _CPU_COUNT
+
+
+def _clear_cpu_count_cache() -> None:
+    global _CPU_COUNT
+    _CPU_COUNT = None
 
 
 class ParallelProcessor:
@@ -26,12 +116,15 @@ class ParallelProcessor:
         Returns:
             Optimal number of workers
         """
-        max_workers = mp.cpu_count()
+        if min_chunk_size > 0 and data_size <= min_chunk_size:
+            return 1
+
+        max_workers = _cpu_count()
         optimal_workers = min(max_workers, max(1, data_size // min_chunk_size))
         return min(optimal_workers, 8)  # Cap at 8 to avoid overhead
 
     @staticmethod
-    def chunk_data(data: List[Any], num_chunks: int) -> List[List[Any]]:
+    def chunk_data(data: list[object], num_chunks: int) -> list[list[object]]:
         """
         Split data into chunks for parallel processing.
 
@@ -54,12 +147,12 @@ class ParallelProcessor:
 
     @staticmethod
     def parallel_map(
-        func: Callable,
-        data: List[Any],
-        num_workers: Optional[int] = None,
+        func: object,
+        data: list[object],
+        num_workers: int | None = None,
         use_threads: bool = False,
         show_progress: bool = False
-    ) -> List[Any]:
+    ) -> list[object]:
         """
         Apply function to data in parallel.
 
@@ -108,12 +201,12 @@ class ParallelProcessor:
 
     @staticmethod
     def parallel_reduce(
-        func: Callable,
-        data: List[Any],
-        reduce_func: Callable,
-        initial_value: Any = None,
-        num_workers: Optional[int] = None
-    ) -> Any:
+        func: object,
+        data: list[object],
+        reduce_func: object,
+        initial_value: object = None,
+        num_workers: int | None = None
+    ) -> object:
         """
         Apply function to data in parallel and reduce results.
 
@@ -138,8 +231,9 @@ class ParallelProcessor:
         else:
             if not results:
                 return None
-            result = results[0]
-            for item in results[1:]:
+            result_iter = iter(results)
+            result = next(result_iter)
+            for item in result_iter:
                 result = reduce_func(result, item)
 
         return result
@@ -152,11 +246,11 @@ class BatchFileProcessor:
 
     @staticmethod
     def process_files(
-        file_paths: List[str],
-        processing_func: Callable,
-        num_workers: Optional[int] = None,
-        aggregate_func: Optional[Callable] = None
-    ) -> Any:
+        file_paths: list[str],
+        processing_func: object,
+        num_workers: int | None = None,
+        aggregate_func: object | None = None
+    ) -> object:
         """
         Process multiple files in parallel.
 
@@ -188,10 +282,10 @@ class BatchFileProcessor:
 
     @staticmethod
     def process_file_pairs(
-        file_pairs: List[Tuple[str, str]],
-        processing_func: Callable,
-        num_workers: Optional[int] = None
-    ) -> List[Any]:
+        file_pairs: list[tuple[str, str]],
+        processing_func: object,
+        num_workers: int | None = None
+    ) -> list[object]:
         """
         Process pairs of files in parallel.
 
@@ -220,10 +314,10 @@ class NumpyParallel:
 
     @staticmethod
     def parallel_apply_along_axis(
-        func: Callable,
+        func: object,
         axis: int,
         array: np.ndarray,
-        num_workers: Optional[int] = None
+        num_workers: int | None = None
     ) -> np.ndarray:
         """
         Apply function along axis in parallel.
@@ -241,7 +335,7 @@ class NumpyParallel:
             # Process columns
             results = ParallelProcessor.parallel_map(
                 lambda col: func(array[:, col]),
-                list(range(array.shape[1])),
+                range(array.shape[1]),
                 num_workers
             )
             return np.array(results).T
@@ -249,7 +343,7 @@ class NumpyParallel:
             # Process rows
             results = ParallelProcessor.parallel_map(
                 lambda row: func(array[row, :]),
-                list(range(array.shape[0])),
+                range(array.shape[0]),
                 num_workers
             )
             return np.array(results)
@@ -258,9 +352,9 @@ class NumpyParallel:
 
     @staticmethod
     def parallel_pairwise_operation(
-        items: List[Any],
-        operation_func: Callable,
-        num_workers: Optional[int] = None,
+        items: list[object],
+        operation_func: object,
+        num_workers: int | None = None,
         symmetric: bool = True
     ) -> np.ndarray:
         """
@@ -278,11 +372,25 @@ class NumpyParallel:
         n = len(items)
         result_matrix = np.zeros((n, n))
 
-        # Generate pairs
-        pairs = []
-        for i in range(n):
-            for j in range(i + 1 if symmetric else 0, n):
-                pairs.append((i, j, items[i], items[j]))
+        pair_count = n * (n - 1) // 2 if symmetric else n * n
+        if num_workers == 1 or pair_count < 20:
+            if symmetric:
+                for i in range(n):
+                    item_i = items[i]
+                    row_i = result_matrix[i]
+                    for j in range(i + 1, n):
+                        value = operation_func(item_i, items[j])
+                        row_i[j] = value
+                        result_matrix[j, i] = value
+            else:
+                for i in range(n):
+                    item_i = items[i]
+                    row_i = result_matrix[i]
+                    for j in range(n):
+                        row_i[j] = operation_func(item_i, items[j])
+            return result_matrix
+
+        pairs = _PairSequence(items, symmetric)
 
         # Process pairs in parallel
         def process_pair(pair_data):

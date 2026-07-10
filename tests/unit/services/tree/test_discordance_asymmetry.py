@@ -1,4 +1,5 @@
 import os
+import subprocess
 import sys
 import tempfile
 
@@ -7,9 +8,170 @@ from mock import patch
 from argparse import Namespace
 
 from phykit.errors import PhykitUserError
+import phykit.services.tree.discordance_asymmetry as discordance_asymmetry_module
 
 TREE_SIMPLE = "tests/sample_files/tree_simple.tre"
 GENE_TREES = "tests/sample_files/gene_trees_simple.nwk"
+
+
+def test_module_import_does_not_import_numpy_biophylo_or_matplotlib():
+    code = """
+import sys
+import phykit.services.tree.discordance_asymmetry as module
+
+assert hasattr(module.np, "__getattr__")
+assert callable(module.print_json)
+assert "typing" not in sys.modules
+assert "json" not in sys.modules
+assert "phykit.helpers.json_output" not in sys.modules
+assert "phykit.helpers.plot_config" not in sys.modules
+assert "phykit.helpers.circular_layout" not in sys.modules
+assert "phykit.helpers.color_annotations" not in sys.modules
+assert "numpy" not in sys.modules
+assert "Bio.Phylo" not in sys.modules
+assert "matplotlib" not in sys.modules
+assert "matplotlib.pyplot" not in sys.modules
+"""
+    subprocess.run([sys.executable, "-c", code], check=True)
+
+
+def test_lazy_numpy_caches_resolved_attributes():
+    lazy_np = discordance_asymmetry_module._LazyNumpy()
+
+    first_asarray = lazy_np.asarray
+    second_asarray = lazy_np.asarray
+
+    assert first_asarray is second_asarray
+    assert lazy_np.__dict__["asarray"] is first_asarray
+    assert lazy_np._module is not None
+
+
+def test_binomial_two_sided_p_value_matches_expected_values():
+    assert discordance_asymmetry_module._binomial_two_sided_p_value(5, 10) == pytest.approx(1.0)
+    assert discordance_asymmetry_module._binomial_two_sided_p_value(9, 10) == pytest.approx(0.021484375)
+    assert discordance_asymmetry_module._binomial_two_sided_p_value(1, 1) == pytest.approx(1.0)
+
+
+def test_binomial_two_sided_p_value_reuses_cached_exact_result(monkeypatch):
+    discordance_asymmetry_module._binomial_two_sided_p_value.cache_clear()
+    expected = discordance_asymmetry_module._binomial_two_sided_p_value(13, 20)
+
+    def fail_ldexp(*_args, **_kwargs):
+        raise AssertionError("repeated exact binomial p-values should use cache")
+
+    monkeypatch.setattr(discordance_asymmetry_module, "ldexp", fail_ldexp)
+
+    assert discordance_asymmetry_module._binomial_two_sided_p_value(13, 20) == expected
+
+
+def test_extended_exact_binomial_two_sided_p_value_matches_scipy():
+    from scipy.special import bdtr
+
+    for successes, total in [(63, 65), (100, 100), (990, 1_000), (959, 1_023)]:
+        expected = min(
+            1.0,
+            2.0 * float(bdtr(min(successes, total - successes), total, 0.5)),
+        )
+        discordance_asymmetry_module._binomial_two_sided_p_value.cache_clear()
+        assert discordance_asymmetry_module._binomial_two_sided_p_value(
+            successes, total
+        ) == pytest.approx(expected)
+
+
+def test_large_binomial_two_sided_p_value_keeps_scipy_fallback():
+    discordance_asymmetry_module._binomial_two_sided_p_value.cache_clear()
+    with patch("scipy.special.bdtr", return_value=0.125) as bdtr:
+        result = discordance_asymmetry_module._binomial_two_sided_p_value(65, 132)
+
+    assert result == 0.25
+    bdtr.assert_called_once_with(65, 132, 0.5)
+
+
+def test_extended_exact_asymmetry_test_does_not_import_scipy(monkeypatch):
+    original_import = __import__
+
+    def fake_import(name, globals=None, locals=None, fromlist=(), level=0):
+        if name == "scipy.stats" or name.startswith(("scipy.stats.", "scipy.special")):
+            raise AssertionError("exact discordance asymmetry p-values should not import SciPy")
+        return original_import(name, globals, locals, fromlist, level)
+
+    monkeypatch.setattr("builtins.__import__", fake_import)
+
+    args = Namespace(
+        tree=TREE_SIMPLE,
+        gene_trees=GENE_TREES,
+        verbose=False,
+        json=False,
+        plot_output=None,
+    )
+    discordance_asymmetry_module._binomial_two_sided_p_value.cache_clear()
+    result = discordance_asymmetry_module.DiscordanceAsymmetry(args)._test_asymmetry(
+        100, 0
+    )
+    assert result["p_value"] == pytest.approx(1.5777218104420236e-30)
+    assert result["favored_alt"] == "alt1"
+
+
+def test_preorder_clades_direct_binary_children_avoid_reversed_iterator():
+    from Bio.Phylo.BaseTree import Clade, Tree
+    from phykit.services.tree.discordance_asymmetry import DiscordanceAsymmetry
+
+    class NoReversedList(list):
+        def __reversed__(self):
+            raise AssertionError("binary preorder should not call reversed")
+
+    left = Clade(
+        name="left",
+        clades=NoReversedList([Clade(name="A"), Clade(name="B")]),
+    )
+    right = Clade(
+        name="right",
+        clades=NoReversedList([Clade(name="C"), Clade(name="D")]),
+    )
+    root = Clade(name="root", clades=NoReversedList([left, right]))
+    tree = Tree(root=root)
+
+    assert DiscordanceAsymmetry._preorder_clades_direct(tree) == [
+        root,
+        left,
+        left.clades[0],
+        left.clades[1],
+        right,
+        right.clades[0],
+        right.clades[1],
+    ]
+
+
+def test_count_split_matches_scans_gene_trees_once():
+    from phykit.services.tree.discordance_asymmetry import DiscordanceAsymmetry
+
+    concordant = frozenset({"a", "b"})
+    alt1 = frozenset({"a", "c"})
+    alt2 = frozenset({"a", "d"})
+
+    class CountingSplits:
+        def __init__(self, rows):
+            self.rows = rows
+            self.iterations = 0
+
+        def __iter__(self):
+            self.iterations += 1
+            return iter(self.rows)
+
+    gene_tree_splits = CountingSplits(
+        [
+            {concordant, alt1},
+            {alt1},
+            {alt2},
+            {concordant, alt2},
+            set(),
+        ]
+    )
+
+    assert DiscordanceAsymmetry._count_split_matches(
+        gene_tree_splits, concordant, alt1, alt2
+    ) == (2, 2, 2)
+    assert gene_tree_splits.iterations == 1
 
 
 class TestProcessArgs:
@@ -69,6 +231,36 @@ class TestProcessArgs:
         assert svc.plot_output == "/tmp/test.png"
 
 
+class TestCanonicalSplit:
+    def test_equal_size_returns_lexicographically_smaller_side(self):
+        from phykit.services.tree.discordance_asymmetry import DiscordanceAsymmetry
+
+        all_taxa = frozenset({"A", "B", "C", "D"})
+
+        assert (
+            DiscordanceAsymmetry._canonical_split(
+                frozenset({"C", "D"}),
+                all_taxa,
+            )
+            == frozenset({"A", "B"})
+        )
+        assert (
+            DiscordanceAsymmetry._canonical_split(
+                frozenset({"A", "B"}),
+                all_taxa,
+            )
+            == frozenset({"A", "B"})
+        )
+
+    def test_empty_split_still_canonicalizes_to_empty_set(self):
+        from phykit.services.tree.discordance_asymmetry import DiscordanceAsymmetry
+
+        assert (
+            DiscordanceAsymmetry._canonical_split(frozenset(), frozenset())
+            == frozenset()
+        )
+
+
 class TestParseGeneTrees:
     def test_parses_multi_newick(self):
         from phykit.services.tree.discordance_asymmetry import DiscordanceAsymmetry
@@ -83,6 +275,74 @@ class TestParseGeneTrees:
         for gt in trees:
             tips = [t.name for t in gt.get_terminals()]
             assert len(tips) == 8
+
+    def test_parse_gene_trees_skips_comments_blanks_and_whitespace(self, tmp_path):
+        from phykit.services.tree.discordance_asymmetry import DiscordanceAsymmetry
+
+        gene_trees = tmp_path / "gene_trees.nwk"
+        gene_trees.write_text(
+            "   # ignored\n\n  (A:1.0,B:2.0,C:3.0);  \n\t# also ignored\n"
+        )
+        args = Namespace(
+            tree=TREE_SIMPLE, gene_trees=str(gene_trees),
+            verbose=False, json=False, plot_output=None,
+        )
+        svc = DiscordanceAsymmetry(args)
+
+        trees = svc._parse_gene_trees(str(gene_trees))
+
+        assert len(trees) == 1
+
+    def test_parse_gene_tree_path_list_avoids_per_row_path_objects(
+        self, tmp_path, monkeypatch
+    ):
+        from pathlib import Path
+        import phykit.services.tree.discordance_asymmetry as module
+        from phykit.services.tree.discordance_asymmetry import DiscordanceAsymmetry
+
+        (tmp_path / "one.nwk").write_text("(A:1,B:1);\n")
+        (tmp_path / "two.nwk").write_text("(A:1,C:1);\n")
+        gene_trees = tmp_path / "gene_tree_paths.txt"
+        gene_trees.write_text("one.nwk\ntwo.nwk\n")
+        parent_joins = 0
+
+        class CountingParent:
+            def __init__(self, path):
+                self._path = path
+
+            def __str__(self):
+                return str(self._path)
+
+            def __truediv__(self, other):
+                nonlocal parent_joins
+                parent_joins += 1
+                return self._path / other
+
+        class CountingPath:
+            def __init__(self, path):
+                self._path = Path(path)
+
+            @property
+            def parent(self):
+                return CountingParent(self._path.parent)
+
+            def open(self, *args, **kwargs):
+                return self._path.open(*args, **kwargs)
+
+        monkeypatch.setattr(module, "Path", CountingPath)
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            gene_trees=str(gene_trees),
+            verbose=False,
+            json=False,
+            plot_output=None,
+        )
+        svc = DiscordanceAsymmetry(args)
+
+        trees = svc._parse_gene_trees(str(gene_trees))
+
+        assert len(trees) == 2
+        assert parent_joins == 0
 
     def test_missing_file_raises_error(self):
         from phykit.services.tree.discordance_asymmetry import DiscordanceAsymmetry
@@ -106,6 +366,18 @@ class TestCountTopologies:
             verbose=False, json=False, plot_output=None,
         )
         return DiscordanceAsymmetry(args)
+
+    def test_count_topologies_uses_fast_tip_name_helper_for_species_taxa(
+        self, svc, mocker
+    ):
+        species_tree = svc.read_tree_file()
+        gene_trees = svc._parse_gene_trees(GENE_TREES)
+        spy = mocker.spy(svc, "get_tip_names_from_tree")
+
+        result, _ = svc._count_topologies(species_tree, gene_trees)
+
+        assert result
+        assert spy.call_count == 1
 
     def test_counts_with_sample_data(self, svc):
         species_tree = svc.read_tree_file()
@@ -153,6 +425,128 @@ class TestCountTopologies:
                 f"got {gcf:.3f} (conc={data['n_concordant']}, "
                 f"alt1={data['n_alt1']}, alt2={data['n_alt2']})"
             )
+
+    def test_cached_clade_taxa_paths_do_not_call_get_terminals(self, svc, monkeypatch):
+        from Bio import Phylo
+        from Bio.Phylo.BaseTree import TreeMixin
+        from io import StringIO
+
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        all_taxa = frozenset({"A", "B", "C", "D"})
+        parent_map = svc._build_parent_map(tree)
+        clade_taxa = svc._collect_clade_taxa(tree)
+        node = tree.root.clades[0]
+
+        def fail_get_terminals(*args, **kwargs):
+            raise AssertionError("cached clade taxa should be used")
+
+        monkeypatch.setattr(TreeMixin, "get_terminals", fail_get_terminals)
+
+        groups = svc._get_four_groups(tree, node, parent_map, all_taxa, clade_taxa)
+        assert groups == (
+            frozenset({"A"}),
+            frozenset({"B"}),
+            frozenset({"C"}),
+            frozenset({"D"}),
+        )
+
+    def test_get_four_groups_merges_multifurcation_extras(self, svc, monkeypatch):
+        from Bio import Phylo
+        from Bio.Phylo.BaseTree import TreeMixin
+        from io import StringIO
+
+        tree = Phylo.read(
+            StringIO("((A:1,B:1,C:1,D:1):1,(E:1,F:1,G:1,H:1):1);"),
+            "newick",
+        )
+        all_taxa = frozenset({"A", "B", "C", "D", "E", "F", "G", "H"})
+        parent_map = svc._build_parent_map(tree)
+        clade_taxa = svc._collect_clade_taxa(tree)
+        node = tree.root.clades[0]
+
+        def fail_get_terminals(*args, **kwargs):
+            raise AssertionError("cached clade taxa should be used")
+
+        monkeypatch.setattr(TreeMixin, "get_terminals", fail_get_terminals)
+
+        groups = svc._get_four_groups(tree, node, parent_map, all_taxa, clade_taxa)
+        assert groups == (
+            frozenset({"A"}),
+            frozenset({"B", "C", "D"}),
+            frozenset({"E"}),
+            frozenset({"F", "G", "H"}),
+        )
+
+    def test_build_parent_map_handles_mixed_child_counts(self, svc, monkeypatch):
+        from Bio import Phylo
+        from Bio.Phylo.BaseTree import TreeMixin
+        from io import StringIO
+
+        tree = Phylo.read(
+            StringIO("(A:1,(B:1,C:1):1,(D:1,E:1,F:1):1);"),
+            "newick",
+        )
+
+        def fail_find_clades(*args, **kwargs):
+            raise AssertionError("parent map should use direct traversal")
+
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_find_clades)
+
+        parent_map = svc._build_parent_map(tree)
+
+        terminal, binary, trifurcating = tree.root.clades
+        assert id(tree.root) not in parent_map
+        assert parent_map[id(terminal)] is tree.root
+        assert parent_map[id(binary)] is tree.root
+        assert parent_map[id(trifurcating)] is tree.root
+        assert all(parent_map[id(child)] is binary for child in binary.clades)
+        assert all(
+            parent_map[id(child)] is trifurcating for child in trifurcating.clades
+        )
+
+    def test_collect_clade_taxa_handles_mixed_child_counts(self, svc, monkeypatch):
+        from Bio import Phylo
+        from Bio.Phylo.BaseTree import TreeMixin
+        from io import StringIO
+
+        tree = Phylo.read(
+            StringIO("(A:1,(B:1,C:1):1,(D:1,E:1,F:1):1);"),
+            "newick",
+        )
+
+        def fail_find_clades(*args, **kwargs):
+            raise AssertionError("standard clade taxa helper should build directly")
+
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_find_clades)
+
+        clade_taxa = svc._collect_clade_taxa(tree)
+        terminal, binary, trifurcating = tree.root.clades
+
+        assert clade_taxa[id(terminal)] == frozenset({"A"})
+        assert clade_taxa[id(binary)] == frozenset({"B", "C"})
+        assert clade_taxa[id(trifurcating)] == frozenset({"D", "E", "F"})
+        assert clade_taxa[id(tree.root)] == frozenset({"A", "B", "C", "D", "E", "F"})
+
+    def test_get_terminal_clades_preserves_order_with_mixed_child_counts(
+        self, svc, monkeypatch
+    ):
+        from Bio import Phylo
+        from Bio.Phylo.BaseTree import TreeMixin
+        from io import StringIO
+
+        tree = Phylo.read(
+            StringIO("(A:1,(B:1,C:1):1,(D:1,E:1,F:1):1);"),
+            "newick",
+        )
+
+        def fail_get_terminals(*args, **kwargs):
+            raise AssertionError("standard terminal helper should build directly")
+
+        monkeypatch.setattr(TreeMixin, "get_terminals", fail_get_terminals)
+
+        tips = svc._get_terminal_clades(tree)
+
+        assert [tip.name for tip in tips] == ["A", "B", "C", "D", "E", "F"]
 
 
 class TestTestAsymmetry:
@@ -230,6 +624,67 @@ class TestFDR:
         result = DiscordanceAsymmetry._fdr([1.0, 1.0, 1.0])
         assert all(p == 1.0 for p in result)
 
+    def test_known_correction_with_ties(self):
+        from phykit.services.tree.discordance_asymmetry import DiscordanceAsymmetry
+        pvals = [0.20, 0.01, 0.01, 0.50, 0.03, 0.80, 0.03]
+        indexed = sorted(enumerate(pvals), key=lambda x: x[1])
+        expected = [0.0] * len(pvals)
+        previous = 1.0
+        for rank_minus_1 in range(len(pvals) - 1, -1, -1):
+            original_idx, p_value = indexed[rank_minus_1]
+            rank = rank_minus_1 + 1
+            adjusted = min(p_value * len(pvals) / rank, previous)
+            adjusted = min(adjusted, 1.0)
+            expected[original_idx] = adjusted
+            previous = adjusted
+
+        assert DiscordanceAsymmetry._fdr(pvals) == pytest.approx(expected)
+
+    def test_medium_fdr_matches_scalar_reference(self):
+        from phykit.services.tree.discordance_asymmetry import DiscordanceAsymmetry
+
+        pvals = [((idx * 37) % 101) / 1000 for idx in range(32)]
+        indexed = sorted(enumerate(pvals), key=lambda x: x[1])
+        expected = [0.0] * len(pvals)
+        previous = 1.0
+        for rank_minus_1 in range(len(pvals) - 1, -1, -1):
+            original_idx, p_value = indexed[rank_minus_1]
+            rank = rank_minus_1 + 1
+            adjusted = min(p_value * len(pvals) / rank, previous)
+            adjusted = min(adjusted, 1.0)
+            expected[original_idx] = adjusted
+            previous = adjusted
+
+        assert DiscordanceAsymmetry._fdr(pvals) == pytest.approx(expected)
+
+    def test_vector_fdr_caps_adjusted_values(self):
+        from phykit.services.tree.discordance_asymmetry import DiscordanceAsymmetry
+
+        pvals = [1.0 if idx % 5 else 0.001 * (idx + 1) for idx in range(64)]
+        indexed = sorted(enumerate(pvals), key=lambda x: x[1])
+        expected = [0.0] * len(pvals)
+        previous = 1.0
+        for rank_minus_1 in range(len(pvals) - 1, -1, -1):
+            original_idx, p_value = indexed[rank_minus_1]
+            rank = rank_minus_1 + 1
+            adjusted = min(p_value * len(pvals) / rank, previous)
+            adjusted = min(adjusted, 1.0)
+            expected[original_idx] = adjusted
+            previous = adjusted
+
+        assert DiscordanceAsymmetry._fdr(pvals) == pytest.approx(expected)
+        assert max(expected) == 1.0
+
+    def test_small_fdr_does_not_import_numpy(self):
+        code = """
+import sys
+from phykit.services.tree.discordance_asymmetry import DiscordanceAsymmetry
+corrected = DiscordanceAsymmetry._fdr([0.20, 0.01, 0.01, 0.50, 0.03, 0.80, 0.03])
+assert [round(value, 10) for value in corrected] == [0.28, 0.035, 0.035, 0.5833333333, 0.0525, 0.8, 0.0525]
+assert "numpy" not in sys.modules
+"""
+        subprocess.run([sys.executable, "-c", code], check=True)
+
 
 class TestRun:
     def _make_svc(self, verbose=False, json_output=False, plot_output=None):
@@ -240,6 +695,87 @@ class TestRun:
             verbose=verbose, json=json_output, plot_output=plot_output,
         )
         return DiscordanceAsymmetry(args)
+
+    def test_run_reuses_unmodified_species_tree(self):
+        svc = self._make_svc()
+        species_tree = object()
+        gene_trees = [object()] * 5
+        topology_counts = {
+            "A,B": {
+                "split": ["A", "B"],
+                "n_concordant": 3,
+                "n_alt1": 1,
+                "n_alt2": 2,
+            }
+        }
+
+        with patch.object(
+            svc,
+            "read_tree_file",
+            side_effect=AssertionError("run should not copy the cached species tree"),
+        ), patch.object(
+            svc, "read_tree_file_unmodified", return_value=species_tree
+        ) as read_unmodified, patch.object(
+            svc, "_parse_gene_trees", return_value=gene_trees
+        ), patch.object(
+            svc, "_count_topologies",
+            return_value=(topology_counts, frozenset({"A", "B", "C", "D"})),
+        ) as count_topologies, patch.object(
+            svc, "_output_text"
+        ):
+            svc.run()
+
+        read_unmodified.assert_called_once_with()
+        count_topologies.assert_called_once_with(species_tree, gene_trees)
+
+    def test_ladderized_plot_uses_copied_species_tree(self):
+        from phykit.services.tree.discordance_asymmetry import DiscordanceAsymmetry
+
+        args = Namespace(
+            tree="tests/sample_files/tree_simple.tre",
+            gene_trees="tests/sample_files/gene_trees_simple.nwk",
+            verbose=False,
+            json=False,
+            plot_output="asym.png",
+            ladderize=True,
+        )
+        svc = DiscordanceAsymmetry(args)
+        analysis_tree = object()
+        plot_tree = type(
+            "PlotTree",
+            (),
+            {"ladderize": lambda self: setattr(self, "ladderized", True)},
+        )()
+        gene_trees = [object()] * 5
+        topology_counts = {
+            "A,B": {
+                "split": ["A", "B"],
+                "n_concordant": 3,
+                "n_alt1": 1,
+                "n_alt2": 2,
+            }
+        }
+
+        with patch.object(
+            svc, "read_tree_file_unmodified", return_value=analysis_tree
+        ), patch.object(
+            svc, "read_tree_file", return_value=plot_tree
+        ) as read_copy, patch.object(
+            svc, "_parse_gene_trees", return_value=gene_trees
+        ), patch.object(
+            svc, "_count_topologies",
+            return_value=(topology_counts, frozenset({"A", "B", "C", "D"})),
+        ), patch.object(
+            svc, "_output_text"
+        ), patch.object(
+            svc, "_plot"
+        ) as plot:
+            svc.run()
+
+        read_copy.assert_called_once_with()
+        assert getattr(plot_tree, "ladderized", False) is True
+        plot.assert_called_once()
+        assert plot.call_args.args[0] is plot_tree
 
     def test_text_output_has_header(self, capsys):
         svc = self._make_svc()
@@ -305,6 +841,61 @@ class TestRun:
         assert "gDF1=" in captured.out
         assert "gDF2=" in captured.out
 
+    def test_output_text_batches_branch_rows(self):
+        svc = self._make_svc(verbose=True)
+        branch_results = [
+            {
+                "split": ["bear", "raccoon"],
+                "n_concordant": 3,
+                "n_alt1": 2,
+                "n_alt2": 1,
+                "asymmetry_ratio": 2.0,
+                "p_value": 0.125,
+                "fdr_p": 0.04,
+                "favored_alt": "alt1",
+            }
+        ]
+        summary = {
+            "n_branches_tested": 1,
+            "n_significant_fdr05": 1,
+        }
+
+        with patch("builtins.print") as mocked_print:
+            svc._output_text(branch_results, summary)
+
+        mocked_print.assert_called_once()
+        output = mocked_print.call_args.args[0]
+        header = (
+            f"{'branch':<30}"
+            f"{'n_conc':>8}"
+            f"{'n_alt1':>8}"
+            f"{'n_alt2':>8}"
+            f"{'asym_ratio':>12}"
+            f"{'binom_p':>12}"
+            f"{'fdr_p':>12}"
+            f"{'gene_flow':>12}"
+        )
+        expected = "\n".join([
+            header,
+            "-" * len(header),
+            (
+                f"{'bear,raccoon':<30}"
+                f"{3:>8}"
+                f"{2:>8}"
+                f"{1:>8}"
+                f"{'2.000':>12}"
+                f"{'0.1250':>12}"
+                f"{'0.0400':>12}"
+                f"{'alt1':>12}"
+            ),
+            "---",
+            "Summary: 1 branches tested, 1 significant (FDR<0.05)",
+            "",
+            "Branch: bear,raccoon",
+            "  gCF=0.500  gDF1=2/6  gDF2=1/6",
+        ])
+        assert output == expected
+
 
 class TestPlot:
     def _make_svc(self, plot_output):
@@ -337,6 +928,319 @@ class TestPlot:
         # If we get here without error, the test passes
         assert os.path.exists(output)
 
+    def test_plot_reuses_direct_traversal_lists(self, tmp_path, monkeypatch):
+        from Bio import Phylo
+        from Bio.Phylo.BaseTree import TreeMixin
+        from io import StringIO
+        import numpy as numpy_module
+        from phykit.services.tree.discordance_asymmetry import DiscordanceAsymmetry
+
+        output = str(tmp_path / "test_asym_direct_traversal.png")
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            gene_trees=GENE_TREES,
+            verbose=False,
+            json=False,
+            plot_output=output,
+            legend_position="none",
+            ylabel_fontsize=0,
+            no_title=True,
+        )
+        svc = DiscordanceAsymmetry(args)
+        species_tree = Phylo.read(
+            StringIO("((A:1,B:1):1,(C:1,D:1):1);"),
+            "newick",
+        )
+        branch_results = [
+            dict(
+                split=["A", "B"],
+                n_concordant=3,
+                n_alt1=1,
+                n_alt2=0,
+                asymmetry_ratio=1.0,
+                p_value=1.0,
+                fdr_p=1.0,
+                favored_alt=None,
+            )
+        ]
+
+        def fail_find_clades(*args, **kwargs):
+            raise AssertionError("standard plotting should reuse direct traversals")
+
+        def fail_np_mean(*args, **kwargs):
+            raise AssertionError(
+                "plot coordinate setup should average child y values without NumPy"
+            )
+
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_find_clades)
+        monkeypatch.setattr(numpy_module, "mean", fail_np_mean)
+
+        svc._plot(
+            species_tree,
+            branch_results,
+            output,
+            shared_taxa=frozenset({"A", "B", "C", "D"}),
+        )
+
+        assert os.path.exists(output)
+        assert os.path.getsize(output) > 0
+
+    def test_rectangular_plot_batches_asymmetry_branches(self, tmp_path, monkeypatch):
+        from Bio import Phylo
+        from io import StringIO
+        from matplotlib.axes import Axes
+        from matplotlib.collections import LineCollection
+        from phykit.services.tree.discordance_asymmetry import DiscordanceAsymmetry
+
+        output = str(tmp_path / "test_asym_batched_rect.png")
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            gene_trees=GENE_TREES,
+            verbose=False,
+            json=False,
+            plot_output=output,
+            legend_position="none",
+            ylabel_fontsize=0,
+            no_title=True,
+        )
+        svc = DiscordanceAsymmetry(args)
+        species_tree = Phylo.read(
+            StringIO("((A:1,B:1):1,(C:1,D:1):1);"),
+            "newick",
+        )
+        branch_results = [
+            dict(
+                split=["A", "B"],
+                n_concordant=3,
+                n_alt1=1,
+                n_alt2=0,
+                asymmetry_ratio=1.0,
+                p_value=1.0,
+                fdr_p=1.0,
+                favored_alt=None,
+            ),
+            dict(
+                split=["C", "D"],
+                n_concordant=2,
+                n_alt1=2,
+                n_alt2=0,
+                asymmetry_ratio=None,
+                p_value=None,
+                fdr_p=None,
+                favored_alt=None,
+            ),
+        ]
+
+        original_add_collection = Axes.add_collection
+        line_collections = []
+
+        def fail_plot(*args, **kwargs):
+            raise AssertionError("branch rendering should use LineCollection")
+
+        def capture_collection(self, collection, *args, **kwargs):
+            if isinstance(collection, LineCollection):
+                line_collections.append(collection)
+            return original_add_collection(self, collection, *args, **kwargs)
+
+        monkeypatch.setattr(Axes, "plot", fail_plot)
+        monkeypatch.setattr(Axes, "add_collection", capture_collection)
+
+        svc._plot(
+            species_tree,
+            branch_results,
+            output,
+            shared_taxa=frozenset({"A", "B", "C", "D"}),
+        )
+
+        assert len(line_collections) >= 2
+        scalar_arrays = [
+            collection.get_array()
+            for collection in line_collections
+            if collection.get_array() is not None
+        ]
+        assert scalar_arrays
+        assert os.path.exists(output)
+        assert os.path.getsize(output) > 0
+
+    def test_rectangular_plot_uses_scalar_asymmetry_ratio_collection(
+        self, tmp_path, monkeypatch
+    ):
+        from Bio import Phylo
+        from io import StringIO
+        from matplotlib.axes import Axes
+        from matplotlib.collections import LineCollection
+        from phykit.services.tree.discordance_asymmetry import DiscordanceAsymmetry
+
+        output = str(tmp_path / "test_asym_repeated_colors.png")
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            gene_trees=GENE_TREES,
+            verbose=False,
+            json=False,
+            plot_output=output,
+            legend_position="none",
+            ylabel_fontsize=0,
+            no_title=True,
+        )
+        svc = DiscordanceAsymmetry(args)
+        species_tree = Phylo.read(
+            StringIO("((A:1,B:1):1,(C:1,D:1):1);"),
+            "newick",
+        )
+        branch_results = [
+            dict(
+                split=["A", "B"],
+                n_concordant=3,
+                n_alt1=1,
+                n_alt2=0,
+                asymmetry_ratio=0.75,
+                p_value=1.0,
+                fdr_p=1.0,
+                favored_alt=None,
+            ),
+            dict(
+                split=["C", "D"],
+                n_concordant=3,
+                n_alt1=1,
+                n_alt2=0,
+                asymmetry_ratio=0.75,
+                p_value=1.0,
+                fdr_p=1.0,
+                favored_alt=None,
+            ),
+        ]
+        original_add_collection = Axes.add_collection
+        line_collections = []
+
+        def capture_collection(self, collection, *args, **kwargs):
+            if isinstance(collection, LineCollection):
+                line_collections.append(collection)
+            return original_add_collection(self, collection, *args, **kwargs)
+
+        monkeypatch.setattr(Axes, "add_collection", capture_collection)
+
+        svc._plot(
+            species_tree,
+            branch_results,
+            output,
+            shared_taxa=frozenset({"A", "B", "C", "D"}),
+        )
+
+        scalar_arrays = [
+            collection.get_array()
+            for collection in line_collections
+            if collection.get_array() is not None
+        ]
+        assert len(scalar_arrays) == 1
+        assert list(scalar_arrays[0]) == [0.75, 0.75]
+        assert os.path.exists(output)
+        assert os.path.getsize(output) > 0
+
+    def test_rectangular_plot_skips_redundant_tight_layout(
+        self, tmp_path, monkeypatch
+    ):
+        from Bio import Phylo
+        from io import StringIO
+        from matplotlib.figure import Figure
+        from phykit.services.tree.discordance_asymmetry import DiscordanceAsymmetry
+
+        output = str(tmp_path / "test_asym_no_tight_layout.png")
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            gene_trees=GENE_TREES,
+            verbose=False,
+            json=False,
+            plot_output=output,
+            legend_position="none",
+            ylabel_fontsize=0,
+            no_title=True,
+        )
+        svc = DiscordanceAsymmetry(args)
+        species_tree = Phylo.read(
+            StringIO("((A:1,B:1):1,(C:1,D:1):1);"),
+            "newick",
+        )
+        branch_results = [
+            dict(
+                split=["A", "B"],
+                n_concordant=3,
+                n_alt1=1,
+                n_alt2=0,
+                asymmetry_ratio=1.0,
+                p_value=1.0,
+                fdr_p=1.0,
+                favored_alt=None,
+            )
+        ]
+
+        def fail_tight_layout(*args, **kwargs):
+            raise AssertionError("bbox_inches='tight' handles saved bounds")
+
+        monkeypatch.setattr(Figure, "tight_layout", fail_tight_layout)
+
+        svc._plot(
+            species_tree,
+            branch_results,
+            output,
+            shared_taxa=frozenset({"A", "B", "C", "D"}),
+        )
+
+        assert os.path.exists(output)
+        assert os.path.getsize(output) > 0
+
+    def test_circular_plot_skips_redundant_tight_layout(
+        self, tmp_path, monkeypatch
+    ):
+        from Bio import Phylo
+        from io import StringIO
+        from matplotlib.figure import Figure
+        from phykit.services.tree.discordance_asymmetry import DiscordanceAsymmetry
+
+        output = str(tmp_path / "test_asym_circular_no_tight_layout.png")
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            gene_trees=GENE_TREES,
+            verbose=False,
+            json=False,
+            plot_output=output,
+            circular=True,
+            legend_position="none",
+            ylabel_fontsize=0,
+            no_title=True,
+        )
+        svc = DiscordanceAsymmetry(args)
+        species_tree = Phylo.read(
+            StringIO("((A:1,B:1):1,(C:1,D:1):1);"),
+            "newick",
+        )
+        branch_results = [
+            dict(
+                split=["A", "B"],
+                n_concordant=3,
+                n_alt1=1,
+                n_alt2=0,
+                asymmetry_ratio=1.0,
+                p_value=1.0,
+                fdr_p=1.0,
+                favored_alt=None,
+            )
+        ]
+
+        def fail_tight_layout(*args, **kwargs):
+            raise AssertionError("bbox_inches='tight' handles saved bounds")
+
+        monkeypatch.setattr(Figure, "tight_layout", fail_tight_layout)
+
+        svc._plot(
+            species_tree,
+            branch_results,
+            output,
+            shared_taxa=frozenset({"A", "B", "C", "D"}),
+        )
+
+        assert os.path.exists(output)
+        assert os.path.getsize(output) > 0
+
 
 class TestPlotCircular:
     def _make_svc(self, plot_output):
@@ -353,6 +1257,157 @@ class TestPlotCircular:
         output = str(tmp_path / "test_asym_circular.png")
         svc = self._make_svc(output)
         svc.run()
+        assert os.path.exists(output)
+        assert os.path.getsize(output) > 0
+
+    def test_circular_plot_batches_asymmetry_branches(self, tmp_path, monkeypatch):
+        from Bio import Phylo
+        from io import StringIO
+        from matplotlib.axes import Axes
+        from matplotlib.collections import LineCollection
+        from phykit.services.tree.discordance_asymmetry import DiscordanceAsymmetry
+
+        output = str(tmp_path / "test_asym_batched_circular.png")
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            gene_trees=GENE_TREES,
+            verbose=False,
+            json=False,
+            plot_output=output,
+            circular=True,
+            legend_position="none",
+            ylabel_fontsize=0,
+            no_title=True,
+        )
+        svc = DiscordanceAsymmetry(args)
+        species_tree = Phylo.read(
+            StringIO("((A:1,B:1):1,(C:1,D:1):1);"),
+            "newick",
+        )
+        branch_results = [
+            dict(
+                split=["A", "B"],
+                n_concordant=3,
+                n_alt1=1,
+                n_alt2=0,
+                asymmetry_ratio=1.0,
+                p_value=1.0,
+                fdr_p=1.0,
+                favored_alt=None,
+            ),
+            dict(
+                split=["C", "D"],
+                n_concordant=2,
+                n_alt1=2,
+                n_alt2=0,
+                asymmetry_ratio=None,
+                p_value=None,
+                fdr_p=None,
+                favored_alt=None,
+            ),
+        ]
+
+        original_add_collection = Axes.add_collection
+        line_collections = []
+
+        def fail_plot(*args, **kwargs):
+            raise AssertionError("branch rendering should use LineCollection")
+
+        def capture_collection(self, collection, *args, **kwargs):
+            if isinstance(collection, LineCollection):
+                line_collections.append(collection)
+            return original_add_collection(self, collection, *args, **kwargs)
+
+        monkeypatch.setattr(Axes, "plot", fail_plot)
+        monkeypatch.setattr(Axes, "add_collection", capture_collection)
+
+        svc._plot(
+            species_tree,
+            branch_results,
+            output,
+            shared_taxa=frozenset({"A", "B", "C", "D"}),
+        )
+
+        assert len(line_collections) >= 2
+        scalar_arrays = [
+            collection.get_array()
+            for collection in line_collections
+            if collection.get_array() is not None
+        ]
+        assert scalar_arrays
+        assert os.path.exists(output)
+        assert os.path.getsize(output) > 0
+
+    @pytest.mark.parametrize("circular", [False, True])
+    def test_plot_batches_significant_star_markers(
+        self, tmp_path, monkeypatch, circular
+    ):
+        from Bio import Phylo
+        from io import StringIO
+        from matplotlib.axes import Axes
+        from phykit.services.tree.discordance_asymmetry import DiscordanceAsymmetry
+
+        output = str(tmp_path / f"test_asym_stars_{circular}.png")
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            gene_trees=GENE_TREES,
+            verbose=False,
+            json=False,
+            plot_output=output,
+            circular=circular,
+            legend_position="none",
+            ylabel_fontsize=0,
+            no_title=True,
+        )
+        svc = DiscordanceAsymmetry(args)
+        species_tree = Phylo.read(
+            StringIO("((A:1,B:1):1,(C:1,D:1):1);"),
+            "newick",
+        )
+        branch_results = [
+            dict(
+                split=["A", "B"],
+                n_concordant=1,
+                n_alt1=4,
+                n_alt2=0,
+                asymmetry_ratio=1.0,
+                p_value=0.01,
+                fdr_p=0.01,
+                favored_alt="alt1",
+            ),
+            dict(
+                split=["C", "D"],
+                n_concordant=1,
+                n_alt1=0,
+                n_alt2=4,
+                asymmetry_ratio=1.0,
+                p_value=0.01,
+                fdr_p=0.01,
+                favored_alt="alt2",
+            ),
+        ]
+
+        original_scatter = Axes.scatter
+        star_counts = []
+
+        def capture_scatter(self, x, y, *args, **kwargs):
+            if kwargs.get("marker") == "*" and kwargs.get("zorder") == 5:
+                try:
+                    star_counts.append(len(x))
+                except TypeError:
+                    star_counts.append(1)
+            return original_scatter(self, x, y, *args, **kwargs)
+
+        monkeypatch.setattr(Axes, "scatter", capture_scatter)
+
+        svc._plot(
+            species_tree,
+            branch_results,
+            output,
+            shared_taxa=frozenset({"A", "B", "C", "D"}),
+        )
+
+        assert star_counts == [len(branch_results)]
         assert os.path.exists(output)
         assert os.path.getsize(output) > 0
 
@@ -630,6 +1685,55 @@ class TestPlotWithExtraTaxa:
         output = str(tmp_path / "test_plot.png")
         svc._plot(species_tree, branch_results, output,
                   shared_taxa=shared_taxa)
+        assert os.path.exists(output)
+        assert os.path.getsize(output) > 0
+
+    def test_plot_uses_cached_clade_taxa(self, tmp_path, monkeypatch):
+        from phykit.services.tree.discordance_asymmetry import DiscordanceAsymmetry
+        from Bio import Phylo
+        from Bio.Phylo.BaseTree import TreeMixin
+        from io import StringIO
+
+        sp_file = tmp_path / "species.tre"
+        sp_file.write_text("((A:1,B:1):1,(C:1,D:1):1);")
+        gt_file = tmp_path / "gene_trees.nwk"
+        gt_file.write_text("((A:1,B:1):1,(C:1,D:1):1);")
+        args = Namespace(
+            tree=str(sp_file), gene_trees=str(gt_file),
+            verbose=False, annotate=False, json=False, plot_output=None,
+        )
+        svc = DiscordanceAsymmetry(args)
+        species_tree = Phylo.read(
+            StringIO("((A:1,B:1):1,(C:1,D:1):1);"),
+            "newick",
+        )
+        branch_results = [
+            dict(
+                split=["A", "B"],
+                n_concordant=3,
+                n_alt1=1,
+                n_alt2=0,
+                gcf=0.75,
+                asymmetry_ratio=1.0,
+                p_value=1.0,
+                fdr_p=1.0,
+                favored_alt=None,
+            )
+        ]
+
+        def fail_get_terminals(*args, **kwargs):
+            raise AssertionError("plot setup should use cached clade taxa")
+
+        monkeypatch.setattr(TreeMixin, "get_terminals", fail_get_terminals)
+
+        output = str(tmp_path / "test_plot_cached.png")
+        svc._plot(
+            species_tree,
+            branch_results,
+            output,
+            shared_taxa=frozenset({"A", "B", "C", "D"}),
+        )
+
         assert os.path.exists(output)
         assert os.path.getsize(output) > 0
 

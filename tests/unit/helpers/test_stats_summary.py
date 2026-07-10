@@ -6,7 +6,12 @@ import unittest
 from unittest.mock import patch
 import statistics as stat
 from io import StringIO
+import subprocess
+import sys
 
+import numpy as np
+
+import phykit.helpers.stats_summary as stats_summary_module
 from phykit.helpers.stats_summary import (
     calculate_summary_statistics_from_arr,
     calculate_summary_statistics_from_dict,
@@ -16,6 +21,25 @@ from phykit.helpers.stats_summary import (
 
 class TestCalculateSummaryStatisticsFromArr(unittest.TestCase):
     """Test calculate_summary_statistics_from_arr function"""
+
+    def test_module_import_does_not_import_numpy(self):
+        code = (
+            "import sys; "
+            "import phykit.helpers.stats_summary; "
+            "assert 'numpy' not in sys.modules; "
+            "assert 'statistics' not in sys.modules"
+        )
+
+        subprocess.run([sys.executable, "-c", code], check=True)
+
+    def test_lazy_numpy_caches_resolved_attributes(self):
+        lazy_np = stats_summary_module._LazyNumpy()
+
+        asarray_attr = lazy_np.asarray
+
+        self.assertIs(lazy_np.__dict__["asarray"], asarray_attr)
+        self.assertIs(lazy_np.asarray, asarray_attr)
+        self.assertIsNotNone(lazy_np._module)
 
     def test_basic_statistics(self):
         """Test calculation of basic statistics from array"""
@@ -45,6 +69,72 @@ class TestCalculateSummaryStatisticsFromArr(unittest.TestCase):
         # stats should be None since it wasn't set
         self.assertIsNone(stats)
 
+    def test_no_values_message_is_batched_and_preserves_exact_text(self):
+        """Test no-values diagnostics keep the legacy text in one print call."""
+        data = [5]
+
+        with patch('builtins.print') as mocked_print:
+            stats = calculate_summary_statistics_from_arr(data)
+
+        self.assertIsNone(stats)
+        mocked_print.assert_called_once_with(
+            "There are no values to calculate summary statistics for.\n\n"
+            "Double check that the input alignment/phylogeny contains\n"
+            "the properties you want to calculate summary statistics for."
+        )
+
+    def test_sized_no_value_array_input_does_not_import_numpy(self):
+        code = (
+            "import sys; "
+            "import phykit.helpers.stats_summary as stats_summary; "
+            "stats_summary.calculate_summary_statistics_from_arr([5]); "
+            "assert 'numpy' not in sys.modules"
+        )
+
+        subprocess.run([sys.executable, "-c", code], check=True)
+
+    def test_small_list_statistics_do_not_import_numpy(self):
+        code = (
+            "import sys; "
+            "import phykit.helpers.stats_summary as stats_summary; "
+            "stats = stats_summary.calculate_summary_statistics_from_arr([1, 2, 3, 4, 5]); "
+            "assert stats['mean'] == 3; "
+            "assert stats['median'] == 3; "
+            "assert stats['twenty_fifth'] == 2.0; "
+            "assert stats['seventy_fifth'] == 4.0; "
+            "assert 'numpy' not in sys.modules"
+        )
+
+        subprocess.run([sys.executable, "-c", code], check=True)
+
+    def test_small_list_boundary_uses_python_statistics_path(self):
+        data = list(range(128))
+        with patch(
+            'phykit.helpers.stats_summary.np.asarray',
+            side_effect=AssertionError("small lists should avoid NumPy conversion"),
+        ):
+            stats = calculate_summary_statistics_from_arr(data)
+
+        self.assertAlmostEqual(stats['mean'], 63.5)
+        self.assertEqual(stats['median'], 63.5)
+        self.assertAlmostEqual(stats['variance'], stat.variance(data))
+
+    def test_two_value_small_list_uses_scalar_summary(self):
+        with patch(
+            'phykit.helpers.stats_summary.np.asarray',
+            side_effect=AssertionError("two-value summaries should avoid NumPy"),
+        ):
+            stats = calculate_summary_statistics_from_arr([3, 1])
+
+        self.assertEqual(stats['mean'], 2)
+        self.assertEqual(stats['median'], 2)
+        self.assertEqual(stats['twenty_fifth'], 1.5)
+        self.assertEqual(stats['seventy_fifth'], 2.5)
+        self.assertEqual(stats['minimum'], 1)
+        self.assertEqual(stats['maximum'], 3)
+        self.assertAlmostEqual(stats['standard_deviation'], stat.stdev([1, 3]))
+        self.assertEqual(stats['variance'], stat.variance([1, 3]))
+
     def test_identical_values(self):
         """Test statistics with identical values"""
         data = [3, 3, 3, 3, 3]
@@ -58,6 +148,178 @@ class TestCalculateSummaryStatisticsFromArr(unittest.TestCase):
         self.assertEqual(stats['maximum'], 3)
         self.assertEqual(stats['standard_deviation'], 0)
         self.assertEqual(stats['variance'], 0)
+
+    def test_identical_small_list_skips_sort_and_numpy(self):
+        data = [7] * 128
+        with patch(
+            'builtins.sorted',
+            side_effect=AssertionError("constant small lists should not sort"),
+        ), patch(
+            'phykit.helpers.stats_summary.np.asarray',
+            side_effect=AssertionError("constant small lists should avoid NumPy"),
+        ):
+            stats = calculate_summary_statistics_from_arr(data)
+
+        self.assertEqual(stats['mean'], 7)
+        self.assertEqual(stats['median'], 7)
+        self.assertEqual(stats['twenty_fifth'], 7.0)
+        self.assertEqual(stats['seventy_fifth'], 7.0)
+        self.assertEqual(stats['standard_deviation'], 0.0)
+        self.assertEqual(stats['variance'], 0.0)
+
+    def test_medium_identical_integer_list_skips_sort_and_numpy(self):
+        data = [7] * 63
+        with patch(
+            'builtins.sorted',
+            side_effect=AssertionError("constant medium lists should not sort"),
+        ), patch(
+            'phykit.helpers.stats_summary.np.asarray',
+            side_effect=AssertionError("constant medium lists should avoid NumPy"),
+        ):
+            stats = calculate_summary_statistics_from_arr(data)
+
+        self.assertEqual(stats['mean'], 7)
+        self.assertEqual(stats['median'], 7)
+        self.assertEqual(stats['twenty_fifth'], 7.0)
+        self.assertEqual(stats['seventy_fifth'], 7.0)
+        self.assertEqual(stats['standard_deviation'], 0.0)
+        self.assertEqual(stats['variance'], 0.0)
+
+    def test_medium_identical_float_list_skips_sort_and_numpy(self):
+        data = [7.5] * 63
+        with patch(
+            'builtins.sorted',
+            side_effect=AssertionError("constant medium float lists should not sort"),
+        ), patch(
+            'phykit.helpers.stats_summary.np.asarray',
+            side_effect=AssertionError(
+                "constant medium float lists should avoid NumPy"
+            ),
+        ):
+            stats = calculate_summary_statistics_from_arr(data)
+
+        self.assertEqual(stats['mean'], 7.5)
+        self.assertEqual(stats['median'], 7.5)
+        self.assertEqual(stats['twenty_fifth'], 7.5)
+        self.assertEqual(stats['seventy_fifth'], 7.5)
+        self.assertEqual(stats['standard_deviation'], 0.0)
+        self.assertEqual(stats['variance'], 0.0)
+
+    def test_large_identical_list_skips_numpy_conversion(self):
+        data = [7] * 129
+        with patch(
+            'phykit.helpers.stats_summary.np.asarray',
+            side_effect=AssertionError("constant large lists should avoid NumPy"),
+        ):
+            stats = calculate_summary_statistics_from_arr(data)
+
+        self.assertEqual(stats['mean'], 7)
+        self.assertEqual(stats['median'], 7)
+        self.assertEqual(stats['twenty_fifth'], 7.0)
+        self.assertEqual(stats['seventy_fifth'], 7.0)
+        self.assertEqual(stats['standard_deviation'], 0.0)
+        self.assertEqual(stats['variance'], 0.0)
+
+    def test_large_almost_identical_list_keeps_numpy_path(self):
+        data = [7] * 128 + [8]
+        with patch(
+            'phykit.helpers.stats_summary.np.asarray',
+            wraps=stats_summary_module.np.asarray,
+        ) as mock_asarray:
+            stats = calculate_summary_statistics_from_arr(data)
+
+        mock_asarray.assert_called_once()
+        self.assertEqual(stats['maximum'], 8)
+
+    def test_identical_values_skip_percentile_and_variance_reductions(self):
+        """Test constant arrays avoid unnecessary summary reductions."""
+        data = np.array([3.5, 3.5, 3.5, 3.5])
+        with patch(
+            'phykit.helpers.stats_summary.np.percentile',
+            side_effect=AssertionError("constant values should skip percentile"),
+        ), patch(
+            'phykit.helpers.stats_summary.np.var',
+            side_effect=AssertionError("constant values should skip variance"),
+        ):
+            stats = calculate_summary_statistics_from_arr(data)
+
+        self.assertEqual(stats['mean'], 3.5)
+        self.assertEqual(stats['median'], 3.5)
+        self.assertEqual(stats['twenty_fifth'], 3.5)
+        self.assertEqual(stats['seventy_fifth'], 3.5)
+        self.assertEqual(stats['minimum'], 3.5)
+        self.assertEqual(stats['maximum'], 3.5)
+        self.assertEqual(stats['standard_deviation'], 0.0)
+        self.assertEqual(stats['variance'], 0.0)
+
+    def test_identical_array_shortcut_avoids_full_equality_mask(self):
+        class NoArrayEquality(np.ndarray):
+            def __eq__(self, other):
+                raise AssertionError(
+                    "constant-array shortcut should not build equality masks"
+                )
+
+        data = np.ones(256, dtype=float).view(NoArrayEquality)
+
+        stats = calculate_summary_statistics_from_arr(data)
+
+        self.assertEqual(stats['mean'], 1.0)
+        self.assertEqual(stats['standard_deviation'], 0.0)
+        self.assertEqual(stats['variance'], 0.0)
+
+    def test_nonconstant_mean_uses_array_reduction(self):
+        data = np.array([1.0, 2.0, 4.0, 8.0])
+        with patch(
+            'phykit.helpers.stats_summary.np.mean',
+            side_effect=AssertionError("mean should use ndarray.mean"),
+        ):
+            stats = calculate_summary_statistics_from_arr(data)
+
+        self.assertEqual(stats['mean'], 3.75)
+
+    def test_nonconstant_extrema_and_variance_use_array_reductions(self):
+        data = np.array([1.0, 2.0, 4.0, 8.0])
+        with patch(
+            'phykit.helpers.stats_summary.np.min',
+            side_effect=AssertionError("minimum should use ndarray.min"),
+        ), patch(
+            'phykit.helpers.stats_summary.np.max',
+            side_effect=AssertionError("maximum should use ndarray.max"),
+        ), patch(
+            'phykit.helpers.stats_summary.np.var',
+            side_effect=AssertionError("variance should use ndarray.var"),
+        ):
+            stats = calculate_summary_statistics_from_arr(data)
+
+        self.assertEqual(stats['minimum'], 1.0)
+        self.assertEqual(stats['maximum'], 8.0)
+        self.assertAlmostEqual(stats['variance'], stat.variance(data))
+
+    def test_exact_integer_mean_and_median_preserve_integer_type(self):
+        """Test exact integer mean/median keep legacy CLI formatting."""
+        data = [85, 85, 100, 100, 100, 100, 100]
+        stats = calculate_summary_statistics_from_arr(data)
+
+        self.assertEqual(stats['mean'], 95.71428571428571)
+        self.assertEqual(stats['median'], 100)
+        self.assertIs(type(stats['median']), int)
+        self.assertEqual(stats['seventy_fifth'], 100.0)
+
+        exact_stats = calculate_summary_statistics_from_arr([100, 100, 100])
+        self.assertEqual(exact_stats['mean'], 100)
+        self.assertIs(type(exact_stats['mean']), int)
+        self.assertEqual(exact_stats['median'], 100)
+        self.assertIs(type(exact_stats['median']), int)
+
+    def test_small_mixed_numeric_list_preserves_float_summary_path(self):
+        """Test non-integer endpoint values keep the mixed numeric behavior."""
+        stats = calculate_summary_statistics_from_arr([1, 2, 4.0])
+
+        self.assertEqual(stats['mean'], 7 / 3)
+        self.assertEqual(stats['median'], 2)
+        self.assertIs(type(stats['mean']), float)
+        self.assertEqual(stats['twenty_fifth'], 1.5)
+        self.assertEqual(stats['seventy_fifth'], 3.0)
 
     def test_negative_values(self):
         """Test statistics with negative values"""
@@ -89,6 +351,43 @@ class TestCalculateSummaryStatisticsFromArr(unittest.TestCase):
         self.assertAlmostEqual(stats['twenty_fifth'], 25.75)
         self.assertAlmostEqual(stats['seventy_fifth'], 75.25)
         self.assertEqual(stats['median'], 50.5)
+
+    def test_numpy_array_input(self):
+        """Test summary statistics from an existing NumPy array."""
+        data = np.array([1.0, 2.0, 3.0, 4.0])
+        stats = calculate_summary_statistics_from_arr(data)
+
+        self.assertAlmostEqual(stats['mean'], 2.5)
+        self.assertAlmostEqual(stats['median'], 2.5)
+        self.assertAlmostEqual(stats['standard_deviation'], stat.stdev(data))
+        self.assertAlmostEqual(stats['variance'], stat.variance(data))
+
+    def test_percentiles_and_median_calculated_together(self):
+        """Test percentile setup asks NumPy for quartiles and median in one pass."""
+        data = np.array([1.0, 2.0, 3.0, 4.0])
+        with patch(
+            'phykit.helpers.stats_summary.np.percentile',
+            return_value=np.array([1.75, 2.5, 3.25]),
+        ) as mock_percentile:
+            stats = calculate_summary_statistics_from_arr(data)
+
+        mock_percentile.assert_called_once()
+        np.testing.assert_array_equal(mock_percentile.call_args.args[1], [25, 50, 75])
+        self.assertEqual(stats['twenty_fifth'], 1.75)
+        self.assertEqual(stats['median'], 2.5)
+        self.assertEqual(stats['seventy_fifth'], 3.25)
+
+    def test_standard_deviation_reuses_variance_reduction(self):
+        """Test standard deviation is derived without a second NumPy reduction."""
+        data = np.array([1.0, 2.0, 3.0, 4.0])
+        with patch(
+            'phykit.helpers.stats_summary.np.std',
+            side_effect=AssertionError("standard deviation should reuse variance"),
+        ):
+            stats = calculate_summary_statistics_from_arr(data)
+
+        self.assertAlmostEqual(stats['variance'], stat.variance(data))
+        self.assertAlmostEqual(stats['standard_deviation'], stat.stdev(data))
 
 
 class TestCalculateSummaryStatisticsFromDict(unittest.TestCase):
@@ -133,6 +432,31 @@ class TestCalculateSummaryStatisticsFromDict(unittest.TestCase):
         self.assertIn("There are no values to calculate summary statistics", output)
         self.assertIsNone(stats)
 
+    def test_sized_no_value_dict_input_does_not_import_numpy(self):
+        code = (
+            "import sys; "
+            "import phykit.helpers.stats_summary as stats_summary; "
+            "stats_summary.calculate_summary_statistics_from_dict({}); "
+            "assert 'numpy' not in sys.modules"
+        )
+
+        subprocess.run([sys.executable, "-c", code], check=True)
+
+    def test_small_numeric_dict_statistics_do_not_import_numpy(self):
+        code = (
+            "import sys; "
+            "import phykit.helpers.stats_summary as stats_summary; "
+            "stats = stats_summary.calculate_summary_statistics_from_dict("
+            "{'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5}); "
+            "assert stats['mean'] == 3; "
+            "assert stats['median'] == 3; "
+            "assert stats['twenty_fifth'] == 2.0; "
+            "assert stats['seventy_fifth'] == 4.0; "
+            "assert 'numpy' not in sys.modules"
+        )
+
+        subprocess.run([sys.executable, "-c", code], check=True)
+
     def test_mixed_values(self):
         """Test dictionary with mixed positive and negative values"""
         data = {'pos1': 10, 'neg1': -5, 'zero': 0, 'pos2': 15, 'neg2': -10}
@@ -152,6 +476,34 @@ class TestCalculateSummaryStatisticsFromDict(unittest.TestCase):
         self.assertEqual(stats['median'], 3.3)
         self.assertAlmostEqual(stats['minimum'], 1.1)
         self.assertAlmostEqual(stats['maximum'], 5.5)
+
+    def test_numeric_dict_uses_fromiter(self):
+        """Test larger numeric dictionary summaries use one-pass NumPy conversion."""
+        data = {str(index): float(index) for index in range(129)}
+        with patch('phykit.helpers.stats_summary.np.fromiter') as mock_fromiter:
+            mock_fromiter.return_value = np.array(
+                [float(index) for index in range(129)]
+            )
+            stats = calculate_summary_statistics_from_dict(data)
+
+        mock_fromiter.assert_called_once()
+        self.assertEqual(stats['mean'], 64.0)
+        self.assertEqual(stats['minimum'], 0.0)
+        self.assertEqual(stats['maximum'], 128.0)
+
+    def test_dict_fromiter_fallback_preserves_generic_values(self):
+        """Test fallback path when one-pass numeric conversion is unavailable."""
+        data = {str(index): float(index) for index in range(129)}
+        with patch(
+            'phykit.helpers.stats_summary.np.fromiter',
+            side_effect=TypeError,
+        ) as mock_fromiter:
+            stats = calculate_summary_statistics_from_dict(data)
+
+        mock_fromiter.assert_called_once()
+        self.assertEqual(stats['mean'], 64.0)
+        self.assertEqual(stats['minimum'], 0.0)
+        self.assertEqual(stats['maximum'], 128.0)
 
 
 class TestPrintSummaryStatistics(unittest.TestCase):
@@ -206,6 +558,33 @@ class TestPrintSummaryStatistics(unittest.TestCase):
         self.assertIn("median: 5", output)
         self.assertIn("minimum: 1", output)
         self.assertIn("maximum: 10", output)
+
+    def test_print_batches_summary_output(self):
+        """Test summary statistics are emitted with one print call."""
+        stats = {
+            'mean': 5.5555,
+            'median': 5.4444,
+            'twenty_fifth': 3.3333,
+            'seventy_fifth': 7.7777,
+            'minimum': 1.1111,
+            'maximum': 10.9999,
+            'standard_deviation': 2.2222,
+            'variance': 4.9382
+        }
+
+        with patch('builtins.print') as mocked_print:
+            print_summary_statistics(stats)
+
+        mocked_print.assert_called_once_with(
+            "mean: 5.5555\n"
+            "median: 5.4444\n"
+            "25th percentile: 3.3333\n"
+            "75th percentile: 7.7777\n"
+            "minimum: 1.1111\n"
+            "maximum: 10.9999\n"
+            "standard deviation: 2.2222\n"
+            "variance: 4.9382"
+        )
 
     def test_print_with_broken_pipe(self):
         """Test handling of BrokenPipeError"""

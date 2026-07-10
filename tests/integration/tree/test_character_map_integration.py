@@ -148,14 +148,11 @@ class TestCharacterMap:
         with patch.object(sys, "argv", testargs):
             Phykit()
 
-        # Verbose mode prints per-character text via multiple print calls
-        assert mocked_print.call_count > 1
-        # Check that at least one call contains per-character info
-        all_output = " ".join(
-            str(call.args[0]) if call.args else ""
-            for call in mocked_print.call_args_list
-        )
-        assert "Character" in all_output or "CI" in all_output
+        assert mocked_print.call_count == 1
+        all_output = mocked_print.call_args.args[0]
+        assert "Optimization: acctran" in all_output
+        assert "Character" in all_output
+        assert "CI:" in all_output
 
     @patch("builtins.print")
     def test_pdf_output(self, mocked_print, tmp_path):

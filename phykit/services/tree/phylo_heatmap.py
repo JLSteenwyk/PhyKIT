@@ -5,27 +5,117 @@ Draws a phylogram on the left and a color-coded heatmap of numeric values
 on the right, with rows aligned to tree tips. Analogous to R's
 phytools::phylo.heatmap().
 """
-import sys
-from typing import Dict, List, Tuple
+from __future__ import annotations
 
-import numpy as np
+import sys
 
 from .base import Tree
-from ...helpers.json_output import print_json
-from ...helpers.plot_config import (
-    PlotConfig, compute_node_x_cladogram,
-    build_parent_map, compute_node_positions,
-    draw_tree_branches, draw_tip_labels, cleanup_tree_axes,
-)
-from ...helpers.color_annotations import (
-    parse_color_file,
-    resolve_mrca,
-    draw_range_rect,
-    draw_range_wedge,
-    get_clade_branch_ids,
-    build_color_legend_handles,
-)
 from ...errors import PhykitUserError
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
+
+
+def build_parent_map(*args, **kwargs):
+    from ...helpers.plot_config import build_parent_map as _build_parent_map
+
+    return _build_parent_map(*args, **kwargs)
+
+
+def compute_node_positions(*args, **kwargs):
+    from ...helpers.plot_config import compute_node_positions as _compute_node_positions
+
+    return _compute_node_positions(*args, **kwargs)
+
+
+def draw_tree_branches(*args, **kwargs):
+    from ...helpers.plot_config import draw_tree_branches as _draw_tree_branches
+
+    return _draw_tree_branches(*args, **kwargs)
+
+
+def parse_color_file(*args, **kwargs):
+    from ...helpers.color_annotations import parse_color_file as _parse_color_file
+
+    return _parse_color_file(*args, **kwargs)
+
+
+def resolve_mrca(*args, **kwargs):
+    from ...helpers.color_annotations import resolve_mrca as _resolve_mrca
+
+    return _resolve_mrca(*args, **kwargs)
+
+
+def draw_range_rect(*args, **kwargs):
+    from ...helpers.color_annotations import draw_range_rect as _draw_range_rect
+
+    return _draw_range_rect(*args, **kwargs)
+
+
+def draw_range_wedge(*args, **kwargs):
+    from ...helpers.color_annotations import draw_range_wedge as _draw_range_wedge
+
+    return _draw_range_wedge(*args, **kwargs)
+
+
+def get_clade_branch_ids(*args, **kwargs):
+    from ...helpers.color_annotations import get_clade_branch_ids as _get_clade_branch_ids
+
+    return _get_clade_branch_ids(*args, **kwargs)
+
+
+def build_color_legend_handles(*args, **kwargs):
+    from ...helpers.color_annotations import (
+        build_color_legend_handles as _build_color_legend_handles,
+    )
+
+    return _build_color_legend_handles(*args, **kwargs)
+
+
+def apply_label_colors(*args, **kwargs):
+    from ...helpers.color_annotations import apply_label_colors as _apply_label_colors
+
+    return _apply_label_colors(*args, **kwargs)
+
+
+def compute_circular_coords(*args, **kwargs):
+    from ...helpers.circular_layout import compute_circular_coords as _compute_circular_coords
+
+    return _compute_circular_coords(*args, **kwargs)
+
+
+def draw_circular_branches(*args, **kwargs):
+    from ...helpers.circular_layout import draw_circular_branches as _draw_circular_branches
+
+    return _draw_circular_branches(*args, **kwargs)
+
+
+def draw_circular_tip_labels(*args, **kwargs):
+    from ...helpers.circular_layout import draw_circular_tip_labels as _draw_circular_tip_labels
+
+    return _draw_circular_tip_labels(*args, **kwargs)
+
+
+class _LazyNumpy:
+    _module = None
+
+    def __getattr__(self, name):
+        module = self._module
+        if module is None:
+            import numpy as _np
+
+            module = _np
+            self._module = module
+
+        value = getattr(module, name)
+        setattr(self, name, value)
+        return value
+
+
+np = _LazyNumpy()
 
 
 class PhyloHeatmap(Tree):
@@ -42,25 +132,38 @@ class PhyloHeatmap(Tree):
         self.plot_config = parsed["plot_config"]
 
     def run(self) -> None:
-        tree = self.read_tree_file()
+        tree = self.read_tree_file_unmodified()
+        copied_tree = False
+        if self._needs_default_branch_lengths(tree):
+            tree = self._fast_copy(tree)
+            copied_tree = True
         self.validate_tree(tree, min_tips=3, assign_default_branch_length=1e-8, context="phylo heatmap")
 
-        tree_tips = [t.name for t in tree.get_terminals()]
+        tree_tips = self.get_tip_names_from_tree(tree)
         trait_names, trait_data = self._parse_trait_matrix(
             self.data_path, tree_tips
         )
 
         # Prune tree to shared taxa
-        shared_taxa = set(trait_data.keys())
-        tips_to_prune = [t for t in tree_tips if t not in shared_taxa]
+        tips_to_prune = self._tips_to_prune_for_ordered_mapping(
+            tree_tips, trait_data
+        )
         if tips_to_prune:
+            if not copied_tree:
+                tree = self._fast_copy(tree)
+                copied_tree = True
             tree = self.prune_tree_using_taxa_list(tree, tips_to_prune)
 
         if self.plot_config.ladderize:
+            if not copied_tree:
+                tree = self._fast_copy(tree)
             tree.ladderize()
 
         # Get tip order from tree traversal
-        tip_order = [t.name for t in tree.get_terminals()]
+        if tips_to_prune or self.plot_config.ladderize:
+            tip_order = self.get_tip_names_from_tree(tree)
+        else:
+            tip_order = tree_tips
 
         self._plot_phylo_heatmap(
             tree, tip_order, trait_names, trait_data, self.output_path
@@ -71,7 +174,33 @@ class PhyloHeatmap(Tree):
         else:
             print(f"Phylogenetic heatmap saved: {self.output_path}")
 
-    def process_args(self, args) -> Dict:
+    @staticmethod
+    def _needs_default_branch_lengths(tree) -> bool:
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            return True
+
+        stack = [root]
+        pop = stack.pop
+        extend = stack.extend
+        try:
+            while stack:
+                clade = pop()
+                children = clade.clades
+                if clade is not root and clade.branch_length is None:
+                    return True
+                if children:
+                    extend(children)
+        except AttributeError:
+            return True
+
+        return False
+
+    def process_args(self, args) -> dict:
+        from ...helpers.plot_config import PlotConfig
+
         split = getattr(args, "split", 0.3)
         if split <= 0 or split >= 1:
             raise PhykitUserError(
@@ -90,8 +219,8 @@ class PhyloHeatmap(Tree):
         )
 
     def _parse_trait_matrix(
-        self, path: str, tree_tips: List[str]
-    ) -> Tuple[List[str], Dict[str, List[float]]]:
+        self, path: str, tree_tips: list[str]
+    ) -> tuple[list[str], dict[str, list[float]]]:
         """Parse a multi-column numeric TSV file.
 
         Format: taxon<tab>col1<tab>col2<tab>...
@@ -100,55 +229,92 @@ class PhyloHeatmap(Tree):
         """
         try:
             with open(path) as f:
-                lines = f.readlines()
+                header = None
+                for line in f:
+                    stripped = line.strip()
+                    if not stripped or stripped[0] == "#":
+                        continue
+                    header = stripped.split("\t")
+                    break
+
+                if header is None:
+                    raise PhykitUserError(
+                        ["Data file must have a header row and at least one data row."],
+                        code=2,
+                    )
+
+                if len(header) < 2:
+                    raise PhykitUserError(
+                        ["Header must have at least 2 columns (taxon + 1 trait)."],
+                        code=2,
+                    )
+                trait_names = header[1:]
+                n_cols = len(header)
+
+                trait_data = {}
+                data_line_idx = 2
+                tree_tip_count = len(tree_tips)
+                ordered_tree_tip_match = tree_tip_count >= 3
+                ordered_tree_tip_idx = 0
+                for line in f:
+                    stripped = line.strip()
+                    if not stripped or stripped[0] == "#":
+                        continue
+                    parts = stripped.split("\t")
+                    if len(parts) != n_cols:
+                        raise PhykitUserError(
+                            [
+                                f"Line {data_line_idx}: expected {n_cols} columns, got {len(parts)}."
+                            ],
+                            code=2,
+                        )
+                    taxon = parts[0]
+                    if ordered_tree_tip_match:
+                        if (
+                            ordered_tree_tip_idx >= tree_tip_count
+                            or taxon != tree_tips[ordered_tree_tip_idx]
+                        ):
+                            ordered_tree_tip_match = False
+                        ordered_tree_tip_idx += 1
+                    try:
+                        values = list(map(float, parts[1:]))
+                    except ValueError:
+                        raise PhykitUserError(
+                            [
+                                f"Line {data_line_idx}: non-numeric value for taxon '{taxon}'."
+                            ],
+                            code=2,
+                        )
+                    trait_data[taxon] = values
+                    data_line_idx += 1
         except FileNotFoundError:
             raise PhykitUserError(
                 [f"{path} not found. Check filename and path."], code=2
             )
 
-        data_lines = []
-        for line in lines:
-            stripped = line.strip()
-            if not stripped or stripped.startswith("#"):
-                continue
-            data_lines.append(stripped)
-
-        if len(data_lines) < 2:
+        if not trait_data:
             raise PhykitUserError(
                 ["Data file must have a header row and at least one data row."],
                 code=2,
             )
 
-        header = data_lines[0].split("\t")
-        if len(header) < 2:
-            raise PhykitUserError(
-                ["Header must have at least 2 columns (taxon + 1 trait)."],
-                code=2,
-            )
-        trait_names = header[1:]
-        n_cols = len(header)
-
-        trait_data = {}
-        for line_idx, line in enumerate(data_lines[1:], 2):
-            parts = line.split("\t")
-            if len(parts) != n_cols:
-                raise PhykitUserError(
-                    [f"Line {line_idx}: expected {n_cols} columns, got {len(parts)}."],
-                    code=2,
-                )
-            taxon = parts[0]
-            try:
-                values = [float(v) for v in parts[1:]]
-            except ValueError:
-                raise PhykitUserError(
-                    [f"Line {line_idx}: non-numeric value for taxon '{taxon}'."],
-                    code=2,
-                )
-            trait_data[taxon] = values
+        if (
+            ordered_tree_tip_match
+            and ordered_tree_tip_idx == tree_tip_count
+            and len(trait_data) == tree_tip_count
+        ):
+            return trait_names, trait_data
 
         # Validate shared taxa
         tree_tip_set = set(tree_tips)
-        data_taxa_set = set(trait_data.keys())
+        if (
+            len(tree_tip_set) >= 3
+            and len(tree_tip_set) == len(trait_data)
+            and tree_tip_set == trait_data.keys()
+        ):
+            return trait_names, trait_data
+
+        data_taxa_set = set(trait_data)
         shared = tree_tip_set & data_taxa_set
 
         if len(shared) < 3:
@@ -177,12 +343,30 @@ class PhyloHeatmap(Tree):
 
         return trait_names, {t: trait_data[t] for t in shared}
 
+    @staticmethod
+    def _build_heatmap_matrix(
+        tip_order: list[str],
+        trait_data: dict[str, list[float]],
+    ) -> np.ndarray:
+        return np.asarray([trait_data[taxon] for taxon in tip_order], dtype=float)
+
+    @staticmethod
+    def _standardize_heatmap_matrix(matrix: np.ndarray) -> np.ndarray:
+        if np.isfinite(matrix).all():
+            col_means = matrix.mean(axis=0)
+            col_stds = matrix.std(axis=0)
+        else:
+            col_means = np.nanmean(matrix, axis=0)
+            col_stds = np.nanstd(matrix, axis=0)
+        col_stds[col_stds == 0] = 1.0
+        return (matrix - col_means) / col_stds
+
     def _plot_phylo_heatmap(
         self,
         tree,
-        tip_order: List[str],
-        trait_names: List[str],
-        trait_data: Dict[str, List[float]],
+        tip_order: list[str],
+        trait_names: list[str],
+        trait_data: dict[str, list[float]],
         output_path: str,
     ) -> None:
         try:
@@ -200,12 +384,9 @@ class PhyloHeatmap(Tree):
         config.resolve(n_rows=n_tips, n_cols=n_traits)
 
         # Build the data matrix in tip_order
-        matrix = np.array([trait_data[taxon] for taxon in tip_order])
+        matrix = self._build_heatmap_matrix(tip_order, trait_data)
         if self.standardize:
-            col_means = np.nanmean(matrix, axis=0)
-            col_stds = np.nanstd(matrix, axis=0)
-            col_stds[col_stds == 0] = 1.0
-            matrix = (matrix - col_means) / col_stds
+            matrix = self._standardize_heatmap_matrix(matrix)
 
         if config.circular:
             self._plot_phylo_heatmap_circular(
@@ -222,15 +403,15 @@ class PhyloHeatmap(Tree):
         self, tree, tip_order, trait_names, trait_data, matrix,
         config, n_tips, n_traits, output_path, plt, gridspec,
     ) -> None:
-        from scipy.cluster.hierarchy import linkage, dendrogram, leaves_list
-        from scipy.spatial.distance import pdist
-
         fig = plt.figure(figsize=(config.fig_width, config.fig_height))
 
         # Cluster columns if requested
         col_order = list(range(n_traits))
         col_dendro_Z = None
         if self.cluster_columns and n_traits >= 2:
+            from scipy.cluster.hierarchy import dendrogram, leaves_list, linkage
+            from scipy.spatial.distance import pdist
+
             # Cluster traits by their column values (transpose, compute distance)
             col_dist = pdist(matrix.T, metric="euclidean")
             col_dendro_Z = linkage(col_dist, method="average")
@@ -267,7 +448,13 @@ class PhyloHeatmap(Tree):
 
         # --- Draw phylogram on left panel ---
         parent_map = build_parent_map(tree)
-        node_x, node_y = compute_node_positions(tree, parent_map, cladogram=self.plot_config.cladogram)
+        preorder_clades = list(self._iter_preorder(tree.root))
+        node_x, node_y = compute_node_positions(
+            tree,
+            parent_map,
+            cladogram=self.plot_config.cladogram,
+            preorder_clades=preorder_clades,
+        )
         draw_tree_branches(ax_tree, tree, node_x, node_y, parent_map)
 
         # Apply color annotations to tree panel
@@ -280,8 +467,12 @@ class PhyloHeatmap(Tree):
             for taxa_list, clade_color, lbl in color_data["clades"]:
                 mrca = resolve_mrca(tree, taxa_list)
                 if mrca is not None:
+                    from matplotlib.collections import LineCollection
+
                     clade_ids = get_clade_branch_ids(tree, mrca, parent_map)
-                    for cl in tree.find_clades(order="preorder"):
+                    horizontal_segments = []
+                    vertical_segments = []
+                    for cl in preorder_clades:
                         if cl == tree.root:
                             continue
                         if id(cl) in clade_ids and id(cl) in parent_map:
@@ -290,8 +481,26 @@ class PhyloHeatmap(Tree):
                             x0, x1 = node_x[pid_val], node_x[cid_val]
                             y0 = node_y.get(pid_val, 0)
                             y1 = node_y.get(cid_val, 0)
-                            ax_tree.plot([x0, x1], [y1, y1], color=clade_color, lw=1.5, zorder=2)
-                            ax_tree.plot([x0, x0], [y0, y1], color=clade_color, lw=1.5, zorder=2)
+                            horizontal_segments.append([(x0, y1), (x1, y1)])
+                            vertical_segments.append([(x0, y0), (x0, y1)])
+                    if vertical_segments:
+                        ax_tree.add_collection(
+                            LineCollection(
+                                vertical_segments,
+                                colors=clade_color,
+                                linewidths=1.5,
+                                zorder=2,
+                            )
+                        )
+                    if horizontal_segments:
+                        ax_tree.add_collection(
+                            LineCollection(
+                                horizontal_segments,
+                                colors=clade_color,
+                                linewidths=1.5,
+                                zorder=2,
+                            )
+                        )
 
         ax_tree.set_ylim(-0.5, n_tips - 0.5)
         ax_tree.invert_yaxis()
@@ -380,24 +589,35 @@ class PhyloHeatmap(Tree):
         config, n_tips, n_traits, output_path, plt,
     ) -> None:
         import math
+        from matplotlib.collections import LineCollection, PatchCollection
         from matplotlib.patches import Wedge
         import matplotlib.colors as mcolors
-        from ...helpers.circular_layout import (
-            compute_circular_coords,
-            draw_circular_branches,
-            draw_circular_tip_labels,
-        )
 
         # Build parent_map and node_x
         parent_map = build_parent_map(tree)
-        node_x, _node_y = compute_node_positions(tree, parent_map, cladogram=config.cladogram)
+        preorder_clades = list(self._iter_preorder(tree.root))
+        tips = [clade for clade in preorder_clades if not clade.clades]
+        node_x, _node_y = compute_node_positions(
+            tree,
+            parent_map,
+            cladogram=config.cladogram,
+            preorder_clades=preorder_clades,
+        )
 
-        coords = compute_circular_coords(tree, node_x, parent_map)
+        coords = compute_circular_coords(
+            tree,
+            node_x,
+            parent_map,
+            preorder_clades=preorder_clades,
+            terminal_clades=tips,
+        )
 
         # Build tip name -> id lookup
-        tip_name_to_id = {}
-        for tip in tree.get_terminals():
-            tip_name_to_id[tip.name] = id(tip)
+        tip_name_to_id = {
+            tip.name: id(tip)
+            for tip in preorder_clades
+            if not tip.clades
+        }
 
         # Compute max_radius from tips
         max_radius = max(
@@ -424,7 +644,6 @@ class PhyloHeatmap(Tree):
 
         # Apply color annotations
         if self.plot_config.color_file:
-            from ...helpers.circular_layout import draw_circular_colored_branch
             color_data = parse_color_file(self.plot_config.color_file)
             for taxa_list, clr, lbl in color_data["ranges"]:
                 mrca = resolve_mrca(tree, taxa_list)
@@ -434,16 +653,35 @@ class PhyloHeatmap(Tree):
                 mrca = resolve_mrca(tree, taxa_list)
                 if mrca is not None:
                     clade_ids = get_clade_branch_ids(tree, mrca, parent_map)
-                    for cl in tree.find_clades(order="preorder"):
+                    radial_segments = []
+                    for cl in preorder_clades:
                         if cl == tree.root:
                             continue
                         if id(cl) in clade_ids and id(cl) in parent_map:
-                            draw_circular_colored_branch(ax, coords[id(parent_map[id(cl)])], coords[id(cl)], clade_color, lw=1.5)
-            for taxon, lbl_color in color_data["labels"].items():
-                for text_obj in ax.texts:
-                    if text_obj.get_text() == taxon:
-                        text_obj.set_color(lbl_color)
-                        break
+                            parent_coords = coords[id(parent_map[id(cl)])]
+                            child_coords = coords[id(cl)]
+                            angle = child_coords["angle"]
+                            cos_angle = math.cos(angle)
+                            sin_angle = math.sin(angle)
+                            r_parent = parent_coords["radius"]
+                            r_child = child_coords["radius"]
+                            radial_segments.append(
+                                [
+                                    (r_parent * cos_angle, r_parent * sin_angle),
+                                    (r_child * cos_angle, r_child * sin_angle),
+                                ]
+                            )
+                    if radial_segments:
+                        ax.add_collection(
+                            LineCollection(
+                                radial_segments,
+                                colors=clade_color,
+                                linewidths=1.5,
+                                capstyle="round",
+                                zorder=2,
+                            )
+                        )
+            apply_label_colors(ax, color_data["labels"])
             color_legend = build_color_legend_handles(color_data)
             if color_legend:
                 ax.legend(handles=color_legend, loc="upper right", fontsize=8, frameon=True)
@@ -458,6 +696,8 @@ class PhyloHeatmap(Tree):
 
         # Draw heatmap rings
         wedge_half = (2.0 * math.pi / n_tips) / 2.0 * 0.9  # 90% of slot
+        heatmap_wedges = []
+        heatmap_values = []
 
         for col_idx in range(n_traits):
             r_inner = max_radius + gap + col_idx * ring_width
@@ -470,13 +710,22 @@ class PhyloHeatmap(Tree):
                 theta1 = math.degrees(tip_angle - wedge_half)
                 theta2 = math.degrees(tip_angle + wedge_half)
                 value = matrix[row_idx, col_idx]
-                color = cmap(norm(value))
                 wedge = Wedge(
                     (0, 0), r_outer, theta1, theta2,
                     width=ring_width,
-                    facecolor=color, edgecolor="none",
                 )
-                ax.add_patch(wedge)
+                heatmap_wedges.append(wedge)
+                heatmap_values.append(value)
+        if heatmap_wedges:
+            heatmap_collection = PatchCollection(
+                heatmap_wedges,
+                cmap=cmap,
+                norm=norm,
+                edgecolors="none",
+                match_original=False,
+            )
+            heatmap_collection.set_array(np.asarray(heatmap_values, dtype=float))
+            ax.add_collection(heatmap_collection)
 
         # Trait name labels at outside of each ring
         label_fontsize = 6
@@ -509,6 +758,23 @@ class PhyloHeatmap(Tree):
         ax.autoscale_view()
         fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
+
+    @staticmethod
+    def _iter_preorder(root):
+        stack = [root]
+        pop = stack.pop
+        append = stack.append
+        while stack:
+            clade = pop()
+            yield clade
+            children = clade.clades
+            if children:
+                append(children[-1])
+                if len(children) == 2:
+                    append(children[0])
+                else:
+                    for idx in range(len(children) - 2, -1, -1):
+                        append(children[idx])
 
     def _print_json(self, tip_order, trait_names, trait_data):
         payload = {

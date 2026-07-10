@@ -69,16 +69,32 @@ class TestTipToTipDistance(object):
 
     @patch("builtins.print")
     def test_tip_to_tip_distance_tip_not_in_tree(self, mocked_print):
-        with pytest.raises(SystemExit) as pytest_wrapped_e:
-            Phykit()
+        testargs = [
+            "phykit",
+            "tip_to_tip_distance",
+            f"{here.parent.parent.parent}/sample_files/small_Aspergillus_tre_rooted.tree",
+            "NONEXISTENT",
+            "Aspergillus_fumigatus_Af293",
+        ]
+        with patch.object(sys, "argv", testargs):
+            with pytest.raises(SystemExit) as pytest_wrapped_e:
+                Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2
 
     @patch("builtins.print")
     def test_tip_to_tip_distance_bad_file_path(self, mocked_print):
-        with pytest.raises(SystemExit) as pytest_wrapped_e:
-            Phykit()
+        testargs = [
+            "phykit",
+            "tip_to_tip_distance",
+            "/does/not/exist.tre",
+            "taxon_a",
+            "taxon_b",
+        ]
+        with patch.object(sys, "argv", testargs):
+            with pytest.raises(SystemExit) as pytest_wrapped_e:
+                Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2
@@ -113,12 +129,11 @@ class TestTipToTipDistance(object):
         with patch.object(sys, "argv", testargs):
             Phykit()
 
-        assert len(mocked_print.mock_calls) == 45
-        assert any(
-            call_args.args[0] == (
-                "Aspergillus_fumigatus_Af293\tAspergillus_fumigatus_CEA10\t0.0021"
-            )
-            for call_args in mocked_print.mock_calls
+        lines = mocked_print.call_args.args[0].splitlines()
+        assert len(lines) == 45
+        assert (
+            "Aspergillus_fumigatus_Af293\tAspergillus_fumigatus_CEA10\t0.0021"
+            in lines
         )
 
     @patch("builtins.print")

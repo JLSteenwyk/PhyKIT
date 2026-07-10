@@ -18,6 +18,40 @@ from phykit.helpers.caching import (
 )
 
 
+def test_module_import_does_not_initialize_heavy_serialization_or_cache_dir():
+    code = """
+import sys
+import phykit.helpers.caching as module
+
+assert hasattr(module.pickle, "loads")
+assert module._result_cache is None
+assert module._alignment_cache is None
+assert module._MD5 is None
+assert "typing" not in sys.modules
+assert "json" not in sys.modules
+assert "pickle" not in sys.modules
+assert "hashlib" not in sys.modules
+assert "tempfile" not in sys.modules
+"""
+    import subprocess
+    import sys
+
+    subprocess.run([sys.executable, "-c", code], check=True)
+
+
+def test_lazy_pickle_caches_resolved_attributes():
+    import phykit.helpers.caching as caching_module
+
+    lazy_pickle = caching_module._LazyPickle()
+    blob = lazy_pickle.dumps({"value": 1})
+    loaded = lazy_pickle.loads(blob)
+
+    assert lazy_pickle._module is not None
+    assert lazy_pickle.__dict__["dumps"] is lazy_pickle.dumps
+    assert lazy_pickle.__dict__["loads"] is lazy_pickle.loads
+    assert loaded == {"value": 1}
+
+
 class TestResultCache(TestCase):
     """Test ResultCache class"""
 
@@ -77,6 +111,29 @@ class TestResultCache(TestCase):
         # Objects with different attributes should produce different key
         self.assertNotEqual(key1, key3)
 
+    def test_get_cache_key_no_kwargs_paths_match_legacy_digest(self):
+        """No-kwargs key paths should preserve the previous cache key text."""
+        import json
+        from hashlib import md5
+
+        class TestObj:
+            def __init__(self, value):
+                self.value = value
+
+        obj = TestObj(10)
+        cases = [
+            ((), ""),
+            (("test",), "test"),
+            ((obj,), json.dumps(vars(obj), sort_keys=True, default=str)),
+            (("test", 123), "test_123"),
+        ]
+
+        for args, key_string in cases:
+            self.assertEqual(
+                self.cache._get_cache_key(*args),
+                md5(key_string.encode()).hexdigest(),
+            )
+
     def test_get_cache_key_with_kwargs(self):
         """Test cache key generation with keyword arguments"""
         key1 = self.cache._get_cache_key("test", foo="bar", baz=123)
@@ -87,6 +144,31 @@ class TestResultCache(TestCase):
         self.assertEqual(key1, key2)
         # Different values should produce different key
         self.assertNotEqual(key1, key3)
+
+    def test_get_cache_key_reuses_hashlib_md5_import(self):
+        import builtins
+        import phykit.helpers.caching as caching_module
+
+        previous_md5 = caching_module._MD5
+        caching_module._MD5 = None
+        original_import = builtins.__import__
+        hashlib_imports = 0
+
+        def counting_import(name, globals=None, locals=None, fromlist=(), level=0):
+            nonlocal hashlib_imports
+            if name == "hashlib":
+                hashlib_imports += 1
+            return original_import(name, globals, locals, fromlist, level)
+
+        with patch.object(builtins, "__import__", side_effect=counting_import):
+            try:
+                key1 = self.cache._get_cache_key("test", foo="bar")
+                key2 = self.cache._get_cache_key("test", foo="bar")
+            finally:
+                caching_module._MD5 = previous_md5
+
+        self.assertEqual(key1, key2)
+        self.assertEqual(hashlib_imports, 1)
 
     def test_set_and_get(self):
         """Test setting and getting cached values"""
@@ -149,6 +231,36 @@ class TestResultCache(TestCase):
         # Verify files are removed
         cache_files = [f for f in os.listdir(self.cache.cache_dir) if f.endswith('.pkl')]
         self.assertEqual(len(cache_files), 0)
+
+    def test_clear_uses_scandir_entry_paths(self):
+        class FakeEntry:
+            def __init__(self, name, path):
+                self.name = name
+                self.path = path
+
+        class FakeScandir:
+            def __init__(self, entries):
+                self.entries = entries
+
+            def __enter__(self):
+                return iter(self.entries)
+
+            def __exit__(self, exc_type, exc, traceback):
+                return False
+
+        entries = [
+            FakeEntry("a.pkl", "/cache/a.pkl"),
+            FakeEntry("b.txt", "/cache/b.txt"),
+            FakeEntry("c.pkl", "/cache/c.pkl"),
+        ]
+        removed = []
+
+        with patch("os.listdir", side_effect=AssertionError("clear should use scandir")):
+            with patch("os.scandir", return_value=FakeScandir(entries)):
+                with patch("os.remove", side_effect=removed.append):
+                    self.cache.clear()
+
+        self.assertEqual(removed, ["/cache/a.pkl", "/cache/c.pkl"])
 
 
 class TestCachedComputation(TestCase):

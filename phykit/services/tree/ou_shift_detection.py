@@ -1,14 +1,117 @@
-import pickle
-import sys
-from typing import Dict, List, Tuple
+from __future__ import annotations
 
-import numpy as np
-from scipy.optimize import minimize_scalar
-from sklearn.linear_model import lars_path
+import sys
 
 from .base import Tree
-from ...helpers.json_output import print_json
 from ...errors import PhykitUserError
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
+
+
+class _LazyPickle:
+    _module = None
+
+    def _load(self):
+        module = self._module
+        if module is None:
+            import pickle as module
+
+            self._module = module
+        return module
+
+    def dumps(self, *args, **kwargs):
+        module = self._load()
+        dumps = module.dumps
+        self.dumps = dumps
+        if "loads" not in self.__dict__:
+            self.loads = module.loads
+
+        return dumps(*args, **kwargs)
+
+    def loads(self, *args, **kwargs):
+        module = self._load()
+        loads = module.loads
+        self.loads = loads
+        if "dumps" not in self.__dict__:
+            self.dumps = module.dumps
+
+        return loads(*args, **kwargs)
+
+    def __getattr__(self, name):
+        value = getattr(self._load(), name)
+        setattr(self, name, value)
+        return value
+
+
+
+class _LazyNumpy:
+    _module = None
+
+    def __getattr__(self, name):
+        module = self._module
+        if module is None:
+            import numpy as _np
+
+            module = _np
+            self._module = module
+
+        value = getattr(module, name)
+        setattr(self, name, value)
+        return value
+
+
+pickle = _LazyPickle()
+np = _LazyNumpy()
+_CHO_FACTOR = None
+_CHO_SOLVE = None
+_SOLVE_TRIANGULAR = None
+_MINIMIZE_SCALAR = None
+
+
+def cho_factor(*args, **kwargs):
+    global _CHO_FACTOR
+    if _CHO_FACTOR is None:
+        from scipy.linalg import cho_factor as _CHO_FACTOR
+
+    return _CHO_FACTOR(*args, **kwargs)
+
+
+def cho_solve(*args, **kwargs):
+    global _CHO_SOLVE
+    if _CHO_SOLVE is None:
+        from scipy.linalg import cho_solve as _CHO_SOLVE
+
+    return _CHO_SOLVE(*args, **kwargs)
+
+
+def solve_triangular(*args, **kwargs):
+    global _SOLVE_TRIANGULAR
+    if _SOLVE_TRIANGULAR is None:
+        from scipy.linalg import solve_triangular as _SOLVE_TRIANGULAR
+
+    return _SOLVE_TRIANGULAR(*args, **kwargs)
+
+
+def minimize_scalar(*args, **kwargs):
+    global _MINIMIZE_SCALAR
+    if _MINIMIZE_SCALAR is None:
+        from scipy.optimize import minimize_scalar as _MINIMIZE_SCALAR
+
+    return _MINIMIZE_SCALAR(*args, **kwargs)
+
+
+def _lars_path(*args, **kwargs):
+    from sklearn.linear_model import lars_path
+
+    return lars_path(*args, **kwargs)
+
+
+def _column_l2_norms(matrix):
+    return np.sqrt(np.einsum("ij,ij->j", matrix, matrix))
 
 
 class OUShiftDetection(Tree):
@@ -33,7 +136,7 @@ class OUShiftDetection(Tree):
         self.max_shifts = parsed["max_shifts"]
         self.json_output = parsed["json_output"]
 
-    def process_args(self, args) -> Dict:
+    def process_args(self, args) -> dict:
         criterion = getattr(args, "criterion", "pBIC")
         if criterion not in ("pBIC", "BIC", "AICc"):
             raise PhykitUserError(
@@ -52,35 +155,38 @@ class OUShiftDetection(Tree):
         )
 
     def run(self) -> None:
-        tree = self.read_tree_file()
+        tree = self.read_tree_file_unmodified()
         self.validate_tree(tree, min_tips=3, require_branch_lengths=True, context="OU shift detection")
 
         tree_tips = self.get_tip_names_from_tree(tree)
         traits = self._parse_trait_file(self.trait_data_path, tree_tips)
 
-        shared = set(traits.keys())
-
-        # Prune tree to shared taxa
-        tree_copy = pickle.loads(pickle.dumps(tree, protocol=pickle.HIGHEST_PROTOCOL))
-        tip_names_in_tree = [t.name for t in tree_copy.get_terminals()]
-        to_prune = [t for t in tip_names_in_tree if t not in shared]
+        to_prune, ordered_names = self._prepare_shared_trait_data(
+            tree_tips,
+            traits,
+        )
+        tree_for_analysis = self._fast_copy(tree) if to_prune else tree
         if to_prune:
             for t in to_prune:
-                tree_copy.prune(t)
+                tree_for_analysis.prune(t)
 
         # Store working data as instance attributes for internal methods
-        self._ordered_names = sorted(shared)
+        self._ordered_names = ordered_names
         self._x = np.array([traits[name] for name in self._ordered_names])
         self._n = len(self._ordered_names)
-        self._parent_map = self._build_parent_map(tree_copy)
+        preorder_clades = list(self._iter_preorder(tree_for_analysis.root))
+        self._parent_map = self._build_parent_map(tree_for_analysis, preorder_clades)
         self._lineage_info = self._build_lineage_info_no_regime(
-            tree_copy, self._ordered_names, self._parent_map
+            tree_for_analysis, self._ordered_names, self._parent_map, preorder_clades
         )
+        self._lineage_rows_by_clade_id = None
         self._tree_height = max(
             sum(bl for _, bl, _, _ in self._lineage_info[name])
             for name in self._ordered_names
         )
-        self._edges = self._enumerate_edges(tree_copy, self._parent_map)
+        self._edges = self._enumerate_edges(
+            tree_for_analysis, self._parent_map, preorder_clades
+        )
         self._n_edges = len(self._edges)
 
         # Precompute shared path lengths for vectorized VCV construction
@@ -95,7 +201,7 @@ class OUShiftDetection(Tree):
             null = self._fit_and_score_config([])
             if null is None:
                 null = self._empty_result()
-            result = self._build_final_result(null, tree_copy)
+            result = self._build_final_result(null, tree_for_analysis)
             self._output(result)
             return
 
@@ -120,17 +226,51 @@ class OUShiftDetection(Tree):
             if best2 is not None and best2[self.criterion] < best[self.criterion]:
                 best = best2
 
-        result = self._build_final_result(best, tree_copy)
+        result = self._build_final_result(best, tree_for_analysis)
         self._output(result)
 
     # ── Tree & data parsing (adapted from OUwie) ─────────────────────
 
+    @staticmethod
+    def _prepare_shared_trait_data(tree_tips, traits):
+        if len(traits) == len(tree_tips) and all(
+            name in traits for name in tree_tips
+        ):
+            return [], sorted(traits)
+
+        shared = set(traits.keys())
+        return [name for name in tree_tips if name not in shared], sorted(shared)
+
     def _parse_trait_file(
-        self, path: str, tree_tips: List[str]
-    ) -> Dict[str, float]:
+        self, path: str, tree_tips: list[str]
+    ) -> dict[str, float]:
         try:
+            traits = {}
             with open(path) as f:
-                lines = f.readlines()
+                for line_num, line in enumerate(f, 1):
+                    line = line.strip()
+                    if not line or line[0] == "#":
+                        continue
+                    parts = line.split("\t", 2)
+                    if len(parts) != 2:
+                        column_count = line.count("\t") + 1
+                        raise PhykitUserError(
+                            [
+                                f"Line {line_num} in trait file has {column_count} columns; expected 2.",
+                                "Each line should be: taxon_name<tab>trait_value",
+                            ],
+                            code=2,
+                        )
+                    taxon, value_str = parts
+                    try:
+                        traits[taxon] = float(value_str)
+                    except ValueError:
+                        raise PhykitUserError(
+                            [
+                                f"Non-numeric trait value '{value_str}' for taxon '{taxon}' on line {line_num}.",
+                            ],
+                            code=2,
+                        )
         except FileNotFoundError:
             raise PhykitUserError(
                 [
@@ -140,33 +280,24 @@ class OUShiftDetection(Tree):
                 code=2,
             )
 
-        traits = {}
-        for line_num, line in enumerate(lines, 1):
-            line = line.strip()
-            if not line or line.startswith("#"):
-                continue
-            parts = line.split("\t")
-            if len(parts) != 2:
-                raise PhykitUserError(
-                    [
-                        f"Line {line_num} in trait file has {len(parts)} columns; expected 2.",
-                        "Each line should be: taxon_name<tab>trait_value",
-                    ],
-                    code=2,
-                )
-            taxon, value_str = parts
-            try:
-                traits[taxon] = float(value_str)
-            except ValueError:
-                raise PhykitUserError(
-                    [
-                        f"Non-numeric trait value '{value_str}' for taxon '{taxon}' on line {line_num}.",
-                    ],
-                    code=2,
-                )
+        if (
+            len(tree_tips) >= 3
+            and len(tree_tips) == len(traits)
+            and next(iter(traits)) == tree_tips[0]
+            and next(reversed(traits)) == tree_tips[-1]
+            and list(traits) == tree_tips
+        ):
+            return traits
 
         tree_tip_set = set(tree_tips)
-        trait_taxa_set = set(traits.keys())
+        if (
+            len(tree_tip_set) >= 3
+            and len(tree_tip_set) == len(traits)
+            and tree_tip_set == traits.keys()
+        ):
+            return traits
+
+        trait_taxa_set = set(traits)
         shared = tree_tip_set & trait_taxa_set
 
         tree_only = tree_tip_set - trait_taxa_set
@@ -198,25 +329,69 @@ class OUShiftDetection(Tree):
 
     # ── Tree structure helpers ───────────────────────────────────────
 
-    def _build_parent_map(self, tree) -> Dict:
+    @staticmethod
+    def _iter_preorder(root):
+        stack = [root]
+        pop = stack.pop
+        append = stack.append
+        while stack:
+            clade = pop()
+            yield clade
+            children = clade.clades
+            if children:
+                append(children[-1])
+                if len(children) == 2:
+                    append(children[0])
+                else:
+                    for idx in range(len(children) - 2, -1, -1):
+                        append(children[idx])
+
+    @staticmethod
+    def _iter_postorder(root):
+        clades = []
+        stack = [root]
+        while stack:
+            clade = stack.pop()
+            clades.append(clade)
+            stack.extend(clade.clades)
+        yield from reversed(clades)
+
+    def _build_parent_map(self, tree, preorder_clades=None) -> dict:
         parent_map = {}
-        for clade in tree.find_clades(order="preorder"):
-            for child in clade.clades:
+        if preorder_clades is not None:
+            for clade in preorder_clades:
+                for child in clade.clades:
+                    parent_map[id(child)] = clade
+            return parent_map
+
+        stack = [tree.root]
+        pop = stack.pop
+        extend = stack.extend
+        while stack:
+            clade = pop()
+            children = clade.clades
+            for child in children:
                 parent_map[id(child)] = clade
+            if children:
+                extend(children)
         return parent_map
 
     def _build_lineage_info_no_regime(
-        self, tree, ordered_names: List[str], parent_map: Dict,
-    ) -> Dict[str, List[Tuple]]:
+        self, tree, ordered_names: list[str], parent_map: dict,
+        preorder_clades=None,
+    ) -> dict[str, list[tuple]]:
         """Build root-to-tip lineage info without regime labels.
 
         Returns dict mapping tip_name -> list of tuples:
             (clade_id, branch_length, dist_from_root_start, dist_from_root_end)
         """
+        ordered_set = set(ordered_names)
         tip_map = {}
-        for tip in tree.get_terminals():
-            if tip.name in ordered_names:
-                tip_map[tip.name] = tip
+        if preorder_clades is None:
+            preorder_clades = self._iter_preorder(tree.root)
+        for clade in preorder_clades:
+            if not clade.clades and clade.name in ordered_set:
+                tip_map[clade.name] = clade
 
         lineage_info = {}
         for name in ordered_names:
@@ -243,7 +418,9 @@ class OUShiftDetection(Tree):
 
     # ── Edge enumeration ─────────────────────────────────────────────
 
-    def _enumerate_edges(self, tree, parent_map: Dict) -> List[Tuple]:
+    def _enumerate_edges(
+        self, tree, parent_map: dict, preorder_clades=None
+    ) -> list[tuple]:
         """List all non-root edges as candidate shift locations.
 
         Returns list of (clade_id, clade_object) tuples for every
@@ -251,51 +428,82 @@ class OUShiftDetection(Tree):
         """
         edges = []
         root = tree.root
-        for clade in tree.find_clades(order="preorder"):
+        if preorder_clades is None:
+            preorder_clades = self._iter_preorder(root)
+        for clade in preorder_clades:
             if clade == root:
                 continue
             edges.append((id(clade), clade))
         return edges
 
-    def _count_descendants(self, tree, edges: List[Tuple]) -> Dict:
+    def _count_descendants(self, tree, edges: list[tuple]) -> dict:
         """Count the number of tip descendants for each edge."""
+        descendant_counts = {}
+        for clade in self._iter_postorder(tree.root):
+            children = clade.clades
+            if not children:
+                descendant_counts[id(clade)] = 1
+            elif len(children) == 2:
+                descendant_counts[id(clade)] = (
+                    descendant_counts[id(children[0])]
+                    + descendant_counts[id(children[1])]
+                )
+            else:
+                total = 0
+                for child in children:
+                    total += descendant_counts[id(child)]
+                descendant_counts[id(clade)] = total
         counts = {}
         for clade_id, clade in edges:
-            tips = list(clade.get_terminals())
-            counts[clade_id] = len(tips)
+            counts[clade_id] = descendant_counts.get(clade_id, 0)
         return counts
 
     # ── Precomputed phylogenetic data ────────────────────────────────
 
-    def _precompute_shared_path_lengths(self) -> Tuple[np.ndarray, np.ndarray]:
+    def _precompute_shared_path_lengths(self) -> tuple[np.ndarray, np.ndarray]:
         """Precompute shared path length matrix S and tip height vector.
 
         S[i,j] = total branch length shared between root-to-tip_i and
                   root-to-tip_j paths (= distance from root to their LCA).
         """
-        n = self._n
-        ordered_names = self._ordered_names
-        lineage_info = self._lineage_info
+        S, tip_heights, rows_by_clade_id = self._shared_path_lengths_from_lineage_info(
+            self._ordered_names,
+            self._lineage_info,
+        )
+        self._lineage_rows_by_clade_id = rows_by_clade_id
+        return S, tip_heights
 
+    @staticmethod
+    def _shared_path_lengths_from_lineage_info(
+        ordered_names: list[str],
+        lineage_info: dict,
+    ) -> tuple[np.ndarray, np.ndarray, dict[int, np.ndarray]]:
+        n = len(ordered_names)
         S = np.zeros((n, n))
         tip_heights = np.zeros(n)
+        row_lists = {}
+        branch_lengths = {}
 
-        for i in range(n):
-            path_i = lineage_info[ordered_names[i]]
-            tip_heights[i] = sum(bl for _, bl, _, _ in path_i)
-            S[i, i] = tip_heights[i]
-            for j in range(i + 1, n):
-                path_j = lineage_info[ordered_names[j]]
-                s = 0.0
-                for idx in range(min(len(path_i), len(path_j))):
-                    if path_i[idx][0] == path_j[idx][0]:
-                        s += path_i[idx][1]
-                    else:
-                        break
-                S[i, j] = s
-                S[j, i] = s
+        for row_idx, name in enumerate(ordered_names):
+            tip_height = 0.0
+            for clade_id, bl, *_ in lineage_info[name]:
+                tip_height += bl
+                row_lists.setdefault(clade_id, []).append(row_idx)
+                branch_lengths[clade_id] = bl
+            tip_heights[row_idx] = tip_height
 
-        return S, tip_heights
+        rows_by_clade_id = {}
+        for clade_id, rows in row_lists.items():
+            row_idx = np.asarray(rows, dtype=np.intp)
+            rows_by_clade_id[clade_id] = row_idx
+            if len(row_idx) == n:
+                S += branch_lengths[clade_id]
+            elif len(row_idx) == 1:
+                S[row_idx[0], row_idx[0]] += branch_lengths[clade_id]
+            else:
+                S[np.ix_(row_idx, row_idx)] += branch_lengths[clade_id]
+
+        return S, tip_heights, rows_by_clade_id
 
     def _build_ou_vcv_fast(self, alpha: float, sigma2: float = 1.0) -> np.ndarray:
         """Vectorized OU VCV matrix using precomputed shared path lengths.
@@ -317,8 +525,8 @@ class OUShiftDetection(Tree):
     # ── OU1 alpha estimation ─────────────────────────────────────────
 
     def _fit_ou1_for_alpha(
-        self, x: np.ndarray = None, ordered_names: List[str] = None,
-        lineage_info: Dict = None, tree_height: float = None,
+        self, x: np.ndarray = None, ordered_names: list[str] = None,
+        lineage_info: dict = None, tree_height: float = None,
     ) -> float:
         """Estimate alpha from a single-regime OU1 fit."""
         x = x if x is not None else self._x
@@ -335,26 +543,10 @@ class OUShiftDetection(Tree):
                 V = self._build_ou_vcv_single_alpha_no_regime(
                     ordered_names, lineage_info, alpha, 1.0
                 )
-            try:
-                V_inv = np.linalg.inv(V)
-            except np.linalg.LinAlgError:
-                return 1e20
-
             ones = np.ones(n)
-            denom = float(ones @ V_inv @ ones)
-            if abs(denom) < 1e-300:
+            _, sig2, ll = self._gls_profile_likelihood(x, ones[:, None], V)
+            if sig2 <= 0 or not np.isfinite(ll):
                 return 1e20
-            theta = float(ones @ V_inv @ x) / denom
-            e = x - theta
-            sig2 = float(e @ V_inv @ e) / n
-            if sig2 <= 0:
-                return 1e20
-
-            sign, logdet = np.linalg.slogdet(V)
-            if sign <= 0:
-                return 1e20
-
-            ll = -0.5 * (n * np.log(2 * np.pi) + n * np.log(sig2) + logdet + n)
             return -ll
 
         alpha_hat, _ = self._optimize_parameter(neg_ll, (1e-8, upper))
@@ -364,7 +556,7 @@ class OUShiftDetection(Tree):
 
     def _lasso_pass_with_selection(
         self, alpha_for_lasso: float, max_shifts: int,
-    ) -> Dict:
+    ) -> dict:
         """Run one LASSO pass: build design, extract configs, evaluate each.
 
         For each candidate configuration from the LASSO path:
@@ -407,7 +599,7 @@ class OUShiftDetection(Tree):
 
     def _extract_lasso_configs(
         self, X_star: np.ndarray, y_star: np.ndarray, max_shifts: int,
-    ) -> List[List[int]]:
+    ) -> list[list[int]]:
         """Extract unique shift configurations from LASSO path.
 
         The root optimum (column 0) is unpenalized via residualization.
@@ -430,7 +622,7 @@ class OUShiftDetection(Tree):
             beta_int_j = XtX_inv * (X_intercept.T @ X_shifts[:, j:j + 1])[0, 0]
             X_resid[:, j] = X_shifts[:, j] - X_intercept.flatten() * beta_int_j
 
-        col_norms = np.linalg.norm(X_resid, axis=0)
+        col_norms = _column_l2_norms(X_resid)
         col_norms[col_norms < 1e-12] = 1.0
         X_resid_norm = X_resid / col_norms
 
@@ -439,7 +631,7 @@ class OUShiftDetection(Tree):
             return []
 
         try:
-            _, _, coefs_path = lars_path(
+            _, _, coefs_path = _lars_path(
                 X_resid_norm, y_resid, method="lasso", max_iter=max_iter,
             )
         except Exception:
@@ -450,7 +642,7 @@ class OUShiftDetection(Tree):
 
         for step in range(coefs_path.shape[1]):
             coefs = coefs_path[:, step] / col_norms
-            nonzero_idx = np.where(np.abs(coefs) > 1e-10)[0]
+            nonzero_idx = np.flatnonzero(np.abs(coefs) > 1e-10)
             config = frozenset(nonzero_idx.tolist())
             if config in seen or len(nonzero_idx) == 0 or len(nonzero_idx) > max_shifts:
                 continue
@@ -461,7 +653,7 @@ class OUShiftDetection(Tree):
 
     # ── Per-candidate model fitting ──────────────────────────────────
 
-    def _fit_and_score_config(self, shift_edge_indices: List[int]) -> Dict:
+    def _fit_and_score_config(self, shift_edge_indices: list[int]) -> dict:
         """Fit OU model with given shifts, jointly optimizing alpha.
 
         Uses R's l1ou approach: indicator (simpX) design matrix for model
@@ -489,43 +681,21 @@ class OUShiftDetection(Tree):
 
         def neg_ll(alpha):
             V = self._build_ou_vcv_fast(alpha)
-            try:
-                V_inv = np.linalg.inv(V)
-            except np.linalg.LinAlgError:
+            _, sig2, ll = self._gls_profile_likelihood(x, W_ind, V)
+            if sig2 <= 0 or not np.isfinite(ll):
                 return 1e20
-
-            theta = self._gls_theta_hat(x, W_ind, V_inv)
-            e = x - W_ind @ theta
-            sig2 = float(e @ V_inv @ e) / n
-            if sig2 <= 0:
-                return 1e20
-
-            sign, logdet = np.linalg.slogdet(V)
-            if sign <= 0:
-                return 1e20
-
-            return 0.5 * (n * np.log(2 * np.pi) + n * np.log(sig2) + logdet + n)
+            return -ll
 
         alpha_hat = self._optimize_alpha(neg_ll, (1e-8, upper))
 
         # Final fit at optimal alpha with indicator matrix
         V = self._build_ou_vcv_fast(alpha_hat)
-        try:
-            V_inv = np.linalg.inv(V)
-        except np.linalg.LinAlgError:
+        theta, sig2, ll = self._gls_profile_likelihood(x, W_ind, V)
+        if sig2 <= 0 or not np.isfinite(ll):
             return None
-
-        theta = self._gls_theta_hat(x, W_ind, V_inv)
-        e = x - W_ind @ theta
-        sig2 = float(e @ V_inv @ e) / n
-        if sig2 <= 0:
+        pbic = self._compute_pbic_from_vcv(n, ll, k, W_ind, V, sig2, x)
+        if pbic is None:
             return None
-
-        sign, logdet = np.linalg.slogdet(V)
-        if sign <= 0:
-            return None
-
-        ll = -0.5 * (n * np.log(2 * np.pi) + n * np.log(sig2) + logdet + n)
 
         # theta[0] = root optimum (intercept)
         # theta[j+1] = shift delta for edge j (added to root)
@@ -542,12 +712,12 @@ class OUShiftDetection(Tree):
             theta_root=float(theta[0]),
             optima=optima,
             log_likelihood=float(ll),
-            pBIC=float(self._compute_pbic(n, ll, k, W_ind, V_inv, sig2, x)),
+            pBIC=float(pbic),
             BIC=float(self._compute_bic(n, ll, k)),
             AICc=float(self._compute_aicc(n, ll, k)),
         )
 
-    def _fit_null_model(self) -> Dict:
+    def _fit_null_model(self) -> dict:
         """Fit the null (no-shift) OU1 model with alpha optimization."""
         n = self._n
         x = self._x
@@ -555,23 +725,13 @@ class OUShiftDetection(Tree):
         alpha_hat = self._fit_ou1_for_alpha()
 
         V = self._build_ou_vcv_fast(alpha_hat)
-        try:
-            V_inv = np.linalg.inv(V)
-        except np.linalg.LinAlgError:
-            return None
-
         W = np.ones((n, 1))
-        theta = self._gls_theta_hat(x, W, V_inv)
-        e = x - W @ theta
-        sig2 = float(e @ V_inv @ e) / n
-        if sig2 <= 0:
+        theta, sig2, ll = self._gls_profile_likelihood(x, W, V)
+        if sig2 <= 0 or not np.isfinite(ll):
             return None
-
-        sign, logdet = np.linalg.slogdet(V)
-        if sign <= 0:
+        pbic = self._compute_pbic_from_vcv(n, ll, 0, W, V, sig2, x)
+        if pbic is None:
             return None
-
-        ll = -0.5 * (n * np.log(2 * np.pi) + n * np.log(sig2) + logdet + n)
 
         return dict(
             n_shifts=0,
@@ -581,14 +741,14 @@ class OUShiftDetection(Tree):
             theta_root=float(theta[0]),
             optima={},
             log_likelihood=float(ll),
-            pBIC=float(self._compute_pbic(n, ll, 0, W, V_inv, sig2, x)),
+            pBIC=float(pbic),
             BIC=float(self._compute_bic(n, ll, 0)),
             AICc=float(self._compute_aicc(n, ll, 0)),
         )
 
     # ── Backward elimination (R-style) ──────────────────────────────
 
-    def _backward_eliminate_single_pass(self, fitted: Dict) -> Dict:
+    def _backward_eliminate_single_pass(self, fitted: dict) -> dict:
         """R-style backward elimination: single greedy pass.
 
         For each shift in the current configuration, tests removing it
@@ -661,54 +821,44 @@ class OUShiftDetection(Tree):
     # ── OU VCV (slow path for backward compatibility) ────────────────
 
     def _build_ou_vcv_single_alpha_no_regime(
-        self, ordered_names: List[str], lineage_info: Dict,
+        self, ordered_names: list[str], lineage_info: dict,
         alpha: float, sigma2: float,
     ) -> np.ndarray:
-        """Build OU VCV matrix without regime labels (loop-based)."""
-        n = len(ordered_names)
-        V = np.zeros((n, n))
+        """Build OU VCV matrix without regime labels."""
+        S, tip_heights, _ = self._shared_path_lengths_from_lineage_info(
+            ordered_names,
+            lineage_info,
+        )
+        if alpha < 1e-10:
+            return sigma2 * S
 
-        tip_heights = {}
-        for name in ordered_names:
-            tip_heights[name] = sum(bl for _, bl, _, _ in lineage_info[name])
-
-        for i in range(n):
-            for j in range(i, n):
-                T_i = tip_heights[ordered_names[i]]
-                T_j = tip_heights[ordered_names[j]]
-
-                if i == j:
-                    s_ij = T_i
-                else:
-                    path_i = lineage_info[ordered_names[i]]
-                    path_j = lineage_info[ordered_names[j]]
-                    s_ij = 0.0
-                    min_len = min(len(path_i), len(path_j))
-                    for s in range(min_len):
-                        if path_i[s][0] == path_j[s][0]:
-                            s_ij += path_i[s][1]
-                        else:
-                            break
-
-                if alpha < 1e-10:
-                    val = sigma2 * s_ij
-                else:
-                    d_i = T_i - s_ij
-                    d_j = T_j - s_ij
-                    val = (sigma2 / (2.0 * alpha)) * np.exp(
-                        -alpha * (d_i + d_j)
-                    ) * (1.0 - np.exp(-2.0 * alpha * s_ij))
-
-                V[i, j] = val
-                V[j, i] = val
-
-        return V
+        D = tip_heights[:, None] + tip_heights[None, :] - 2.0 * S
+        return (sigma2 / (2.0 * alpha)) * np.exp(-alpha * D) * (
+            1.0 - np.exp(-2.0 * alpha * S)
+        )
 
     # ── Design matrices ────────────────────────────────────────────
 
+    def _get_lineage_rows_by_clade_id(self) -> dict[int, np.ndarray]:
+        rows_by_clade_id = getattr(self, "_lineage_rows_by_clade_id", None)
+        if rows_by_clade_id is not None:
+            return rows_by_clade_id
+
+        row_lists = {}
+        for row_idx, name in enumerate(self._ordered_names):
+            for clade_id, *_ in self._lineage_info[name]:
+                row_lists.setdefault(clade_id, []).append(row_idx)
+
+        rows_by_clade_id = {
+            clade_id: np.asarray(rows, dtype=np.intp)
+            for clade_id, rows in row_lists.items()
+        }
+        self._lineage_rows_by_clade_id = rows_by_clade_id
+        return rows_by_clade_id
+
     def _build_shift_weight_matrix(
-        self, ordered_names: List[str], lineage_info: Dict,
-        edges: List[Tuple], alpha: float, tree_height: float,
+        self, ordered_names: list[str], lineage_info: dict,
+        edges: list[tuple], alpha: float, tree_height: float,
     ) -> np.ndarray:
         """Build n x (p+1) OU-weight design matrix for LASSO shift detection.
 
@@ -739,12 +889,12 @@ class OUShiftDetection(Tree):
                         )
                     W[i, col] = w
 
-            W[i, 0] = 1.0 - np.sum(W[i, 1:])
+            W[i, 0] = 1.0 - W[i, 1:].sum()
 
         return W
 
     def _build_indicator_design_matrix(
-        self, shift_edge_indices: List[int],
+        self, shift_edge_indices: list[int],
     ) -> np.ndarray:
         """Build n x (k+1) indicator (simpX) design matrix for scoring.
 
@@ -763,18 +913,17 @@ class OUShiftDetection(Tree):
         if k == 0:
             return W
 
-        # Map selected shift edge indices to their clade IDs
+        # Map selected shift edge indices to their clade IDs.
         shift_clade_ids = {}
         for col_idx, edge_idx in enumerate(shift_edge_indices):
             clade_id = self._edges[edge_idx][0]
             shift_clade_ids[clade_id] = col_idx + 1
 
-        # For each tip, check which shift edges are on its root-to-tip path
-        for i, name in enumerate(self._ordered_names):
-            path = self._lineage_info[name]
-            for clade_id, bl, d_start, d_end in path:
-                if clade_id in shift_clade_ids:
-                    W[i, shift_clade_ids[clade_id]] = 1.0
+        rows_by_clade_id = self._get_lineage_rows_by_clade_id()
+        for clade_id, col_idx in shift_clade_ids.items():
+            rows = rows_by_clade_id.get(clade_id)
+            if rows is not None:
+                W[rows, col_idx] = 1.0
 
         return W
 
@@ -782,22 +931,91 @@ class OUShiftDetection(Tree):
 
     def _transform_to_independent(
         self, x: np.ndarray, W: np.ndarray, V: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         """Cholesky-transform to remove phylogenetic correlation."""
         try:
             L = np.linalg.cholesky(V)
-            L_inv = np.linalg.inv(L)
+            y_star = solve_triangular(L, x, lower=True, check_finite=False)
+            X_star = solve_triangular(L, W, lower=True, check_finite=False)
         except np.linalg.LinAlgError:
             V_reg = V + np.eye(len(x)) * 1e-8 * np.trace(V) / len(x)
             L = np.linalg.cholesky(V_reg)
-            L_inv = np.linalg.inv(L)
-
-        y_star = L_inv @ x
-        X_star = L_inv @ W
+            y_star = solve_triangular(L, x, lower=True, check_finite=False)
+            X_star = solve_triangular(L, W, lower=True, check_finite=False)
 
         return X_star, y_star
 
     # ── GLS ──────────────────────────────────────────────────────────
+
+    def _gls_profile_likelihood(
+        self, x: np.ndarray, W: np.ndarray, V: np.ndarray
+    ) -> tuple[np.ndarray, float, float]:
+        """Profiled GLS likelihood with Cholesky solve and inverse fallback."""
+        try:
+            return self._gls_profile_likelihood_cholesky(x, W, V)
+        except (np.linalg.LinAlgError, FloatingPointError, ValueError):
+            return self._gls_profile_likelihood_inverse(x, W, V)
+
+    def _gls_profile_likelihood_cholesky(
+        self, x: np.ndarray, W: np.ndarray, V: np.ndarray
+    ) -> tuple[np.ndarray, float, float]:
+        n = len(x)
+        factor = cho_factor(V, lower=True, check_finite=False)
+        n_predictors = W.shape[1]
+        solve_rhs = np.empty(
+            (n, n_predictors + 1),
+            dtype=np.result_type(W, x, V),
+        )
+        solve_rhs[:, :n_predictors] = W
+        solve_rhs[:, n_predictors] = x
+        solved = cho_solve(factor, solve_rhs, check_finite=False)
+        V_inv_W = solved[:, :n_predictors]
+        V_inv_x = solved[:, n_predictors]
+
+        info = W.T @ V_inv_W
+        rhs = W.T @ V_inv_x
+        try:
+            theta = np.linalg.solve(info, rhs)
+        except np.linalg.LinAlgError:
+            theta = np.linalg.lstsq(info, rhs, rcond=None)[0]
+
+        e = x - W @ theta
+        V_inv_e = V_inv_x - V_inv_W @ theta
+        sig2 = float(e @ V_inv_e) / n
+        if sig2 <= 0:
+            return theta, sig2, float("-inf")
+
+        logdet = 2.0 * float(np.log(np.diagonal(factor[0])).sum())
+        ll = -0.5 * (n * np.log(2 * np.pi) + n * np.log(sig2) + logdet + n)
+        return theta, sig2, float(ll)
+
+    def _gls_profile_likelihood_inverse(
+        self, x: np.ndarray, W: np.ndarray, V: np.ndarray
+    ) -> tuple[np.ndarray, float, float]:
+        n = len(x)
+        V_inv = np.linalg.inv(V)
+        theta = self._gls_theta_hat(x, W, V_inv)
+        e = x - W @ theta
+        sig2 = float(e @ V_inv @ e) / n
+        if sig2 <= 0:
+            return theta, sig2, float("-inf")
+
+        sign, logdet = np.linalg.slogdet(V)
+        if sign <= 0:
+            return theta, sig2, float("-inf")
+
+        ll = -0.5 * (n * np.log(2 * np.pi) + n * np.log(sig2) + logdet + n)
+        return theta, sig2, float(ll)
+
+    def _invert_vcv(self, V: np.ndarray):
+        try:
+            factor = cho_factor(V, lower=True, check_finite=False)
+            return cho_solve(factor, np.eye(V.shape[0]), check_finite=False)
+        except (np.linalg.LinAlgError, FloatingPointError, ValueError):
+            try:
+                return np.linalg.inv(V)
+            except np.linalg.LinAlgError:
+                return None
 
     def _gls_theta_hat(
         self, x: np.ndarray, W: np.ndarray, V_inv: np.ndarray
@@ -817,6 +1035,36 @@ class OUShiftDetection(Tree):
         W: np.ndarray, V_inv: np.ndarray, sigma2: float,
         x: np.ndarray,
     ) -> float:
+        info = W.T @ V_inv @ W
+        return self._compute_pbic_from_info(
+            n, log_likelihood, k, info, sigma2, x
+        )
+
+    def _compute_pbic_from_vcv(
+        self, n: int, log_likelihood: float, k: int,
+        W: np.ndarray, V: np.ndarray, sigma2: float,
+        x: np.ndarray,
+    ):
+        """Compute pBIC without forming the full covariance inverse."""
+        try:
+            factor = cho_factor(V, lower=True, check_finite=False)
+            V_inv_W = cho_solve(factor, W, check_finite=False)
+            info = W.T @ V_inv_W
+        except (np.linalg.LinAlgError, FloatingPointError, ValueError):
+            try:
+                V_inv = np.linalg.inv(V)
+            except np.linalg.LinAlgError:
+                return None
+            info = W.T @ V_inv @ W
+
+        return self._compute_pbic_from_info(
+            n, log_likelihood, k, info, sigma2, x
+        )
+
+    def _compute_pbic_from_info(
+        self, n: int, log_likelihood: float, k: int,
+        info: np.ndarray, sigma2: float, x: np.ndarray,
+    ) -> float:
         """Phylogenetic BIC matching R's l1ou implementation.
 
         pBIC = 2*k*log(nEdges-1) - 2*LL + 2*log(n) - log(det(scaled_vcov))
@@ -831,13 +1079,6 @@ class OUShiftDetection(Tree):
 
         # Fisher information correction
         d = 1 + k  # intercept + shift magnitudes
-        WtVi = W.T @ V_inv
-        info = WtVi @ W
-
-        try:
-            vcov = sigma2 * np.linalg.inv(info)
-        except np.linalg.LinAlgError:
-            return float("inf")
 
         var_y = np.var(x, ddof=1)
         if var_y < 1e-300:
@@ -846,11 +1087,16 @@ class OUShiftDetection(Tree):
         if n - d <= 0:
             return float("inf")
 
-        scaled = vcov * (n - d) / (var_y * n)
-        sign, ld = np.linalg.slogdet(scaled)
-        if sign <= 0:
+        scale = sigma2 * (n - d) / (var_y * n)
+        if scale == 0.0:
             return float("inf")
 
+        sign_info, logdet_info = np.linalg.slogdet(info)
+        sign_scale = 1.0 if scale > 0.0 or d % 2 == 0 else -1.0
+        if sign_info * sign_scale <= 0:
+            return float("inf")
+
+        ld = d * np.log(abs(scale)) - logdet_info
         return df1 - 2.0 * log_likelihood + 2.0 * np.log(n) - ld
 
     def _compute_bic(self, n: int, log_likelihood: float, k: int) -> float:
@@ -872,7 +1118,9 @@ class OUShiftDetection(Tree):
 
     def _describe_edge(self, clade, tree) -> str:
         """Human-readable edge name."""
-        tips = [t.name for t in clade.get_terminals()]
+        tips = Tree.calculate_terminal_names_fast(clade)
+        if tips is None:
+            tips = [t.name for t in clade.get_terminals()]
         if len(tips) == 1:
             return f"terminal branch to {tips[0]}"
         elif len(tips) <= 3:
@@ -881,8 +1129,8 @@ class OUShiftDetection(Tree):
             return f"stem of ({', '.join(sorted(tips[:2]))}, ... +{len(tips)-2} more)"
 
     def _identify_shift_edges(
-        self, best: Dict, edges: List[Tuple], tree
-    ) -> List[Dict]:
+        self, best: dict, edges: list[tuple], tree
+    ) -> list[dict]:
         """Map selected shift edges to human-readable descriptions."""
         shifts = []
         for j in best["shift_edge_indices"]:
@@ -898,7 +1146,7 @@ class OUShiftDetection(Tree):
 
     # ── Final result assembly ────────────────────────────────────────
 
-    def _build_final_result(self, best: Dict, tree) -> Dict:
+    def _build_final_result(self, best: dict, tree) -> dict:
         """Assemble final result dictionary for output."""
         shifts = self._identify_shift_edges(best, self._edges, tree)
 
@@ -916,7 +1164,7 @@ class OUShiftDetection(Tree):
             shifts=shifts,
         )
 
-    def _empty_result(self) -> Dict:
+    def _empty_result(self) -> dict:
         """Fallback result when no model could be fit."""
         return dict(
             n_shifts=0,
@@ -933,41 +1181,45 @@ class OUShiftDetection(Tree):
 
     # ── Output methods ───────────────────────────────────────────────
 
-    def _output(self, result: Dict) -> None:
+    def _output(self, result: dict) -> None:
         if self.json_output:
             self._print_json_output(result)
         else:
             self._print_text_output(result)
 
-    def _print_text_output(self, result: Dict) -> None:
+    def _print_text_output(self, result: dict) -> None:
         try:
-            print("=" * 60)
-            print("OU Shift Detection (l1ou)")
-            print("=" * 60)
-            print(f"Number of tips:       {result['n_tips']}")
-            print(f"Number of shifts:     {result['n_shifts']}")
-            print(f"Selection criterion:  {result['criterion']}")
-            print(f"Alpha (OU strength):  {result['alpha']:.6f}")
-            print(f"Sigma² (BM rate):     {result['sigma2']:.6f}")
-            print(f"Root optimum (θ₀):    {result['theta_root']:.6f}")
-            print(f"Log-likelihood:       {result['log_likelihood']:.4f}")
-            print(f"pBIC:                 {result['pBIC']:.4f}")
-            print(f"BIC:                  {result['BIC']:.4f}")
-            print(f"AICc:                 {result['AICc']:.4f}")
+            lines = [
+                "=" * 60,
+                "OU Shift Detection (l1ou)",
+                "=" * 60,
+                f"Number of tips:       {result['n_tips']}",
+                f"Number of shifts:     {result['n_shifts']}",
+                f"Selection criterion:  {result['criterion']}",
+                f"Alpha (OU strength):  {result['alpha']:.6f}",
+                f"Sigma² (BM rate):     {result['sigma2']:.6f}",
+                f"Root optimum (θ₀):    {result['theta_root']:.6f}",
+                f"Log-likelihood:       {result['log_likelihood']:.4f}",
+                f"pBIC:                 {result['pBIC']:.4f}",
+                f"BIC:                  {result['BIC']:.4f}",
+                f"AICc:                 {result['AICc']:.4f}",
+            ]
 
-            if result["shifts"]:
-                print()
-                print("Detected shifts:")
-                print("-" * 60)
-                for i, shift in enumerate(result["shifts"], 1):
-                    print(f"  Shift {i}: {shift['description']}")
-                    print(f"           New optimum: {shift['optimum']:.6f}")
+            shifts = result["shifts"]
+            if shifts:
+                lines.extend(["", "Detected shifts:", "-" * 60])
+                append = lines.append
+                for i, shift in enumerate(shifts, 1):
+                    append(
+                        f"  Shift {i}: {shift['description']}\n"
+                        f"           New optimum: {shift['optimum']:.6f}"
+                    )
             else:
-                print()
-                print("No shifts detected — single-regime OU is best.")
-            print("=" * 60)
+                lines.extend(["", "No shifts detected — single-regime OU is best."])
+            lines.append("=" * 60)
+            print("\n".join(lines))
         except BrokenPipeError:
             pass
 
-    def _print_json_output(self, result: Dict) -> None:
+    def _print_json_output(self, result: dict) -> None:
         print_json(result, sort_keys=False)

@@ -1,10 +1,14 @@
-from typing import Dict
-import numpy as np
+from __future__ import annotations
 
-from Bio.Phylo import Newick
+import math
 
 from .base import Tree
-from ...helpers.json_output import print_json
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
 
 
 class DVMC(Tree):
@@ -14,28 +18,89 @@ class DVMC(Tree):
         self.json_output = parsed["json_output"]
 
     def run(self):
-        tree = self.read_tree_file()
-        dvmc = self.determine_dvmc(tree)
+        summary = self._get_simple_newick_terminal_distance_stats(
+            self.tree_file_path,
+            "tree_file_path",
+        )
+        if summary is None:
+            tree = self.read_tree_file_unmodified()
+            dvmc = self.determine_dvmc(tree)
+        else:
+            count, total, total_sq = summary
+            avg_dist = total / count
+            squared_diff_sum = total_sq - count * (avg_dist * avg_dist)
+            dvmc = math.sqrt(squared_diff_sum / (count - 1))
         if self.json_output:
             print_json(dict(dvmc=round(dvmc, 4)))
             return
         print(round(dvmc, 4))
 
-    def process_args(self, args) -> Dict[str, str]:
+    def process_args(self, args) -> dict[str, str]:
         return dict(tree_file_path=args.tree, json_output=getattr(args, "json", False))
 
     def determine_dvmc(self, tree: Newick.Tree) -> float:
-        num_spp = tree.count_terminals()
+        dvmc = self._determine_dvmc_standard_tree(tree)
+        if dvmc is not None:
+            return dvmc
 
-        # Collect all distances at once for vectorized operations
-        distances = np.array([tree.distance(term) for term in tree.get_terminals()])
+        distances = self.calculate_terminal_root_distances_fast(tree)
+        if distances is None:
+            terminals = tree.get_terminals()
+            try:
+                depths = tree.depths()
+                root_depth = depths[tree.root]
+                distances = [depths[term] - root_depth for term in terminals]
+            except (AttributeError, KeyError, TypeError):
+                distances = [tree.distance(term) for term in terminals]
 
-        # Calculate statistics using numpy
-        sumi2N = np.sum(distances ** 2)
-        avg_dist = np.mean(distances)
+        num_spp = len(distances)
+        total = 0.0
+        total_sq = 0.0
+        for distance in distances:
+            total += distance
+            total_sq += distance * distance
+        avg_dist = total / num_spp
 
-        # Calculate variance more efficiently
-        squared_diff_sum = sumi2N - num_spp * (avg_dist ** 2)
+        squared_diff_sum = total_sq - num_spp * (avg_dist * avg_dist)
 
-        # Return standard deviation
-        return np.sqrt(squared_diff_sum / (num_spp - 1))
+        return math.sqrt(squared_diff_sum / (num_spp - 1))
+
+    @staticmethod
+    def _determine_dvmc_standard_tree(tree):
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            return None
+
+        count = 0
+        total = 0.0
+        total_sq = 0.0
+        stack = [(root, 0.0)]
+        pop = stack.pop
+        append = stack.append
+        try:
+            while stack:
+                clade, distance = pop()
+                children = clade.clades
+                if children:
+                    for child in children:
+                        append(
+                            (
+                                child,
+                                distance + (child.branch_length or 0.0),
+                            )
+                        )
+                else:
+                    count += 1
+                    total += distance
+                    total_sq += distance * distance
+        except AttributeError:
+            return None
+
+        if count < 2:
+            return None
+
+        avg_dist = total / count
+        squared_diff_sum = total_sq - count * (avg_dist * avg_dist)
+        return math.sqrt(squared_diff_sum / (count - 1))

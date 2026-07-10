@@ -5,12 +5,63 @@ Given a list of alignment or tree files, counts how many files each
 taxon appears in and retains only taxa meeting a minimum occupancy
 threshold. Outputs filtered copies of each input file.
 """
-from collections import Counter
-from pathlib import Path
-from typing import Dict, List
+from __future__ import annotations
 
+from collections import Counter
+import os
+from pathlib import Path
+
+from ._fasta import _clean_sequence, read_fasta_first_tokens
 from ...errors import PhykitUserError
-from ...helpers.json_output import print_json
+
+
+_path_exists = os.path.exists
+_FASTA_WRAP_WIDTH = 60
+_WRAPPED_FASTA_BATCH_CHUNKS = 8_192
+_WRAPPED_FASTA_BATCH_MIN_LENGTH = 1_000_000
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
+
+
+def _normalize_list_path(path: str) -> str:
+    separator = os.sep
+    if not (
+        separator + separator in path
+        or path == "."
+        or path.startswith("." + separator)
+        or separator + "." + separator in path
+        or path.endswith(separator + ".")
+    ):
+        return path
+
+    is_absolute = os.path.isabs(path)
+    if is_absolute:
+        if (
+            separator == "/"
+            and path.startswith("//")
+            and not path.startswith("///")
+        ):
+            prefix = "//"
+            rest = path[2:]
+        else:
+            prefix = separator
+            rest = path.lstrip(separator)
+    else:
+        prefix = ""
+        rest = path
+
+    parts = [
+        part for part in rest.split(separator)
+        if part and part != "."
+    ]
+    normalized = separator.join(parts)
+    if prefix:
+        return prefix + normalized if normalized else prefix
+    return normalized or "."
 
 
 class OccupancyFilter:
@@ -62,13 +113,12 @@ class OccupancyFilter:
 
         # Count occupancy across files
         occupancy = Counter()
+        update_occupancy = occupancy.update
         for taxa in file_taxa.values():
-            for taxon in taxa:
-                occupancy[taxon] += 1
+            update_occupancy(taxa)
 
         total_files = len(file_paths)
         min_count = self._resolve_threshold(total_files)
-        all_taxa = sorted(occupancy.keys())
 
         # Determine which taxa pass the threshold
         kept_taxa = set()
@@ -145,39 +195,81 @@ class OccupancyFilter:
                 code=2,
             )
 
-        lines = source.read_text().splitlines()
         paths = []
-        for line in lines:
-            line = line.strip()
-            if not line or line.startswith("#"):
-                continue
-            p = Path(line)
-            if not p.is_absolute():
-                p = source.parent / p
-            paths.append(str(p))
+        append = paths.append
+        parent_str = str(source.parent)
+        parent_prefix = "" if parent_str == "." else parent_str + os.sep
+        separator = os.sep
+        double_separator = separator + separator
+        dot_prefix = "." + separator
+        dot_segment = separator + "." + separator
+        dot_suffix = separator + "."
+        check_isabs = os.path.isabs if separator == "\\" else None
+        with source.open() as handle:
+            for line in handle:
+                line = line.strip()
+                if not line or line[0] == "#":
+                    continue
+                if line == ".":
+                    append(parent_str)
+                    continue
+                has_separator = separator in line
+                if not has_separator:
+                    append(parent_prefix + line)
+                    continue
+                needs_normalization = (
+                    line.startswith(dot_prefix)
+                    or double_separator in line
+                    or dot_segment in line
+                    or line.endswith(dot_suffix)
+                )
+                if line[0] == separator or (
+                    check_isabs is not None and check_isabs(line)
+                ):
+                    append(
+                        _normalize_list_path(line)
+                        if needs_normalization
+                        else line
+                    )
+                elif needs_normalization:
+                    normalized = _normalize_list_path(line)
+                    if normalized == ".":
+                        append(parent_str)
+                    else:
+                        append(parent_prefix + normalized)
+                else:
+                    append(parent_prefix + line)
         return paths
 
     def _extract_taxa(self, path):
         """Extract taxon names from a tree or FASTA file."""
-        if not Path(path).exists():
+        if not _path_exists(path):
             raise PhykitUserError(
                 [f"{path} corresponds to no such file or directory."],
                 code=2,
             )
 
         if self.format == "fasta":
-            from Bio import SeqIO
             try:
-                records = list(SeqIO.parse(path, "fasta"))
-                return [r.id for r in records]
+                return read_fasta_first_tokens(path)
             except Exception:
                 raise PhykitUserError(
                     [f"Could not parse FASTA file: {path}"], code=2
                 )
         else:
-            from Bio import Phylo
+            from ..tree.base import Tree
+
             try:
+                taxa = Tree._scan_simple_newick_tip_names(path)
+                if taxa is not None:
+                    return list(taxa)
+
+                from Bio import Phylo
+
                 tree = Phylo.read(path, "newick")
+                taxa = Tree.calculate_terminal_names_fast(tree)
+                if taxa is not None:
+                    return taxa
                 return [t.name for t in tree.get_terminals()]
             except Exception:
                 raise PhykitUserError(
@@ -196,38 +288,154 @@ class OccupancyFilter:
 
     def _filter_fasta(self, input_path, output_path, kept_taxa):
         """Filter a FASTA file to keep only taxa in kept_taxa."""
-        from Bio import SeqIO
+        total = 0
+        kept = 0
 
-        records = list(SeqIO.parse(input_path, "fasta"))
-        kept = [r for r in records if r.id in kept_taxa]
-        removed = len(records) - len(kept)
+        with open(output_path, "w") as f, open(input_path) as handle:
+            write = f.write
+            title = None
+            record_kept = False
+            sequence_parts = []
 
-        with open(output_path, "w") as f:
-            SeqIO.write(kept, f, "fasta")
+            for line in handle:
+                if line[0] == ">":
+                    if record_kept:
+                        write(f">{title}\n")
+                        self._write_wrapped_fasta_sequence(
+                            f,
+                            _clean_sequence(sequence_parts),
+                        )
+                    title = line[1:].rstrip()
+                    total += 1
+                    record_id = title.split(None, 1)[0]
+                    record_kept = record_id in kept_taxa
+                    sequence_parts = []
+                    if record_kept:
+                        kept += 1
+                elif record_kept:
+                    sequence_parts.append(line.rstrip())
 
-        return len(kept), removed
+            if record_kept:
+                write(f">{title}\n")
+                self._write_wrapped_fasta_sequence(
+                    f,
+                    _clean_sequence(sequence_parts),
+                )
+
+        return kept, total - kept
+
+    @staticmethod
+    def _write_wrapped_fasta_sequence(
+        handle,
+        sequence: str,
+        width: int = _FASTA_WRAP_WIDTH,
+    ) -> None:
+        sequence_length = len(sequence)
+        if sequence_length == 0:
+            return
+        if sequence_length <= width:
+            handle.write(sequence)
+            handle.write("\n")
+            return
+
+        if sequence_length <= width * 2:
+            handle.write(f"{sequence[:width]}\n{sequence[width:]}\n")
+            return
+
+        if sequence_length >= _WRAPPED_FASTA_BATCH_MIN_LENGTH:
+            write = handle.write
+            batch_size = width * _WRAPPED_FASTA_BATCH_CHUNKS
+            for start in range(0, sequence_length, batch_size):
+                stop = min(start + batch_size, sequence_length)
+                write(
+                    "\n".join(
+                        [
+                            sequence[idx:idx + width]
+                            for idx in range(start, stop, width)
+                        ]
+                    )
+                )
+                write("\n")
+            return
+
+        handle.write(
+            "\n".join(
+                sequence[idx:idx + width]
+                for idx in range(0, sequence_length, width)
+            )
+        )
+        handle.write("\n")
 
     def _filter_tree(self, input_path, output_path, kept_taxa):
         """Filter a tree to keep only tips in kept_taxa."""
         from Bio import Phylo
-        import copy
+        from ..tree.base import Tree
 
         tree = Phylo.read(input_path, "newick")
-        tips = [t.name for t in tree.get_terminals()]
-        tips_to_prune = [t for t in tips if t not in kept_taxa]
+        terminals = []
+        tips_to_prune = []
+        target_ids = set()
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            root = None
 
-        if tips_to_prune:
-            tree_copy = copy.deepcopy(tree)
-            for tip_name in tips_to_prune:
+        if root is not None:
+            stack = [root]
+            pop = stack.pop
+            append = stack.append
+            append_terminal = terminals.append
+            append_prune = tips_to_prune.append
+            add_target = target_ids.add
+            contains = kept_taxa.__contains__
+            try:
+                while stack:
+                    clade = pop()
+                    children = clade.clades
+                    if children:
+                        child_count = len(children)
+                        if child_count == 2:
+                            append(children[1])
+                            append(children[0])
+                        else:
+                            for index in range(child_count - 1, -1, -1):
+                                append(children[index])
+                    else:
+                        append_terminal(clade)
+                        if not contains(clade.name):
+                            append_prune(clade)
+                            add_target(id(clade))
+            except AttributeError:
+                terminals = []
+                tips_to_prune = []
+                target_ids = set()
+
+        if root is None or (not terminals and not tips_to_prune):
+            terminals = tree.get_terminals()
+            tips_to_prune = [
+                tip for tip in terminals if tip.name not in kept_taxa
+            ]
+
+        if tips_to_prune and target_ids:
+            if not Tree._prune_terminal_objects_batch_standard_tree(
+                tree,
+                target_ids,
+            ):
+                for tip in tips_to_prune:
+                    try:
+                        tree.prune(tip)
+                    except Exception:
+                        pass
+        elif tips_to_prune:
+            for tip in tips_to_prune:
                 try:
-                    tree_copy.prune(tip_name)
+                    tree.prune(tip)
                 except Exception:
                     pass
-            Phylo.write(tree_copy, output_path, "newick")
-        else:
-            Phylo.write(tree, output_path, "newick")
+        Phylo.write(tree, output_path, "newick")
 
-        return len(tips) - len(tips_to_prune), len(tips_to_prune)
+        return len(terminals) - len(tips_to_prune), len(tips_to_prune)
 
     def _print_text(
         self, file_paths, output_paths, occupancy, kept_taxa,
@@ -240,32 +448,36 @@ class OccupancyFilter:
                 if 0 < self.threshold < 1
                 else f"{min_count}/{total_files} files"
             )
-            print(f"Occupancy filter (threshold: {threshold_str})")
-            print(f"Input files: {total_files}")
-            print(f"Total taxa: {len(occupancy)}")
-            print(f"Taxa kept: {len(kept_taxa)}")
-            print(f"Taxa removed: {len(removed_taxa)}")
-            print(f"Files modified: {files_modified}")
-            print()
+            lines = [
+                f"Occupancy filter (threshold: {threshold_str})",
+                f"Input files: {total_files}",
+                f"Total taxa: {len(occupancy)}",
+                f"Taxa kept: {len(kept_taxa)}",
+                f"Taxa removed: {len(removed_taxa)}",
+                f"Files modified: {files_modified}",
+                "",
+            ]
 
             if removed_taxa:
-                print("Removed taxa (occupancy):")
+                lines.append("Removed taxa (occupancy):")
                 for taxon in sorted(removed_taxa):
-                    print(f"  {taxon}: {occupancy[taxon]}/{total_files}")
-                print()
+                    lines.append(f"  {taxon}: {occupancy[taxon]}/{total_files}")
+                lines.append("")
 
-            print("Occupancy per taxon:")
-            for taxon in sorted(occupancy.keys()):
+            lines.append("Occupancy per taxon:")
+            for taxon in sorted(occupancy):
                 status = "kept" if taxon in kept_taxa else "REMOVED"
-                print(f"  {taxon}: {occupancy[taxon]}/{total_files} ({status})")
-            print()
+                lines.append(f"  {taxon}: {occupancy[taxon]}/{total_files} ({status})")
+            lines.append("")
 
-            print("Output files:")
+            lines.append("Output files:")
             for in_path, out_path in zip(file_paths, output_paths):
                 n_removed = len(taxa_removed_per_file.get(in_path, []))
-                print(f"  {out_path}" + (
+                lines.append(f"  {out_path}" + (
                     f" ({n_removed} taxa removed)" if n_removed else ""
                 ))
+
+            print("\n".join(lines))
 
         except BrokenPipeError:
             return
@@ -285,7 +497,7 @@ class OccupancyFilter:
             "removed_taxa": sorted(removed_taxa),
             "occupancy": {
                 taxon: occupancy[taxon]
-                for taxon in sorted(occupancy.keys())
+                for taxon in sorted(occupancy)
             },
             "files": [
                 {

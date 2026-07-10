@@ -1,16 +1,89 @@
-import os
-import pickle
-from typing import Dict, List, Tuple
+from __future__ import annotations
 
-import numpy as np
-from scipy.optimize import minimize_scalar
+import os
 
 from .base import Tree
-from ...helpers.json_output import print_json
-from ...helpers.pgls_utils import max_lambda as compute_max_lambda
-from ...helpers.plot_config import PlotConfig
-from ...helpers.trait_parsing import parse_multi_trait_file
 from ...errors import PhykitUserError
+
+
+class _LazyNumpy:
+    _module = None
+
+    def __getattr__(self, name):
+        module = self._module
+        if module is None:
+            import numpy as _np
+
+            module = _np
+            self._module = module
+
+        value = getattr(module, name)
+        setattr(self, name, value)
+        return value
+
+
+np = _LazyNumpy()
+_CHO_FACTOR = None
+_CHO_SOLVE = None
+_MINIMIZE_SCALAR = None
+
+
+def _eigenvalue_total_variance(eigenvalues) -> float:
+    return float(eigenvalues.sum())
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
+
+
+def parse_multi_trait_file(*args, **kwargs):
+    from ...helpers.trait_parsing import (
+        parse_multi_trait_file as _parse_multi_trait_file,
+    )
+
+    return _parse_multi_trait_file(*args, **kwargs)
+
+
+def trait_matrix_from_rows(*args, **kwargs):
+    from ...helpers.trait_parsing import (
+        trait_matrix_from_rows as _trait_matrix_from_rows,
+    )
+
+    return _trait_matrix_from_rows(*args, **kwargs)
+
+
+def subset_traits_to_ordered_shared_taxa(*args, **kwargs):
+    from ...helpers.trait_parsing import (
+        subset_traits_to_ordered_shared_taxa as _subset_traits_to_ordered_shared_taxa,
+    )
+
+    return _subset_traits_to_ordered_shared_taxa(*args, **kwargs)
+
+
+def cho_factor(*args, **kwargs):
+    global _CHO_FACTOR
+    if _CHO_FACTOR is None:
+        from scipy.linalg import cho_factor as _CHO_FACTOR
+
+    return _CHO_FACTOR(*args, **kwargs)
+
+
+def cho_solve(*args, **kwargs):
+    global _CHO_SOLVE
+    if _CHO_SOLVE is None:
+        from scipy.linalg import cho_solve as _CHO_SOLVE
+
+    return _CHO_SOLVE(*args, **kwargs)
+
+
+def minimize_scalar(*args, **kwargs):
+    global _MINIMIZE_SCALAR
+    if _MINIMIZE_SCALAR is None:
+        from scipy.optimize import minimize_scalar as _MINIMIZE_SCALAR
+
+    return _MINIMIZE_SCALAR(*args, **kwargs)
 
 
 class PhylogeneticOrdination(Tree):
@@ -36,10 +109,19 @@ class PhylogeneticOrdination(Tree):
         self.plot_config = parsed["plot_config"]
 
     def run(self) -> None:
-        from .vcv_utils import build_vcv_matrix, build_discordance_vcv, parse_gene_trees
+        from .vcv_utils import (
+            build_discordance_vcv,
+            build_vcv_matrix,
+            parse_gene_trees,
+        )
 
-        tree = self.read_tree_file()
-        self.validate_tree(tree, min_tips=3, require_branch_lengths=True, context="phylogenetic ordination")
+        tree = self.read_tree_file_unmodified()
+        self.validate_tree(
+            tree,
+            min_tips=3,
+            require_branch_lengths=True,
+            context="phylogenetic ordination",
+        )
 
         tree_tips = self.get_tip_names_from_tree(tree)
         trait_names, traits = parse_multi_trait_file(
@@ -52,9 +134,9 @@ class PhylogeneticOrdination(Tree):
             gene_trees = parse_gene_trees(self.gene_trees_path)
             vcv, vcv_meta = build_discordance_vcv(tree, gene_trees, ordered_names)
             shared = vcv_meta["shared_taxa"]
-            if set(shared) != set(ordered_names):
-                traits = {k: traits[k] for k in shared}
-                ordered_names = shared
+            traits, ordered_names = subset_traits_to_ordered_shared_taxa(
+                traits, ordered_names, shared
+            )
         else:
             vcv = build_vcv_matrix(tree, ordered_names)
             vcv_meta = None
@@ -62,29 +144,27 @@ class PhylogeneticOrdination(Tree):
         n = len(ordered_names)
         p = len(trait_names)
 
-        Y = np.array([[traits[name][j] for j in range(p)] for name in ordered_names])
+        Y = trait_matrix_from_rows(traits, ordered_names)
 
         lambda_val = None
         log_likelihood = None
 
         if self.correction == "lambda":
+            from ...helpers.pgls_utils import max_lambda as compute_max_lambda
+
             max_lam = compute_max_lambda(tree)
             lambda_val, log_likelihood = self._multi_trait_lambda(Y, vcv, max_lam)
-            diag_vals = np.diag(vcv).copy()
+            diag_vals = vcv.diagonal().copy()
             vcv = vcv * lambda_val
             np.fill_diagonal(vcv, diag_vals)
 
-        C_inv = np.linalg.inv(vcv)
-        ones = np.ones(n)
-
-        denom = ones @ C_inv @ ones
-        a_hat = np.array([(ones @ C_inv @ Y[:, j]) / denom for j in range(p)])
-
-        Z = Y - np.outer(ones, a_hat)
+        Z, C_inv_Z = self._center_traits_by_vcv(
+            Y, vcv, include_weighted=self.method == "pca"
+        )
 
         if self.method == "pca":
             self._run_pca(
-                Z, C_inv, n, p, tree, ordered_names, trait_names, Y,
+                Z, C_inv_Z, n, p, tree, ordered_names, trait_names, Y,
                 lambda_val, log_likelihood, vcv_meta,
             )
         else:  # tsne or umap
@@ -94,16 +174,15 @@ class PhylogeneticOrdination(Tree):
             )
 
     def _run_pca(
-        self, Z, C_inv, n, p, tree, ordered_names, trait_names, Y,
+        self, Z, C_inv_Z, n, p, tree, ordered_names, trait_names, Y,
         lambda_val, log_likelihood, vcv_meta=None,
     ) -> None:
-        R = (Z.T @ C_inv @ Z) / (n - 1)
+        R = (Z.T @ C_inv_Z) / (n - 1)
 
         Z_std = None
         if self.mode == "corr":
-            D = np.sqrt(np.diag(R))
-            D_inv = np.diag(1.0 / D)
-            R_corr = D_inv @ R @ D_inv
+            D_inv = 1.0 / np.sqrt(R.diagonal())
+            R_corr = (R * D_inv[:, None]) * D_inv[None, :]
             eigenvalues, eigenvectors = np.linalg.eigh(R_corr)
         else:
             eigenvalues, eigenvectors = np.linalg.eigh(R)
@@ -114,11 +193,11 @@ class PhylogeneticOrdination(Tree):
 
         pc_labels = [f"PC{i+1}" for i in range(p)]
 
-        total_var = np.sum(eigenvalues)
+        total_var = _eigenvalue_total_variance(eigenvalues)
         proportions = eigenvalues / total_var
 
         if self.mode == "corr":
-            Z_std = Z @ D_inv
+            Z_std = Z * D_inv
             scores = Z_std @ eigenvectors
         else:
             scores = Z @ eigenvectors
@@ -186,7 +265,9 @@ class PhylogeneticOrdination(Tree):
             if self.plot:
                 print(f"\nSaved plot: {self.plot_output}")
 
-    def process_args(self, args) -> Dict[str, str]:
+    def process_args(self, args) -> dict[str, str]:
+        from ...helpers.plot_config import PlotConfig
+
         method = getattr(args, "method", "pca")
         plot_tree = getattr(args, "plot_tree", False)
         no_plot_tree = getattr(args, "no_plot_tree", False)
@@ -215,12 +296,102 @@ class PhylogeneticOrdination(Tree):
         )
 
     def _build_vcv_matrix(
-        self, tree, ordered_names: List[str]
+        self, tree, ordered_names: list[str]
     ) -> np.ndarray:
         from .vcv_utils import build_vcv_matrix
         return build_vcv_matrix(tree, ordered_names)
 
+    def _center_traits_by_vcv(
+        self, Y: np.ndarray, C: np.ndarray, include_weighted: bool = False
+    ) -> tuple[np.ndarray, np.ndarray]:
+        try:
+            return self._center_traits_by_vcv_cholesky(Y, C, include_weighted)
+        except (np.linalg.LinAlgError, FloatingPointError, ValueError):
+            return self._center_traits_by_vcv_inverse(Y, C, include_weighted)
+
+    def _center_traits_by_vcv_cholesky(
+        self, Y: np.ndarray, C: np.ndarray, include_weighted: bool = False
+    ) -> tuple[np.ndarray, np.ndarray]:
+        n, p = Y.shape
+        ones = np.ones(n)
+        factor = cho_factor(C, lower=True, check_finite=False)
+
+        solve_rhs = np.empty((n, p + 1), dtype=np.result_type(Y, C))
+        solve_rhs[:, 0] = ones
+        solve_rhs[:, 1:] = Y
+        solved = cho_solve(factor, solve_rhs, check_finite=False)
+        C_inv_ones = solved[:, 0]
+        C_inv_Y = solved[:, 1:]
+
+        denom = ones @ C_inv_ones
+        a_hat = (ones @ C_inv_Y) / denom
+        Z = Y - a_hat
+        if not include_weighted:
+            return Z, None
+
+        C_inv_Z = C_inv_Y - C_inv_ones[:, None] * a_hat
+        return Z, C_inv_Z
+
+    def _center_traits_by_vcv_inverse(
+        self, Y: np.ndarray, C: np.ndarray, include_weighted: bool = False
+    ) -> tuple[np.ndarray, np.ndarray]:
+        n, p = Y.shape
+        ones = np.ones(n)
+        C_inv = np.linalg.inv(C)
+
+        C_inv_rhs = C_inv @ np.column_stack((ones, Y))
+        C_inv_ones = C_inv_rhs[:, 0]
+        C_inv_Y = C_inv_rhs[:, 1:]
+
+        denom = ones @ C_inv_ones
+        a_hat = (ones @ C_inv_Y) / denom
+        Z = Y - a_hat
+        if not include_weighted:
+            return Z, None
+
+        C_inv_Z = C_inv_Y - C_inv_ones[:, None] * a_hat
+        return Z, C_inv_Z
+
     def _multi_trait_log_likelihood(
+        self, Y: np.ndarray, C: np.ndarray
+    ) -> float:
+        try:
+            return self._multi_trait_log_likelihood_cholesky(Y, C)
+        except (np.linalg.LinAlgError, FloatingPointError, ValueError):
+            return self._multi_trait_log_likelihood_inverse(Y, C)
+
+    def _multi_trait_log_likelihood_cholesky(
+        self, Y: np.ndarray, C: np.ndarray
+    ) -> float:
+        n, p = Y.shape
+        ones = np.ones(n)
+
+        factor = cho_factor(C, lower=True, check_finite=False)
+        solve_rhs = np.empty((n, p + 1), dtype=np.result_type(Y, C))
+        solve_rhs[:, 0] = 1.0
+        solve_rhs[:, 1:] = Y
+        solved = cho_solve(factor, solve_rhs, check_finite=False)
+        C_inv_ones = solved[:, 0]
+        C_inv_Y = solved[:, 1:]
+
+        denom = ones @ C_inv_ones
+        a_hat = (ones @ C_inv_Y) / denom
+
+        Z = Y - a_hat
+        C_inv_Z = C_inv_Y - C_inv_ones[:, None] * a_hat
+
+        R_mle = (Z.T @ C_inv_Z) / n
+
+        logdet_C = 2.0 * float(np.log(np.diagonal(factor[0])).sum())
+        sign_R, logdet_R = np.linalg.slogdet(R_mle)
+
+        if sign_R <= 0:
+            return -1e20
+
+        ll = -0.5 * (n * p * np.log(2 * np.pi) + p * logdet_C + n * logdet_R + n * p)
+        return float(ll)
+
+    def _multi_trait_log_likelihood_inverse(
         self, Y: np.ndarray, C: np.ndarray
     ) -> float:
         n, p = Y.shape
@@ -228,12 +399,17 @@ class PhylogeneticOrdination(Tree):
 
         C_inv = np.linalg.inv(C)
 
-        denom = ones @ C_inv @ ones
-        a_hat = np.array([(ones @ C_inv @ Y[:, j]) / denom for j in range(p)])
+        C_inv_rhs = C_inv @ np.column_stack((ones, Y))
+        C_inv_ones = C_inv_rhs[:, 0]
+        C_inv_Y = C_inv_rhs[:, 1:]
 
-        Z = Y - np.outer(ones, a_hat)
+        denom = ones @ C_inv_ones
+        a_hat = (ones @ C_inv_Y) / denom
 
-        R_mle = (Z.T @ C_inv @ Z) / n
+        Z = Y - a_hat
+        C_inv_Z = C_inv_Y - C_inv_ones[:, None] * a_hat
+
+        R_mle = (Z.T @ C_inv_Z) / n
 
         sign_C, logdet_C = np.linalg.slogdet(C)
         sign_R, logdet_R = np.linalg.slogdet(R_mle)
@@ -246,13 +422,14 @@ class PhylogeneticOrdination(Tree):
 
     def _multi_trait_lambda(
         self, Y: np.ndarray, vcv: np.ndarray, max_lambda: float
-    ) -> Tuple[float, float]:
-        diag_vals = np.diag(vcv).copy()
+    ) -> tuple[float, float]:
+        diag_vals = vcv.diagonal().copy()
+        diag_step = vcv.shape[0] + 1
         niter = 10
 
         def neg_ll(lam):
             C_lam = vcv * lam
-            np.fill_diagonal(C_lam, diag_vals)
+            C_lam.ravel()[::diag_step] = diag_vals
             try:
                 ll = self._multi_trait_log_likelihood(Y, C_lam)
                 return -ll
@@ -272,12 +449,12 @@ class PhylogeneticOrdination(Tree):
                 lambda_hat = res.x
 
         C_fitted = vcv * lambda_hat
-        np.fill_diagonal(C_fitted, diag_vals)
+        C_fitted.ravel()[::diag_step] = diag_vals
         ll_fitted = self._multi_trait_log_likelihood(Y, C_fitted)
 
         return float(lambda_hat), float(ll_fitted)
 
-    def _embed_tsne(self, Z: np.ndarray, n: int) -> Tuple[np.ndarray, Dict]:
+    def _embed_tsne(self, Z: np.ndarray, n: int) -> tuple[np.ndarray, dict]:
         from sklearn.manifold import TSNE
 
         if self.perplexity is not None:
@@ -309,7 +486,7 @@ class PhylogeneticOrdination(Tree):
 
         return embedding, params
 
-    def _embed_umap(self, Z: np.ndarray, n: int) -> Tuple[np.ndarray, Dict]:
+    def _embed_umap(self, Z: np.ndarray, n: int) -> tuple[np.ndarray, dict]:
         import umap
 
         if self.n_neighbors is not None:
@@ -344,41 +521,63 @@ class PhylogeneticOrdination(Tree):
         return embedding, params
 
     def _reconstruct_ancestral_scores(
-        self, tree, scores: np.ndarray, ordered_names: List[str]
-    ) -> Tuple[Dict, Dict]:
-        tree_copy = pickle.loads(pickle.dumps(tree, protocol=pickle.HIGHEST_PROTOCOL))
-
-        tip_names_in_tree = [t.name for t in tree_copy.get_terminals()]
-        tips_to_prune = [t for t in tip_names_in_tree if t not in ordered_names]
+        self, tree, scores: np.ndarray, ordered_names: list[str]
+    ) -> tuple[dict, dict]:
+        tip_names_in_tree = self.get_tip_names_from_tree(tree)
+        tips_to_prune = self._tips_to_prune_for_ordered_names(
+            tip_names_in_tree,
+            ordered_names,
+        )
+        tree_for_analysis = self._fast_copy(tree) if tips_to_prune else tree
         if tips_to_prune:
-            tree_copy = self.prune_tree_using_taxa_list(tree_copy, tips_to_prune)
+            tree_for_analysis = self.prune_tree_using_taxa_list(
+                tree_for_analysis, tips_to_prune
+            )
 
         name_to_idx = {name: i for i, name in enumerate(ordered_names)}
 
+        root = tree_for_analysis.root
+        try:
+            preorder_clades = []
+            node_distances = {}
+            stack = [(root, 0.0)]
+            while stack:
+                clade, distance = stack.pop()
+                preorder_clades.append(clade)
+                node_distances[id(clade)] = distance
+                children = clade.clades
+                if children:
+                    for child in reversed(children):
+                        branch_length = (
+                            child.branch_length if child.branch_length else 0.0
+                        )
+                        stack.append((child, distance + branch_length))
+        except AttributeError:
+            node_distances = {}
+            for clade in tree_for_analysis.find_clades(order="postorder"):
+                if clade == root:
+                    node_distances[id(clade)] = 0.0
+                else:
+                    node_distances[id(clade)] = tree_for_analysis.distance(root, clade)
+            preorder_clades = list(tree_for_analysis.find_clades(order="preorder"))
+
         node_estimates = {}
         node_variances = {}
-        node_distances = {}
 
-        root = tree_copy.root
-        for clade in tree_copy.find_clades(order="postorder"):
-            if clade == root:
-                node_distances[id(clade)] = 0.0
-            else:
-                node_distances[id(clade)] = tree_copy.distance(root, clade)
-
-        for clade in tree_copy.find_clades(order="postorder"):
-            if clade.is_terminal():
+        for clade in reversed(preorder_clades):
+            children = clade.clades
+            if not children:
                 name = clade.name
                 if name in name_to_idx:
                     node_estimates[id(clade)] = scores[name_to_idx[name]]
                     node_variances[id(clade)] = 0.0
             else:
-                children = clade.clades
-                precisions = []
-                weighted_scores = []
+                total_prec = 0.0
+                weighted_score = None
                 for child in children:
                     child_id = id(child)
-                    if child_id not in node_estimates:
+                    child_estimate = node_estimates.get(child_id)
+                    if child_estimate is None:
                         continue
                     v_i = child.branch_length if child.branch_length else 0.0
                     child_var = node_variances[child_id]
@@ -386,24 +585,54 @@ class PhylogeneticOrdination(Tree):
                     if denom == 0:
                         denom = 1e-10
                     prec = 1.0 / denom
-                    precisions.append(prec)
-                    weighted_scores.append(prec * node_estimates[child_id])
+                    if weighted_score is None:
+                        weighted_score = prec * child_estimate
+                    else:
+                        weighted_score += prec * child_estimate
+                    total_prec += prec
 
-                if precisions:
-                    total_prec = sum(precisions)
-                    est = sum(weighted_scores) / total_prec
-                    node_estimates[id(clade)] = est
+                if total_prec:
+                    node_estimates[id(clade)] = weighted_score / total_prec
                     node_variances[id(clade)] = 1.0 / total_prec
 
-        return node_estimates, node_distances, tree_copy
+        return node_estimates, node_distances, tree_for_analysis
+
+    @staticmethod
+    def _preorder_clades_direct(tree):
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            return None
+
+        clades = []
+        stack = [root]
+        append_clade = clades.append
+        append_stack = stack.append
+        pop = stack.pop
+        try:
+            while stack:
+                clade = pop()
+                append_clade(clade)
+                children = clade.clades
+                child_count = len(children)
+                if child_count == 2:
+                    append_stack(children[1])
+                    append_stack(children[0])
+                else:
+                    for index in range(child_count - 1, -1, -1):
+                        append_stack(children[index])
+        except AttributeError:
+            return None
+        return clades
 
     def _parse_color_by(
         self,
         color_by: str,
-        trait_names: List[str],
+        trait_names: list[str],
         Y: np.ndarray,
-        ordered_names: List[str],
-    ) -> Tuple[np.ndarray, List[str], str]:
+        ordered_names: list[str],
+    ) -> tuple[np.ndarray, list[str], str]:
         if color_by in trait_names:
             col_idx = trait_names.index(color_by)
             return Y[:, col_idx], [], "continuous"
@@ -423,14 +652,14 @@ class PhylogeneticOrdination(Tree):
         with open(color_by) as f:
             for line in f:
                 stripped = line.strip()
-                if not stripped or stripped.startswith("#"):
+                if not stripped or stripped[0] == "#":
                     continue
-                parts = stripped.split("\t")
+                parts = stripped.split("\t", 2)
                 if len(parts) < 2:
                     continue
-                taxon = parts[0]
-                if taxon in name_to_idx:
-                    values[name_to_idx[taxon]] = parts[1]
+                idx = name_to_idx.get(parts[0])
+                if idx is not None:
+                    values[idx] = parts[1]
 
         missing = [ordered_names[i] for i, v in enumerate(values) if v is None]
         if missing:
@@ -450,7 +679,15 @@ class PhylogeneticOrdination(Tree):
                 break
 
         if is_numeric:
-            return np.array([float(v) for v in values]), [], "continuous"
+            return (
+                np.fromiter(
+                    (float(v) for v in values),
+                    dtype=np.float64,
+                    count=len(values),
+                ),
+                [],
+                "continuous",
+            )
         else:
             categories = sorted(set(values))
             return np.array(values), categories, "discrete"
@@ -462,18 +699,77 @@ class PhylogeneticOrdination(Tree):
         eigenvalues, proportions, eigenvectors, scores,
         trait_names, taxon_names, pc_labels,
         lambda_val, log_likelihood,
-    ) -> Dict:
+    ) -> dict:
+        def format_rows(names, values):
+            if len(pc_labels) == 2:
+                pc1, pc2 = pc_labels
+                col1 = values[:, 0].tolist()
+                col2 = values[:, 1].tolist()
+                return {
+                    name: {
+                        pc1: float(val1),
+                        pc2: float(val2),
+                    }
+                    for name, val1, val2 in zip(names, col1, col2)
+                }
+            if len(pc_labels) == 3:
+                pc1, pc2, pc3 = pc_labels
+                col1 = values[:, 0].tolist()
+                col2 = values[:, 1].tolist()
+                col3 = values[:, 2].tolist()
+                return {
+                    name: {
+                        pc1: float(val1),
+                        pc2: float(val2),
+                        pc3: float(val3),
+                    }
+                    for name, val1, val2, val3 in zip(
+                        names,
+                        col1,
+                        col2,
+                        col3,
+                    )
+                }
+            if len(pc_labels) == 4:
+                pc1, pc2, pc3, pc4 = pc_labels
+                col1 = values[:, 0].tolist()
+                col2 = values[:, 1].tolist()
+                col3 = values[:, 2].tolist()
+                col4 = values[:, 3].tolist()
+                return {
+                    name: {
+                        pc1: float(val1),
+                        pc2: float(val2),
+                        pc3: float(val3),
+                        pc4: float(val4),
+                    }
+                    for name, val1, val2, val3, val4 in zip(
+                        names,
+                        col1,
+                        col2,
+                        col3,
+                        col4,
+                    )
+                }
+            return {
+                name: {
+                    label: float(value)
+                    for label, value in zip(pc_labels, row_values)
+                }
+                for name, row_values in zip(names, values)
+            }
+
         result = {
-            "eigenvalues": {pc_labels[i]: float(eigenvalues[i]) for i in range(len(pc_labels))},
-            "proportion_of_variance": {pc_labels[i]: float(proportions[i]) for i in range(len(pc_labels))},
-            "loadings": {
-                trait_names[j]: {pc_labels[i]: float(eigenvectors[j, i]) for i in range(len(pc_labels))}
-                for j in range(len(trait_names))
+            "eigenvalues": {
+                label: float(value)
+                for label, value in zip(pc_labels, eigenvalues)
             },
-            "scores": {
-                taxon_names[k]: {pc_labels[i]: float(scores[k, i]) for i in range(len(pc_labels))}
-                for k in range(len(taxon_names))
+            "proportion_of_variance": {
+                label: float(value)
+                for label, value in zip(pc_labels, proportions)
             },
+            "loadings": format_rows(trait_names, eigenvectors),
+            "scores": format_rows(taxon_names, scores),
         }
         if lambda_val is not None:
             result["lambda"] = float(lambda_val)
@@ -489,50 +785,127 @@ class PhylogeneticOrdination(Tree):
         def fmt(v):
             return f"{v:.6f}"
 
-        print("Eigenvalues:")
-        print("\t" + "\t".join(pc_labels))
-        print("eigenvalue\t" + "\t".join(fmt(v) for v in eigenvalues))
-        print("proportion\t" + "\t".join(fmt(v) for v in proportions))
+        lines = [
+            "Eigenvalues:",
+            "\t" + "\t".join(pc_labels),
+            "eigenvalue\t" + "\t".join(fmt(v) for v in eigenvalues),
+            "proportion\t" + "\t".join(fmt(v) for v in proportions),
+            "",
+            "Loadings:",
+            "\t" + "\t".join(pc_labels),
+        ]
+        append = lines.append
 
-        print("\nLoadings:")
-        print("\t" + "\t".join(pc_labels))
-        for j, trait in enumerate(trait_names):
-            row = "\t".join(fmt(eigenvectors[j, i]) for i in range(len(pc_labels)))
-            print(f"{trait}\t{row}")
+        def append_rows(names, values):
+            if len(pc_labels) == 2:
+                col1 = values[:, 0].tolist()
+                col2 = values[:, 1].tolist()
+                for name, val1, val2 in zip(names, col1, col2):
+                    append(f"{name}\t{val1:.6f}\t{val2:.6f}")
+            elif len(pc_labels) == 3:
+                col1 = values[:, 0].tolist()
+                col2 = values[:, 1].tolist()
+                col3 = values[:, 2].tolist()
+                for name, val1, val2, val3 in zip(
+                    names,
+                    col1,
+                    col2,
+                    col3,
+                ):
+                    append(
+                        f"{name}\t{val1:.6f}\t{val2:.6f}\t{val3:.6f}"
+                    )
+            elif len(pc_labels) == 4:
+                col1 = values[:, 0].tolist()
+                col2 = values[:, 1].tolist()
+                col3 = values[:, 2].tolist()
+                col4 = values[:, 3].tolist()
+                for name, val1, val2, val3, val4 in zip(
+                    names,
+                    col1,
+                    col2,
+                    col3,
+                    col4,
+                ):
+                    append(
+                        f"{name}\t{val1:.6f}\t{val2:.6f}"
+                        f"\t{val3:.6f}\t{val4:.6f}"
+                    )
+            else:
+                for name, row_values in zip(names, values.tolist()):
+                    row = "\t".join(fmt(value) for value in row_values)
+                    append(f"{name}\t{row}")
 
-        print("\nScores:")
-        print("\t" + "\t".join(pc_labels))
-        for k, taxon in enumerate(taxon_names):
-            row = "\t".join(fmt(scores[k, i]) for i in range(len(pc_labels)))
-            print(f"{taxon}\t{row}")
+        append_rows(trait_names, eigenvectors)
+
+        append("")
+        append("Scores:")
+        append("\t" + "\t".join(pc_labels))
+        append_rows(taxon_names, scores)
 
         if lambda_val is not None:
-            print(f"\nLambda: {fmt(lambda_val)}")
-            print(f"Log-likelihood: {fmt(log_likelihood)}")
+            append("")
+            append(f"Lambda: {fmt(lambda_val)}")
+            append(f"Log-likelihood: {fmt(log_likelihood)}")
+
+        print("\n".join(lines))
 
     # --- Dimreduce output ---
 
     def _format_dimreduce_result(
         self,
         embedding: np.ndarray,
-        taxon_names: List[str],
-        params: Dict,
+        taxon_names: list[str],
+        params: dict,
         lambda_val,
         log_likelihood,
-    ) -> Dict:
+    ) -> dict:
         dim_labels = [f"Dim{i+1}" for i in range(self.n_components)]
+        if self.n_components == 2:
+            dim1_values = embedding[:, 0].tolist()
+            dim2_values = embedding[:, 1].tolist()
+            embedding_rows = {
+                taxon: {
+                    "Dim1": round(dim1, 6),
+                    "Dim2": round(dim2, 6),
+                }
+                for taxon, dim1, dim2 in zip(
+                    taxon_names,
+                    dim1_values,
+                    dim2_values,
+                )
+            }
+        elif self.n_components == 3:
+            dim1_values = embedding[:, 0].tolist()
+            dim2_values = embedding[:, 1].tolist()
+            dim3_values = embedding[:, 2].tolist()
+            embedding_rows = {
+                taxon: {
+                    "Dim1": round(dim1, 6),
+                    "Dim2": round(dim2, 6),
+                    "Dim3": round(dim3, 6),
+                }
+                for taxon, dim1, dim2, dim3 in zip(
+                    taxon_names,
+                    dim1_values,
+                    dim2_values,
+                    dim3_values,
+                )
+            }
+        else:
+            embedding_rows = {
+                taxon: {
+                    label: round(float(value), 6)
+                    for label, value in zip(dim_labels, row)
+                }
+                for taxon, row in zip(taxon_names, embedding.tolist())
+            }
         result = {
             "method": self.method,
             "correction": self.correction,
             "n_components": self.n_components,
             "parameters": params,
-            "embedding": {
-                taxon_names[k]: {
-                    dim_labels[i]: round(float(embedding[k, i]), 6)
-                    for i in range(self.n_components)
-                }
-                for k in range(len(taxon_names))
-            },
+            "embedding": embedding_rows,
         }
         if lambda_val is not None:
             result["lambda"] = float(lambda_val)
@@ -542,8 +915,8 @@ class PhylogeneticOrdination(Tree):
     def _print_dimreduce_text_output(
         self,
         embedding: np.ndarray,
-        taxon_names: List[str],
-        params: Dict,
+        taxon_names: list[str],
+        params: dict,
         lambda_val,
         log_likelihood,
     ) -> None:
@@ -552,33 +925,70 @@ class PhylogeneticOrdination(Tree):
 
         dim_labels = [f"Dim{i+1}" for i in range(self.n_components)]
 
-        print(f"Method: {self.method}")
-        print(f"Correction: {self.correction}")
+        lines = [
+            f"Method: {self.method}",
+            f"Correction: {self.correction}",
+        ]
+        append = lines.append
 
         if "perplexity" in params:
-            print(f"Perplexity: {params['perplexity']}")
+            append(f"Perplexity: {params['perplexity']}")
         if "n_neighbors" in params:
-            print(f"n_neighbors: {params['n_neighbors']}")
+            append(f"n_neighbors: {params['n_neighbors']}")
         if "min_dist" in params:
-            print(f"min_dist: {params['min_dist']}")
+            append(f"min_dist: {params['min_dist']}")
 
-        print(f"\nEmbedding:")
-        print("\t" + "\t".join(dim_labels))
-        for k, taxon in enumerate(taxon_names):
-            row = "\t".join(fmt(embedding[k, i]) for i in range(self.n_components))
-            print(f"{taxon}\t{row}")
+        append("")
+        append("Embedding:")
+        append("\t" + "\t".join(dim_labels))
+        if self.n_components == 2:
+            try:
+                dim1_values = embedding[:, 0].tolist()
+                dim2_values = embedding[:, 1].tolist()
+            except (AttributeError, IndexError, TypeError):
+                for taxon, values in zip(taxon_names, embedding):
+                    append(f"{taxon}\t{values[0]:.6f}\t{values[1]:.6f}")
+            else:
+                for taxon, dim1, dim2 in zip(taxon_names, dim1_values, dim2_values):
+                    append(f"{taxon}\t{dim1:.6f}\t{dim2:.6f}")
+        elif self.n_components == 3:
+            try:
+                dim1_values = embedding[:, 0].tolist()
+                dim2_values = embedding[:, 1].tolist()
+                dim3_values = embedding[:, 2].tolist()
+            except (AttributeError, IndexError, TypeError):
+                for taxon, values in zip(taxon_names, embedding):
+                    append(
+                        f"{taxon}\t{values[0]:.6f}\t"
+                        f"{values[1]:.6f}\t{values[2]:.6f}"
+                    )
+            else:
+                for taxon, dim1, dim2, dim3 in zip(
+                    taxon_names,
+                    dim1_values,
+                    dim2_values,
+                    dim3_values,
+                ):
+                    append(f"{taxon}\t{dim1:.6f}\t{dim2:.6f}\t{dim3:.6f}")
+        else:
+            for taxon, values in zip(taxon_names, embedding.tolist()):
+                row = "\t".join(fmt(value) for value in values)
+                append(f"{taxon}\t{row}")
 
         if lambda_val is not None:
-            print(f"\nLambda: {fmt(lambda_val)}")
-            print(f"Log-likelihood: {fmt(log_likelihood)}")
+            append("")
+            append(f"Lambda: {fmt(lambda_val)}")
+            append(f"Log-likelihood: {fmt(log_likelihood)}")
+
+        print("\n".join(lines))
 
     # --- Plotting ---
 
     def _plot_pca(
         self,
         scores: np.ndarray,
-        taxon_names: List[str],
-        pc_labels: List[str],
+        taxon_names: list[str],
+        pc_labels: list[str],
         proportions: np.ndarray,
         tree=None,
         eigenvectors=None,
@@ -617,14 +1027,13 @@ class PhylogeneticOrdination(Tree):
         ax.set_ylabel(
             f"{pc_labels[1]} ({proportions[1]*100:.1f}% variance explained)"
         )
-        fig.tight_layout()
         fig.savefig(self.plot_output, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
 
     def _plot_dimreduce(
         self,
         embedding: np.ndarray,
-        taxon_names: List[str],
+        taxon_names: list[str],
         tree=None,
         Z=None,
         trait_names=None,
@@ -656,7 +1065,6 @@ class PhylogeneticOrdination(Tree):
             dim_labels = [f"Dim{i+1}" for i in range(self.n_components)]
             ax.set_xlabel(dim_labels[0])
             ax.set_ylabel(dim_labels[1])
-        fig.tight_layout()
         fig.savefig(self.plot_output, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
 
@@ -686,13 +1094,16 @@ class PhylogeneticOrdination(Tree):
                 edge_label = tree_color_by
                 edge_cmap = "viridis"
 
-        all_dists = list(node_distances.values())
-        max_dist = max(all_dists) if all_dists else 1.0
+        max_dist = max(node_distances.values(), default=1.0)
 
         segments = []
         colors = []
 
-        for clade in tree_pruned.find_clades(order="preorder"):
+        preorder_clades = self._preorder_clades_direct(tree_pruned)
+        if preorder_clades is None:
+            preorder_clades = tree_pruned.find_clades(order="preorder")
+
+        for clade in preorder_clades:
             parent_id = id(clade)
             if parent_id not in node_estimates:
                 continue
@@ -750,31 +1161,28 @@ class PhylogeneticOrdination(Tree):
             tip_vals = Y[:, col_idx]
         elif os.path.isfile(tree_color_by):
             name_to_idx = {name: i for i, name in enumerate(taxon_names)}
-            tip_vals = np.zeros(len(taxon_names))
+            n_taxa = len(taxon_names)
+            tip_vals = np.zeros(n_taxa)
+            found = [False] * n_taxa
+            found_count = 0
             with open(tree_color_by) as f:
                 for line in f:
                     stripped = line.strip()
-                    if not stripped or stripped.startswith("#"):
+                    if not stripped or stripped[0] == "#":
                         continue
-                    parts = stripped.split("\t")
+                    parts = stripped.split("\t", 2)
                     if len(parts) < 2:
                         continue
-                    taxon = parts[0]
-                    if taxon in name_to_idx:
+                    idx = name_to_idx.get(parts[0])
+                    if idx is not None:
                         try:
-                            tip_vals[name_to_idx[taxon]] = float(parts[1])
+                            tip_vals[idx] = float(parts[1])
                         except ValueError:
                             return None, None, None
-            # Check all taxa covered
-            found = set()
-            with open(tree_color_by) as f:
-                for line in f:
-                    stripped = line.strip()
-                    if stripped and not stripped.startswith("#"):
-                        parts = stripped.split("\t")
-                        if parts[0] in name_to_idx:
-                            found.add(parts[0])
-            if len(found) < len(taxon_names):
+                        if not found[idx]:
+                            found[idx] = True
+                            found_count += 1
+            if found_count < n_taxa:
                 return None, None, None
         else:
             return None, None, None

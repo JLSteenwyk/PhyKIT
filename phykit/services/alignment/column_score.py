@@ -1,11 +1,83 @@
-from typing import Dict, List, Tuple
-import numpy as np
-
-from Bio import AlignIO
-from Bio.Align import MultipleSeqAlignment
+from __future__ import annotations
 
 from .base import Alignment
-from ...helpers.json_output import print_json
+
+
+class _LazyAlignIO:
+    _module = None
+
+    def read(self, *args, **kwargs):
+        module = self._module
+        if module is None:
+            from Bio import AlignIO as _AlignIO
+
+            module = _AlignIO
+            self._module = module
+
+        read = module.read
+        self.read = read
+        return read(*args, **kwargs)
+
+
+AlignIO = _LazyAlignIO()
+
+
+class _LazyNumpy:
+    _module = None
+
+    def __getattr__(self, name):
+        module = self._module
+        if module is None:
+            import numpy as _np
+
+            module = _np
+            self._module = module
+
+        value = getattr(module, name)
+        setattr(self, name, value)
+        return value
+
+
+np = _LazyNumpy()
+_SMALL_TAXON_COLUMN_SET_MAX = 8
+
+
+def _clean_fasta_sequence(sequence_parts: list[str]) -> str:
+    if len(sequence_parts) == 1:
+        sequence = sequence_parts[0]
+    else:
+        sequence = "".join(sequence_parts)
+    if " " in sequence:
+        sequence = sequence.replace(" ", "")
+    if "\r" in sequence:
+        sequence = sequence.replace("\r", "")
+    return sequence.upper()
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
+
+
+def get_alignment_and_format(*args, **kwargs):
+    from ...helpers.files import get_alignment_and_format as _get_alignment_and_format
+
+    return _get_alignment_and_format(*args, **kwargs)
+
+
+def _alignment_size(alignment):
+    try:
+        return len(alignment)
+    except TypeError:
+        return None
+
+
+def _alignment_length(alignment):
+    get_alignment_length = getattr(alignment, "get_alignment_length", None)
+    if get_alignment_length is None:
+        return None
+    return get_alignment_length()
 
 
 class ColumnScore(Alignment):
@@ -15,19 +87,42 @@ class ColumnScore(Alignment):
         self.json_output = parsed["json_output"]
 
     def run(self) -> None:
-        query_records = AlignIO.read(self.fasta, "fasta")
-        reference_records = AlignIO.read(self.reference, "fasta")
+        direct_result = self._calculate_fasta_paths_direct(self.reference, self.fasta)
+        if direct_result is not None:
+            number_of_matches, number_of_total_columns = direct_result
+            score = round(number_of_matches / number_of_total_columns, 4)
 
-        # create lists with strings of every columns
-        ref_columns, query_columns = self.get_columns_from_alignments(
+            if self.json_output:
+                print_json(dict(column_score=score))
+                return
+
+            print(score)
+            return
+
+        query_records, query_format, _ = get_alignment_and_format(self.fasta)
+        if query_format != "fasta":
+            query_records = AlignIO.read(self.fasta, "fasta")
+
+        if self.reference == self.fasta:
+            reference_records = query_records
+        else:
+            reference_records, reference_format, _ = get_alignment_and_format(
+                self.reference
+            )
+            if reference_format != "fasta":
+                reference_records = AlignIO.read(self.reference, "fasta")
+
+        direct_result = self._calculate_matches_between_alignments_direct(
             reference_records, query_records
         )
-
-        # count the number of matches and total pairs
-        number_of_matches, number_of_total_columns = \
-            self.calculate_matches_between_ref_and_query_columns(
+        if direct_result is None:
+            ref_columns, query_columns = self.get_columns_from_alignments(
+                reference_records, query_records
+            )
+            direct_result = self.calculate_matches_between_ref_and_query_columns(
                 ref_columns, query_columns
             )
+        number_of_matches, number_of_total_columns = direct_result
 
         score = round(number_of_matches / number_of_total_columns, 4)
 
@@ -37,7 +132,7 @@ class ColumnScore(Alignment):
 
         print(score)
 
-    def process_args(self, args) -> Dict[str, str]:
+    def process_args(self, args) -> dict[str, str]:
         return dict(
             fasta=args.fasta,
             reference=args.reference,
@@ -48,32 +143,243 @@ class ColumnScore(Alignment):
         self,
         reference_records: MultipleSeqAlignment,
         query_records: MultipleSeqAlignment,
-    ) -> Tuple[List[str], List[str]]:
-        # Convert alignments to numpy arrays for faster column extraction
-        ref_array = np.array([
-            [c.upper() for c in str(record.seq)]
-            for record in reference_records
-        ], dtype='U1')
+    ) -> tuple[list[str], list[str]]:
+        ref_sequences = [str(record.seq).upper() for record in reference_records]
+        query_sequences = [str(record.seq).upper() for record in query_records]
 
-        query_array = np.array([
-            [c.upper() for c in str(record.seq)]
-            for record in query_records
-        ], dtype='U1')
-
-        # Extract columns as strings
-        ref_columns = [''.join(ref_array[:, i]) for i in range(ref_array.shape[1])]
-        query_columns = [''.join(query_array[:, i]) for i in range(query_array.shape[1])]
+        ref_columns = ["".join(column) for column in zip(*ref_sequences)]
+        query_columns = ["".join(column) for column in zip(*query_sequences)]
 
         return ref_columns, query_columns
 
     def calculate_matches_between_ref_and_query_columns(
         self,
-        ref_columns: List[str],
-        query_columns: List[str],
-    ) -> Tuple[int, int]:
+        ref_columns: list[str],
+        query_columns: list[str],
+    ) -> tuple[int, int]:
         set1 = set(ref_columns)
         set2 = set(query_columns)
 
         matches = set1.intersection(set2)
 
         return len(matches), len(query_columns)
+
+    @staticmethod
+    def _read_fasta_sequences_upper(path: str) -> list[str] | None:
+        sequences = []
+        expected_length = None
+        with open(path) as handle:
+            record_seen = False
+            sequence_parts = []
+            for line in handle:
+                if not line:
+                    continue
+                if line[0] == ">":
+                    if record_seen:
+                        sequence = _clean_fasta_sequence(sequence_parts)
+                        sequence_length = len(sequence)
+                        if expected_length is None:
+                            expected_length = sequence_length
+                        elif sequence_length != expected_length:
+                            return None
+                        sequences.append(sequence)
+                    record_seen = True
+                    sequence_parts = []
+                elif record_seen:
+                    sequence_parts.append(line.rstrip())
+                else:
+                    return None
+
+            if record_seen:
+                sequence = _clean_fasta_sequence(sequence_parts)
+                sequence_length = len(sequence)
+                if expected_length is None:
+                    expected_length = sequence_length
+                elif sequence_length != expected_length:
+                    return None
+                sequences.append(sequence)
+
+        return sequences or None
+
+    @staticmethod
+    def _unique_column_count_ascii(sequences: list[str], seq_len: int) -> int | None:
+        column_set = ColumnScore._small_ascii_column_set(sequences)
+        if column_set is not None:
+            return len(column_set)
+
+        try:
+            sequence_matrix = np.frombuffer(
+                "".join(sequences).encode("ascii"),
+                dtype=np.uint8,
+            ).reshape(len(sequences), seq_len)
+        except UnicodeEncodeError:
+            return None
+
+        column_dtype = np.dtype((np.void, len(sequences)))
+        unique_columns = np.unique(
+            np.ascontiguousarray(sequence_matrix.T).view(column_dtype).ravel()
+        )
+        return int(unique_columns.size)
+
+    @staticmethod
+    def _small_ascii_column_set(
+        sequences: list[str],
+    ) -> set[str] | set[tuple[str, ...]] | None:
+        if len(sequences) > _SMALL_TAXON_COLUMN_SET_MAX:
+            return None
+        try:
+            if len(sequences) == 1:
+                sequence = sequences[0]
+                sequence.encode("ascii")
+                return set(sequence)
+            for sequence in sequences:
+                sequence.encode("ascii")
+        except UnicodeEncodeError:
+            return None
+        return set(zip(*sequences))
+
+    @staticmethod
+    def _repeated_sequence_symbols_ascii(sequences: list[str]) -> frozenset[str] | None:
+        first_sequence = sequences[0]
+        for sequence in sequences:
+            if sequence != first_sequence:
+                return None
+        try:
+            first_sequence.encode("ascii")
+        except UnicodeEncodeError:
+            return None
+        return frozenset(first_sequence)
+
+    @staticmethod
+    def _calculate_matches_between_sequence_lists(
+        ref_sequences: list[str],
+        query_sequences: list[str],
+    ) -> tuple[int, int] | None:
+        if not ref_sequences or not query_sequences:
+            return None
+
+        ref_len = len(ref_sequences[0])
+        query_len = len(query_sequences[0])
+        if len(ref_sequences) != len(query_sequences):
+            return 0, query_len
+
+        ref_symbols = ColumnScore._repeated_sequence_symbols_ascii(ref_sequences)
+        query_symbols = ColumnScore._repeated_sequence_symbols_ascii(query_sequences)
+        if ref_symbols is not None and query_symbols is not None:
+            return len(ref_symbols.intersection(query_symbols)), query_len
+
+        if ref_sequences == query_sequences:
+            unique_column_count = ColumnScore._unique_column_count_ascii(
+                query_sequences,
+                query_len,
+            )
+            if unique_column_count is None:
+                return None
+            return unique_column_count, query_len
+
+        n_taxa = len(ref_sequences)
+        if n_taxa <= _SMALL_TAXON_COLUMN_SET_MAX:
+            ref_columns = ColumnScore._small_ascii_column_set(ref_sequences)
+            query_columns = ColumnScore._small_ascii_column_set(query_sequences)
+            if ref_columns is not None and query_columns is not None:
+                return len(ref_columns.intersection(query_columns)), query_len
+
+        try:
+            ref_matrix = np.frombuffer(
+                "".join(ref_sequences).encode("ascii"),
+                dtype=np.uint8,
+            ).reshape(n_taxa, ref_len)
+            query_matrix = np.frombuffer(
+                "".join(query_sequences).encode("ascii"),
+                dtype=np.uint8,
+            ).reshape(n_taxa, query_len)
+        except UnicodeEncodeError:
+            return None
+
+        column_dtype = np.dtype((np.void, n_taxa))
+        ref_unique = np.unique(
+            np.ascontiguousarray(ref_matrix.T).view(column_dtype).ravel()
+        )
+        query_unique = np.unique(
+            np.ascontiguousarray(query_matrix.T).view(column_dtype).ravel()
+        )
+        matches = np.intersect1d(ref_unique, query_unique, assume_unique=True)
+        return int(matches.size), query_len
+
+    @staticmethod
+    def _calculate_fasta_paths_direct(
+        reference_path: str,
+        query_path: str,
+    ) -> tuple[int, int] | None:
+        try:
+            query_sequences = ColumnScore._read_fasta_sequences_upper(query_path)
+            if query_sequences is None:
+                return None
+            if reference_path == query_path:
+                reference_sequences = query_sequences
+            else:
+                reference_sequences = ColumnScore._read_fasta_sequences_upper(
+                    reference_path
+                )
+                if reference_sequences is None:
+                    return None
+        except OSError:
+            return None
+
+        return ColumnScore._calculate_matches_between_sequence_lists(
+            reference_sequences,
+            query_sequences,
+        )
+
+    @staticmethod
+    def _calculate_matches_between_alignments_direct(
+        reference_records: MultipleSeqAlignment,
+        query_records: MultipleSeqAlignment,
+    ) -> tuple[int, int] | None:
+        if reference_records is query_records:
+            query_sequences = [str(record.seq).upper() for record in query_records]
+            if not query_sequences:
+                return None
+
+            query_len = len(query_sequences[0])
+            if any(len(seq) != query_len for seq in query_sequences):
+                return None
+
+            return ColumnScore._calculate_matches_between_sequence_lists(
+                query_sequences,
+                query_sequences,
+            )
+
+        ref_size = _alignment_size(reference_records)
+        query_size = _alignment_size(query_records)
+        if (
+            ref_size is not None
+            and query_size is not None
+            and ref_size > 0
+            and query_size > 0
+            and ref_size != query_size
+        ):
+            query_len = _alignment_length(query_records)
+            if query_len is not None:
+                return 0, query_len
+
+        ref_sequences = [str(record.seq).upper() for record in reference_records]
+        query_sequences = [str(record.seq).upper() for record in query_records]
+        if not ref_sequences or not query_sequences:
+            return None
+
+        ref_len = len(ref_sequences[0])
+        query_len = len(query_sequences[0])
+        if (
+            any(len(seq) != ref_len for seq in ref_sequences)
+            or any(len(seq) != query_len for seq in query_sequences)
+        ):
+            return None
+
+        if len(ref_sequences) != len(query_sequences):
+            return 0, query_len
+
+        return ColumnScore._calculate_matches_between_sequence_lists(
+            ref_sequences,
+            query_sequences,
+        )

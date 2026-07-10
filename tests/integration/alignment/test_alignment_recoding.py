@@ -11,12 +11,17 @@ from phykit.phykit import Phykit
 here = Path(__file__)
 
 
+def _expected_fasta_call(*records):
+    return [call("\n".join(records))]
+
+
 @pytest.mark.integration
 class TestAlignmentRecoding(object):
     @patch("builtins.print")
     def test_alignment_recoding_invalid_input(self, mocked_print):  # noqa
-        with pytest.raises(SystemExit) as pytest_wrapped_e:
-            Phykit()
+        with patch.object(sys, "argv", ["phykit", "alignment_recoding"]):
+            with pytest.raises(SystemExit) as pytest_wrapped_e:
+                Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2
@@ -48,13 +53,13 @@ class TestAlignmentRecoding(object):
         ]
         with patch.object(sys, "argv", testargs):
             Phykit()
-        assert mocked_print.mock_calls == [
-            call(expected_result_0),
-            call(expected_result_1),
-            call(expected_result_2),
-            call(expected_result_3),
-            call(expected_result_4),
-        ]
+        assert mocked_print.mock_calls == _expected_fasta_call(
+            expected_result_0,
+            expected_result_1,
+            expected_result_2,
+            expected_result_3,
+            expected_result_4,
+        )
 
     @patch("builtins.print")
     def test_alignment_recoding_dayhoff_6(self, mocked_print):
@@ -74,10 +79,10 @@ class TestAlignmentRecoding(object):
         ]
         with patch.object(sys, "argv", testargs):
             Phykit()
-        assert mocked_print.mock_calls == [
-            call(expected_result_0),
-            call(expected_result_1),
-        ]
+        assert mocked_print.mock_calls == _expected_fasta_call(
+            expected_result_0,
+            expected_result_1,
+        )
 
     @patch("builtins.print")
     def test_alignment_recoding_dayhoff_9(self, mocked_print):
@@ -97,10 +102,10 @@ class TestAlignmentRecoding(object):
         ]
         with patch.object(sys, "argv", testargs):
             Phykit()
-        assert mocked_print.mock_calls == [
-            call(expected_result_0),
-            call(expected_result_1),
-        ]
+        assert mocked_print.mock_calls == _expected_fasta_call(
+            expected_result_0,
+            expected_result_1,
+        )
 
     @patch("builtins.print")
     def test_alignment_recoding_dayhoff_12(self, mocked_print):
@@ -120,10 +125,10 @@ class TestAlignmentRecoding(object):
         ]
         with patch.object(sys, "argv", testargs):
             Phykit()
-        assert mocked_print.mock_calls == [
-            call(expected_result_0),
-            call(expected_result_1),
-        ]
+        assert mocked_print.mock_calls == _expected_fasta_call(
+            expected_result_0,
+            expected_result_1,
+        )
 
     @patch("builtins.print")
     def test_alignment_recoding_dayhoff_15(self, mocked_print):
@@ -143,10 +148,10 @@ class TestAlignmentRecoding(object):
         ]
         with patch.object(sys, "argv", testargs):
             Phykit()
-        assert mocked_print.mock_calls == [
-            call(expected_result_0),
-            call(expected_result_1),
-        ]
+        assert mocked_print.mock_calls == _expected_fasta_call(
+            expected_result_0,
+            expected_result_1,
+        )
 
     @patch("builtins.print")
     def test_alignment_recoding_dayhoff_18(self, mocked_print):
@@ -166,10 +171,10 @@ class TestAlignmentRecoding(object):
         ]
         with patch.object(sys, "argv", testargs):
             Phykit()
-        assert mocked_print.mock_calls == [
-            call(expected_result_0),
-            call(expected_result_1),
-        ]
+        assert mocked_print.mock_calls == _expected_fasta_call(
+            expected_result_0,
+            expected_result_1,
+        )
 
     @patch("builtins.print")
     def test_alignment_recoding_sandr_6(self, mocked_print):
@@ -189,10 +194,10 @@ class TestAlignmentRecoding(object):
         ]
         with patch.object(sys, "argv", testargs):
             Phykit()
-        assert mocked_print.mock_calls == [
-            call(expected_result_0),
-            call(expected_result_1),
-        ]
+        assert mocked_print.mock_calls == _expected_fasta_call(
+            expected_result_0,
+            expected_result_1,
+        )
 
     @patch("builtins.print")
     def test_alignment_recoding_KGB_6(self, mocked_print):
@@ -212,10 +217,10 @@ class TestAlignmentRecoding(object):
         ]
         with patch.object(sys, "argv", testargs):
             Phykit()
-        assert mocked_print.mock_calls == [
-            call(expected_result_0),
-            call(expected_result_1),
-        ]
+        assert mocked_print.mock_calls == _expected_fasta_call(
+            expected_result_0,
+            expected_result_1,
+        )
 
     @patch("builtins.print")
     def test_alignment_recoding_alias0(self, mocked_print):
@@ -244,13 +249,13 @@ class TestAlignmentRecoding(object):
         ]
         with patch.object(sys, "argv", testargs):
             Phykit()
-        assert mocked_print.mock_calls == [
-            call(expected_result_0),
-            call(expected_result_1),
-            call(expected_result_2),
-            call(expected_result_3),
-            call(expected_result_4),
-        ]
+        assert mocked_print.mock_calls == _expected_fasta_call(
+            expected_result_0,
+            expected_result_1,
+            expected_result_2,
+            expected_result_3,
+            expected_result_4,
+        )
 
     @patch("builtins.print")
     def test_alignment_recoding_alias1(self, mocked_print):
@@ -280,13 +285,13 @@ class TestAlignmentRecoding(object):
         ]
         with patch.object(sys, "argv", testargs):
             Phykit()
-        assert mocked_print.mock_calls == [
-            call(expected_result_0),
-            call(expected_result_1),
-            call(expected_result_2),
-            call(expected_result_3),
-            call(expected_result_4),
-        ]
+        assert mocked_print.mock_calls == _expected_fasta_call(
+            expected_result_0,
+            expected_result_1,
+            expected_result_2,
+            expected_result_3,
+            expected_result_4,
+        )
 
     @patch("builtins.print")
     def test_alignment_recoding_no_recoding_table(self, mocked_print):
@@ -337,13 +342,13 @@ class TestAlignmentRecoding(object):
         ]
         with patch.object(sys, "argv", testargs):
             Phykit()
-        assert mocked_print.mock_calls == [
-            call(expected_result_0),
-            call(expected_result_1),
-            call(expected_result_2),
-            call(expected_result_3),
-            call(expected_result_4),
-        ]
+        assert mocked_print.mock_calls == _expected_fasta_call(
+            expected_result_0,
+            expected_result_1,
+            expected_result_2,
+            expected_result_3,
+            expected_result_4,
+        )
 
     @patch("builtins.print")
     def test_alignment_recoding_json(self, mocked_print):

@@ -1,21 +1,64 @@
 import itertools
 import math
-from pathlib import Path
-from typing import Dict, List
+import os
 
 from .base import Tree
-from ...helpers.files import (
-    get_alignment_and_format as get_alignment_and_format_helper
-)
-from ...helpers.json_output import print_json
-from ...helpers.plot_config import PlotConfig
 from ...errors import PhykitUserError
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
+
+
+def get_alignment_and_format_helper(*args, **kwargs):
+    from ...helpers.files import get_alignment_and_format
+
+    return get_alignment_and_format(*args, **kwargs)
+
+
+def Path(*args, **kwargs):
+    from pathlib import Path as _Path
+
+    return _Path(*args, **kwargs)
 
 
 def _chi2_sf(x, df):
     """Chi-squared survival function (lazy scipy import)."""
+    if df == 1:
+        return math.erfc(math.sqrt(x / 2.0))
+
     from scipy.stats import chi2
     return float(chi2.sf(x, df))
+
+
+_NO_SINGLETON_OUTGROUP = object()
+_TAJIMA_VECTOR_MIN_LENGTH = 256
+_TAJIMA_SKIP_BYTES = b"-?NXnx"
+_TAJIMA_SKIP_SCAN_BYTES = 4096
+_CORRECTION_VECTOR_MIN_LENGTH = 32
+_PAIRWISE_BUILTIN_ROW_MIN_TAXA = 768
+_path_isabs = os.path.isabs
+
+
+class _LazyNumpy:
+    _module = None
+
+    def __getattr__(self, name):
+        module = self._module
+        if module is None:
+            import numpy as _np
+
+            module = _np
+            self._module = module
+
+        value = getattr(module, name)
+        setattr(self, name, value)
+        return value
+
+
+np = _LazyNumpy()
 
 
 class RelativeRateTest(Tree):
@@ -31,7 +74,9 @@ class RelativeRateTest(Tree):
         self.plot_output = parsed.get("plot_output")
         self.plot_config = parsed["plot_config"]
 
-    def process_args(self, args) -> Dict:
+    def process_args(self, args) -> dict:
+        from ...helpers.plot_config import PlotConfig
+
         return dict(
             tree_file_path=args.tree,
             alignment_file_path=getattr(args, "alignment", None),
@@ -47,12 +92,103 @@ class RelativeRateTest(Tree):
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _tajima_test(seq_x: str, seq_y: str, seq_out: str) -> Dict:
+    def _tajima_test(seq_x: str, seq_y: str, seq_out: str) -> dict:
         """Tajima's relative rate test (Equation 4).
 
         Counts unique substitutions on each ingroup lineage relative
         to the outgroup.  Returns m1, m2, chi-squared, and p-value.
         """
+        n_sites = min(len(seq_x), len(seq_y), len(seq_out))
+        if n_sites < _TAJIMA_VECTOR_MIN_LENGTH:
+            return RelativeRateTest._tajima_test_scalar(seq_x, seq_y, seq_out)
+
+        try:
+            x_bytes = seq_x[:n_sites].encode("ascii")
+            y_bytes = seq_y[:n_sites].encode("ascii")
+            out_bytes = seq_out[:n_sites].encode("ascii")
+            use_upper_bytes = (
+                RelativeRateTest._ascii_sample_has_lowercase(x_bytes)
+                or RelativeRateTest._ascii_sample_has_lowercase(y_bytes)
+                or RelativeRateTest._ascii_sample_has_lowercase(out_bytes)
+            )
+            if use_upper_bytes:
+                x_bytes = x_bytes.upper()
+                y_bytes = y_bytes.upper()
+                out_bytes = out_bytes.upper()
+            x = np.frombuffer(x_bytes, dtype=np.uint8)
+            y = np.frombuffer(y_bytes, dtype=np.uint8)
+            out = np.frombuffer(out_bytes, dtype=np.uint8)
+        except UnicodeEncodeError:
+            return RelativeRateTest._tajima_test_scalar(seq_x, seq_y, seq_out)
+
+        has_skip_code = any(
+            code in x_bytes[:_TAJIMA_SKIP_SCAN_BYTES]
+            or code in y_bytes[:_TAJIMA_SKIP_SCAN_BYTES]
+            or code in out_bytes[:_TAJIMA_SKIP_SCAN_BYTES]
+            or code in x_bytes[-_TAJIMA_SKIP_SCAN_BYTES:]
+            or code in y_bytes[-_TAJIMA_SKIP_SCAN_BYTES:]
+            or code in out_bytes[-_TAJIMA_SKIP_SCAN_BYTES:]
+            for code in _TAJIMA_SKIP_BYTES
+        )
+        if not has_skip_code:
+            has_skip_code = any(
+                code in x_bytes or code in y_bytes or code in out_bytes
+                for code in _TAJIMA_SKIP_BYTES
+            )
+
+        if use_upper_bytes:
+            x_upper = x
+            y_upper = y
+            out_upper = out
+        else:
+            x_upper = RelativeRateTest._ascii_upper_array(x)
+            y_upper = RelativeRateTest._ascii_upper_array(y)
+            out_upper = RelativeRateTest._ascii_upper_array(out)
+
+        x_diff = x_upper != out_upper
+        y_diff = y_upper != out_upper
+        if has_skip_code:
+            valid = RelativeRateTest._tajima_valid_mask(
+                x_upper,
+                y_upper,
+                out_upper,
+            )
+            m1 = int(np.count_nonzero(valid & x_diff & ~y_diff))
+            m2 = int(np.count_nonzero(valid & y_diff & ~x_diff))
+        else:
+            m1 = int(np.count_nonzero(x_diff & ~y_diff))
+            m2 = int(np.count_nonzero(y_diff & ~x_diff))
+
+        return RelativeRateTest._tajima_result(m1, m2)
+
+    @staticmethod
+    def _tajima_valid_mask(x_upper, y_upper, out_upper):
+        return (
+            (x_upper != 45) & (x_upper != 63)
+            & (x_upper != 78) & (x_upper != 88)
+            & (y_upper != 45) & (y_upper != 63)
+            & (y_upper != 78) & (y_upper != 88)
+            & (out_upper != 45) & (out_upper != 63)
+            & (out_upper != 78) & (out_upper != 88)
+        )
+
+    @staticmethod
+    def _ascii_sample_has_lowercase(values: bytes) -> bool:
+        head = values[:_TAJIMA_SKIP_SCAN_BYTES]
+        if head != head.upper():
+            return True
+        tail = values[-_TAJIMA_SKIP_SCAN_BYTES:]
+        return tail != tail.upper()
+
+    @staticmethod
+    def _ascii_upper_array(values):
+        upper = values.copy()
+        lowercase = (upper >= 97) & (upper <= 122)
+        upper[lowercase] -= 32
+        return upper
+
+    @staticmethod
+    def _tajima_test_scalar(seq_x: str, seq_y: str, seq_out: str) -> dict:
         m1 = 0  # unique changes on lineage x
         m2 = 0  # unique changes on lineage y
         skip_chars = {"-", "?", "N", "X", "n", "x"}
@@ -68,6 +204,10 @@ class RelativeRateTest(Tree):
                 m2 += 1
             # Both differ or neither differs -> uninformative
 
+        return RelativeRateTest._tajima_result(m1, m2)
+
+    @staticmethod
+    def _tajima_result(m1: int, m2: int) -> dict:
         if m1 + m2 == 0:
             return {"m1": m1, "m2": m2, "chi2": 0.0, "p_value": 1.0}
 
@@ -79,6 +219,41 @@ class RelativeRateTest(Tree):
     # ------------------------------------------------------------------
     # Outgroup identification
     # ------------------------------------------------------------------
+
+    @staticmethod
+    def _single_terminal_name_if_singleton(clade):
+        stack = [clade]
+        terminal_count = 0
+        terminal_name = _NO_SINGLETON_OUTGROUP
+
+        while stack:
+            node = stack.pop()
+            children = node.clades
+            if children:
+                stack.extend(children)
+                continue
+
+            terminal_count += 1
+            if terminal_count == 1:
+                terminal_name = node.name
+            else:
+                return _NO_SINGLETON_OUTGROUP
+
+        return terminal_name if terminal_count == 1 else _NO_SINGLETON_OUTGROUP
+
+    @staticmethod
+    def _generic_single_terminal_name_if_singleton(clade):
+        terminal_count = 0
+        terminal_name = _NO_SINGLETON_OUTGROUP
+
+        for terminal in clade.get_terminals():
+            terminal_count += 1
+            if terminal_count == 1:
+                terminal_name = terminal.name
+            else:
+                return _NO_SINGLETON_OUTGROUP
+
+        return terminal_name if terminal_count == 1 else _NO_SINGLETON_OUTGROUP
 
     @staticmethod
     def _identify_outgroup(tree) -> str:
@@ -93,16 +268,16 @@ class RelativeRateTest(Tree):
                 ["Tree does not appear to be rooted (root has < 2 children)."]
             )
 
-        # Find the child clade with fewest terminals
-        clade_sizes = []
-        for child in children:
-            terminals = list(child.get_terminals())
-            clade_sizes.append((len(terminals), terminals, child))
-
-        clade_sizes.sort(key=lambda x: x[0])
-        smallest_clade = clade_sizes[0]
-
-        if smallest_clade[0] != 1:
+        try:
+            for child in children:
+                terminal_name = (
+                    RelativeRateTest._single_terminal_name_if_singleton(child)
+                )
+                if terminal_name is not _NO_SINGLETON_OUTGROUP:
+                    return terminal_name
+        except AttributeError:
+            pass
+        else:
             raise PhykitUserError(
                 [
                     "Cannot determine a single outgroup taxon from the rooted tree. "
@@ -111,40 +286,71 @@ class RelativeRateTest(Tree):
                 ]
             )
 
-        return smallest_clade[1][0].name
+        # Generic fallback for nonstandard tree-like objects.
+        for child in children:
+            terminal_name = (
+                RelativeRateTest._generic_single_terminal_name_if_singleton(child)
+            )
+            if terminal_name is not _NO_SINGLETON_OUTGROUP:
+                return terminal_name
+
+        raise PhykitUserError(
+            [
+                "Cannot determine a single outgroup taxon from the rooted tree. "
+                "The smallest clade at the root contains multiple taxa. "
+                "Please ensure the tree is rooted with a single outgroup taxon."
+            ]
+        )
 
     # ------------------------------------------------------------------
     # Multiple testing correction
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _bonferroni(p_values: List[float]) -> List[float]:
+    def _bonferroni(p_values: list[float]) -> list[float]:
         n = len(p_values)
-        return [min(p * n, 1.0) for p in p_values]
+        if n == 0:
+            return []
+        if n < _CORRECTION_VECTOR_MIN_LENGTH:
+            return [min(p_value * n, 1.0) for p_value in p_values]
+        return np.minimum(np.asarray(p_values, dtype=float) * n, 1.0).tolist()
 
     @staticmethod
-    def _fdr(p_values: List[float]) -> List[float]:
+    def _fdr(p_values: list[float]) -> list[float]:
         """Benjamini-Hochberg FDR correction."""
         n = len(p_values)
         if n == 0:
             return []
-        indexed = sorted(enumerate(p_values), key=lambda x: x[1])
-        corrected = [0.0] * n
-        prev = 1.0
-        for rank_minus_1 in range(n - 1, -1, -1):
-            orig_idx, p = indexed[rank_minus_1]
-            rank = rank_minus_1 + 1
-            adjusted = min(p * n / rank, prev)
-            adjusted = min(adjusted, 1.0)
-            corrected[orig_idx] = adjusted
-            prev = adjusted
-        return corrected
+        if n < _CORRECTION_VECTOR_MIN_LENGTH:
+            indexed = sorted(enumerate(p_values), key=lambda item: item[1])
+            corrected = [0.0] * n
+            previous = 1.0
+            for rank_minus_1 in range(n - 1, -1, -1):
+                original_idx, p_value = indexed[rank_minus_1]
+                rank = rank_minus_1 + 1
+                adjusted = min(p_value * n / rank, previous)
+                adjusted = min(adjusted, 1.0)
+                corrected[original_idx] = adjusted
+                previous = adjusted
+            return corrected
+        p_arr = np.asarray(p_values, dtype=float)
+        order = np.argsort(p_arr)
+        ranks = np.arange(1, n + 1, dtype=float)
+        adjusted = p_arr[order].copy()
+        adjusted *= n
+        adjusted /= ranks
+        adjusted_reversed = adjusted[::-1]
+        np.minimum.accumulate(adjusted_reversed, out=adjusted_reversed)
+        np.minimum(adjusted, 1.0, out=adjusted)
+        corrected = np.empty(n, dtype=float)
+        corrected[order] = adjusted
+        return corrected.tolist()
 
     # ------------------------------------------------------------------
     # Single alignment analysis
     # ------------------------------------------------------------------
 
-    def _run_single(self, alignment_path: str, tree, outgroup: str) -> List[Dict]:
+    def _run_single(self, alignment_path: str, tree, outgroup: str) -> list[dict]:
         """Run Tajima's test for all ingroup pairs in one alignment."""
         alignment, _, _ = get_alignment_and_format_helper(alignment_path)
 
@@ -169,29 +375,164 @@ class RelativeRateTest(Tree):
                 ["At least 2 ingroup taxa are required (3 total including outgroup)."]
             )
 
+        results = self._run_pairwise_tests(seq_dict, ingroup, seq_out)
+
+        self._add_multiple_testing_corrections(results)
+        return results
+
+    def _run_pairwise_tests(
+        self, seq_dict: dict[str, str], ingroup: list[str], seq_out: str
+    ) -> list[dict]:
+        seq_len = len(seq_out)
+        for taxon in ingroup:
+            if len(seq_dict[taxon]) != seq_len:
+                return self._run_pairwise_tests_legacy(seq_dict, ingroup, seq_out)
+
+        try:
+            return self._run_pairwise_tests_vectorized(seq_dict, ingroup, seq_out)
+        except UnicodeEncodeError:
+            pass
+        return self._run_pairwise_tests_legacy(seq_dict, ingroup, seq_out)
+
+    def _run_pairwise_tests_legacy(
+        self, seq_dict: dict[str, str], ingroup: list[str], seq_out: str
+    ) -> list[dict]:
         results = []
         for t1, t2 in itertools.combinations(ingroup, 2):
             test_result = self._tajima_test(seq_dict[t1], seq_dict[t2], seq_out)
             test_result["taxon1"] = t1
             test_result["taxon2"] = t2
             results.append(test_result)
+        return results
 
-        # Multiple testing correction
+    def _run_pairwise_tests_vectorized(
+        self, seq_dict: dict[str, str], ingroup: list[str], seq_out: str
+    ) -> list[dict]:
+        out = np.frombuffer(seq_out.upper().encode("ascii"), dtype=np.uint8)
+        ingroup_matrix = self._ingroup_ascii_matrix(seq_dict, ingroup, out.size)
+
+        skip = np.frombuffer(b"-?NX", dtype=np.uint8)
+        out_valid = ~np.isin(out, skip)
+        ingroup_valid = ~np.isin(ingroup_matrix, skip)
+        valid = ingroup_valid & out_valid
+        differs = valid & (ingroup_matrix != out)
+        matches_out = valid & ~differs
+
+        differs_i = differs.astype(np.int32, copy=False)
+        matches_i = matches_out.astype(np.int32, copy=False)
+        m1_matrix = differs_i @ matches_i.T
+
+        pair_count = len(ingroup) * (len(ingroup) - 1) // 2
+        if pair_count <= 1024:
+            return self._pairwise_results_small(m1_matrix, ingroup)
+        return self._pairwise_results_large(m1_matrix, ingroup)
+
+    @staticmethod
+    def _ingroup_ascii_matrix(
+        seq_dict: dict[str, str],
+        ingroup: list[str],
+        seq_len: int,
+    ):
+        return np.frombuffer(
+            "".join(seq_dict[taxon].upper() for taxon in ingroup).encode("ascii"),
+            dtype=np.uint8,
+        ).reshape(len(ingroup), seq_len)
+
+    @staticmethod
+    def _pairwise_results_small(m1_matrix, ingroup: list[str]) -> list[dict]:
+        results = []
+        for i, taxon1 in enumerate(ingroup[:-1]):
+            for j in range(i + 1, len(ingroup)):
+                m1 = int(m1_matrix[i, j])
+                m2 = int(m1_matrix[j, i])
+                result = RelativeRateTest._tajima_result(m1, m2)
+                result["taxon1"] = taxon1
+                result["taxon2"] = ingroup[j]
+                results.append(result)
+        return results
+
+    @staticmethod
+    def _pairwise_results_large(m1_matrix, ingroup: list[str]) -> list[dict]:
+        from scipy.special import erfc
+
+        results = []
+        append = results.append
+        n_ingroup = len(ingroup)
+        use_builtin_rows = n_ingroup >= _PAIRWISE_BUILTIN_ROW_MIN_TAXA
+        for i, taxon1 in enumerate(ingroup[:-1]):
+            j_start = i + 1
+            m1_values = m1_matrix[i, j_start:]
+            m2_values = m1_matrix[j_start:, i]
+            totals = m1_values + m2_values
+
+            chi2_values = np.zeros_like(totals, dtype=np.float64)
+            informative = totals > 0
+            has_informative = informative.any()
+            if has_informative:
+                diff_values = m1_values - m2_values
+                chi2_values[informative] = (
+                    diff_values[informative] * diff_values[informative]
+                ) / totals[informative]
+
+            p_values = np.ones_like(chi2_values, dtype=np.float64)
+            if has_informative:
+                p_values[informative] = erfc(
+                    np.sqrt(chi2_values[informative] * 0.5)
+                )
+
+            if use_builtin_rows:
+                for taxon2, m1, m2, chi2, p_value in zip(
+                    ingroup[j_start:n_ingroup],
+                    m1_values.tolist(),
+                    m2_values.tolist(),
+                    chi2_values.tolist(),
+                    p_values.tolist(),
+                ):
+                    append(
+                        {
+                            "m1": m1,
+                            "m2": m2,
+                            "chi2": chi2,
+                            "p_value": p_value,
+                            "taxon1": taxon1,
+                            "taxon2": taxon2,
+                        }
+                    )
+                continue
+
+            for taxon2, m1, m2, chi2, p_value in zip(
+                ingroup[j_start:n_ingroup],
+                m1_values,
+                m2_values,
+                chi2_values,
+                p_values,
+            ):
+                append(
+                    {
+                        "m1": int(m1),
+                        "m2": int(m2),
+                        "chi2": float(chi2),
+                        "p_value": float(p_value),
+                        "taxon1": taxon1,
+                        "taxon2": taxon2,
+                    }
+                )
+        return results
+
+    def _add_multiple_testing_corrections(self, results: list[dict]) -> None:
         p_values = [r["p_value"] for r in results]
         p_bonf = self._bonferroni(p_values)
         p_fdr = self._fdr(p_values)
-        for i, r in enumerate(results):
-            r["p_bonf"] = p_bonf[i]
-            r["p_fdr"] = p_fdr[i]
-
-        return results
+        for r, bonferroni_value, fdr_value in zip(results, p_bonf, p_fdr):
+            r["p_bonf"] = bonferroni_value
+            r["p_fdr"] = fdr_value
 
     # ------------------------------------------------------------------
     # Main entry point
     # ------------------------------------------------------------------
 
     def run(self):
-        tree = self.read_tree_file()
+        tree = self.read_tree_file_unmodified()
 
         outgroup = self._identify_outgroup(tree)
 
@@ -200,21 +541,25 @@ class RelativeRateTest(Tree):
             list_path = Path(self.alignment_list)
             if not list_path.exists():
                 raise PhykitUserError([f"{self.alignment_list} not found."])
-            aln_paths = [
-                line.strip()
-                for line in list_path.read_text().splitlines()
-                if line.strip() and not line.strip().startswith("#")
-            ]
+            with list_path.open() as handle:
+                aln_paths = [
+                    stripped
+                    for line in handle
+                    if (stripped := line.strip())
+                    and stripped[0] != "#"
+                ]
             if not aln_paths:
                 raise PhykitUserError(["No alignment paths found in list file."])
 
             # Run each alignment
             all_results = {}  # (t1, t2) -> list of per-gene results
             n_alignments = 0
+            parent_str = str(list_path.parent)
+            parent_prefix = "" if parent_str == "." else parent_str + os.sep
             for aln_path in aln_paths:
-                resolved = aln_path
-                if not Path(aln_path).is_absolute():
-                    resolved = str(list_path.parent / aln_path)
+                resolved = (
+                    aln_path if _path_isabs(aln_path) else parent_prefix + aln_path
+                )
                 try:
                     results = self._run_single(resolved, tree, outgroup)
                     n_alignments += 1
@@ -241,7 +586,48 @@ class RelativeRateTest(Tree):
     # Plotting
     # ------------------------------------------------------------------
 
-    def _plot_heatmap(self, results: List[Dict], output_path: str) -> None:
+    @staticmethod
+    def _build_heatmap_matrices(results: list[dict]):
+        taxa = sorted(
+            set(r["taxon1"] for r in results) | set(r["taxon2"] for r in results)
+        )
+        n = len(taxa)
+        idx = {t: i for i, t in enumerate(taxa)}
+
+        matrix = np.full((n, n), np.nan)
+        p_fdr_matrix = np.full((n, n), np.nan)
+        for r in results:
+            i, j = idx[r["taxon1"]], idx[r["taxon2"]]
+            p_fdr = r["p_fdr"]
+            val = -math.log10(p_fdr) if p_fdr > 0 else 10.0
+            matrix[i, j] = val
+            matrix[j, i] = val
+            p_fdr_matrix[i, j] = p_fdr
+            p_fdr_matrix[j, i] = p_fdr
+
+        return taxa, matrix, p_fdr_matrix
+
+    @staticmethod
+    def _significant_heatmap_cells(p_fdr_matrix, alpha=0.05):
+        if p_fdr_matrix.size == 0 or p_fdr_matrix.shape[0] <= 1:
+            return (
+                np.empty(0, dtype=np.intp),
+                np.empty(0, dtype=np.intp),
+            )
+        if np.nanmin(p_fdr_matrix) >= alpha:
+            return (
+                np.empty(0, dtype=np.intp),
+                np.empty(0, dtype=np.intp),
+            )
+        flat_indices = np.flatnonzero(p_fdr_matrix < alpha)
+        if flat_indices.size == 0:
+            return (
+                np.empty(0, dtype=np.intp),
+                np.empty(0, dtype=np.intp),
+            )
+        return np.unravel_index(flat_indices, p_fdr_matrix.shape)
+
+    def _plot_heatmap(self, results: list[dict], output_path: str) -> None:
         """Plot a symmetric heatmap of -log10(p_fdr) for all pairwise tests."""
         try:
             import matplotlib
@@ -256,18 +642,8 @@ class RelativeRateTest(Tree):
         config = self.plot_config
         config.resolve(n_rows=len(results), n_cols=None)
 
-        taxa = sorted(
-            set(r["taxon1"] for r in results) | set(r["taxon2"] for r in results)
-        )
+        taxa, matrix, p_fdr_matrix = self._build_heatmap_matrices(results)
         n = len(taxa)
-        idx = {t: i for i, t in enumerate(taxa)}
-
-        matrix = np.full((n, n), np.nan)
-        for r in results:
-            i, j = idx[r["taxon1"]], idx[r["taxon2"]]
-            val = -math.log10(r["p_fdr"]) if r["p_fdr"] > 0 else 10.0
-            matrix[i, j] = val
-            matrix[j, i] = val
 
         fig, ax = plt.subplots(figsize=(config.fig_width, config.fig_height))
         cmap = plt.cm.YlOrRd.copy()
@@ -276,7 +652,7 @@ class RelativeRateTest(Tree):
         # Fix scale so non-significant data always looks light:
         # vmin=0, vmax at least -log10(0.05) ≈ 1.3
         sig_threshold = -math.log10(0.05)
-        data_max = float(np.nanmax(matrix)) if not np.all(np.isnan(matrix)) else 0.0
+        data_max = float(np.nanmax(matrix)) if not np.isnan(matrix).all() else 0.0
         vmax = max(sig_threshold, data_max) * 1.1
 
         im = ax.imshow(
@@ -289,18 +665,17 @@ class RelativeRateTest(Tree):
         ax.set_xticklabels(taxa, rotation=45, ha="right", fontsize=9)
         ax.set_yticklabels(taxa, fontsize=9)
 
-        for i in range(n):
-            for j in range(n):
-                if not np.isnan(matrix[i, j]):
-                    p_fdr = None
-                    for r in results:
-                        ri, rj = idx[r["taxon1"]], idx[r["taxon2"]]
-                        if (ri == i and rj == j) or (ri == j and rj == i):
-                            p_fdr = r["p_fdr"]
-                            break
-                    if p_fdr is not None and p_fdr < 0.05:
-                        ax.text(j, i, "*", ha="center", va="center",
-                                fontsize=14, fontweight="bold", color="black")
+        sig_rows, sig_cols = self._significant_heatmap_cells(p_fdr_matrix)
+        if sig_rows.size:
+            ax.scatter(
+                sig_cols,
+                sig_rows,
+                marker="$*$",
+                s=170,
+                c="black",
+                linewidths=0,
+                zorder=3,
+            )
 
         cbar = fig.colorbar(im, ax=ax, shrink=0.8)
         cbar.set_label("$-\\log_{10}$(FDR-corrected p-value)", fontsize=10)
@@ -313,7 +688,6 @@ class RelativeRateTest(Tree):
             ax.xaxis.label.set_fontsize(config.axis_fontsize)
             ax.yaxis.label.set_fontsize(config.axis_fontsize)
 
-        fig.tight_layout()
         fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
 
@@ -321,63 +695,80 @@ class RelativeRateTest(Tree):
     # Output
     # ------------------------------------------------------------------
 
-    def _output_single(self, outgroup: str, results: List[Dict]):
-        n_ingroup = len(
-            set(r["taxon1"] for r in results) | set(r["taxon2"] for r in results)
-        )
-
+    def _output_single(self, outgroup: str, results: list[dict]):
         if self.json_output:
-            print_json(dict(
-                outgroup=outgroup,
-                n_ingroup_taxa=n_ingroup,
-                n_tests=len(results),
-                results=[
-                    dict(
-                        taxon1=r["taxon1"], taxon2=r["taxon2"],
-                        m1=r["m1"], m2=r["m2"],
-                        chi2=round(r["chi2"], 4),
-                        p_value=r["p_value"],
-                        p_bonferroni=r["p_bonf"],
-                        p_fdr=r["p_fdr"],
-                    )
-                    for r in results
-                ],
-            ))
+            taxa = set()
+            output_results = []
+            append_result = output_results.append
+            add_taxon = taxa.add
+            for r in results:
+                taxon1 = r["taxon1"]
+                taxon2 = r["taxon2"]
+                add_taxon(taxon1)
+                add_taxon(taxon2)
+                append_result({
+                    "taxon1": taxon1, "taxon2": taxon2,
+                    "m1": r["m1"], "m2": r["m2"],
+                    "chi2": round(r["chi2"], 4),
+                    "p_value": r["p_value"],
+                    "p_bonferroni": r["p_bonf"],
+                    "p_fdr": r["p_fdr"],
+                })
+            print_json({
+                "outgroup": outgroup,
+                "n_ingroup_taxa": len(taxa),
+                "n_tests": len(results),
+                "results": output_results,
+            })
         else:
             try:
-                print(f"Outgroup: {outgroup}")
-                print(f"Number of ingroup taxa: {n_ingroup}")
-                print(f"Number of pairwise tests: {len(results)}")
-                print("---")
-                print(
-                    "taxon1\ttaxon2\tm1\tm2\tchi2\tp_value\tp_bonf\tp_fdr\tsignificant"
-                )
+                taxa = set()
+                body_lines = []
+                append_body = body_lines.append
+                add_taxon = taxa.add
                 for r in results:
+                    taxon1 = r["taxon1"]
+                    taxon2 = r["taxon2"]
+                    add_taxon(taxon1)
+                    add_taxon(taxon2)
                     sig = "*" if r["p_fdr"] < 0.05 else ""
-                    print(
-                        f"{r['taxon1']}\t{r['taxon2']}\t{r['m1']}\t{r['m2']}\t"
+                    append_body(
+                        f"{taxon1}\t{taxon2}\t{r['m1']}\t{r['m2']}\t"
                         f"{r['chi2']:.4f}\t{r['p_value']:.4e}\t{r['p_bonf']:.4e}\t"
                         f"{r['p_fdr']:.4e}\t{sig}"
                     )
+                lines = [
+                    f"Outgroup: {outgroup}",
+                    f"Number of ingroup taxa: {len(taxa)}",
+                    f"Number of pairwise tests: {len(results)}",
+                    "---",
+                    "taxon1\ttaxon2\tm1\tm2\tchi2\tp_value\tp_bonf\tp_fdr\tsignificant",
+                ]
+                lines.extend(body_lines)
+                print("\n".join(lines))
             except BrokenPipeError:
                 pass
 
-    def _output_batch(self, outgroup: str, n_alignments: int, all_results: Dict):
+    def _output_batch(self, outgroup: str, n_alignments: int, all_results: dict):
         if self.json_output:
-            pairs = []
-            for (t1, t2), gene_results in sorted(all_results.items()):
-                n_reject = sum(1 for r in gene_results if r["p_value"] < 0.05)
-                chi2_values = [r["chi2"] for r in gene_results]
-                chi2_values.sort()
-                median_chi2 = (
-                    chi2_values[len(chi2_values) // 2] if chi2_values else 0.0
+            pair_keys = list(all_results)
+            pair_keys.sort()
+            pairs = [None] * len(pair_keys)
+            round_ = round
+            get_results = all_results.__getitem__
+            for idx, (t1, t2) in enumerate(pair_keys):
+                gene_results = get_results((t1, t2))
+                n_reject, n_total, pct_reject, median_chi2 = (
+                    self._summarize_batch_gene_results(gene_results)
                 )
-                pairs.append(dict(
-                    taxon1=t1, taxon2=t2,
-                    n_reject=n_reject, n_total=len(gene_results),
-                    pct_reject=round(100 * n_reject / len(gene_results), 1),
-                    median_chi2=round(median_chi2, 4),
-                ))
+                pairs[idx] = {
+                    "taxon1": t1,
+                    "taxon2": t2,
+                    "n_reject": n_reject,
+                    "n_total": n_total,
+                    "pct_reject": round_(pct_reject, 1),
+                    "median_chi2": round_(median_chi2, 4),
+                }
             print_json(dict(
                 outgroup=outgroup,
                 n_alignments=n_alignments,
@@ -385,26 +776,36 @@ class RelativeRateTest(Tree):
             ))
         else:
             try:
-                print(f"Number of alignments: {n_alignments}")
-                print(f"Outgroup: {outgroup}")
-                print("---")
-                print(
-                    "taxon1\ttaxon2\tn_reject\tn_total\tpct_reject\tmedian_chi2"
-                )
+                lines = [
+                    f"Number of alignments: {n_alignments}",
+                    f"Outgroup: {outgroup}",
+                    "---",
+                    "taxon1\ttaxon2\tn_reject\tn_total\tpct_reject\tmedian_chi2",
+                ]
+                append = lines.append
                 for (t1, t2), gene_results in sorted(all_results.items()):
-                    n_reject = sum(
-                        1 for r in gene_results if r["p_value"] < 0.05
+                    n_reject, n_total, pct, median_chi2 = (
+                        self._summarize_batch_gene_results(gene_results)
                     )
-                    chi2_values = sorted(r["chi2"] for r in gene_results)
-                    median_chi2 = (
-                        chi2_values[len(chi2_values) // 2]
-                        if chi2_values
-                        else 0.0
-                    )
-                    pct = 100 * n_reject / len(gene_results)
-                    print(
-                        f"{t1}\t{t2}\t{n_reject}\t{len(gene_results)}\t"
+                    append(
+                        f"{t1}\t{t2}\t{n_reject}\t{n_total}\t"
                         f"{pct:.1f}\t{median_chi2:.4f}"
                     )
+                print("\n".join(lines))
             except BrokenPipeError:
                 pass
+
+    @staticmethod
+    def _summarize_batch_gene_results(gene_results: list[dict]):
+        n_reject = 0
+        chi2_values = []
+        append_chi2 = chi2_values.append
+        for result in gene_results:
+            if result["p_value"] < 0.05:
+                n_reject += 1
+            append_chi2(result["chi2"])
+        chi2_values.sort()
+        n_total = len(gene_results)
+        median_chi2 = chi2_values[n_total // 2] if chi2_values else 0.0
+        pct_reject = 100 * n_reject / n_total
+        return n_reject, n_total, pct_reject, median_chi2

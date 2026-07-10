@@ -1,31 +1,40 @@
 #!/usr/bin/env python
 
-import logging
 import sys
-import textwrap
 
 from .version import __version__
 
-from argparse import (
-    ArgumentParser,
-    SUPPRESS,
-    RawDescriptionHelpFormatter,
-)
-
-from .helpers.boolean_argument_parsing import str2bool
-from .helpers.plot_config import add_plot_arguments
-from .cli_registry import ALIAS_TO_HANDLER
 from .service_factories import SERVICE_FACTORIES
 from .errors import PhykitUserError
+
+
+_STR2BOOL = None
+_ALIAS_TO_HANDLER = None
+
+
+def str2bool(value):
+    global _STR2BOOL
+    if _STR2BOOL is not None:
+        return _STR2BOOL(value)
+
+    from .helpers.boolean_argument_parsing import str2bool as _str2bool
+
+    _STR2BOOL = _str2bool
+    return _str2bool(value)
+
+
+def _alias_to_handler():
+    global _ALIAS_TO_HANDLER
+    if _ALIAS_TO_HANDLER is None:
+        from .cli_registry import ALIAS_TO_HANDLER
+
+        _ALIAS_TO_HANDLER = ALIAS_TO_HANDLER
+    return _ALIAS_TO_HANDLER
+
 
 # Expose legacy factory names used by static command handlers in this module.
 globals().update(SERVICE_FACTORIES)
 
-
-logger = logging.getLogger(__name__)
-ch = logging.StreamHandler()
-ch.setLevel(logging.INFO)
-logger.addHandler(ch)
 
 BANNER = rf"""
                  _____  _           _  _______ _______ 
@@ -47,22 +56,404 @@ BANNER = rf"""
 # Backward-compatible module alias used by command-specific parser descriptions.
 help_header = BANNER
 
+SUPPRESS = "==SUPPRESS=="
+_DEDENTED_BANNER = None
+_DEDENTED_VERSION_BANNER = None
+_FIXED_WIDTH_FORMATTER_CLASS = None
 
-def _new_parser(*, description: str) -> ArgumentParser:
+
+class _PairwiseIdentityDefaultArgs:
+    __slots__ = (
+        "alignment",
+        "verbose",
+        "exclude_gaps",
+        "plot",
+        "plot_output",
+        "json",
+        "fig_width",
+        "fig_height",
+        "dpi",
+        "no_title",
+        "title",
+        "legend_position",
+        "ylabel_fontsize",
+        "xlabel_fontsize",
+        "title_fontsize",
+        "axis_fontsize",
+        "colors",
+        "ladderize",
+        "cladogram",
+        "circular",
+        "color_file",
+    )
+
+    def __init__(self, alignment: str, *, verbose: bool = False) -> None:
+        self.alignment = alignment
+        self.verbose = verbose
+        self.exclude_gaps = False
+        self.plot = False
+        self.plot_output = "pairwise_identity_heatmap.png"
+        self.json = False
+        self.fig_width = None
+        self.fig_height = None
+        self.dpi = 300
+        self.no_title = False
+        self.title = None
+        self.legend_position = None
+        self.ylabel_fontsize = None
+        self.xlabel_fontsize = None
+        self.title_fontsize = None
+        self.axis_fontsize = None
+        self.colors = None
+        self.ladderize = False
+        self.cladogram = False
+        self.circular = False
+        self.color_file = None
+
+
+class _AlignmentJsonDefaultArgs:
+    __slots__ = ("alignment", "json")
+
+    def __init__(self, alignment: str) -> None:
+        self.alignment = alignment
+        self.json = False
+
+
+class _AlignmentPlotJsonDefaultArgs:
+    __slots__ = ("alignment", "plot", "plot_output", "json")
+
+    def __init__(self, alignment: str, plot_output: str) -> None:
+        self.alignment = alignment
+        self.plot = False
+        self.plot_output = plot_output
+        self.json = False
+
+
+class _AlignmentEntropyDefaultArgs:
+    __slots__ = ("alignment", "verbose", "json", "plot", "plot_output")
+
+    def __init__(self, alignment: str) -> None:
+        self.alignment = alignment
+        self.verbose = False
+        self.json = False
+        self.plot = False
+        self.plot_output = "alignment_entropy_plot.png"
+
+
+class _FastaVerboseJsonDefaultArgs:
+    __slots__ = ("fasta", "verbose", "json")
+
+    def __init__(self, fasta: str, *, verbose: bool = False) -> None:
+        self.fasta = fasta
+        self.verbose = verbose
+        self.json = False
+
+
+class _FastaReferenceJsonDefaultArgs:
+    __slots__ = ("fasta", "reference", "json")
+
+    def __init__(self, fasta: str, reference: str) -> None:
+        self.fasta = fasta
+        self.reference = reference
+        self.json = False
+
+
+class _FastaEntryJsonDefaultArgs:
+    __slots__ = ("fasta", "entry", "json")
+
+    def __init__(self, fasta: str, entry: str) -> None:
+        self.fasta = fasta
+        self.entry = entry
+        self.json = False
+
+
+class _RenameFastaDefaultArgs:
+    __slots__ = ("fasta", "idmap", "output", "json")
+
+    def __init__(self, fasta: str, idmap: str) -> None:
+        self.fasta = fasta
+        self.idmap = idmap
+        self.output = None
+        self.json = False
+
+
+class _TreeJsonDefaultArgs:
+    __slots__ = ("tree", "json")
+
+    def __init__(self, tree: str) -> None:
+        self.tree = tree
+        self.json = False
+
+
+class _TreeOutputJsonDefaultArgs:
+    __slots__ = ("tree", "output", "json")
+
+    def __init__(self, tree: str) -> None:
+        self.tree = tree
+        self.output = None
+        self.json = False
+
+
+class _TreeFactorJsonDefaultArgs:
+    __slots__ = ("tree", "factor", "json")
+
+    def __init__(self, tree: str, factor=None) -> None:
+        self.tree = tree
+        self.factor = factor
+        self.json = False
+
+
+class _TreesConsensusDefaultArgs:
+    __slots__ = ("trees", "method", "missing_taxa", "json")
+
+    def __init__(self, trees: str) -> None:
+        self.trees = trees
+        self.method = "majority"
+        self.missing_taxa = "error"
+        self.json = False
+
+
+class _TreesConsensusNetworkDefaultArgs:
+    __slots__ = (
+        "trees",
+        "threshold",
+        "missing_taxa",
+        "max_splits",
+        "histogram",
+        "plot_output",
+        "json",
+    )
+
+    def __init__(self, trees: str) -> None:
+        self.trees = trees
+        self.threshold = 0.1
+        self.missing_taxa = "allow"
+        self.max_splits = 30
+        self.histogram = None
+        self.plot_output = None
+        self.json = False
+
+
+class _TreesQuartetNetworkDefaultArgs:
+    __slots__ = ("trees", "alpha", "beta", "missing_taxa", "plot_output", "json")
+
+    def __init__(self, trees: str) -> None:
+        self.trees = trees
+        self.alpha = 0.05
+        self.beta = 0.95
+        self.missing_taxa = "error"
+        self.plot_output = None
+        self.json = False
+
+
+class _TreeVerboseJsonDefaultArgs:
+    __slots__ = ("tree", "verbose", "json")
+
+    def __init__(self, tree: str, *, verbose: bool = False) -> None:
+        self.tree = tree
+        self.verbose = verbose
+        self.json = False
+
+
+class _TreeVerboseThresholdJsonDefaultArgs:
+    __slots__ = ("tree", "verbose", "thresholds", "json")
+
+    def __init__(self, tree: str) -> None:
+        self.tree = tree
+        self.verbose = False
+        self.thresholds = None
+        self.json = False
+
+
+class _TreeTaxaJsonDefaultArgs:
+    __slots__ = ("tree", "list_of_taxa", "json")
+
+    def __init__(self, tree: str, list_of_taxa: str) -> None:
+        self.tree = tree
+        self.list_of_taxa = list_of_taxa
+        self.json = False
+
+
+class _TreeTaxaOutputJsonDefaultArgs:
+    __slots__ = ("tree", "list_of_taxa", "output", "json")
+
+    def __init__(self, tree: str, list_of_taxa: str) -> None:
+        self.tree = tree
+        self.list_of_taxa = list_of_taxa
+        self.output = None
+        self.json = False
+
+
+class _PruneTreeDefaultArgs:
+    __slots__ = (
+        "tree",
+        "list_of_taxa",
+        "output",
+        "keep",
+        "ignore_branch_labels",
+        "json",
+    )
+
+    def __init__(self, tree: str, list_of_taxa: str) -> None:
+        self.tree = tree
+        self.list_of_taxa = list_of_taxa
+        self.output = None
+        self.keep = False
+        self.ignore_branch_labels = False
+        self.json = False
+
+
+class _TreeFactorOutputJsonDefaultArgs:
+    __slots__ = ("tree", "factor", "output", "json")
+
+    def __init__(self, tree: str, factor: float) -> None:
+        self.tree = tree
+        self.factor = factor
+        self.output = None
+        self.json = False
+
+
+class _TreeSupportOutputJsonDefaultArgs:
+    __slots__ = ("tree", "support", "output", "json")
+
+    def __init__(self, tree: str, support: float) -> None:
+        self.tree = tree
+        self.support = support
+        self.output = None
+        self.json = False
+
+
+class _TreeIdmapOutputJsonDefaultArgs:
+    __slots__ = ("tree", "idmap", "output", "json")
+
+    def __init__(self, tree: str, idmap: str) -> None:
+        self.tree = tree
+        self.idmap = idmap
+        self.output = None
+        self.json = False
+
+
+class _TwoTreeJsonDefaultArgs:
+    __slots__ = ("tree_zero", "tree_one", "json")
+
+    def __init__(self, tree_zero: str, tree_one: str) -> None:
+        self.tree_zero = tree_zero
+        self.tree_one = tree_one
+        self.json = False
+
+
+class _TreeTwoTipsJsonDefaultArgs:
+    __slots__ = ("tree_zero", "tip_1", "tip_2", "json")
+
+    def __init__(self, tree_zero: str, tip_1: str, tip_2: str) -> None:
+        self.tree_zero = tree_zero
+        self.tip_1 = tip_1
+        self.tip_2 = tip_2
+        self.json = False
+
+
+def _dedent(text: str) -> str:
+    from textwrap import dedent
+
+    return dedent(text)
+
+
+def _dedented_banner() -> str:
+    global _DEDENTED_BANNER
+    if _DEDENTED_BANNER is None:
+        _DEDENTED_BANNER = _dedent(BANNER)
+    return _DEDENTED_BANNER
+
+
+def _dedented_version_banner(help_header: str = BANNER) -> str:
+    if help_header != BANNER:
+        return _dedent(
+            f"""\
+            {help_header}
+            """
+        )
+    global _DEDENTED_VERSION_BANNER
+    if _DEDENTED_VERSION_BANNER is None:
+        _DEDENTED_VERSION_BANNER = _dedent(
+            f"""\
+            {BANNER}
+            """
+        )
+    return _DEDENTED_VERSION_BANNER
+
+
+def _clear_banner_cache() -> None:
+    global _DEDENTED_BANNER, _DEDENTED_VERSION_BANNER
+    _DEDENTED_BANNER = None
+    _DEDENTED_VERSION_BANNER = None
+
+
+def _fixed_width_raw_description_formatter():
+    global _FIXED_WIDTH_FORMATTER_CLASS
+    if _FIXED_WIDTH_FORMATTER_CLASS is None:
+        from argparse import RawDescriptionHelpFormatter
+
+        class FixedWidthRawDescriptionHelpFormatter(RawDescriptionHelpFormatter):
+            def __init__(
+                self,
+                prog,
+                indent_increment=2,
+                max_help_position=24,
+                width=None,
+            ):
+                if width is None:
+                    width = 78
+                super().__init__(prog, indent_increment, max_help_position, width)
+
+        _FIXED_WIDTH_FORMATTER_CLASS = FixedWidthRawDescriptionHelpFormatter
+    return _FIXED_WIDTH_FORMATTER_CLASS
+
+
+def _new_parser(*, description: str):
+    from argparse import (
+        ArgumentParser,
+        SUPPRESS as argparse_suppress,
+    )
+
+    global SUPPRESS
+    SUPPRESS = argparse_suppress
     return ArgumentParser(
         add_help=True,
         usage=SUPPRESS,
-        formatter_class=RawDescriptionHelpFormatter,
+        formatter_class=_fixed_width_raw_description_formatter(),
         description=description,
     )
 
 
-def _add_json_argument(parser: ArgumentParser) -> None:
+def _add_json_argument(parser) -> None:
     parser.add_argument("--json", action="store_true", required=False, help=SUPPRESS)
 
 
-def _run_service(parser: ArgumentParser, argv, service_factory) -> None:
+def add_plot_arguments(parser) -> None:
+    group = parser.add_argument_group("plot options")
+    group.add_argument("--fig-width", type=float, default=None, help="Figure width in inches (auto-scaled if omitted)")
+    group.add_argument("--fig-height", type=float, default=None, help="Figure height in inches (auto-scaled if omitted)")
+    group.add_argument("--dpi", type=int, default=300, help="Resolution in DPI (default: 300)")
+    group.add_argument("--no-title", action="store_true", default=False, help="Hide the plot title")
+    group.add_argument("--title", type=str, default=None, help="Custom title text")
+    group.add_argument("--legend-position", type=str, default=None, help="Legend location (e.g., 'upper right', 'none' to hide)")
+    group.add_argument("--ylabel-fontsize", type=float, default=None, help="Font size for y-axis labels; 0 to hide")
+    group.add_argument("--xlabel-fontsize", type=float, default=None, help="Font size for x-axis labels; 0 to hide")
+    group.add_argument("--title-fontsize", type=float, default=None, help="Font size for the title")
+    group.add_argument("--axis-fontsize", type=float, default=None, help="Font size for axis labels")
+    group.add_argument("--colors", type=str, default=None, help="Comma-separated colors (hex or named)")
+    group.add_argument("--ladderize", action="store_true", default=False, help="Ladderize (sort) the tree before plotting")
+    group.add_argument("--cladogram", action="store_true", default=False, help="Draw cladogram (equal branch lengths, tips aligned) instead of phylogram")
+    group.add_argument("--circular", action="store_true", default=False, help="Draw circular (radial/fan) phylogram instead of rectangular")
+    group.add_argument("--color-file", type=str, default=None, help="Color annotation file for tip labels, clade ranges, and branch colors")
+
+
+def _run_service(parser, argv, service_factory) -> None:
     args = parser.parse_args(argv)
+    _run_service_with_args(args, service_factory)
+
+
+def _run_service_with_args(args, service_factory) -> None:
     try:
         service_factory(args).run()
     except PhykitUserError as err:
@@ -77,9 +468,30 @@ def _run_service(parser: ArgumentParser, argv, service_factory) -> None:
 class Phykit:
     help_header = BANNER
 
+    def _dispatch_command(self, command, argv):
+        # Normal command dispatch does not need the large top-level help parser.
+        try:
+            try:
+                handler = getattr(self, command)
+            except AttributeError:
+                self.run_alias(command, argv)
+            else:
+                handler(argv)
+        except SystemExit:
+            # Re-raise SystemExit as-is to preserve exit code
+            raise
+        except NameError as e:
+            print(f"Error: {e}", file=sys.stderr)
+            sys.exit(2)
+
     def __init__(self):
+        command = sys.argv[1] if len(sys.argv) > 1 else None
+        if command not in (None, "-h", "--help"):
+            self._dispatch_command(command, sys.argv[2:])
+            return
+
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {self.help_header}
 
@@ -375,28 +787,18 @@ class Phykit:
         # if command is part of the possible commands (i.e., the long form
         # commands, run). Otherwise, assume it is an alias and look to the
         # run_alias function
-        try:
-            if hasattr(self, args.command):
-                getattr(self, args.command)(sys.argv[2:])
-            else:
-                self.run_alias(args.command, sys.argv[2:])
-        except SystemExit:
-            # Re-raise SystemExit as-is to preserve exit code
-            raise
-        except NameError as e:
-            print(f"Error: {e}", file=sys.stderr)
-            sys.exit(2)
+        self._dispatch_command(args.command, sys.argv[2:])
 
     ## Aliases
     def run_alias(self, command, argv):
-        handler_name = ALIAS_TO_HANDLER.get(command)
+        handler_name = _alias_to_handler().get(command)
         if handler_name:
             handler = getattr(self, handler_name)
             if handler_name == "version":
                 return handler()
             return handler(argv)
 
-        print(textwrap.dedent(BANNER))
+        print(_dedented_banner())
         print(
             "Invalid command option. See help for a complete list of commands and aliases."
         )
@@ -404,19 +806,17 @@ class Phykit:
 
     ## print version
     def version(self):
-        print(
-            textwrap.dedent(
-                f"""\
-            {self.help_header}
-            """
-            )
-        )
+        print(_dedented_version_banner(self.help_header))
 
     ## Alignment functions
     @staticmethod
     def alignment_length(argv):
+        if len(argv) == 1 and argv[0] and argv[0][0] != "-":
+            _run_service_with_args(_AlignmentJsonDefaultArgs(argv[0]), AlignmentLength)
+            return
+
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -453,8 +853,15 @@ class Phykit:
 
     @staticmethod
     def alignment_length_no_gaps(argv):
+        if len(argv) == 1 and argv[0] and argv[0][0] != "-":
+            _run_service_with_args(
+                _AlignmentJsonDefaultArgs(argv[0]),
+                AlignmentLengthNoGaps,
+            )
+            return
+
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -498,8 +905,15 @@ class Phykit:
 
     @staticmethod
     def alignment_entropy(argv):
+        if len(argv) == 1 and argv[0] and argv[0][0] != "-":
+            _run_service_with_args(
+                _AlignmentEntropyDefaultArgs(argv[0]),
+                AlignmentEntropy,
+            )
+            return
+
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -610,7 +1024,7 @@ class Phykit:
     @staticmethod
     def alignment_recoding(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -746,7 +1160,7 @@ class Phykit:
     @staticmethod
     def alignment_outlier_taxa(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -822,8 +1236,22 @@ class Phykit:
 
     @staticmethod
     def column_score(argv):
+        if (
+            len(argv) == 3
+            and argv[0]
+            and argv[0][0] != "-"
+            and argv[1] in ("-r", "--reference")
+            and argv[2]
+            and argv[2][0] != "-"
+        ):
+            _run_service_with_args(
+                _FastaReferenceJsonDefaultArgs(argv[0], argv[2]),
+                ColumnScore,
+            )
+            return
+
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -864,8 +1292,15 @@ class Phykit:
 
     @staticmethod
     def compositional_bias_per_site(argv):
+        if len(argv) == 1 and argv[0] and argv[0][0] != "-":
+            _run_service_with_args(
+                _AlignmentJsonDefaultArgs(argv[0]),
+                CompositionalBiasPerSite,
+            )
+            return
+
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -972,8 +1407,15 @@ class Phykit:
 
     @staticmethod
     def composition_per_taxon(argv):
+        if len(argv) == 1 and argv[0] and argv[0][0] != "-":
+            _run_service_with_args(
+                _AlignmentJsonDefaultArgs(argv[0]),
+                CompositionPerTaxon,
+            )
+            return
+
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -1008,8 +1450,15 @@ class Phykit:
 
     @staticmethod
     def evolutionary_rate_per_site(argv):
+        if len(argv) == 1 and argv[0] and argv[0][0] != "-":
+            _run_service_with_args(
+                _AlignmentJsonDefaultArgs(argv[0]),
+                EvolutionaryRatePerSite,
+            )
+            return
+
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -1118,8 +1567,19 @@ class Phykit:
 
     @staticmethod
     def faidx(argv):
+        if (
+            len(argv) == 3
+            and argv[0]
+            and argv[0][0] != "-"
+            and argv[1] in ("-e", "--entry")
+            and argv[2]
+            and argv[2][0] != "-"
+        ):
+            _run_service_with_args(_FastaEntryJsonDefaultArgs(argv[0], argv[2]), Faidx)
+            return
+
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -1163,8 +1623,23 @@ class Phykit:
 
     @staticmethod
     def gc_content(argv):
+        if len(argv) == 1 and argv[0] and argv[0][0] != "-":
+            _run_service_with_args(_FastaVerboseJsonDefaultArgs(argv[0]), GCContent)
+            return
+        if (
+            len(argv) == 2
+            and argv[0]
+            and argv[0][0] != "-"
+            and argv[1] in ("-v", "--verbose")
+        ):
+            _run_service_with_args(
+                _FastaVerboseJsonDefaultArgs(argv[0], verbose=True),
+                GCContent,
+            )
+            return
+
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
                 
@@ -1212,7 +1687,7 @@ class Phykit:
     @staticmethod
     def mask_alignment(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -1266,7 +1741,7 @@ class Phykit:
     @staticmethod
     def plot_alignment_qc(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -1337,8 +1812,15 @@ class Phykit:
 
     @staticmethod
     def occupancy_per_taxon(argv):
+        if len(argv) == 1 and argv[0] and argv[0][0] != "-":
+            _run_service_with_args(
+                _AlignmentJsonDefaultArgs(argv[0]),
+                OccupancyPerTaxon,
+            )
+            return
+
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -1372,8 +1854,26 @@ class Phykit:
 
     @staticmethod
     def pairwise_identity(argv):
+        if len(argv) == 1 and argv[0] and argv[0][0] != "-":
+            _run_service_with_args(
+                _PairwiseIdentityDefaultArgs(argv[0]),
+                PairwiseIdentity,
+            )
+            return
+        if (
+            len(argv) == 2
+            and argv[0]
+            and argv[0][0] != "-"
+            and argv[1] in ("-v", "--verbose")
+        ):
+            _run_service_with_args(
+                _PairwiseIdentityDefaultArgs(argv[0], verbose=True),
+                PairwiseIdentity,
+            )
+            return
+
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -1497,7 +1997,7 @@ class Phykit:
     @staticmethod
     def identity_matrix(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -1590,8 +2090,15 @@ class Phykit:
 
     @staticmethod
     def parsimony_informative_sites(argv):
+        if len(argv) == 1 and argv[0] and argv[0][0] != "-":
+            _run_service_with_args(
+                _AlignmentJsonDefaultArgs(argv[0]),
+                ParsimonyInformative,
+            )
+            return
+
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -1637,8 +2144,15 @@ class Phykit:
 
     @staticmethod
     def rcv(argv):
+        if len(argv) == 1 and argv[0] and argv[0][0] != "-":
+            _run_service_with_args(
+                _AlignmentJsonDefaultArgs(argv[0]),
+                RelativeCompositionVariability,
+            )
+            return
+
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -1676,8 +2190,15 @@ class Phykit:
 
     @staticmethod
     def rcvt(argv):
+        if len(argv) == 1 and argv[0] and argv[0][0] != "-":
+            _run_service_with_args(
+                _AlignmentPlotJsonDefaultArgs(argv[0], "rcvt_plot.png"),
+                RelativeCompositionVariabilityTaxon,
+            )
+            return
+
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -1776,8 +2297,22 @@ class Phykit:
 
     @staticmethod
     def rename_fasta_entries(argv):
+        if (
+            len(argv) == 3
+            and argv[0]
+            and argv[2]
+            and argv[0][0] != "-"
+            and argv[1] in ("-i", "--idmap")
+            and argv[2][0] != "-"
+        ):
+            _run_service_with_args(
+                _RenameFastaDefaultArgs(argv[0], argv[2]),
+                RenameFastaEntries,
+            )
+            return
+
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -1827,8 +2362,22 @@ class Phykit:
 
     @staticmethod
     def sum_of_pairs_score(argv):
+        if (
+            len(argv) == 3
+            and argv[0]
+            and argv[2]
+            and argv[0][0] != "-"
+            and argv[1] in ("-r", "--reference")
+            and argv[2][0] != "-"
+        ):
+            _run_service_with_args(
+                _FastaReferenceJsonDefaultArgs(argv[0], argv[2]),
+                SumOfPairsScore,
+            )
+            return
+
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -1869,8 +2418,12 @@ class Phykit:
 
     @staticmethod
     def variable_sites(argv):
+        if len(argv) == 1 and argv[0] and argv[0][0] != "-":
+            _run_service_with_args(_AlignmentJsonDefaultArgs(argv[0]), VariableSites)
+            return
+
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -1915,7 +2468,7 @@ class Phykit:
     @staticmethod
     def phylo_gwas(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -2024,7 +2577,7 @@ class Phykit:
     @staticmethod
     def phylo_anova(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -2105,7 +2658,7 @@ class Phykit:
     @staticmethod
     def phylo_path(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -2164,7 +2717,7 @@ class Phykit:
     @staticmethod
     def alignment_subsample(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -2240,7 +2793,7 @@ class Phykit:
     @staticmethod
     def dstatistic(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -2331,7 +2884,7 @@ class Phykit:
     @staticmethod
     def dfoil(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -2397,7 +2950,7 @@ class Phykit:
     @staticmethod
     def parsimony_score(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -2453,7 +3006,7 @@ class Phykit:
     @staticmethod
     def character_map(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -2552,7 +3105,7 @@ class Phykit:
     @staticmethod
     def independent_contrasts(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -2603,7 +3156,7 @@ class Phykit:
     @staticmethod
     def ancestral_state_reconstruction(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -2774,7 +3327,7 @@ class Phykit:
     @staticmethod
     def concordance_asr(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -2932,7 +3485,7 @@ class Phykit:
     @staticmethod
     def chronogram(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -2998,7 +3551,7 @@ class Phykit:
     @staticmethod
     def dtt(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -3068,8 +3621,15 @@ class Phykit:
 
     @staticmethod
     def bipartition_support_stats(argv):
+        if len(argv) == 1 and argv[0] and argv[0][0] != "-":
+            _run_service_with_args(
+                _TreeVerboseThresholdJsonDefaultArgs(argv[0]),
+                BipartitionSupportStats,
+            )
+            return
+
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
                 Calculate summary statistics for bipartition support.
@@ -3124,8 +3684,26 @@ class Phykit:
 
     @staticmethod
     def branch_length_multiplier(argv):
+        if (
+            len(argv) == 3
+            and argv[0]
+            and argv[0][0] != "-"
+            and argv[1] in ("-f", "--factor")
+            and argv[2]
+        ):
+            try:
+                factor = float(argv[2])
+            except ValueError:
+                pass
+            else:
+                _run_service_with_args(
+                    _TreeFactorOutputJsonDefaultArgs(argv[0], factor),
+                    BranchLengthMultiplier,
+                )
+                return
+
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header} 
 
@@ -3171,8 +3749,26 @@ class Phykit:
 
     @staticmethod
     def collapse_branches(argv):
+        if (
+            len(argv) == 3
+            and argv[0]
+            and argv[0][0] != "-"
+            and argv[1] in ("-s", "--support")
+            and argv[2]
+        ):
+            try:
+                support = float(argv[2])
+            except ValueError:
+                pass
+            else:
+                _run_service_with_args(
+                    _TreeSupportOutputJsonDefaultArgs(argv[0], support),
+                    CollapseBranches,
+                )
+                return
+
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header} 
 
@@ -3219,7 +3815,7 @@ class Phykit:
     @staticmethod
     def covarying_evolutionary_rates(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -3362,7 +3958,7 @@ class Phykit:
     @staticmethod
     def dvmc(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -3403,8 +3999,12 @@ class Phykit:
 
     @staticmethod
     def evolutionary_rate(argv):
+        if len(argv) == 1 and argv[0] and argv[0][0] != "-":
+            _run_service_with_args(_TreeJsonDefaultArgs(argv[0]), EvolutionaryRate)
+            return
+
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
                 Calculate a tree-based estimation of the evolutionary rate of a gene.
@@ -3441,7 +4041,7 @@ class Phykit:
     @staticmethod
     def hidden_paralogy_check(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
                 Scan tree for evidence of hidden paralogy.
@@ -3509,8 +4109,15 @@ class Phykit:
 
     @staticmethod
     def internal_branch_stats(argv):
+        if len(argv) == 1 and argv[0] and argv[0][0] != "-":
+            _run_service_with_args(
+                _TreeVerboseJsonDefaultArgs(argv[0]),
+                InternalBranchStats,
+            )
+            return
+
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -3551,8 +4158,15 @@ class Phykit:
 
     @staticmethod
     def internode_labeler(argv):
+        if len(argv) == 1 and argv[0] and argv[0][0] != "-":
+            _run_service_with_args(
+                _TreeOutputJsonDefaultArgs(argv[0]),
+                InternodeLabeler,
+            )
+            return
+
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -3589,8 +4203,21 @@ class Phykit:
 
     @staticmethod
     def last_common_ancestor_subtree(argv):
+        if (
+            len(argv) == 2
+            and argv[0]
+            and argv[0][0] != "-"
+            and argv[1]
+            and argv[1][0] != "-"
+        ):
+            _run_service_with_args(
+                _TreeTaxaOutputJsonDefaultArgs(argv[0], argv[1]),
+                LastCommonAncestorSubtree,
+            )
+            return
+
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -3631,8 +4258,23 @@ class Phykit:
 
     @staticmethod
     def lb_score(argv):
+        if len(argv) == 1 and argv[0] and argv[0][0] != "-":
+            _run_service_with_args(_TreeVerboseJsonDefaultArgs(argv[0]), LBScore)
+            return
+        if (
+            len(argv) == 2
+            and argv[0]
+            and argv[0][0] != "-"
+            and argv[1] in ("-v", "--verbose")
+        ):
+            _run_service_with_args(
+                _TreeVerboseJsonDefaultArgs(argv[0], verbose=True),
+                LBScore,
+            )
+            return
+
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -3683,8 +4325,21 @@ class Phykit:
 
     @staticmethod
     def monophyly_check(argv):
+        if (
+            len(argv) == 2
+            and argv[0]
+            and argv[1]
+            and argv[0][0] != "-"
+            and argv[1][0] != "-"
+        ):
+            _run_service_with_args(
+                _TreeTaxaJsonDefaultArgs(argv[0], argv[1]),
+                MonophylyCheck,
+            )
+            return
+
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
                 Check for monophyly of a lineage.
@@ -3738,7 +4393,7 @@ class Phykit:
     @staticmethod
     def nearest_neighbor_interchange(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -3827,7 +4482,7 @@ class Phykit:
     @staticmethod
     def faiths_pd(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -3887,8 +4542,15 @@ class Phykit:
 
     @staticmethod
     def patristic_distances(argv):
+        if len(argv) == 1 and argv[0] and argv[0][0] != "-":
+            _run_service_with_args(
+                _TreeVerboseJsonDefaultArgs(argv[0]),
+                PatristicDistances,
+            )
+            return
+
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -3934,7 +4596,7 @@ class Phykit:
     @staticmethod
     def phylogenetic_signal(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -4027,7 +4689,7 @@ class Phykit:
     @staticmethod
     def trait_correlation(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -4109,7 +4771,7 @@ class Phykit:
     @staticmethod
     def phylo_impute(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -4176,7 +4838,7 @@ class Phykit:
     @staticmethod
     def phylogenetic_ordination(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -4434,7 +5096,7 @@ class Phykit:
     @staticmethod
     def phylo_heatmap(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -4536,7 +5198,7 @@ class Phykit:
     @staticmethod
     def phylomorphospace(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -4685,7 +5347,7 @@ class Phykit:
     @staticmethod
     def phylogenetic_regression(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -4776,7 +5438,7 @@ class Phykit:
     @staticmethod
     def phylogenetic_glm(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -4904,7 +5566,7 @@ class Phykit:
     @staticmethod
     def phylo_logistic(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -4982,7 +5644,7 @@ class Phykit:
     @staticmethod
     def stochastic_character_map(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -5127,7 +5789,7 @@ class Phykit:
     @staticmethod
     def simmap_summary(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -5200,7 +5862,7 @@ class Phykit:
     @staticmethod
     def cont_map(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -5307,7 +5969,7 @@ class Phykit:
     @staticmethod
     def density_map(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -5436,7 +6098,7 @@ class Phykit:
     @staticmethod
     def phenogram(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -5538,7 +6200,7 @@ class Phykit:
     @staticmethod
     def cophylo(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -5650,7 +6312,7 @@ class Phykit:
     @staticmethod
     def rate_heterogeneity(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -5779,7 +6441,7 @@ class Phykit:
     @staticmethod
     def fit_discrete(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -5838,7 +6500,7 @@ class Phykit:
     @staticmethod
     def fit_continuous(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -5904,7 +6566,7 @@ class Phykit:
     @staticmethod
     def ouwie(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -5966,7 +6628,7 @@ class Phykit:
     @staticmethod
     def ou_shift_detection(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -6023,7 +6685,7 @@ class Phykit:
     @staticmethod
     def polytomy_test(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -6086,7 +6748,7 @@ class Phykit:
     @staticmethod
     def print_tree(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -6128,8 +6790,20 @@ class Phykit:
 
     @staticmethod
     def consensus_tree(argv):
+        if (
+            len(argv) == 2
+            and argv[0] in ("-t", "--trees")
+            and argv[1]
+            and argv[1][0] != "-"
+        ):
+            _run_service_with_args(
+                _TreesConsensusDefaultArgs(argv[1]),
+                ConsensusTree,
+            )
+            return
+
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -6194,8 +6868,20 @@ class Phykit:
 
     @staticmethod
     def consensus_network(argv):
+        if (
+            len(argv) == 2
+            and argv[0] in ("-t", "--trees")
+            and argv[1]
+            and argv[1][0] != "-"
+        ):
+            _run_service_with_args(
+                _TreesConsensusNetworkDefaultArgs(argv[1]),
+                ConsensusNetwork,
+            )
+            return
+
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -6358,7 +7044,7 @@ class Phykit:
     @staticmethod
     def neighbor_net(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -6466,7 +7152,7 @@ class Phykit:
     @staticmethod
     def quartet_pie(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -6608,8 +7294,20 @@ class Phykit:
 
     @staticmethod
     def quartet_network(argv):
+        if (
+            len(argv) == 2
+            and argv[0] in ("-t", "--trees")
+            and argv[1]
+            and argv[1][0] != "-"
+        ):
+            _run_service_with_args(
+                _TreesQuartetNetworkDefaultArgs(argv[1]),
+                QuartetNetwork,
+            )
+            return
+
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -6770,7 +7468,7 @@ class Phykit:
     @staticmethod
     def network_signal(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -6865,7 +7563,7 @@ class Phykit:
     @staticmethod
     def ltt(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -6977,8 +7675,21 @@ class Phykit:
 
     @staticmethod
     def prune_tree(argv):
+        if (
+            len(argv) == 2
+            and argv[0]
+            and argv[0][0] != "-"
+            and argv[1]
+            and argv[1][0] != "-"
+        ):
+            _run_service_with_args(
+                _PruneTreeDefaultArgs(argv[0], argv[1]),
+                PruneTree,
+            )
+            return
+
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -7050,7 +7761,7 @@ class Phykit:
     @staticmethod
     def subtree_prune_regraft(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -7102,7 +7813,7 @@ class Phykit:
     @staticmethod
     def transfer_annotations(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -7155,7 +7866,7 @@ class Phykit:
     @staticmethod
     def relative_rate_test(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -7275,7 +7986,7 @@ class Phykit:
     @staticmethod
     def threshold_model(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -7422,8 +8133,22 @@ class Phykit:
 
     @staticmethod
     def rename_tree_tips(argv):
+        if (
+            len(argv) == 3
+            and argv[0]
+            and argv[0][0] != "-"
+            and argv[1] in ("-i", "--idmap")
+            and argv[2]
+            and argv[2][0] != "-"
+        ):
+            _run_service_with_args(
+                _TreeIdmapOutputJsonDefaultArgs(argv[0], argv[2]),
+                RenameTreeTips,
+            )
+            return
+
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -7473,8 +8198,21 @@ class Phykit:
 
     @staticmethod
     def kf_distance(argv):
+        if (
+            len(argv) == 2
+            and argv[0]
+            and argv[0][0] != "-"
+            and argv[1]
+            and argv[1][0] != "-"
+        ):
+            _run_service_with_args(
+                _TwoTreeJsonDefaultArgs(argv[0], argv[1]),
+                KuhnerFelsensteinDistance,
+            )
+            return
+
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -7527,8 +8265,21 @@ class Phykit:
 
     @staticmethod
     def rf_distance(argv):
+        if (
+            len(argv) == 2
+            and argv[0]
+            and argv[0][0] != "-"
+            and argv[1]
+            and argv[1][0] != "-"
+        ):
+            _run_service_with_args(
+                _TwoTreeJsonDefaultArgs(argv[0], argv[1]),
+                RobinsonFouldsDistance,
+            )
+            return
+
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -7582,7 +8333,7 @@ class Phykit:
     @staticmethod
     def root_tree(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -7632,8 +8383,15 @@ class Phykit:
 
     @staticmethod
     def spurious_sequence(argv):
+        if len(argv) == 1 and argv[0] and argv[0][0] != "-":
+            _run_service_with_args(
+                _TreeFactorJsonDefaultArgs(argv[0]),
+                SpuriousSequence,
+            )
+            return
+
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header} 
 
@@ -7689,8 +8447,15 @@ class Phykit:
 
     @staticmethod
     def terminal_branch_stats(argv):
+        if len(argv) == 1 and argv[0] and argv[0][0] != "-":
+            _run_service_with_args(
+                _TreeVerboseJsonDefaultArgs(argv[0]),
+                TerminalBranchStats,
+            )
+            return
+
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -7732,7 +8497,7 @@ class Phykit:
     @staticmethod
     def tip_labels(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -7764,7 +8529,7 @@ class Phykit:
     @staticmethod
     def tip_to_tip_distance(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -7881,8 +8646,23 @@ class Phykit:
 
     @staticmethod
     def tip_to_tip_node_distance(argv):
+        if (
+            len(argv) == 3
+            and argv[0]
+            and argv[0][0] != "-"
+            and argv[1]
+            and argv[1][0] != "-"
+            and argv[2]
+            and argv[2][0] != "-"
+        ):
+            _run_service_with_args(
+                _TreeTwoTipsJsonDefaultArgs(argv[0], argv[1], argv[2]),
+                TipToTipNodeDistance,
+            )
+            return
+
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -7926,8 +8706,12 @@ class Phykit:
 
     @staticmethod
     def total_tree_length(argv):
+        if len(argv) == 1 and argv[0] and argv[0][0] != "-":
+            _run_service_with_args(_TreeJsonDefaultArgs(argv[0]), TotalTreeLength)
+            return
+
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -7958,8 +8742,12 @@ class Phykit:
 
     @staticmethod
     def treeness(argv):
+        if len(argv) == 1 and argv[0] and argv[0][0] != "-":
+            _run_service_with_args(_TreeJsonDefaultArgs(argv[0]), Treeness)
+            return
+
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -8004,7 +8792,7 @@ class Phykit:
     @staticmethod
     def saturation(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -8136,7 +8924,7 @@ class Phykit:
     @staticmethod
     def treeness_over_rcv(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -8185,7 +8973,7 @@ class Phykit:
     @staticmethod
     def evo_tempo_map(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -8308,7 +9096,7 @@ class Phykit:
     @staticmethod
     def discordance_asymmetry(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -8433,7 +9221,7 @@ class Phykit:
     @staticmethod
     def hybridization(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -8511,7 +9299,7 @@ class Phykit:
     @staticmethod
     def spectral_discordance(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -8660,7 +9448,7 @@ class Phykit:
     @staticmethod
     def trait_rate_map(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -8783,7 +9571,7 @@ class Phykit:
     @staticmethod
     def tree_space(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -8896,7 +9684,7 @@ class Phykit:
     @staticmethod
     def taxon_groups(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -8942,7 +9730,7 @@ class Phykit:
     @staticmethod
     def occupancy_filter(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -9006,7 +9794,7 @@ class Phykit:
     @staticmethod
     def create_concatenation_matrix(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 
@@ -9133,7 +9921,7 @@ class Phykit:
     @staticmethod
     def thread_dna(argv):
         parser = _new_parser(
-            description=textwrap.dedent(
+            description=_dedent(
                 f"""\
                 {help_header}
 

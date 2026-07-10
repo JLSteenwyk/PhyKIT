@@ -1,10 +1,37 @@
-import pickle
-from Bio import Phylo
-
 from .base import Tree
 
-from ...helpers.files import read_single_column_file_to_list
-from ...helpers.json_output import print_json
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
+
+
+def read_single_column_file_to_list(*args, **kwargs):
+    from ...helpers.files import (
+        read_single_column_file_to_list as _read_single_column_file_to_list,
+    )
+
+    return _read_single_column_file_to_list(*args, **kwargs)
+
+
+class _LazyBaseTreeTree:
+    def root_with_outgroup(self, *args, **kwargs):
+        from Bio.Phylo.BaseTree import Tree as _Tree
+
+        self.root_with_outgroup = _Tree.root_with_outgroup
+        return self.root_with_outgroup(*args, **kwargs)
+
+
+class _LazyBaseTree:
+    Tree = _LazyBaseTreeTree()
+
+
+class _LazyPhylo:
+    BaseTree = _LazyBaseTree()
+
+
+Phylo = _LazyPhylo()
 
 
 class RootTree(Tree):
@@ -19,15 +46,13 @@ class RootTree(Tree):
 
     def run(self):
         tree = self.read_tree_file()
-        # Make a deep copy to avoid modifying the cached tree
-        tree_copy = pickle.loads(pickle.dumps(tree, protocol=pickle.HIGHEST_PROTOCOL))
 
         outgroup = \
             read_single_column_file_to_list(self.outgroup_taxa_file_path)
 
-        Phylo.BaseTree.Tree.root_with_outgroup(tree_copy, outgroup)
+        Phylo.BaseTree.Tree.root_with_outgroup(tree, outgroup)
 
-        self.write_tree_file(tree_copy, self.output_file_path)
+        self.write_tree_file(tree, self.output_file_path)
 
         if self.json_output:
             print_json(

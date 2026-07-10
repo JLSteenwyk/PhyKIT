@@ -76,9 +76,17 @@ class TestRootTree(object):
 
     @patch("builtins.print")
     def test_root_tree_incorrect_tree_path(self, mocked_print):
+        testargs = [
+            "phykit",
+            "root_tree",
+            f"{here.parent.parent.parent}/sample_files/tree_simple.tx",
+            "-r",
+            f"{here.parent.parent.parent}/sample_files/tree_simple.outgroup.txt",
+        ]
 
-        with pytest.raises(SystemExit) as pytest_wrapped_e:
-            Phykit()
+        with patch.object(sys, "argv", testargs):
+            with pytest.raises(SystemExit) as pytest_wrapped_e:
+                Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2

@@ -1,9 +1,13 @@
-from typing import Dict
+from __future__ import annotations
 
-from Bio import SeqIO
-
+from ._fasta import read_unique_fasta_entries
 from .base import Alignment
-from ...helpers.json_output import print_json
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
 
 
 class Faidx(Alignment):
@@ -13,13 +17,13 @@ class Faidx(Alignment):
         self.json_output = parsed["json_output"]
 
     def run(self) -> None:
-        record_dict = SeqIO.index(self.fasta, "fasta")
-        entries = [e for e in map(str.strip, self.entry.split(",")) if e]
+        entries = self._parse_entries(self.entry)
+        records = self._fetch_entries(self.fasta, entries)
 
         if self.json_output:
             rows = [
-                dict(entry=e, name=record_dict[e].name, sequence=str(record_dict[e].seq))
-                for e in entries
+                {"entry": entry, "name": entry, "sequence": records[entry]}
+                for entry in entries
             ]
             print_json(
                 dict(
@@ -29,14 +33,31 @@ class Faidx(Alignment):
             )
             return
 
-        # Split entries and iterate
-        for e in entries:
-            record = record_dict[e]
-            print(f">{record.name}\n{record.seq}")
+        blocks = [f">{entry}\n{records[entry]}" for entry in entries]
+        if blocks:
+            print("\n".join(blocks))
 
-    def process_args(self, args) -> Dict[str, str]:
+    def process_args(self, args) -> dict[str, str]:
         return dict(
             fasta=args.fasta,
             entry=args.entry,
             json_output=getattr(args, "json", False),
         )
+
+    @staticmethod
+    def _fetch_entries(path: str, entries: list[str]) -> dict[str, str]:
+        return read_unique_fasta_entries(path, entries)
+
+    @staticmethod
+    def _parse_entries(entry_arg: str) -> list[str]:
+        if (
+            " " not in entry_arg
+            and "\t" not in entry_arg
+            and "\n" not in entry_arg
+            and "\r" not in entry_arg
+        ):
+            entries = entry_arg.split(",")
+            if entries and entries[0] and entries[-1] and "" not in entries:
+                return entries
+            return [entry for entry in entries if entry]
+        return [entry for entry in map(str.strip, entry_arg.split(",")) if entry]

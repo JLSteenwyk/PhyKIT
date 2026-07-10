@@ -1,5 +1,8 @@
-import pytest
+import os
 from pathlib import Path
+import subprocess
+
+import pytest
 
 from Bio import AlignIO
 from Bio import Phylo
@@ -11,6 +14,31 @@ here = Path(__file__)
 def pytest_configure(config):
     config.addinivalue_line("markers", "integration: mark as integration test")
     config.addinivalue_line("markers", "slow: mark as slow-running test")
+
+
+@pytest.fixture(autouse=True)
+def disable_coverage_for_import_probe_subprocesses(monkeypatch):
+    run = subprocess.run
+
+    def run_without_probe_coverage(*popenargs, **kwargs):
+        command = popenargs[0] if popenargs else kwargs.get("args")
+        if (
+            isinstance(command, (list, tuple))
+            and len(command) >= 3
+            and command[1] == "-c"
+            and isinstance(command[2], str)
+            and "sys.modules" in command[2]
+        ):
+            supplied_env = kwargs.get("env")
+            env = dict(os.environ if supplied_env is None else supplied_env)
+            for key in tuple(env):
+                if key.startswith("COV_CORE_"):
+                    del env[key]
+            kwargs["env"] = env
+        return run(*popenargs, **kwargs)
+
+    monkeypatch.setattr(subprocess, "run", run_without_probe_coverage)
+
 
 # alignment fixtures
 @pytest.fixture

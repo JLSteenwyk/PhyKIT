@@ -3,14 +3,91 @@ Unit tests for parallel processing utilities
 """
 
 import unittest
+import builtins
 from unittest.mock import patch, MagicMock
 import numpy as np
+import subprocess
+import sys
 
 from phykit.helpers.parallel import (
     ParallelProcessor,
     BatchFileProcessor,
     NumpyParallel
 )
+import phykit.helpers.parallel as parallel_module
+
+
+def test_module_import_does_not_import_heavy_parallel_dependencies():
+    code = """
+import sys
+import phykit.helpers.parallel as module
+
+assert "multiprocessing" not in sys.modules
+assert "typing" not in sys.modules
+assert "numpy" not in sys.modules
+assert "concurrent.futures" not in sys.modules
+assert callable(module.ProcessPoolExecutor)
+assert callable(module.ThreadPoolExecutor)
+"""
+    subprocess.run([sys.executable, "-c", code], check=True)
+
+
+def test_lazy_numpy_caches_module_and_attributes():
+    proxy = parallel_module._LazyNumpy()
+    real_import = builtins.__import__
+    numpy_imports = 0
+
+    def counting_import(name, globals=None, locals=None, fromlist=(), level=0):
+        nonlocal numpy_imports
+        if name == "numpy":
+            numpy_imports += 1
+        return real_import(name, globals, locals, fromlist, level)
+
+    with patch("builtins.__import__", side_effect=counting_import):
+        assert proxy.zeros is np.zeros
+        assert proxy.array is np.array
+        assert proxy.zeros is np.zeros
+        assert proxy.array is np.array
+
+    assert numpy_imports == 1
+
+
+def test_lazy_executor_caches_resolved_executor_class():
+    class DummyExecutor:
+        calls = []
+
+        def __init__(self, *args, **kwargs):
+            self.calls.append((args, kwargs))
+
+    class DummyFutures:
+        ThreadPoolExecutor = DummyExecutor
+
+    class DummyConcurrent:
+        futures = DummyFutures
+
+    proxy = parallel_module._LazyExecutor("ThreadPoolExecutor")
+    real_import = builtins.__import__
+    concurrent_imports = 0
+
+    def counting_import(name, globals=None, locals=None, fromlist=(), level=0):
+        nonlocal concurrent_imports
+        if name == "concurrent" and fromlist == ("futures",):
+            concurrent_imports += 1
+            return DummyConcurrent
+        return real_import(name, globals, locals, fromlist, level)
+
+    with patch("builtins.__import__", side_effect=counting_import):
+        first = proxy(max_workers=2)
+        second = proxy(max_workers=4)
+
+    assert isinstance(first, DummyExecutor)
+    assert isinstance(second, DummyExecutor)
+    assert concurrent_imports == 1
+    assert proxy._executor_class is DummyExecutor
+    assert DummyExecutor.calls == [
+        ((), {"max_workers": 2}),
+        ((), {"max_workers": 4}),
+    ]
 
 
 class TestParallelProcessor(unittest.TestCase):
@@ -38,6 +115,39 @@ class TestParallelProcessor(unittest.TestCase):
         # Very large dataset (should be capped at 8 or CPU count, whichever is smaller)
         workers = ParallelProcessor.get_optimal_workers(10000, min_chunk_size=10)
         self.assertEqual(workers, min(8, max_cpu))
+
+    def test_get_optimal_workers_reuses_cpu_count(self):
+        """Test repeated worker calculations avoid repeated CPU-count calls."""
+        calls = 0
+
+        def fake_cpu_count():
+            nonlocal calls
+            calls += 1
+            return 4
+
+        parallel_module._clear_cpu_count_cache()
+        with patch.object(parallel_module.mp, "cpu_count", side_effect=fake_cpu_count):
+            self.assertEqual(ParallelProcessor.get_optimal_workers(100), 4)
+            self.assertEqual(ParallelProcessor.get_optimal_workers(1000), 4)
+            self.assertEqual(ParallelProcessor.get_optimal_workers(5), 1)
+
+        parallel_module._clear_cpu_count_cache()
+        self.assertEqual(calls, 1)
+
+    def test_get_optimal_workers_small_data_skips_cpu_count(self):
+        """Test sequential-size jobs avoid multiprocessing setup."""
+        parallel_module._clear_cpu_count_cache()
+        with patch.object(
+            parallel_module.mp,
+            "cpu_count",
+            side_effect=AssertionError("small jobs should not ask for CPU count"),
+        ):
+            self.assertEqual(ParallelProcessor.get_optimal_workers(0), 1)
+            self.assertEqual(ParallelProcessor.get_optimal_workers(5), 1)
+            self.assertEqual(
+                ParallelProcessor.get_optimal_workers(10, min_chunk_size=10),
+                1,
+            )
 
     def test_chunk_data(self):
         """Test data chunking"""
@@ -201,6 +311,29 @@ class TestParallelProcessor(unittest.TestCase):
         # 2 * 3 * 4 = 24
         self.assertEqual(result, 24)
 
+    def test_parallel_reduce_without_initial_does_not_slice_results(self):
+        class NoSliceList(list):
+            def __getitem__(self, key):
+                if isinstance(key, slice):
+                    raise AssertionError("parallel_reduce should not copy results")
+                return super().__getitem__(key)
+
+        def fake_parallel_map(_func, _data, _num_workers=None):
+            return NoSliceList([2, 3, 4])
+
+        with patch.object(
+            ParallelProcessor,
+            "parallel_map",
+            side_effect=fake_parallel_map,
+        ):
+            result = ParallelProcessor.parallel_reduce(
+                lambda x: x,
+                [2, 3, 4],
+                lambda left, right: left * right,
+            )
+
+        self.assertEqual(result, 24)
+
     def test_parallel_reduce_empty_data(self):
         """Test parallel_reduce with empty data"""
         result = ParallelProcessor.parallel_reduce(
@@ -289,6 +422,7 @@ class TestNumpyParallel(unittest.TestCase):
                 col_sum, 0, array
             )
 
+            self.assertIsInstance(mock_map.call_args.args[1], range)
             # Result should be transposed back
             expected = np.array([12, 15, 18])
             np.testing.assert_array_equal(result, expected)
@@ -309,6 +443,7 @@ class TestNumpyParallel(unittest.TestCase):
                 row_sum, 1, array
             )
 
+            self.assertIsInstance(mock_map.call_args.args[1], range)
             expected = np.array([6, 15, 24])
             np.testing.assert_array_equal(result, expected)
 
@@ -379,3 +514,145 @@ class TestNumpyParallel(unittest.TestCase):
                                 [1, 0, -1],
                                 [2, 1, 0]])
             np.testing.assert_array_equal(result, expected)
+
+    def test_parallel_pairwise_operation_symmetric_uses_lazy_pair_sequence(self):
+        """Parallel symmetric pairwise operations avoid eager pair tuple lists."""
+        items = list(range(7))
+        expected_pairs = [
+            (i, j, items[i], items[j])
+            for i in range(len(items))
+            for j in range(i + 1, len(items))
+        ]
+
+        with patch('phykit.helpers.parallel.ParallelProcessor.parallel_map') as mock_map:
+            mock_map.return_value = [
+                (i, j, item_i + item_j)
+                for i, j, item_i, item_j in expected_pairs
+            ]
+
+            result = NumpyParallel.parallel_pairwise_operation(
+                items, lambda left, right: left + right, symmetric=True
+            )
+
+        pair_data = mock_map.call_args.args[1]
+        self.assertIsInstance(pair_data, parallel_module._PairSequence)
+        self.assertNotIsInstance(pair_data, list)
+        self.assertEqual(list(pair_data), expected_pairs)
+        self.assertEqual(len(pair_data), len(expected_pairs))
+
+        for i, j, item_i, item_j in expected_pairs:
+            self.assertEqual(result[i, j], item_i + item_j)
+            self.assertEqual(result[j, i], item_i + item_j)
+
+    def test_parallel_pairwise_operation_non_symmetric_uses_lazy_pair_sequence(self):
+        """Parallel non-symmetric pairwise operations avoid eager pair tuple lists."""
+        items = list(range(5))
+        expected_pairs = [
+            (i, j, items[i], items[j])
+            for i in range(len(items))
+            for j in range(len(items))
+        ]
+
+        with patch('phykit.helpers.parallel.ParallelProcessor.parallel_map') as mock_map:
+            mock_map.return_value = [
+                (i, j, item_i - item_j)
+                for i, j, item_i, item_j in expected_pairs
+            ]
+
+            result = NumpyParallel.parallel_pairwise_operation(
+                items, lambda left, right: left - right, symmetric=False
+            )
+
+        pair_data = mock_map.call_args.args[1]
+        self.assertIsInstance(pair_data, parallel_module._PairSequence)
+        self.assertNotIsInstance(pair_data, list)
+        self.assertEqual(list(pair_data), expected_pairs)
+        self.assertEqual(len(pair_data), len(expected_pairs))
+
+        for i, j, item_i, item_j in expected_pairs:
+            self.assertEqual(result[i, j], item_i - item_j)
+
+    def test_parallel_pairwise_operation_symmetric_num_workers_one_direct(self):
+        """Explicit sequential pairwise operations should avoid pair materialization."""
+        items = ["A", "B", "C"]
+
+        with patch(
+            "phykit.helpers.parallel.ParallelProcessor.parallel_map",
+            side_effect=AssertionError("num_workers=1 should use direct loops"),
+        ):
+            result = NumpyParallel.parallel_pairwise_operation(
+                items,
+                lambda left, right: abs(ord(left) - ord(right)),
+                num_workers=1,
+                symmetric=True,
+            )
+
+        expected = np.array([[0, 1, 2],
+                            [1, 0, 1],
+                            [2, 1, 0]])
+        np.testing.assert_array_equal(result, expected)
+
+    def test_parallel_pairwise_operation_non_symmetric_num_workers_one_direct(self):
+        """Explicit sequential non-symmetric pairwise operations stay ordered."""
+        items = [1, 2, 3]
+
+        with patch(
+            "phykit.helpers.parallel.ParallelProcessor.parallel_map",
+            side_effect=AssertionError("num_workers=1 should use direct loops"),
+        ):
+            result = NumpyParallel.parallel_pairwise_operation(
+                items,
+                lambda left, right: left - right,
+                num_workers=1,
+                symmetric=False,
+            )
+
+        expected = np.array([[0, -1, -2],
+                            [1, 0, -1],
+                            [2, 1, 0]])
+        np.testing.assert_array_equal(result, expected)
+
+    def test_parallel_pairwise_operation_small_symmetric_direct_by_default(self):
+        """Small symmetric pairwise operations avoid parallel setup overhead."""
+        items = [1, 2, 4, 8, 16]
+
+        with patch(
+            "phykit.helpers.parallel.ParallelProcessor.parallel_map",
+            side_effect=AssertionError("small pairwise work should use direct loops"),
+        ):
+            result = NumpyParallel.parallel_pairwise_operation(
+                items,
+                lambda left, right: abs(left - right),
+                symmetric=True,
+            )
+
+        expected = np.array([
+            [0, 1, 3, 7, 15],
+            [1, 0, 2, 6, 14],
+            [3, 2, 0, 4, 12],
+            [7, 6, 4, 0, 8],
+            [15, 14, 12, 8, 0],
+        ])
+        np.testing.assert_array_equal(result, expected)
+
+    def test_parallel_pairwise_operation_small_non_symmetric_direct_by_default(self):
+        """Small non-symmetric pairwise operations avoid parallel setup overhead."""
+        items = [1, 2, 4, 8]
+
+        with patch(
+            "phykit.helpers.parallel.ParallelProcessor.parallel_map",
+            side_effect=AssertionError("small pairwise work should use direct loops"),
+        ):
+            result = NumpyParallel.parallel_pairwise_operation(
+                items,
+                lambda left, right: left - right,
+                symmetric=False,
+            )
+
+        expected = np.array([
+            [0, -1, -3, -7],
+            [1, 0, -2, -6],
+            [3, 2, 0, -4],
+            [7, 6, 4, 0],
+        ])
+        np.testing.assert_array_equal(result, expected)

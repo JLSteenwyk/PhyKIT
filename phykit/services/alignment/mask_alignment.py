@@ -1,10 +1,110 @@
+from __future__ import annotations
+
 import sys
-from typing import Dict
 
-import numpy as np
+from .base import Alignment, _all_sequences_identical
 
-from .base import Alignment
-from ...helpers.json_output import print_json
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
+
+
+class _LazyNumpy:
+    _module = None
+
+    def __getattr__(self, name):
+        module = self._module
+        if module is None:
+            import numpy as _np
+
+            module = _np
+            self._module = module
+
+        value = getattr(module, name)
+        setattr(self, name, value)
+        return value
+
+
+np = _LazyNumpy()
+_DNA_INVALID_LOOKUP = None
+_PROTEIN_INVALID_LOOKUP = None
+_ASCII_ENTROPY_BLOCK_SIZE = 512
+_MASK_CLUSTERED_RANGE_FACTOR = 4
+_MASK_CLUSTER_SAMPLE_WIDTH = 4096
+
+
+def _entropy_columns_from_probabilities(probs, log_probs):
+    return -np.einsum("ij,ij->j", probs, log_probs)
+
+
+def _entropy_count_totals(counts):
+    if counts.shape[1] <= 20000 or counts.shape[0] >= 8:
+        return counts.sum(axis=0)
+    return np.sum(counts, axis=0)
+
+
+def _get_invalid_lookup(is_protein: bool):
+    global _DNA_INVALID_LOOKUP, _PROTEIN_INVALID_LOOKUP
+    if is_protein:
+        if _PROTEIN_INVALID_LOOKUP is None:
+            lookup = np.zeros(256, dtype=np.bool_)
+            lookup[np.frombuffer("-?*X".encode("ascii"), dtype=np.uint8)] = True
+            _PROTEIN_INVALID_LOOKUP = lookup
+        return _PROTEIN_INVALID_LOOKUP
+
+    if _DNA_INVALID_LOOKUP is None:
+        lookup = np.zeros(256, dtype=np.bool_)
+        lookup[np.frombuffer("-?*XN".encode("ascii"), dtype=np.uint8)] = True
+        _DNA_INVALID_LOOKUP = lookup
+    return _DNA_INVALID_LOOKUP
+
+
+def _column_entropies_from_ascii_codes(
+    alignment_array,
+    valid_mask,
+    valid_symbols,
+    block_size: int = _ASCII_ENTROPY_BLOCK_SIZE,
+):
+    aln_len = alignment_array.shape[1]
+    entropies = np.zeros(aln_len, dtype=np.float64)
+    symbol_codes = valid_symbols.astype(np.intp, copy=False)
+
+    for start in range(0, aln_len, block_size):
+        stop = min(start + block_size, aln_len)
+        width = stop - start
+        block = alignment_array[:, start:stop]
+
+        block_by_site = block.T.astype(np.intp, copy=False)
+        site_offsets = np.arange(width, dtype=np.intp)[:, None] * 256
+        if valid_mask is None:
+            count_index = (block_by_site + site_offsets).ravel()
+        else:
+            block_valid = valid_mask[:, start:stop]
+            if not block_valid.any():
+                continue
+            count_index = (block_by_site + site_offsets)[block_valid.T]
+        counts = np.bincount(
+            count_index,
+            minlength=width * 256,
+        ).reshape(width, 256)[:, symbol_codes].T.astype(np.float64, copy=False)
+        totals = _entropy_count_totals(counts)
+        probs = np.divide(
+            counts,
+            totals,
+            out=np.zeros_like(counts, dtype=np.float64),
+            where=totals > 0,
+        )
+        log_probs = np.zeros_like(probs, dtype=np.float64)
+        positive_probs = probs > 0
+        np.log2(probs, out=log_probs, where=positive_probs)
+        entropies[start:stop] = _entropy_columns_from_probabilities(
+            probs,
+            log_probs,
+        )
+
+    return entropies
 
 
 class MaskAlignment(Alignment):
@@ -23,7 +123,7 @@ class MaskAlignment(Alignment):
         masked = self.apply_mask(alignment, keep_mask)
 
         if self.json_output:
-            rows = [dict(taxon=taxon, sequence=seq) for taxon, seq in masked.items()]
+            rows = [{"taxon": taxon, "sequence": seq} for taxon, seq in masked.items()]
             print_json(
                 dict(
                     thresholds=dict(
@@ -31,7 +131,7 @@ class MaskAlignment(Alignment):
                         min_occupancy=self.min_occupancy,
                         max_entropy=self.max_entropy,
                     ),
-                    kept_sites=int(np.sum(keep_mask)),
+                    kept_sites=int(np.count_nonzero(keep_mask)),
                     total_sites=int(len(keep_mask)),
                     rows=rows,
                     taxa=rows,
@@ -39,10 +139,13 @@ class MaskAlignment(Alignment):
             )
             return
 
-        for taxon, seq in masked.items():
-            print(f">{taxon}\n{seq}")
+        if masked:
+            print("\n".join(
+                f">{taxon}\n{seq}"
+                for taxon, seq in masked.items()
+            ))
 
-    def process_args(self, args) -> Dict[str, str]:
+    def process_args(self, args) -> dict[str, str]:
         return dict(
             alignment_file_path=args.alignment,
             max_gap=args.max_gap,
@@ -62,40 +165,265 @@ class MaskAlignment(Alignment):
             print("max_entropy must be >= 0.")
             sys.exit(2)
 
+    @staticmethod
+    def _valid_sites_for_identical_sequence(
+        sequence: str,
+        aln_len: int,
+        is_protein: bool,
+        invalid_chars,
+    ) -> np.ndarray:
+        try:
+            sequence_array = np.frombuffer(
+                sequence[:aln_len].encode("ascii"),
+                dtype=np.uint8,
+            )
+            invalid_lookup = _get_invalid_lookup(is_protein)
+            return ~invalid_lookup[sequence_array]
+        except UnicodeEncodeError:
+            return np.fromiter(
+                (char not in invalid_chars for char in sequence),
+                dtype=np.bool_,
+                count=aln_len,
+            )
+
     def calculate_keep_mask(self, alignment, is_protein: bool) -> np.ndarray:
+        aln_len = alignment.get_alignment_length()
+        if (
+            self.max_entropy is None
+            and self.max_gap >= 1.0
+            and self.min_occupancy <= 0.0
+        ):
+            return np.ones(aln_len, dtype=np.bool_)
+
+        raw_sequences = [str(record.seq) for record in alignment]
+        if raw_sequences:
+            first_raw_sequence = raw_sequences[0]
+            first_sequence = first_raw_sequence.upper()
+            all_identical = True
+            for idx in range(1, len(raw_sequences)):
+                sequence = raw_sequences[idx]
+                if sequence != first_raw_sequence and sequence.upper() != first_sequence:
+                    all_identical = False
+                    break
+
+            if all_identical:
+                if is_protein:
+                    invalid_chars = {"-", "?", "*", "X"}
+                else:
+                    invalid_chars = {"-", "?", "*", "X", "N"}
+                if self.max_gap >= 1.0 and self.min_occupancy <= 0.0:
+                    keep_mask = np.ones(aln_len, dtype=np.bool_)
+                else:
+                    keep_mask = self._valid_sites_for_identical_sequence(
+                        first_sequence,
+                        aln_len,
+                        is_protein,
+                        invalid_chars,
+                    )
+                if self.max_entropy is not None:
+                    keep_mask &= 0.0 <= self.max_entropy
+                return keep_mask
+        sequences = [sequence.upper() for sequence in raw_sequences]
+
         if is_protein:
-            invalid_chars = np.array(["-", "?", "*", "X"], dtype="U1")
+            invalid_chars = ["-", "?", "*", "X"]
         else:
-            invalid_chars = np.array(["-", "?", "*", "X", "N"], dtype="U1")
+            invalid_chars = ["-", "?", "*", "X", "N"]
 
-        alignment_array = np.array(
-            [[c.upper() for c in str(record.seq)] for record in alignment], dtype="U1"
-        )
-        valid_mask = ~np.isin(alignment_array, invalid_chars)
+        ascii_matrix = False
+        try:
+            alignment_bytes = "".join(sequences).encode("ascii")
+            invalid_codes = b"-?*X" if is_protein else b"-?*XN"
+            clean_ascii = not any(
+                alignment_bytes.find(invalid_code) != -1
+                for invalid_code in invalid_codes
+            )
+            if (
+                self.max_entropy is None
+                and self.max_gap >= 0.0
+                and self.min_occupancy <= 1.0
+                and clean_ascii
+            ):
+                return np.ones(aln_len, dtype=np.bool_)
 
-        occupancy = np.mean(valid_mask, axis=0).astype(np.float64)
-        gap_fraction = 1.0 - occupancy
-
-        keep_mask = (gap_fraction <= self.max_gap) & (occupancy >= self.min_occupancy)
+            alignment_array = np.frombuffer(
+                alignment_bytes,
+                dtype=np.uint8,
+            ).reshape(len(sequences), aln_len)
+            if clean_ascii:
+                valid_mask = None
+                keep_mask = np.full(
+                    aln_len,
+                    self.max_gap >= 0.0 and self.min_occupancy <= 1.0,
+                    dtype=np.bool_,
+                )
+            else:
+                invalid_lookup = _get_invalid_lookup(is_protein)
+                valid_mask = ~invalid_lookup[alignment_array]
+                occupancy = np.mean(valid_mask, axis=0).astype(np.float64)
+                gap_fraction = 1.0 - occupancy
+                keep_mask = (
+                    (gap_fraction <= self.max_gap)
+                    & (occupancy >= self.min_occupancy)
+                )
+            ascii_matrix = True
+        except UnicodeEncodeError:
+            alignment_array = np.array([list(seq) for seq in sequences], dtype="U1")
+            invalid_chars_array = np.array(invalid_chars, dtype="U1")
+            valid_mask = ~np.isin(alignment_array, invalid_chars_array)
+            occupancy = np.mean(valid_mask, axis=0).astype(np.float64)
+            gap_fraction = 1.0 - occupancy
+            keep_mask = (
+                (gap_fraction <= self.max_gap)
+                & (occupancy >= self.min_occupancy)
+            )
 
         if self.max_entropy is not None:
             entropies = np.zeros(alignment_array.shape[1], dtype=np.float64)
-            for col_idx in range(alignment_array.shape[1]):
-                column = alignment_array[:, col_idx]
-                valid = column[valid_mask[:, col_idx]]
-                if valid.size == 0:
-                    entropies[col_idx] = 0.0
-                    continue
-                _, counts = np.unique(valid, return_counts=True)
-                probs = counts / counts.sum()
-                entropies[col_idx] = float(-np.sum(probs * np.log2(probs)))
+            if valid_mask is None:
+                valid_symbols = np.unique(alignment_array)
+            else:
+                valid_symbols = np.unique(alignment_array[valid_mask])
+            if valid_symbols.size <= 1:
+                keep_mask &= 0.0 <= self.max_entropy
+            else:
+                if ascii_matrix and valid_symbols.size > 8:
+                    entropies = _column_entropies_from_ascii_codes(
+                        alignment_array,
+                        valid_mask,
+                        valid_symbols,
+                    )
+                else:
+                    count_reducer = np.count_nonzero if ascii_matrix else np.sum
+                    counts = np.array(
+                        [
+                            count_reducer(alignment_array == symbol, axis=0)
+                            for symbol in valid_symbols
+                        ],
+                        dtype=np.float64,
+                    )
+                    totals = _entropy_count_totals(counts)
+                    probs = np.divide(
+                        counts,
+                        totals,
+                        out=np.zeros_like(counts, dtype=np.float64),
+                        where=totals > 0,
+                    )
+                    log_probs = np.zeros_like(probs, dtype=np.float64)
+                    positive_probs = probs > 0
+                    np.log2(probs, out=log_probs, where=positive_probs)
+                    entropies = _entropy_columns_from_probabilities(
+                        probs,
+                        log_probs,
+                    )
             keep_mask &= entropies <= self.max_entropy
 
         return keep_mask
 
-    def apply_mask(self, alignment, keep_mask: np.ndarray) -> Dict[str, str]:
-        output = {}
-        for record in alignment:
-            seq_arr = np.array(list(str(record.seq).upper()), dtype="U1")
-            output[record.id] = "".join(seq_arr[keep_mask].tolist())
-        return output
+    def apply_mask(self, alignment, keep_mask: np.ndarray) -> dict[str, str]:
+        records = list(alignment)
+        if not records:
+            return {}
+
+        mask_len = len(keep_mask)
+        if (
+            mask_len
+            and not keep_mask[0]
+            and not keep_mask.any()
+            and all(len(str(record.seq)) == mask_len for record in records)
+        ):
+            return {
+                record.id: ""
+                for record in records
+            }
+
+        if len(keep_mask) and keep_mask.all():
+            return {
+                record.id: str(record.seq).upper()
+                for record in records
+            }
+
+        if mask_len:
+            kept_count = int(np.count_nonzero(keep_mask))
+            run_start = int(keep_mask.argmax())
+            run_stop = mask_len - int(keep_mask[::-1].argmax())
+            if keep_mask[run_start:run_stop].all():
+                masked = {}
+                for record in records:
+                    sequence = str(record.seq)
+                    if len(sequence) != mask_len:
+                        masked = None
+                        break
+                    masked[record.id] = sequence[run_start:run_stop].upper()
+                if masked is not None:
+                    return masked
+
+            ranges = self._clustered_true_mask_ranges(keep_mask, kept_count)
+            if ranges is not None:
+                masked = {}
+                for record in records:
+                    sequence = str(record.seq)
+                    if len(sequence) != mask_len:
+                        masked = None
+                        break
+                    masked[record.id] = "".join(
+                        [
+                            sequence[start:stop]
+                            for start, stop in ranges
+                        ]
+                    ).upper()
+                if masked is not None:
+                    return masked
+
+        sequences = [str(record.seq).upper() for record in records]
+        try:
+            alignment_array = np.frombuffer(
+                "".join(sequences).encode("ascii"),
+                dtype="S1",
+            ).reshape(len(sequences), len(keep_mask))
+            masked_array = alignment_array[:, keep_mask]
+            return {
+                record.id: row.tobytes().decode("ascii")
+                for record, row in zip(records, masked_array)
+            }
+        except UnicodeEncodeError:
+            alignment_array = np.array([list(seq) for seq in sequences], dtype="U1")
+            masked_array = alignment_array[:, keep_mask]
+            return {
+                record.id: "".join(row.tolist())
+                for record, row in zip(records, masked_array)
+            }
+
+    @staticmethod
+    def _clustered_true_mask_ranges(
+        keep_mask: np.ndarray,
+        kept_count: int,
+    ) -> list[tuple[int, int]] | None:
+        if kept_count <= 0:
+            return []
+        if kept_count < 1024:
+            return None
+
+        mask_len = len(keep_mask)
+        sample_width = min(mask_len, _MASK_CLUSTER_SAMPLE_WIDTH)
+        if sample_width < mask_len:
+            sample = keep_mask[:sample_width]
+            sample_kept = int(np.count_nonzero(sample))
+            if sample_kept:
+                sample_changes = int(np.count_nonzero(sample[1:] != sample[:-1]))
+                sample_range_count = (sample_changes + int(bool(sample[0])) + 1) // 2
+                if sample_range_count * _MASK_CLUSTERED_RANGE_FACTOR >= sample_kept:
+                    return None
+
+        padded_mask = np.empty(mask_len + 2, dtype=np.bool_)
+        padded_mask[0] = False
+        padded_mask[-1] = False
+        padded_mask[1:-1] = keep_mask
+        changes = np.flatnonzero(padded_mask[1:] != padded_mask[:-1])
+        range_count = changes.size // 2
+        if range_count * _MASK_CLUSTERED_RANGE_FACTOR >= kept_count:
+            return None
+
+        starts = changes[0::2].tolist()
+        stops = changes[1::2].tolist()
+        return list(zip(starts, stops))

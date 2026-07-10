@@ -3,17 +3,96 @@ Phylogenetic trait correlation: compute phylogenetic correlations between
 all pairs of traits and display them as a heatmap with significance
 indicators.
 """
-import sys
-from typing import Dict, List
-
-import numpy as np
-from scipy.stats import t as t_dist
+from __future__ import annotations
 
 from .base import Tree
-from ...helpers.json_output import print_json
-from ...helpers.plot_config import PlotConfig
-from ...helpers.trait_parsing import parse_multi_trait_file
 from ...errors import PhykitUserError
+
+
+_STDTR = None
+_CHO_FACTOR = None
+_CHO_SOLVE = None
+
+
+class _LazyNumpy:
+    _module = None
+
+    def __getattr__(self, name):
+        module = self._module
+        if module is None:
+            import numpy as _np
+
+            module = _np
+            self._module = module
+        value = getattr(module, name)
+        setattr(self, name, value)
+        return value
+
+
+np = _LazyNumpy()
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
+
+
+def parse_multi_trait_file(*args, **kwargs):
+    from ...helpers.trait_parsing import (
+        parse_multi_trait_file as _parse_multi_trait_file,
+    )
+
+    return _parse_multi_trait_file(*args, **kwargs)
+
+
+def trait_matrix_from_rows(*args, **kwargs):
+    from ...helpers.trait_parsing import (
+        trait_matrix_from_rows as _trait_matrix_from_rows,
+    )
+
+    return _trait_matrix_from_rows(*args, **kwargs)
+
+
+def subset_traits_to_ordered_shared_taxa(*args, **kwargs):
+    from ...helpers.trait_parsing import (
+        subset_traits_to_ordered_shared_taxa as _subset_traits_to_ordered_shared_taxa,
+    )
+
+    return _subset_traits_to_ordered_shared_taxa(*args, **kwargs)
+
+
+def cho_factor(*args, **kwargs):
+    global _CHO_FACTOR
+
+    if _CHO_FACTOR is None:
+        from scipy.linalg import cho_factor as _cho_factor
+
+        _CHO_FACTOR = _cho_factor
+
+    return _CHO_FACTOR(*args, **kwargs)
+
+
+def cho_solve(*args, **kwargs):
+    global _CHO_SOLVE
+
+    if _CHO_SOLVE is None:
+        from scipy.linalg import cho_solve as _cho_solve
+
+        _CHO_SOLVE = _cho_solve
+
+    return _CHO_SOLVE(*args, **kwargs)
+
+
+def _t_two_tailed_p_values(t_stats: np.ndarray, df: int) -> np.ndarray:
+    global _STDTR
+
+    if _STDTR is None:
+        from scipy.special import stdtr as _stdtr
+
+        _STDTR = _stdtr
+
+    return 2.0 * _STDTR(df, -np.abs(t_stats))
 
 
 class TraitCorrelation(Tree):
@@ -29,10 +108,19 @@ class TraitCorrelation(Tree):
         self.plot_config = parsed["plot_config"]
 
     def run(self) -> None:
-        from .vcv_utils import build_vcv_matrix, build_discordance_vcv, parse_gene_trees
+        from .vcv_utils import (
+            build_discordance_vcv,
+            build_vcv_matrix,
+            parse_gene_trees,
+        )
 
-        tree = self.read_tree_file()
-        self.validate_tree(tree, min_tips=3, require_branch_lengths=True, context="trait correlation analysis")
+        tree = self.read_tree_file_unmodified()
+        self.validate_tree(
+            tree,
+            min_tips=3,
+            require_branch_lengths=True,
+            context="trait correlation analysis",
+        )
 
         tree_tips = self.get_tip_names_from_tree(tree)
         trait_names, traits = parse_multi_trait_file(
@@ -45,9 +133,9 @@ class TraitCorrelation(Tree):
             gene_trees = parse_gene_trees(self.gene_trees_path)
             vcv, vcv_meta = build_discordance_vcv(tree, gene_trees, ordered_names)
             shared = vcv_meta["shared_taxa"]
-            if set(shared) != set(ordered_names):
-                traits = {k: traits[k] for k in shared}
-                ordered_names = shared
+            traits, ordered_names = subset_traits_to_ordered_shared_taxa(
+                traits, ordered_names, shared
+            )
             vcv_type = "discordance"
         else:
             vcv = build_vcv_matrix(tree, ordered_names)
@@ -57,16 +145,18 @@ class TraitCorrelation(Tree):
         n = len(ordered_names)
         p = len(trait_names)
 
-        Y = np.array([[traits[name][j] for j in range(p)] for name in ordered_names])
+        Y = trait_matrix_from_rows(traits, ordered_names)
 
         # Drop invariant (zero-variance) traits: their correlations are
         # undefined (division by a zero standard deviation), which yields
         # NaNs that propagate into the heatmap and crash hierarchical
         # clustering. Warn and continue with the variable traits.
-        col_var = np.var(Y, axis=0)
+        col_var = Y.var(axis=0)
         invariant = [trait_names[j] for j in range(p) if col_var[j] < 1e-12]
         if invariant:
             keep = [j for j in range(p) if col_var[j] >= 1e-12]
+            import sys
+
             print(
                 f"Warning: dropping {len(invariant)} invariant trait(s) "
                 f"(zero variance): {', '.join(invariant)}",
@@ -86,33 +176,7 @@ class TraitCorrelation(Tree):
                     code=2,
                 )
 
-        # GLS-centered data
-        C_inv = np.linalg.inv(vcv)
-        ones = np.ones(n)
-        denom = ones @ C_inv @ ones
-        a_hat = np.array([(ones @ C_inv @ Y[:, j]) / denom for j in range(p)])
-        Y_centered = Y - a_hat  # broadcast subtraction
-
-        # Phylogenetic covariance matrix
-        phylo_cov = (Y_centered.T @ C_inv @ Y_centered) / (n - 1)
-
-        # Convert to correlation matrix
-        std_devs = np.sqrt(np.diag(phylo_cov))
-        corr_matrix = phylo_cov / np.outer(std_devs, std_devs)
-        np.fill_diagonal(corr_matrix, 1.0)
-
-        # Compute p-values
-        p_matrix = np.ones((p, p))
-        for i in range(p):
-            for j in range(i + 1, p):
-                r = corr_matrix[i, j]
-                if abs(r) >= 1.0 - 1e-10:
-                    pval = 0.0
-                else:
-                    t_stat = r * np.sqrt((n - 2) / (1 - r ** 2))
-                    pval = 2.0 * t_dist.sf(abs(t_stat), df=n - 2)
-                p_matrix[i, j] = pval
-                p_matrix[j, i] = pval
+        corr_matrix, p_matrix = self._compute_correlation_matrices(Y, vcv)
 
         # Plot heatmap
         self._plot_heatmap(
@@ -130,7 +194,9 @@ class TraitCorrelation(Tree):
                 self.trait_data_path,
             )
 
-    def process_args(self, args) -> Dict:
+    def process_args(self, args) -> dict:
+        from ...helpers.plot_config import PlotConfig
+
         return dict(
             tree_file_path=args.tree,
             trait_data_path=args.trait_data,
@@ -142,6 +208,80 @@ class TraitCorrelation(Tree):
             plot_config=PlotConfig.from_args(args),
         )
 
+    def _compute_correlation_matrices(
+        self, Y: np.ndarray, vcv: np.ndarray
+    ):
+        try:
+            return self._compute_correlation_matrices_cholesky(Y, vcv)
+        except (np.linalg.LinAlgError, FloatingPointError, ValueError):
+            return self._compute_correlation_matrices_inverse(Y, vcv)
+
+    def _compute_correlation_matrices_cholesky(
+        self, Y: np.ndarray, vcv: np.ndarray
+    ):
+        n, p = Y.shape
+        factor = cho_factor(vcv, lower=True, check_finite=False)
+        ones = np.ones(n)
+        solve_rhs = np.empty(
+            (n, p + 1),
+            dtype=np.result_type(Y, vcv),
+        )
+        solve_rhs[:, 0] = 1.0
+        solve_rhs[:, 1:] = Y
+        solved = cho_solve(factor, solve_rhs, check_finite=False)
+        C_inv_ones = solved[:, 0]
+        C_inv_Y = solved[:, 1:]
+        denom = ones @ C_inv_ones
+        a_hat = (ones @ C_inv_Y) / denom
+        Y_centered = Y - a_hat
+        C_inv_Y_centered = C_inv_Y - C_inv_ones[:, None] * a_hat
+        phylo_cov = (Y_centered.T @ C_inv_Y_centered) / (n - 1)
+        return self._correlation_and_p_values(phylo_cov, n, p)
+
+    def _compute_correlation_matrices_inverse(
+        self, Y: np.ndarray, vcv: np.ndarray
+    ):
+        n, p = Y.shape
+        C_inv = np.linalg.inv(vcv)
+        ones = np.ones(n)
+        C_inv_ones = C_inv @ ones
+        C_inv_Y = C_inv @ Y
+        denom = ones @ C_inv_ones
+        a_hat = (ones @ C_inv_Y) / denom
+        Y_centered = Y - a_hat  # broadcast subtraction
+        C_inv_Y_centered = C_inv_Y - C_inv_ones[:, None] * a_hat
+        phylo_cov = (Y_centered.T @ C_inv_Y_centered) / (n - 1)
+        return self._correlation_and_p_values(phylo_cov, n, p)
+
+    def _correlation_and_p_values(
+        self, phylo_cov: np.ndarray, n: int, p: int
+    ):
+        std_devs = np.sqrt(phylo_cov.diagonal())
+        corr_matrix = phylo_cov / np.outer(std_devs, std_devs)
+        np.fill_diagonal(corr_matrix, 1.0)
+
+        p_matrix = np.ones((p, p))
+        upper_rows, upper_cols = np.triu_indices(p, k=1)
+        upper_r = corr_matrix[upper_rows, upper_cols]
+        perfect = np.abs(upper_r) >= 1.0 - 1e-10
+        if perfect.any():
+            rows = upper_rows[perfect]
+            cols = upper_cols[perfect]
+            p_matrix[rows, cols] = 0.0
+            p_matrix[cols, rows] = 0.0
+
+        testable = ~perfect
+        if testable.any():
+            rows = upper_rows[testable]
+            cols = upper_cols[testable]
+            r = upper_r[testable]
+            t_stat = r * np.sqrt((n - 2) / (1 - r ** 2))
+            p_values = _t_two_tailed_p_values(t_stat, n - 2)
+            p_matrix[rows, cols] = p_values
+            p_matrix[cols, rows] = p_values
+
+        return corr_matrix, p_matrix
+
     def _significance_stars(self, pval: float) -> str:
         if pval < 0.001:
             return "***"
@@ -151,11 +291,44 @@ class TraitCorrelation(Tree):
             return "*"
         return ""
 
+    def _draw_significance_stars(self, ax, p_matrix: np.ndarray) -> None:
+        if p_matrix.size == 0 or p_matrix.min() >= self.alpha:
+            return
+
+        flat_indices = np.flatnonzero(p_matrix < self.alpha)
+        if flat_indices.size == 0:
+            return
+
+        rows, cols = np.unravel_index(flat_indices, p_matrix.shape)
+        offdiag = rows != cols
+        if not offdiag.any():
+            return
+
+        rows = rows[offdiag]
+        cols = cols[offdiag]
+        p_values = p_matrix[rows, cols]
+        star_groups = [
+            ("***", p_values < 0.001),
+            ("**", (p_values >= 0.001) & (p_values < 0.01)),
+            ("*", p_values >= 0.01),
+        ]
+        for stars, mask in star_groups:
+            if mask.any():
+                ax.scatter(
+                    cols[mask],
+                    rows[mask],
+                    marker=f"${stars}$",
+                    s=85,
+                    c="black",
+                    linewidths=0,
+                    zorder=3,
+                )
+
     def _plot_heatmap(
         self,
         corr_matrix: np.ndarray,
         p_matrix: np.ndarray,
-        trait_names: List[str],
+        trait_names: list[str],
         output_path: str,
     ) -> None:
         try:
@@ -190,17 +363,7 @@ class TraitCorrelation(Tree):
             aspect="auto", interpolation="nearest",
         )
 
-        # Add significance stars
-        for i in range(p):
-            for j in range(p):
-                if i != j:
-                    stars = self._significance_stars(p_matrix[i, j])
-                    if stars:
-                        ax.text(
-                            j, i, stars,
-                            ha="center", va="center",
-                            fontsize=8, color="black",
-                        )
+        self._draw_significance_stars(ax, p_matrix)
 
         ax.set_xticks(np.arange(p))
         ax.set_yticks(np.arange(p))
@@ -269,17 +432,7 @@ class TraitCorrelation(Tree):
             aspect="auto", interpolation="nearest",
         )
 
-        # Significance stars
-        for i in range(p):
-            for j in range(p):
-                if i != j:
-                    stars = self._significance_stars(p_ordered[i, j])
-                    if stars:
-                        heat_ax.text(
-                            j, i, stars,
-                            ha="center", va="center",
-                            fontsize=8, color="black",
-                        )
+        self._draw_significance_stars(heat_ax, p_ordered)
 
         heat_ax.set_xticks(np.arange(p))
         heat_ax.set_yticks(np.arange(p))
@@ -305,59 +458,72 @@ class TraitCorrelation(Tree):
         self, n, p, trait_names, vcv_type, corr_matrix, p_matrix,
         tree_path,
     ) -> None:
-        print("Phylogenetic Trait Correlation")
-        print(f"Tree: {tree_path}")
-        print(f"Taxa: {n}")
-        print(f"Traits: {p}")
-        print(f"VCV: {vcv_type} ({'standard' if vcv_type == 'BM' else 'discordance-aware'})")
-        print(f"Alpha: {self.alpha}")
+        lines = [
+            "Phylogenetic Trait Correlation",
+            f"Tree: {tree_path}",
+            f"Taxa: {n}",
+            f"Traits: {p}",
+            f"VCV: {vcv_type} ({'standard' if vcv_type == 'BM' else 'discordance-aware'})",
+            f"Alpha: {self.alpha}",
+        ]
 
         # Determine column width
         max_name_len = max(len(name) for name in trait_names)
         col_width = max(max_name_len, 12)
+        suffix = "  "
 
         # Header
-        header = " " * (max_name_len + 2)
-        for name in trait_names:
-            header += name.rjust(col_width) + "  "
-        print(f"\n{header}")
+        header = (" " * (max_name_len + 2)) + "".join(
+            name.rjust(col_width) + suffix for name in trait_names
+        )
+        lines.append(f"\n{header}")
 
         # Rows
+        alpha = self.alpha
+        row_label_width = max_name_len + 2
         for i, name in enumerate(trait_names):
-            row = name.ljust(max_name_len + 2)
-            for j in range(p):
+            row_cells = []
+            row_cells_append = row_cells.append
+            corr_row = corr_matrix[i]
+            p_row = p_matrix[i]
+            for j, (corr_value, pval) in enumerate(zip(corr_row, p_row)):
                 if i == j:
                     cell = "1.0000"
                 else:
-                    stars = self._significance_stars(p_matrix[i, j])
-                    cell = f"{corr_matrix[i, j]:.4f}{stars}"
-                row += cell.rjust(col_width) + "  "
-            print(row)
+                    if pval < 0.001:
+                        stars = "***"
+                    elif pval < 0.01:
+                        stars = "**"
+                    elif pval < alpha:
+                        stars = "*"
+                    else:
+                        stars = ""
+                    cell = f"{corr_value:.4f}{stars}"
+                row_cells_append(cell.rjust(col_width))
+            lines.append(name.ljust(row_label_width) + suffix.join(row_cells) + suffix)
 
-        # Count significant pairs
-        n_sig = 0
-        n_total = 0
-        for i in range(p):
-            for j in range(i + 1, p):
-                n_total += 1
-                if p_matrix[i, j] < self.alpha:
-                    n_sig += 1
-        print(f"\nSignificant pairs (p < {self.alpha}): {n_sig} of {n_total}")
-        print(f"Output: {self.output_path}")
+        n_total = p * (p - 1) // 2
+        n_sig = self._count_significant_upper_triangle(p_matrix, self.alpha)
+        lines.append(f"\nSignificant pairs (p < {self.alpha}): {n_sig} of {n_total}")
+        lines.append(f"Output: {self.output_path}")
+        print("\n".join(lines))
+
+    @staticmethod
+    def _count_significant_upper_triangle(p_matrix: np.ndarray, alpha: float) -> int:
+        n_traits = p_matrix.shape[0]
+        count = 0
+        for row_idx in range(n_traits - 1):
+            count += int(np.count_nonzero(p_matrix[row_idx, row_idx + 1:] < alpha))
+        return count
 
     def _print_json(
         self, n, p, trait_names, vcv_type, corr_matrix, p_matrix
     ) -> None:
-        sig_pairs = []
-        for i in range(p):
-            for j in range(i + 1, p):
-                if p_matrix[i, j] < self.alpha:
-                    sig_pairs.append({
-                        "trait_i": trait_names[i],
-                        "trait_j": trait_names[j],
-                        "r": round(float(corr_matrix[i, j]), 6),
-                        "p": round(float(p_matrix[i, j]), 6),
-                    })
+        corr_block = corr_matrix[:p, :p]
+        p_block = p_matrix[:p, :p]
+        sig_pairs = self._build_significant_pairs(
+            trait_names, corr_block, p_block, self.alpha
+        )
 
         payload = {
             "n_taxa": n,
@@ -365,15 +531,53 @@ class TraitCorrelation(Tree):
             "trait_names": trait_names,
             "vcv_type": vcv_type,
             "alpha": self.alpha,
-            "correlation_matrix": [
-                [round(float(corr_matrix[i, j]), 6) for j in range(p)]
-                for i in range(p)
-            ],
-            "p_value_matrix": [
-                [round(float(p_matrix[i, j]), 6) for j in range(p)]
-                for i in range(p)
-            ],
+            "correlation_matrix": np.round(corr_block, 6).tolist(),
+            "p_value_matrix": np.round(p_block, 6).tolist(),
             "significant_pairs": sig_pairs,
             "output_file": self.output_path,
         }
         print_json(payload)
+
+    @staticmethod
+    def _build_significant_pairs(
+        trait_names, corr_block: np.ndarray, p_block: np.ndarray, alpha: float
+    ) -> list[dict]:
+        n_traits = len(trait_names)
+        total_pairs = n_traits * (n_traits - 1) // 2
+        significant_entries = int(np.count_nonzero(p_block < alpha))
+        if significant_entries == 0:
+            return []
+
+        if significant_entries <= max(64, total_pairs // 20):
+            pairs = []
+            append = pairs.append
+            for i in range(n_traits - 1):
+                sig_offsets = np.flatnonzero(p_block[i, i + 1:] < alpha)
+                if sig_offsets.size:
+                    trait_i = trait_names[i]
+                    for offset in sig_offsets:
+                        j = i + 1 + int(offset)
+                        append(
+                            {
+                                "trait_i": trait_i,
+                                "trait_j": trait_names[j],
+                                "r": round(float(corr_block[i, j]), 6),
+                                "p": round(float(p_block[i, j]), 6),
+                            }
+                        )
+            return pairs
+
+        upper_rows, upper_cols = np.nonzero(np.triu(p_block < alpha, k=1))
+        corr_values = corr_block[upper_rows, upper_cols]
+        p_values = p_block[upper_rows, upper_cols]
+        return [
+            {
+                "trait_i": trait_names[int(i)],
+                "trait_j": trait_names[int(j)],
+                "r": round(float(corr_value), 6),
+                "p": round(float(p_value), 6),
+            }
+            for i, j, corr_value, p_value in zip(
+                upper_rows, upper_cols, corr_values, p_values
+            )
+        ]

@@ -1,15 +1,108 @@
-import json
-import sys
-from collections import Counter, deque
-from typing import Dict, List, Tuple
+from __future__ import annotations
 
-import numpy as np
-from scipy.optimize import minimize_scalar
-from scipy.stats import chi2
+import math
+import sys
+from collections import deque
 
 from .base import Tree
-from ...helpers.json_output import print_json
 from ...errors import PhykitUserError
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
+
+
+def _json_load(*args, **kwargs):
+    import json
+
+    return json.load(*args, **kwargs)
+
+
+class _LazyNumpy:
+    def __init__(self):
+        self._module = None
+
+    def __getattr__(self, name):
+        module = self._module
+        if module is None:
+            import numpy as _np
+
+            module = _np
+            self._module = module
+
+        attr = getattr(module, name)
+        setattr(self, name, attr)
+        return attr
+
+
+np = _LazyNumpy()
+_CHO_FACTOR = None
+_CHO_SOLVE = None
+_MINIMIZE_SCALAR = None
+_COLUMN_SUM_METHOD_MIN_SIZE = 180
+
+
+def _permutation_p_value_ge(permutations: np.ndarray, observed: float) -> float:
+    if permutations.size == 0:
+        return float("nan")
+    return float(np.count_nonzero(permutations >= observed) / permutations.size)
+
+
+def _matrix_column_sums(matrix: np.ndarray) -> np.ndarray:
+    if matrix.shape[0] >= _COLUMN_SUM_METHOD_MIN_SIZE:
+        return matrix.sum(axis=0)
+    return np.sum(matrix, axis=0)
+
+
+def cho_factor(*args, **kwargs):
+    global _CHO_FACTOR
+
+    if _CHO_FACTOR is None:
+        from scipy.linalg import cho_factor as _cho_factor
+
+        _CHO_FACTOR = _cho_factor
+
+    return _CHO_FACTOR(*args, **kwargs)
+
+
+def cho_solve(*args, **kwargs):
+    global _CHO_SOLVE
+
+    if _CHO_SOLVE is None:
+        from scipy.linalg import cho_solve as _cho_solve
+
+        _CHO_SOLVE = _cho_solve
+
+    return _CHO_SOLVE(*args, **kwargs)
+
+
+def minimize_scalar(*args, **kwargs):
+    global _MINIMIZE_SCALAR
+
+    if _MINIMIZE_SCALAR is None:
+        from scipy.optimize import minimize_scalar as _minimize_scalar
+
+        _MINIMIZE_SCALAR = _minimize_scalar
+
+    return _MINIMIZE_SCALAR(*args, **kwargs)
+
+
+def _chi2_sf_df1(chi2_stat: float) -> float:
+    return math.erfc(math.sqrt(chi2_stat / 2.0))
+
+
+def _inverse_from_spd_matrix(matrix):
+    try:
+        factor = cho_factor(matrix, lower=True, check_finite=False)
+        return cho_solve(
+            factor,
+            np.eye(matrix.shape[0]),
+            check_finite=False,
+        )
+    except (np.linalg.LinAlgError, FloatingPointError, ValueError):
+        return np.linalg.inv(matrix)
 
 
 class NetworkSignal(Tree):
@@ -23,7 +116,7 @@ class NetworkSignal(Tree):
         self.quartet_json = parsed["quartet_json"]
         self.json_output = parsed["json_output"]
 
-    def process_args(self, args) -> Dict[str, str]:
+    def process_args(self, args) -> dict[str, str]:
         return dict(
             tree_file_path=args.tree,
             trait_data_path=args.trait_data,
@@ -89,7 +182,15 @@ class NetworkSignal(Tree):
         return nodes, parents, tip_map
 
     @staticmethod
-    def _add_hybrid_edge(nodes, parents, tip_map, donor, recipient, gamma):
+    def _add_hybrid_edge(
+        nodes,
+        parents,
+        tip_map,
+        donor,
+        recipient,
+        gamma,
+        name_to_id=None,
+    ):
         """Make the recipient a hybrid node by adding a second parent edge
         from the donor's tree parent.
 
@@ -108,8 +209,10 @@ class NetworkSignal(Tree):
                 code=2,
             )
 
-        # Build name -> node_id map
-        name_to_id = {v: k for k, v in tip_map.items()}
+        # Build name -> node_id map only when the caller has not cached it
+        # across a batch of hybrid edges.
+        if name_to_id is None:
+            name_to_id = {v: k for k, v in tip_map.items()}
 
         if donor not in name_to_id:
             raise PhykitUserError(
@@ -197,9 +300,9 @@ class NetworkSignal(Tree):
                 p_idx = node_to_idx[p_id]
                 V[idx, idx] = V[p_idx, p_idx] + edge_len
                 # Copy covariances from parent (only preceding nodes)
-                for j in range(idx):
-                    V[idx, j] = V[p_idx, j]
-                    V[j, idx] = V[p_idx, j]
+                row = V[p_idx, :idx]
+                V[idx, :idx] = row
+                V[:idx, idx] = row
             elif len(parent_list) == 2:
                 # Hybrid node
                 p1_id, l1, g1 = parent_list[0]
@@ -214,10 +317,9 @@ class NetworkSignal(Tree):
                     + 2 * g1 * g2 * V[p1_idx, p2_idx]
                 )
                 # Covariances (only preceding nodes)
-                for j in range(idx):
-                    cov = g1 * V[p1_idx, j] + g2 * V[p2_idx, j]
-                    V[idx, j] = cov
-                    V[j, idx] = cov
+                cov = g1 * V[p1_idx, :idx] + g2 * V[p2_idx, :idx]
+                V[idx, :idx] = cov
+                V[:idx, idx] = cov
             else:
                 raise PhykitUserError(
                     [f"Node {nid} has {len(parent_list)} parents; expected 0, 1, or 2."],
@@ -226,15 +328,12 @@ class NetworkSignal(Tree):
 
         # Extract tip x tip submatrix
         name_to_id = {v: k for k, v in tip_map.items()}
-        tip_ids = [name_to_id[tip_name] for tip_name in ordered_tips]
-
-        n_tips = len(ordered_tips)
-        vcv = np.zeros((n_tips, n_tips))
-        for i, tid_i in enumerate(tip_ids):
-            for j, tid_j in enumerate(tip_ids):
-                vcv[i, j] = V[node_to_idx[tid_i], node_to_idx[tid_j]]
-
-        return vcv
+        tip_indices = np.fromiter(
+            (node_to_idx[name_to_id[tip_name]] for tip_name in ordered_tips),
+            dtype=np.intp,
+            count=len(ordered_tips),
+        )
+        return V[np.ix_(tip_indices, tip_indices)]
 
     # ------------------------------------------------------------------
     # Quartet JSON inference
@@ -272,6 +371,22 @@ class NetworkSignal(Tree):
         return swap
 
     @staticmethod
+    def _top_two_topology_indices(counts):
+        """Return the first two topology indices by descending count."""
+        c0, c1, c2 = counts
+        if c0 >= c1:
+            if c1 >= c2:
+                return 0, 1
+            if c0 >= c2:
+                return 0, 2
+            return 2, 0
+        if c0 >= c2:
+            return 1, 0
+        if c1 >= c2:
+            return 1, 2
+        return 2, 1
+
+    @staticmethod
     def _infer_hybrid_edges(quartet_data):
         """Infer hybrid edges from quartet_network JSON data.
 
@@ -281,12 +396,16 @@ class NetworkSignal(Tree):
 
         Aggregates evidence across multiple quartets: counts how many quartets
         support each swap pair, averages gamma estimates, and returns edges
-        ordered by frequency via Counter.most_common().
+        ordered by descending frequency.
 
         Returns a list of dicts with keys: donor, recipient, gamma, n_quartets.
         """
-        pair_counts = Counter()
-        pair_gammas = {}  # (donor, recipient) -> list of gamma values
+        pair_stats = {}
+        parsed_topology_cache = {}
+        parse_topology = NetworkSignal._parse_topology_string
+        top_two_indices = NetworkSignal._top_two_topology_indices
+        pair_stats_get = pair_stats.get
+        topology_cache_get = parsed_topology_cache.get
 
         for q in quartet_data.get("quartets", []):
             if q["classification"] != "hybrid":
@@ -296,56 +415,58 @@ class NetworkSignal(Tree):
             counts = q["counts"]
             dominant_topo_str = q["dominant_topology"]
 
-            # Parse dominant topology
-            dominant = NetworkSignal._parse_topology_string(dominant_topo_str)
+            # Preserve topology-string validation without reparsing repeated JSON rows.
+            if topology_cache_get(dominant_topo_str) is None:
+                parsed_topology_cache[dominant_topo_str] = parse_topology(
+                    dominant_topo_str
+                )
 
             # The three topologies for quartet (a,b,c,d):
             # topo 0: {a,b}|{c,d}, topo 1: {a,c}|{b,d}, topo 2: {a,d}|{b,c}
             a, b, c, d = taxa
-            topos = [
-                (frozenset({a, b}), frozenset({c, d})),
-                (frozenset({a, c}), frozenset({b, d})),
-                (frozenset({a, d}), frozenset({b, c})),
-            ]
 
-            # Find the dominant index
-            dominant_idx = counts.index(max(counts))
+            # Find the dominant and second-most elevated topologies.
+            dominant_idx, minor_idx = top_two_indices(counts)
+            if dominant_idx == 0:
+                taxon_1, taxon_2 = (b, c) if minor_idx == 1 else (b, d)
+            elif dominant_idx == 1:
+                taxon_1, taxon_2 = (b, c) if minor_idx == 0 else (c, d)
+            else:
+                taxon_1, taxon_2 = (b, d) if minor_idx == 0 else (c, d)
 
-            # Find the second-most elevated (minor) topology
-            sorted_with_idx = sorted(enumerate(counts), key=lambda p: -p[1])
-            minor_idx = sorted_with_idx[1][0]
+            # Preserve the sorted pair orientation returned by sorted(swap).
+            pair_key = (
+                (taxon_1, taxon_2)
+                if taxon_1 <= taxon_2
+                else (taxon_2, taxon_1)
+            )
+            total = counts[0] + counts[1] + counts[2]
+            gamma_est = counts[minor_idx] / total if total > 0 else 0.1
+            if gamma_est > 0.499:
+                gamma_est = 0.499
+            elif gamma_est < 0.001:
+                gamma_est = 0.001
 
-            minor_topo = topos[minor_idx]
-            dominant_topo = topos[dominant_idx]
+            stats = pair_stats_get(pair_key)
+            if stats is None:
+                pair_stats[pair_key] = [1, gamma_est]
+            else:
+                stats[0] += 1
+                stats[1] += gamma_est
 
-            swap = NetworkSignal._identify_swap_pair(dominant_topo, minor_topo)
-            swap_list = sorted(swap)
-
-            if len(swap_list) == 2:
-                # Use the taxon from the minor side as donor and
-                # the other as recipient; gamma estimated from count ratio
-                total = sum(counts)
-                minor_count = counts[minor_idx]
-                gamma_est = minor_count / total if total > 0 else 0.1
-                gamma_est = min(gamma_est, 0.499)
-                gamma_est = max(gamma_est, 0.001)
-
-                pair_key = (swap_list[0], swap_list[1])
-                pair_counts[pair_key] += 1
-                pair_gammas.setdefault(pair_key, []).append(gamma_est)
-
-        edges = []
-        for (donor, recipient), n_quartets in pair_counts.most_common():
-            avg_gamma = sum(pair_gammas[(donor, recipient)]) / n_quartets
-            avg_gamma = round(avg_gamma, 4)
-            edges.append({
+        return [
+            {
                 "donor": donor,
                 "recipient": recipient,
-                "gamma": avg_gamma,
+                "gamma": round(gamma_sum / n_quartets, 4),
                 "n_quartets": n_quartets,
-            })
-
-        return edges
+            }
+            for (donor, recipient), (n_quartets, gamma_sum) in sorted(
+                pair_stats.items(),
+                key=lambda item: item[1][0],
+                reverse=True,
+            )
+        ]
 
     # ------------------------------------------------------------------
     # K and Lambda (same formulas as phylogenetic_signal.py)
@@ -357,6 +478,47 @@ class NetworkSignal(Tree):
 
         Matches phytools::phylosig(method='lambda') internals.
         """
+        try:
+            return NetworkSignal._log_likelihood_cholesky(x, C)
+        except (np.linalg.LinAlgError, FloatingPointError, ValueError):
+            return NetworkSignal._log_likelihood_inverse(x, C)
+
+    @staticmethod
+    def _log_likelihood_cholesky(x, C):
+        """Cholesky-backed likelihood for positive-definite VCV matrices."""
+        n = len(x)
+        ones = np.ones(n)
+        factor = cho_factor(C, lower=True, check_finite=False)
+
+        solve_rhs = np.empty((n, 2), dtype=np.result_type(x, C))
+        solve_rhs[:, 0] = 1.0
+        solve_rhs[:, 1] = x
+        solved = cho_solve(factor, solve_rhs, check_finite=False)
+        C_inv_ones = solved[:, 0]
+        C_inv_x = solved[:, 1]
+
+        # GLS estimate of phylogenetic mean
+        a_hat = float((ones @ C_inv_x) / (ones @ C_inv_ones))
+
+        # Residuals
+        e = x - a_hat
+        C_inv_e = C_inv_x - a_hat * C_inv_ones
+
+        # MLE of sigma^2 (profiled out)
+        sig2 = float(e @ C_inv_e / n)
+        if sig2 <= 0:
+            return NetworkSignal._log_likelihood_inverse(x, C)
+
+        # Concentrated log-likelihood
+        logdet_C = 2.0 * float(np.log(np.diagonal(factor[0])).sum())
+        logdet_sig2C = n * np.log(sig2) + logdet_C
+        ll = -0.5 * (n * np.log(2 * np.pi) + logdet_sig2C + n)
+
+        return ll, a_hat
+
+    @staticmethod
+    def _log_likelihood_inverse(x, C):
+        """Inverse-based likelihood implementation retained as a fallback."""
         n = len(x)
         ones = np.ones(n)
 
@@ -388,7 +550,7 @@ class NetworkSignal(Tree):
         ones = np.ones(n)
         C = vcv.copy()
 
-        C_inv = np.linalg.inv(C)
+        C_inv = _inverse_from_spd_matrix(C)
         sum_C_inv = float(ones @ C_inv @ ones)
 
         # GLS estimate of phylogenetic mean
@@ -407,16 +569,15 @@ class NetworkSignal(Tree):
         K = observed_ratio / expected_ratio
 
         # Permutation test
-        rng = np.random.default_rng(seed=42)
-        k_perm = np.empty(n_perm)
-        for perm_i in range(n_perm):
-            x_perm = rng.permutation(x)
-            a_p = float((ones @ C_inv @ x_perm) / sum_C_inv)
-            e_p = x_perm - a_p
-            obs_p = float(e_p @ e_p) / float(e_p @ C_inv @ e_p)
-            k_perm[perm_i] = obs_p / expected_ratio
+        k_perm = NetworkSignal._blombergs_k_permutations(
+            x,
+            C_inv,
+            sum_C_inv,
+            expected_ratio,
+            n_perm,
+        )
 
-        p_value = float(np.mean(k_perm >= K))
+        p_value = _permutation_p_value_ge(k_perm, K)
 
         return dict(
             K=float(K),
@@ -425,15 +586,49 @@ class NetworkSignal(Tree):
         )
 
     @staticmethod
+    def _blombergs_k_permutations(
+        x,
+        C_inv,
+        sum_C_inv,
+        expected_ratio,
+        n_perm,
+        batch_size=128,
+    ):
+        rng = np.random.default_rng(seed=42)
+        n = len(x)
+        weights = _matrix_column_sums(C_inv)
+        x_sum = float(x.sum())
+        x_sumsq = float(x @ x)
+        k_perm = np.empty(n_perm, dtype=np.float64)
+
+        for start in range(0, n_perm, batch_size):
+            stop = min(start + batch_size, n_perm)
+            batch_len = stop - start
+            perms = np.empty((batch_len, n), dtype=np.float64)
+            for row in range(batch_len):
+                perms[row] = rng.permutation(x)
+
+            weighted_sums = perms @ weights
+            a_perm = weighted_sums / sum_C_inv
+            numerator = x_sumsq - (2.0 * a_perm * x_sum) + (n * a_perm * a_perm)
+            C_inv_perm = perms @ C_inv
+            perm_quadratics = np.einsum("ij,ij->i", perms, C_inv_perm)
+            denominator = perm_quadratics - (a_perm * a_perm * sum_C_inv)
+            k_perm[start:stop] = (numerator / denominator) / expected_ratio
+
+        return k_perm
+
+    @staticmethod
     def _pagels_lambda(x, vcv, max_lambda=1.0):
         """Pagel's lambda with multi-interval optimization."""
         n = len(x)
-        diag_vals = np.diag(vcv).copy()
+        diag_vals = vcv.diagonal().copy()
+        diag_step = vcv.shape[0] + 1
         niter = 10
 
         def neg_ll(lam):
             C_lam = vcv * lam
-            np.fill_diagonal(C_lam, diag_vals)
+            C_lam.ravel()[::diag_step] = diag_vals
             try:
                 ll, _ = NetworkSignal._log_likelihood(x, C_lam)
                 return -ll
@@ -454,18 +649,18 @@ class NetworkSignal(Tree):
 
         # Log-likelihood at fitted lambda
         C_fitted = vcv * lambda_hat
-        np.fill_diagonal(C_fitted, diag_vals)
+        C_fitted.ravel()[::diag_step] = diag_vals
         ll_fitted, _ = NetworkSignal._log_likelihood(x, C_fitted)
 
         # Log-likelihood at lambda = 0
         C_zero = vcv * 0.0
-        np.fill_diagonal(C_zero, diag_vals)
+        C_zero.ravel()[::diag_step] = diag_vals
         ll_zero, _ = NetworkSignal._log_likelihood(x, C_zero)
 
         # Likelihood ratio test (1 df)
         lr_stat = 2.0 * (ll_fitted - ll_zero)
         lr_stat = max(lr_stat, 0.0)
-        p_value = float(chi2.sf(lr_stat, df=1))
+        p_value = _chi2_sf_df1(lr_stat)
 
         return dict(
             **{"lambda": float(lambda_hat)},
@@ -479,8 +674,32 @@ class NetworkSignal(Tree):
 
     def _parse_trait_file(self, path, tree_tips):
         try:
+            traits = {}
             with open(path) as f:
-                lines = f.readlines()
+                for line_num, line in enumerate(f, 1):
+                    line = line.strip()
+                    if not line or line[0] == "#":
+                        continue
+                    parts = line.split("\t", 2)
+                    if len(parts) != 2:
+                        column_count = line.count("\t") + 1
+                        raise PhykitUserError(
+                            [
+                                f"Line {line_num} in trait file has {column_count} columns; expected 2.",
+                                "Each line should be: taxon_name<tab>trait_value",
+                            ],
+                            code=2,
+                        )
+                    taxon, value_str = parts
+                    try:
+                        traits[taxon] = float(value_str)
+                    except ValueError:
+                        raise PhykitUserError(
+                            [
+                                f"Non-numeric trait value '{value_str}' for taxon '{taxon}' on line {line_num}.",
+                            ],
+                            code=2,
+                        )
         except FileNotFoundError:
             raise PhykitUserError(
                 [
@@ -490,33 +709,24 @@ class NetworkSignal(Tree):
                 code=2,
             )
 
-        traits = {}
-        for line_num, line in enumerate(lines, 1):
-            line = line.strip()
-            if not line or line.startswith("#"):
-                continue
-            parts = line.split("\t")
-            if len(parts) != 2:
-                raise PhykitUserError(
-                    [
-                        f"Line {line_num} in trait file has {len(parts)} columns; expected 2.",
-                        "Each line should be: taxon_name<tab>trait_value",
-                    ],
-                    code=2,
-                )
-            taxon, value_str = parts
-            try:
-                traits[taxon] = float(value_str)
-            except ValueError:
-                raise PhykitUserError(
-                    [
-                        f"Non-numeric trait value '{value_str}' for taxon '{taxon}' on line {line_num}.",
-                    ],
-                    code=2,
-                )
+        if (
+            len(tree_tips) >= 3
+            and len(tree_tips) == len(traits)
+            and next(iter(traits)) == tree_tips[0]
+            and next(reversed(traits)) == tree_tips[-1]
+            and list(traits) == tree_tips
+        ):
+            return traits
 
         tree_tip_set = set(tree_tips)
-        trait_taxa_set = set(traits.keys())
+        if (
+            len(tree_tip_set) >= 3
+            and len(tree_tip_set) == len(traits)
+            and tree_tip_set == traits.keys()
+        ):
+            return traits
+
+        trait_taxa_set = set(traits)
         shared = tree_tip_set & trait_taxa_set
 
         tree_only = tree_tip_set - trait_taxa_set
@@ -551,27 +761,40 @@ class NetworkSignal(Tree):
     # ------------------------------------------------------------------
 
     def _validate_tree(self, tree) -> None:
-        tips = list(tree.get_terminals())
-        if len(tips) < 3:
+        root = tree.root
+        tip_count = 0
+        polytomy_count = 0
+        missing_branch_lengths = False
+        stack = [root]
+        pop = stack.pop
+        extend = stack.extend
+
+        while stack:
+            clade = pop()
+            children = clade.clades
+
+            if clade is not root and clade.branch_length is None:
+                missing_branch_lengths = True
+
+            if children:
+                child_count = len(children)
+                if child_count > 2 and not (clade is root and child_count == 3):
+                    polytomy_count += 1
+                extend(children)
+            else:
+                tip_count += 1
+
+        if tip_count < 3:
             raise PhykitUserError(
                 ["Tree must have at least 3 tips for phylogenetic signal analysis."],
                 code=2,
             )
-        for clade in tree.find_clades():
-            if clade.branch_length is None and clade != tree.root:
-                raise PhykitUserError(
-                    ["All branches in the tree must have lengths."],
-                    code=2,
-                )
-        # Warn about polytomies (treated as star topologies in the network)
-        polytomy_count = sum(
-            1 for clade in tree.find_clades()
-            if not clade.is_terminal()
-            and len(clade.clades) > 2
-            and not (clade == tree.root and len(clade.clades) == 3)
-        )
+        if missing_branch_lengths:
+            raise PhykitUserError(
+                ["All branches in the tree must have lengths."],
+                code=2,
+            )
         if polytomy_count > 0:
-            import sys
             print(
                 f"Warning: tree contains {polytomy_count} polytomous node(s). "
                 "These are treated as star topologies in the network VCV.",
@@ -579,7 +802,7 @@ class NetworkSignal(Tree):
             )
 
     def run(self):
-        tree = self.read_tree_file()
+        tree = self.read_tree_file_unmodified()
         self._validate_tree(tree)
 
         tree_tips = self.get_tip_names_from_tree(tree)
@@ -592,10 +815,11 @@ class NetworkSignal(Tree):
         nodes, parents, tip_map = self._tree_to_dag(tree)
 
         # Add hybrid edges
+        name_to_id = None
         if self.quartet_json:
             try:
                 with open(self.quartet_json) as f:
-                    quartet_data = json.load(f)
+                    quartet_data = _json_load(f)
             except FileNotFoundError:
                 raise PhykitUserError(
                     [
@@ -605,16 +829,21 @@ class NetworkSignal(Tree):
                     code=2,
                 )
             edges = self._infer_hybrid_edges(quartet_data)
+            if edges:
+                name_to_id = {v: k for k, v in tip_map.items()}
             for edge in edges:
                 try:
                     self._add_hybrid_edge(
                         nodes, parents, tip_map,
                         edge["donor"], edge["recipient"], edge["gamma"],
+                        name_to_id=name_to_id,
                     )
                 except PhykitUserError as e:
                     print(f"Warning: skipping hybrid edge {edge['donor']} -> {edge['recipient']}: {e.messages[0]}", file=sys.stderr)
 
         if self.hybrid_edges:
+            if name_to_id is None:
+                name_to_id = {v: k for k, v in tip_map.items()}
             for edge_spec in self.hybrid_edges:
                 parts = edge_spec.split(":")
                 if len(parts) != 3:
@@ -633,7 +862,15 @@ class NetworkSignal(Tree):
                         [f"Invalid gamma value: '{gamma_str}'."],
                         code=2,
                     )
-                self._add_hybrid_edge(nodes, parents, tip_map, donor, recipient, gamma)
+                self._add_hybrid_edge(
+                    nodes,
+                    parents,
+                    tip_map,
+                    donor,
+                    recipient,
+                    gamma,
+                    name_to_id=name_to_id,
+                )
 
         # Compute VCV
         vcv = self._compute_network_vcv(nodes, parents, tip_map, ordered_names)
@@ -657,33 +894,46 @@ class NetworkSignal(Tree):
             return
 
         try:
+            lines = []
             # Print hybrid edge info
             if tip_map and parents:
+                children_by_parent = {}
+                for child_id, child_name in tip_map.items():
+                    child_parents = parents.get(child_id)
+                    if child_parents:
+                        parent_id = child_parents[0][0]
+                        children_by_parent.setdefault(parent_id, []).append(
+                            (child_id, child_name)
+                        )
+
                 for nid, name in tip_map.items():
                     if len(parents.get(nid, [])) == 2:
                         gamma = parents[nid][1][2]
                         # Find the donor name from the second parent
                         donor_parent_id = parents[nid][1][0]
                         donor_name = None
-                        for child_id, child_name in tip_map.items():
-                            if child_id != nid and parents.get(child_id):
-                                if parents[child_id][0][0] == donor_parent_id:
-                                    donor_name = child_name
-                                    break
+                        for child_id, child_name in children_by_parent.get(
+                            donor_parent_id, []
+                        ):
+                            if child_id != nid:
+                                donor_name = child_name
+                                break
                         if donor_name:
-                            print(f"Hybrid edge: {donor_name} -> {name} (gamma={gamma:.4f})")
+                            lines.append(
+                                f"Hybrid edge: {donor_name} -> {name} (gamma={gamma:.4f})"
+                            )
 
             if ordered_names:
-                print(f"Network taxa: {len(ordered_names)}")
-                print("---")
+                lines.append(f"Network taxa: {len(ordered_names)}")
+                lines.append("---")
 
             if self.method == "blombergs_k":
-                print(
+                lines.append(
                     f"Blomberg's K: {results['K']:.4f}    "
                     f"p-value: {results['p_value']:.4f}"
                 )
             elif self.method == "lambda":
-                print(
+                lines.append(
                     f"Pagel's lambda: {results['lambda']:.4f}    "
                     f"log-likelihood: {results['log_likelihood']:.4f}    "
                     f"p-value: {results['p_value']:.4f}"
@@ -691,14 +941,16 @@ class NetworkSignal(Tree):
             elif self.method == "both":
                 k = results["blombergs_k"]
                 l = results["pagels_lambda"]
-                print(
+                lines.append(
                     f"Blomberg's K: {k['K']:.4f}    "
                     f"p-value: {k['p_value']:.4f}"
                 )
-                print(
+                lines.append(
                     f"Pagel's lambda: {l['lambda']:.4f}    "
                     f"log-likelihood: {l['log_likelihood']:.4f}    "
                     f"p-value: {l['p_value']:.4f}"
                 )
+            if lines:
+                print("\n".join(lines))
         except BrokenPipeError:
             pass

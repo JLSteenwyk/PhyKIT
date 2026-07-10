@@ -1,78 +1,523 @@
-from typing import Dict, List, Tuple
-
-import numpy as np
+from __future__ import annotations
 
 from .base import Alignment
-from ...helpers.json_output import print_json
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
+
+
+class _LazyNumpy:
+    def __init__(self):
+        self._module = None
+
+    def __getattr__(self, name):
+        module = self._module
+        if module is None:
+            import numpy as _np
+
+            module = _np
+            self._module = module
+
+        attr = getattr(module, name)
+        setattr(self, name, attr)
+        return attr
+
+
+np = _LazyNumpy()
+_COMPOSITION_ROW_ZIP_MIN_COUNT = 50_000
+_IDENTICAL_INDEXED_SCAN_MIN_RECORDS = 200_000
+_IDENTICAL_ROW_TILE_MIN_COUNT = 1_000
+_ASCII_OFFSET_BINCOUNT_MAX_ROWS = 16_384
+_COMPOSITION_SCALAR_MAX_CELLS = 8192
+_DNA_ALPHABET_BYTES = b"ACGTU"
+_NUCLEOTIDE_BYTES = b"ACGTUacgtu-Nn?*"
+_NUCLEOTIDE_CHARS = {"A", "C", "G", "T", "U", "-", "N", "?", "*"}
+
+
+class _IdenticalCompositionOutputRows(list):
+    __slots__ = ("shared_composition",)
+
+    def __init__(self, rows, shared_composition):
+        super().__init__(rows)
+        self.shared_composition = shared_composition
+
+
+def _composition_payload(symbols, comps):
+    return {
+        symbol: round(float(value), 4)
+        for symbol, value in zip(symbols, comps)
+    }
+
+
+def _composition_text(symbols, comps):
+    return ";".join(
+        f"{symbol}:{round(float(value), 4)}"
+        for symbol, value in zip(symbols, comps)
+    )
+
+
+def _composition_output_rows(record_ids, freqs):
+    if len(record_ids) >= _COMPOSITION_ROW_ZIP_MIN_COUNT:
+        return list(zip(record_ids, freqs))
+    return [
+        (record_id, freqs[row_idx])
+        for row_idx, record_id in enumerate(record_ids)
+    ]
+
+
+def _identical_composition_output_rows(record_ids, freqs):
+    if len(record_ids) >= _IDENTICAL_ROW_TILE_MIN_COUNT:
+        rows = zip(record_ids, np.tile(freqs, (len(record_ids), 1)))
+    else:
+        rows = [
+            (record_id, freqs.copy())
+            for record_id in record_ids
+        ]
+    return _IdenticalCompositionOutputRows(rows, freqs)
+
+
+def _row_symbol_counts_from_ascii_codes(alignment_array, symbol_values):
+    n_rows = alignment_array.shape[0]
+    row_offsets = np.arange(n_rows, dtype=np.uint32)[:, None] * 256
+    encoded = (alignment_array + row_offsets).ravel()
+    return np.bincount(
+        encoded,
+        minlength=n_rows * 256,
+    ).reshape(n_rows, 256)[:, symbol_values].astype(np.float64, copy=False)
+
+
+def _bounded_ascii_count_dtype(max_count: int):
+    if max_count <= 0xFFFF:
+        return np.uint16
+    if max_count <= 0xFFFFFFFF:
+        return np.uint32
+    return np.uint64
+
+
+def _bounded_ascii_row_symbol_counts(alignment_array, symbol_values):
+    count_dtype = _bounded_ascii_count_dtype(alignment_array.shape[1])
+    return np.array(
+        [
+            (alignment_array == symbol).sum(axis=1, dtype=count_dtype)
+            for symbol in symbol_values
+        ],
+        dtype=np.float64,
+    ).T
+
+
+def _composition_per_taxon_scalar(raw_records, invalid_chars):
+    if not raw_records:
+        return [], []
+
+    aln_len = len(raw_records[0][1])
+    total_cells = len(raw_records) * aln_len
+    if total_cells > _COMPOSITION_SCALAR_MAX_CELLS:
+        return None
+    if any(len(sequence) != aln_len for _, sequence in raw_records):
+        return None
+
+    invalid_chars = frozenset(char.upper() for char in invalid_chars)
+    row_counts = []
+    valid_symbols = set()
+    for record_id, sequence in raw_records:
+        counts = {}
+        valid_count = 0
+        for char in sequence.upper():
+            if char in invalid_chars:
+                continue
+            counts[char] = counts.get(char, 0) + 1
+            valid_count += 1
+        row_counts.append((record_id, counts, valid_count))
+        valid_symbols.update(counts)
+
+    if not valid_symbols:
+        return [], []
+
+    symbols = sorted(valid_symbols)
+    freqs = []
+    for _, counts, valid_count in row_counts:
+        if valid_count == 0:
+            freqs.append([0.0 for _ in symbols])
+        else:
+            freqs.append([
+                counts.get(symbol, 0) / valid_count
+                for symbol in symbols
+            ])
+    record_ids = [record_id for record_id, _, _ in row_counts]
+    return symbols, _composition_output_rows(record_ids, freqs)
+
+
+def _clean_simple_fasta_sequence(sequence_parts):
+    if len(sequence_parts) == 1:
+        sequence = sequence_parts[0]
+    else:
+        sequence = "".join(sequence_parts)
+    if " " in sequence:
+        sequence = sequence.replace(" ", "")
+    if "\r" in sequence:
+        sequence = sequence.replace("\r", "")
+    return sequence
+
+
+def _sequence_has_protein_symbols(sequence: str) -> bool:
+    try:
+        return bool(sequence.encode("ascii").translate(None, _NUCLEOTIDE_BYTES))
+    except UnicodeEncodeError:
+        return bool(set(sequence.upper()) - _NUCLEOTIDE_CHARS)
+
+
+def _read_small_simple_fasta_records(path: str):
+    raw_records = []
+    expected_length = None
+    total_cells = 0
+    is_protein = False
+
+    def append_record(record_id, sequence_parts):
+        nonlocal expected_length, total_cells, is_protein
+        sequence = _clean_simple_fasta_sequence(sequence_parts)
+        sequence_length = len(sequence)
+        if expected_length is None:
+            expected_length = sequence_length
+        elif sequence_length != expected_length:
+            return False
+        total_cells += sequence_length
+        if total_cells > _COMPOSITION_SCALAR_MAX_CELLS:
+            return False
+        if not is_protein and _sequence_has_protein_symbols(sequence):
+            is_protein = True
+        raw_records.append((record_id, sequence))
+        return True
+
+    try:
+        with open(path) as handle:
+            record_id = None
+            sequence_parts = []
+            for line in handle:
+                if not line:
+                    continue
+                if line[0] == ">":
+                    if record_id is not None and not append_record(
+                        record_id,
+                        sequence_parts,
+                    ):
+                        return None
+                    record_id = line[1:].split(None, 1)[0]
+                    sequence_parts = []
+                elif record_id is not None:
+                    sequence_parts.append(line.rstrip())
+                elif line.strip():
+                    return None
+
+            if record_id is not None and not append_record(record_id, sequence_parts):
+                return None
+    except OSError:
+        return None
+
+    if not raw_records:
+        return None
+    return raw_records, is_protein
 
 
 class CompositionPerTaxon(Alignment):
+    _INVALID_LOOKUP_CACHE = {}
+
     def __init__(self, args) -> None:
         parsed = self.process_args(args)
         super().__init__(alignment_file_path=parsed["alignment_file_path"])
         self.json_output = parsed["json_output"]
 
     def run(self) -> None:
-        alignment, _, is_protein = self.get_alignment_and_format()
-        symbols, rows = self.calculate_composition_per_taxon(alignment, is_protein)
+        direct_records = _read_small_simple_fasta_records(self.alignment_file_path)
+        if direct_records is None:
+            alignment, _, is_protein = self.get_alignment_and_format()
+            symbols, rows = self.calculate_composition_per_taxon(alignment, is_protein)
+        else:
+            raw_records, is_protein = direct_records
+            symbols, rows = _composition_per_taxon_scalar(
+                raw_records,
+                self.get_gap_chars(is_protein),
+            )
         if not symbols:
             return
 
         if self.json_output:
-            payload_rows = []
-            for taxon, comps in rows:
-                payload_rows.append(
-                    dict(
-                        taxon=taxon,
-                        composition={
-                            symbol: round(float(comps[idx]), 4)
-                            for idx, symbol in enumerate(symbols)
-                        },
-                    )
-                )
+            shared_composition = getattr(rows, "shared_composition", None)
+            if shared_composition is None:
+                payload_rows = [
+                    {
+                        "taxon": taxon,
+                        "composition": _composition_payload(symbols, comps),
+                    }
+                    for taxon, comps in rows
+                ]
+            else:
+                composition = _composition_payload(symbols, shared_composition)
+                payload_rows = [
+                    {"taxon": taxon, "composition": composition.copy()}
+                    for taxon, _ in rows
+                ]
             print_json(dict(symbols=symbols, rows=payload_rows, taxa=payload_rows))
             return
 
-        for taxon, comps in rows:
-            comp_str = ";".join(
-                f"{symbol}:{round(comps[idx], 4)}"
-                for idx, symbol in enumerate(symbols)
-            )
-            print(f"{taxon}\t{comp_str}")
+        shared_composition = getattr(rows, "shared_composition", None)
+        if shared_composition is None:
+            lines = [
+                f"{taxon}\t{_composition_text(symbols, comps)}"
+                for taxon, comps in rows
+            ]
+        else:
+            comp_str = _composition_text(symbols, shared_composition)
+            lines = [f"{taxon}\t{comp_str}" for taxon, _ in rows]
+        if lines:
+            print("\n".join(lines))
 
-    def process_args(self, args) -> Dict[str, str]:
+    def process_args(self, args) -> dict[str, str]:
         return dict(
             alignment_file_path=args.alignment,
             json_output=getattr(args, "json", False),
         )
 
+    @classmethod
+    def _invalid_lookup_for_chars(cls, invalid_chars):
+        invalid_chars = frozenset(char.upper() for char in invalid_chars)
+        lookup = cls._INVALID_LOOKUP_CACHE.get(invalid_chars)
+        if lookup is None:
+            lookup = np.zeros(256, dtype=bool)
+            lookup[
+                np.fromiter((ord(char) for char in invalid_chars), dtype=np.uint8)
+            ] = True
+            cls._INVALID_LOOKUP_CACHE[invalid_chars] = lookup
+        return lookup
+
     def calculate_composition_per_taxon(
         self, alignment, is_protein: bool
-    ) -> Tuple[List[str], List[Tuple[str, np.ndarray]]]:
-        if is_protein:
-            invalid_chars = np.array(["-", "?", "*", "X"], dtype="U1")
-        else:
-            invalid_chars = np.array(["-", "?", "*", "X", "N"], dtype="U1")
+    ) -> tuple[list[str], list[tuple[str, np.ndarray]]]:
+        invalid_chars = {char.upper() for char in self.get_gap_chars(is_protein)}
+        try:
+            alignment_len = len(alignment)
+        except TypeError:
+            alignment_len = None
 
-        alignment_array = np.array(
-            [[c.upper() for c in str(record.seq)] for record in alignment], dtype="U1"
-        )
-        valid_mask = ~np.isin(alignment_array, invalid_chars)
-        valid_chars = alignment_array[valid_mask]
+        if (
+            alignment_len is not None
+            and alignment_len >= _IDENTICAL_INDEXED_SCAN_MIN_RECORDS
+        ):
+            try:
+                first_record = alignment[0]
+                first_raw_sequence = str(first_record.seq)
+                first_sequence = first_raw_sequence.upper()
+                sampled_identical = True
+                for sample_idx in {alignment_len // 2, alignment_len - 1}:
+                    if sample_idx == 0:
+                        continue
+                    sample_sequence = str(alignment[sample_idx].seq)
+                    if (
+                        sample_sequence != first_raw_sequence
+                        and sample_sequence.upper() != first_sequence
+                    ):
+                        sampled_identical = False
+                        break
+                if sampled_identical:
+                    record_ids = [first_record.id]
+                    for idx in range(1, alignment_len):
+                        record = alignment[idx]
+                        sequence = str(record.seq)
+                        if (
+                            sequence != first_raw_sequence
+                            and sequence.upper() != first_sequence
+                        ):
+                            break
+                        record_ids.append(record.id)
+                    else:
+                        try:
+                            sequence_array = np.frombuffer(
+                                first_sequence.encode("ascii"),
+                                dtype=np.uint8,
+                            )
+                            invalid_lookup = self._invalid_lookup_for_chars(
+                                invalid_chars
+                            )
+                            valid_symbols_raw, counts = np.unique(
+                                sequence_array[~invalid_lookup[sequence_array]],
+                                return_counts=True,
+                            )
+                            symbols = [
+                                chr(int(symbol)) for symbol in valid_symbols_raw
+                            ]
+                        except UnicodeEncodeError:
+                            sequence_array = np.array(list(first_sequence), dtype="U1")
+                            invalid_chars_array = np.array(
+                                list(invalid_chars), dtype="U1"
+                            )
+                            valid_symbols_raw, counts = np.unique(
+                                sequence_array[
+                                    ~np.isin(sequence_array, invalid_chars_array)
+                                ],
+                                return_counts=True,
+                            )
+                            symbols = valid_symbols_raw.tolist()
 
-        if valid_chars.size == 0:
+                        if not symbols:
+                            return [], []
+
+                        freqs = counts.astype(np.float64) / float(counts.sum())
+                        return symbols, _identical_composition_output_rows(
+                            record_ids,
+                            freqs,
+                        )
+            except (AttributeError, IndexError, TypeError):
+                pass
+
+        raw_records = [(record.id, str(record.seq)) for record in alignment]
+        if not raw_records:
             return [], []
 
-        symbols = sorted(np.unique(valid_chars).tolist())
-        output: List[Tuple[str, np.ndarray]] = []
-        for record_idx, record in enumerate(alignment):
-            seq = alignment_array[record_idx]
-            seq_valid = valid_mask[record_idx]
-            valid_len = int(np.sum(seq_valid))
-            freqs = np.zeros(len(symbols), dtype=np.float64)
-            if valid_len > 0:
-                for sym_idx, symbol in enumerate(symbols):
-                    freqs[sym_idx] = np.sum((seq == symbol) & seq_valid) / valid_len
-            output.append((record.id, freqs))
+        record_ids = [record_id for record_id, _ in raw_records]
+        first_raw_sequence = raw_records[0][1]
+        first_sequence = first_raw_sequence.upper()
+        all_identical = True
+        for idx in range(1, len(raw_records)):
+            sequence = raw_records[idx][1]
+            if sequence != first_raw_sequence and sequence.upper() != first_sequence:
+                all_identical = False
+                break
+
+        if all_identical:
+            try:
+                sequence_array = np.frombuffer(
+                    first_sequence.encode("ascii"),
+                    dtype=np.uint8,
+                )
+                invalid_lookup = self._invalid_lookup_for_chars(invalid_chars)
+                valid_symbols_raw, counts = np.unique(
+                    sequence_array[~invalid_lookup[sequence_array]],
+                    return_counts=True,
+                )
+                symbols = [chr(int(symbol)) for symbol in valid_symbols_raw]
+            except UnicodeEncodeError:
+                sequence_array = np.array(list(first_sequence), dtype="U1")
+                invalid_chars_array = np.array(list(invalid_chars), dtype="U1")
+                valid_symbols_raw, counts = np.unique(
+                    sequence_array[~np.isin(sequence_array, invalid_chars_array)],
+                    return_counts=True,
+                )
+                symbols = valid_symbols_raw.tolist()
+
+            if not symbols:
+                return [], []
+
+            freqs = counts.astype(np.float64) / float(counts.sum())
+            return symbols, _identical_composition_output_rows(record_ids, freqs)
+
+        scalar_result = _composition_per_taxon_scalar(raw_records, invalid_chars)
+        if scalar_result is not None:
+            return scalar_result
+
+        records = [
+            (record_id, sequence.upper())
+            for record_id, sequence in raw_records
+        ]
+        sequences = [seq for _, seq in records]
+        aln_len = len(sequences[0])
+        try:
+            alignment_bytes = "".join(sequences).encode("ascii")
+            alignment_array = np.frombuffer(
+                alignment_bytes,
+                dtype=np.uint8,
+            ).reshape(len(sequences), aln_len)
+            invalid_lookup = self._invalid_lookup_for_chars(invalid_chars)
+            invalid_codes = tuple(ord(char) for char in invalid_chars)
+            count_dtype = _bounded_ascii_count_dtype(aln_len)
+            if any(code in alignment_bytes for code in invalid_codes):
+                valid_mask = ~invalid_lookup[alignment_array]
+                valid_lengths = valid_mask.sum(axis=1, dtype=count_dtype)
+                valid_symbols_raw = np.unique(
+                    alignment_array[valid_mask]
+                )
+            else:
+                valid_mask = None
+                valid_lengths = np.full(
+                    len(sequences),
+                    aln_len,
+                    dtype=count_dtype,
+                )
+                if (
+                    not is_protein
+                    and not alignment_bytes.translate(None, _DNA_ALPHABET_BYTES)
+                ):
+                    valid_symbols_raw = np.fromiter(
+                        (
+                            code
+                            for code in _DNA_ALPHABET_BYTES
+                            if code in alignment_bytes
+                        ),
+                        dtype=np.uint8,
+                    )
+                else:
+                    valid_symbols_raw = np.unique(alignment_array)
+            symbols = [chr(int(symbol)) for symbol in valid_symbols_raw]
+            symbol_values = valid_symbols_raw
+        except UnicodeEncodeError:
+            alignment_array = np.array([list(seq) for seq in sequences], dtype="U1")
+            invalid_chars_array = np.array(list(invalid_chars), dtype="U1")
+            valid_mask = ~np.isin(alignment_array, invalid_chars_array)
+            valid_lengths = np.count_nonzero(valid_mask, axis=1)
+            symbol_values = np.unique(
+                alignment_array[valid_mask]
+            )
+            symbols = symbol_values.tolist()
+
+        if not symbols:
+            return [], []
+
+        if len(symbol_values) == 1:
+            freqs = np.zeros((len(sequences), 1), dtype=np.float64)
+            freqs[valid_lengths > 0, 0] = 1.0
+            return symbols, _composition_output_rows(record_ids, freqs)
+
+        if alignment_array.dtype == np.uint8:
+            if (
+                valid_mask is None
+                and len(symbol_values) > 8
+                and len(sequences) <= _ASCII_OFFSET_BINCOUNT_MAX_ROWS
+            ):
+                counts = _row_symbol_counts_from_ascii_codes(
+                    alignment_array,
+                    symbol_values,
+                )
+            elif len(symbol_values) <= 8 or (
+                len(sequences) >= 1024 and aln_len <= 512
+            ):
+                counts = _bounded_ascii_row_symbol_counts(
+                    alignment_array,
+                    symbol_values,
+                )
+            else:
+                counts = np.zeros((len(sequences), len(symbol_values)), dtype=np.float64)
+                for row_idx, row in enumerate(alignment_array):
+                    row_values = row if valid_mask is None else row[valid_mask[row_idx]]
+                    counts[row_idx] = np.bincount(
+                        row_values,
+                        minlength=256,
+                    )[symbol_values]
+        else:
+            counts = np.array(
+                [
+                    np.count_nonzero(alignment_array == symbol, axis=1)
+                    for symbol in symbol_values
+                ],
+                dtype=np.float64,
+            ).T
+        freqs = np.divide(
+            counts,
+            valid_lengths[:, None],
+            out=np.zeros_like(counts, dtype=np.float64),
+            where=valid_lengths[:, None] > 0,
+        )
+
+        output = _composition_output_rows(record_ids, freqs)
 
         return symbols, output

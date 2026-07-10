@@ -1,46 +1,197 @@
-from typing import Dict, List, Tuple
-import itertools
-import multiprocessing as mp
-from functools import partial
-import pickle
-import sys
+from __future__ import annotations
 
-from Bio.Phylo import Newick
-try:
-    from tqdm import tqdm
-except ImportError:
-    # Fallback if tqdm is not installed
-    def tqdm(iterable, *args, **kwargs):
-        return iterable
+import itertools
+import sys
 
 from .base import Tree
 
-from ...helpers.stats_summary import (
-    calculate_summary_statistics_from_arr,
-    print_summary_statistics,
-)
-from ...helpers.json_output import print_json
+
+def calculate_summary_statistics_from_arr(*args, **kwargs):
+    from ...helpers.stats_summary import (
+        calculate_summary_statistics_from_arr as _calculate_summary_statistics_from_arr,
+    )
+
+    return _calculate_summary_statistics_from_arr(*args, **kwargs)
+
+
+def print_summary_statistics(*args, **kwargs):
+    from ...helpers.stats_summary import print_summary_statistics as _print_summary_statistics
+
+    return _print_summary_statistics(*args, **kwargs)
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
+
+
+class _LazyMultiprocessing:
+    _module = None
+
+    def _load(self):
+        module = self._module
+        if module is None:
+            import multiprocessing as module
+
+            self._module = module
+        return module
+
+    def cpu_count(self):
+        return self._load().cpu_count()
+
+    def Pool(self, *args, **kwargs):
+        return self._load().Pool(*args, **kwargs)
+
+
+mp = _LazyMultiprocessing()
+
+
+class _LazyPickle:
+    _module = None
+
+    def _load(self):
+        module = self._module
+        if module is None:
+            import pickle as module
+
+            self._module = module
+        return module
+
+    def dumps(self, *args, **kwargs):
+        module = self._load()
+        dumps = module.dumps
+        self.dumps = dumps
+        if "loads" not in self.__dict__:
+            self.loads = module.loads
+
+        return dumps(*args, **kwargs)
+
+    def loads(self, *args, **kwargs):
+        module = self._load()
+        loads = module.loads
+        self.loads = loads
+        if "dumps" not in self.__dict__:
+            self.dumps = module.dumps
+
+        return loads(*args, **kwargs)
+
+
+pickle = _LazyPickle()
+
+
+def _with_optional_progress(iterable, **kwargs):
+    try:
+        from tqdm import tqdm
+    except ImportError:
+        return iterable
+    return tqdm(iterable, **kwargs)
 
 
 class PatristicDistances(Tree):
+    MP_MIN_PAIRS = 500_000
+    MAX_MP_WORKERS = 8
+    _PAIRWISE_LCA_DEPTH_THRESHOLD = 64
+
     def __init__(self, args) -> None:
         parsed = self.process_args(args)
         super().__init__(tree_file_path=parsed["tree_file_path"], verbose=parsed["verbose"])
         self.json_output = parsed["json_output"]
 
     def run(self):
-        tree = self.read_tree_file()
-        patristic_distances, combos, stats = \
-            self.calculate_patristic_distances(tree)
+        simple_result = self._scan_simple_newick_distance_inputs(self.tree_file_path)
+        if simple_result is not None:
+            tips, tip_indices, parent_indices, levels, depths = simple_result
+            max_tip_level = max(levels[tip_idx] for tip_idx in tip_indices)
+            if max_tip_level > self._PAIRWISE_LCA_DEPTH_THRESHOLD:
+                patristic_distances = self._pairwise_tip_distance_values_from_lca_index(
+                    tip_indices,
+                    parent_indices,
+                    levels,
+                    depths,
+                    max_tip_level,
+                )
+            else:
+                patristic_distances = self._pairwise_tip_distance_values_from_paths(
+                    tip_indices,
+                    parent_indices,
+                    depths,
+                )
+
+            if self.verbose:
+                if self.json_output:
+                    rows = [
+                        {
+                            "taxon_a": taxon_a,
+                            "taxon_b": taxon_b,
+                            "patristic_distance": round(distance, 4),
+                        }
+                        for (taxon_a, taxon_b), distance in zip(
+                            itertools.combinations(tips, 2),
+                            patristic_distances,
+                        )
+                    ]
+                    print_json(dict(verbose=True, rows=rows, pairs=rows))
+                else:
+                    try:
+                        lines = [
+                            f"{taxon_a}\t{taxon_b}\t{round(distance, 4)}"
+                            for (taxon_a, taxon_b), distance in zip(
+                                itertools.combinations(tips, 2),
+                                patristic_distances,
+                            )
+                        ]
+                        if lines:
+                            print("\n".join(lines))
+                    except BrokenPipeError:
+                        pass
+                return
+
+            stats = calculate_summary_statistics_from_arr(patristic_distances)
+            if self.json_output:
+                print_json(dict(verbose=False, summary=stats))
+            else:
+                print_summary_statistics(stats)
+            return
+
+        tree = self.read_tree_file_unmodified()
+        if self.verbose:
+            if self.json_output:
+                rows = self._format_verbose_json_rows_fast(tree)
+                if rows is not None:
+                    print_json(
+                        dict(
+                            verbose=True,
+                            rows=rows,
+                            pairs=rows,
+                        )
+                    )
+                    return
+            else:
+                output = self._format_verbose_text_fast(tree)
+                if output is not None:
+                    try:
+                        if output:
+                            print(output)
+                    except BrokenPipeError:
+                        pass
+                    return
+
+            patristic_distances, combos, _ = \
+                self.calculate_patristic_distances(tree)
+        else:
+            patristic_distances = []
+            combos = []
+            stats = self.calculate_patristic_distance_stats(tree)
 
         if self.json_output:
             if self.verbose:
                 rows = [
-                    dict(
-                        taxon_a=combo[0],
-                        taxon_b=combo[1],
-                        patristic_distance=round(patristic_distance, 4),
-                    )
+                    {
+                        "taxon_a": combo[0],
+                        "taxon_b": combo[1],
+                        "patristic_distance": round(patristic_distance, 4),
+                    }
                     for combo, patristic_distance in zip(combos, patristic_distances)
                 ]
                 print_json(
@@ -56,47 +207,261 @@ class PatristicDistances(Tree):
 
         if self.verbose:
             try:
-                for combo, patristic_distance in zip(combos, patristic_distances):
-                    print(f"{combo[0]}\t{combo[1]}\t{round(patristic_distance, 4)}")
+                lines = [
+                    f"{combo[0]}\t{combo[1]}\t{round(patristic_distance, 4)}"
+                    for combo, patristic_distance in zip(
+                        combos, patristic_distances
+                    )
+                ]
+                if lines:
+                    print("\n".join(lines))
             except BrokenPipeError:
                 pass
         else:
             print_summary_statistics(stats)
 
-    def process_args(self, args) -> Dict[str, str]:
+    def _verbose_distances_without_combos(self, tree):
+        tips = self.calculate_terminal_names_fast(tree)
+        if tips is None:
+            return None
+
+        fast_result = self.calculate_pairwise_tip_distances_fast(
+            tree,
+            tips,
+            include_combos=False,
+        )
+        if fast_result is None:
+            return None
+
+        _, distances = fast_result
+        return tips, distances
+
+    def _format_verbose_text_fast(self, tree) -> str | None:
+        fast_result = self._verbose_distances_without_combos(tree)
+        if fast_result is None:
+            return None
+
+        tips, distances = fast_result
+        return "\n".join(
+            f"{taxon_a}\t{taxon_b}\t{round(distance, 4)}"
+            for (taxon_a, taxon_b), distance in zip(
+                itertools.combinations(tips, 2),
+                distances,
+            )
+        )
+
+    def _format_verbose_json_rows_fast(self, tree) -> list[dict[str, object]] | None:
+        fast_result = self._verbose_distances_without_combos(tree)
+        if fast_result is None:
+            return None
+
+        tips, distances = fast_result
+        return [
+            {
+                "taxon_a": taxon_a,
+                "taxon_b": taxon_b,
+                "patristic_distance": round(distance, 4),
+            }
+            for (taxon_a, taxon_b), distance in zip(
+                itertools.combinations(tips, 2),
+                distances,
+            )
+        ]
+
+    def process_args(self, args) -> dict[str, str]:
         return dict(
             tree_file_path=args.tree,
             verbose=args.verbose,
             json_output=getattr(args, "json", False),
         )
 
+    @staticmethod
+    def _scan_simple_newick_distance_inputs(file_path: str):
+        try:
+            with open(file_path) as handle:
+                text = handle.read()
+        except OSError:
+            return None
+
+        if not text or any(char in text for char in "'\"[]"):
+            return None
+
+        text_len = len(text)
+        whitespace = " \t\r\n"
+        delimiters = "(),:;"
+
+        def skip_ws(index):
+            while index < text_len and text[index] in whitespace:
+                index += 1
+            return index
+
+        def parse_label(index):
+            index = skip_ws(index)
+            start = index
+            while (
+                index < text_len
+                and text[index] not in delimiters
+                and text[index] not in whitespace
+            ):
+                index += 1
+            return text[start:index], index
+
+        def parse_length(index):
+            index = skip_ws(index)
+            if index >= text_len or text[index] != ":":
+                return index, 0.0
+            index += 1
+            index = skip_ws(index)
+            start = index
+            while (
+                index < text_len
+                and text[index] not in ",);"
+                and text[index] not in whitespace
+            ):
+                index += 1
+            if start == index:
+                return None
+            try:
+                length = float(text[start:index])
+            except ValueError:
+                return None
+            return skip_ws(index), length
+
+        def parse_node(index):
+            index = skip_ws(index)
+            if index >= text_len:
+                return None
+
+            if text[index] == "(":
+                index += 1
+                children = []
+                while True:
+                    parsed = parse_node(index)
+                    if parsed is None:
+                        return None
+                    child, index = parsed
+                    children.append(child)
+
+                    index = skip_ws(index)
+                    if index >= text_len:
+                        return None
+                    if text[index] == ",":
+                        index += 1
+                        continue
+                    if text[index] == ")":
+                        index += 1
+                        break
+                    return None
+
+                _label, index = parse_label(index)
+                parsed_length = parse_length(index)
+                if parsed_length is None:
+                    return None
+                index, branch_length = parsed_length
+                return {"children": children, "name": None, "length": branch_length}, index
+
+            label, index = parse_label(index)
+            if not label:
+                return None
+            parsed_length = parse_length(index)
+            if parsed_length is None:
+                return None
+            index, branch_length = parsed_length
+            return {"children": [], "name": label, "length": branch_length}, index
+
+        try:
+            parsed = parse_node(0)
+        except RecursionError:
+            return None
+        if parsed is None:
+            return None
+        root, index = parsed
+        index = skip_ws(index)
+        if index >= text_len or text[index] != ";":
+            return None
+        index = skip_ws(index + 1)
+        if index != text_len:
+            return None
+
+        tips = []
+        tip_indices = []
+        parent_indices = []
+        levels = []
+        depths = []
+        stack = [(root, -1, 0, 0.0)]
+        while stack:
+            node, parent_idx, level, depth = stack.pop()
+            node_idx = len(parent_indices)
+            parent_indices.append(parent_idx)
+            levels.append(level)
+            depths.append(depth)
+            children = node["children"]
+            if children:
+                next_level = level + 1
+                for child in reversed(children):
+                    stack.append(
+                        (
+                            child,
+                            node_idx,
+                            next_level,
+                            depth + child["length"],
+                        )
+                    )
+            else:
+                tips.append(node["name"])
+                tip_indices.append(node_idx)
+
+        if len(tips) != len(set(tips)):
+            return None
+
+        return tips, tip_indices, parent_indices, levels, depths
+
     def _calculate_distance_batch(self, tree_pickle, combo_batch):
         """Helper function to calculate distances for a batch of combinations."""
         tree = pickle.loads(tree_pickle)
-        return [tree.distance(combo[0], combo[1]) for combo in combo_batch]
+        return [
+            tree.distance(tip_a, tip_b)
+            for tip_a, tip_b in combo_batch
+        ]
+
+    @staticmethod
+    def _batched_tip_pairs(tips: list[str], batch_size: int):
+        pairs = itertools.combinations(tips, 2)
+        while True:
+            batch = list(itertools.islice(pairs, batch_size))
+            if not batch:
+                break
+            yield batch
 
     def calculate_distance_between_pairs(
         self,
-        tips: List[str],
+        tips: list[str],
         tree
-    ) -> Tuple[
-        List[Tuple[str, str]],
-        List[float],
+    ) -> tuple[
+        list[tuple[str, str]],
+        list[float],
     ]:
+        fast_result = self.calculate_pairwise_tip_distances_fast(tree, tips)
+        if fast_result is not None:
+            return fast_result
+
         combos = list(itertools.combinations(tips, 2))
 
-        # For small datasets, use the original single-threaded approach
-        if len(combos) < 100:
+        # For small/medium fallback datasets, multiprocessing overhead dominates.
+        if len(combos) < self.MP_MIN_PAIRS:
             patristic_distances = [
-                tree.distance(combo[0], combo[1]) for combo in combos
+                tree.distance(tip_a, tip_b)
+                for tip_a, tip_b in combos
             ]
         else:
             # Use multiprocessing for larger datasets
+            from functools import partial
+
             # Serialize the tree once to avoid repeated serialization
             tree_pickle = pickle.dumps(tree)
 
             # Determine optimal number of workers
-            num_workers = min(mp.cpu_count(), 8)
+            num_workers = min(mp.cpu_count(), self.MAX_MP_WORKERS)
 
             # Split combos into chunks for parallel processing
             chunk_size = max(1, len(combos) // (num_workers * 4))
@@ -109,7 +474,7 @@ class PatristicDistances(Tree):
             with mp.Pool(processes=num_workers) as pool:
                 # Only show progress bar if stderr is a tty (not redirected)
                 if sys.stderr.isatty():
-                    results = list(tqdm(
+                    results = list(_with_optional_progress(
                         pool.imap(calc_func, combo_chunks),
                         total=len(combo_chunks),
                         desc="Calculating patristic distances",
@@ -123,13 +488,231 @@ class PatristicDistances(Tree):
 
         return combos, patristic_distances
 
+    def calculate_distance_values_between_pairs(
+        self,
+        tips: list[str],
+        tree,
+    ) -> list[float]:
+        fast_result = self.calculate_pairwise_tip_distance_values_fast(tree, tips)
+        if fast_result is not None:
+            return fast_result
+
+        return self._calculate_distance_values_between_pairs_fallback(tips, tree)
+
+    def _calculate_distance_values_between_pairs_fallback(
+        self,
+        tips: list[str],
+        tree,
+    ) -> list[float]:
+        num_pairs = len(tips) * (len(tips) - 1) // 2
+        if num_pairs < self.MP_MIN_PAIRS:
+            return [
+                tree.distance(tip_a, tip_b)
+                for tip_a, tip_b in itertools.combinations(tips, 2)
+            ]
+
+        from functools import partial
+
+        tree_pickle = pickle.dumps(tree)
+        num_workers = min(mp.cpu_count(), self.MAX_MP_WORKERS)
+        chunk_size = max(1, num_pairs // (num_workers * 4))
+        pair_chunks = self._batched_tip_pairs(tips, chunk_size)
+        total_chunks = (num_pairs + chunk_size - 1) // chunk_size
+        calc_func = partial(self._calculate_distance_batch, tree_pickle)
+
+        with mp.Pool(processes=num_workers) as pool:
+            if sys.stderr.isatty():
+                results = list(_with_optional_progress(
+                    pool.imap(calc_func, pair_chunks),
+                    total=total_chunks,
+                    desc="Calculating patristic distances",
+                    unit="batch",
+                ))
+            else:
+                results = pool.map(calc_func, pair_chunks)
+
+        return [dist for chunk_result in results for dist in chunk_result]
+
+    def calculate_pairwise_tip_distance_values_fast(
+        self,
+        tree,
+        tips: list[str],
+    ):
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            return None
+
+        parent_indices = []
+        levels = []
+        depths = []
+        terminal_by_name = {}
+        stack = [(root, -1, 0, 0.0)]
+        try:
+            pop = stack.pop
+            append = stack.append
+            while stack:
+                clade, parent_idx, level, depth = pop()
+                clade_idx = len(parent_indices)
+                parent_indices.append(parent_idx)
+                levels.append(level)
+                depths.append(depth)
+                children = clade.clades
+                if children:
+                    next_level = level + 1
+                    child_count = len(children)
+                    if child_count == 2:
+                        child = children[1]
+                        append(
+                            (
+                                child,
+                                clade_idx,
+                                next_level,
+                                depth + (child.branch_length or 0.0),
+                            )
+                        )
+                        child = children[0]
+                        append(
+                            (
+                                child,
+                                clade_idx,
+                                next_level,
+                                depth + (child.branch_length or 0.0),
+                            )
+                        )
+                    else:
+                        for idx in range(child_count - 1, -1, -1):
+                            child = children[idx]
+                            append(
+                                (
+                                    child,
+                                    clade_idx,
+                                    next_level,
+                                    depth + (child.branch_length or 0.0),
+                                )
+                            )
+                else:
+                    terminal_by_name[clade.name] = clade_idx
+        except (AttributeError, TypeError):
+            return None
+
+        try:
+            tip_indices = [terminal_by_name[tip] for tip in tips]
+        except (KeyError, TypeError):
+            return None
+
+        if not tip_indices:
+            return []
+
+        max_tip_level = max(levels[tip_idx] for tip_idx in tip_indices)
+        if max_tip_level > self._PAIRWISE_LCA_DEPTH_THRESHOLD:
+            return self._pairwise_tip_distance_values_from_lca_index(
+                tip_indices,
+                parent_indices,
+                levels,
+                depths,
+                max_tip_level,
+            )
+
+        return self._pairwise_tip_distance_values_from_paths(
+            tip_indices,
+            parent_indices,
+            depths,
+        )
+
+    @staticmethod
+    def _pairwise_tip_distance_values_from_paths(
+        tip_indices,
+        parent_indices,
+        depths,
+    ) -> list[float]:
+        tip_paths = []
+        for tip_idx in tip_indices:
+            path = [tip_idx]
+            current = tip_idx
+            while parent_indices[current] != -1:
+                current = parent_indices[current]
+                path.append(current)
+            path.reverse()
+            tip_paths.append(tuple(path))
+
+        tip_count = len(tip_indices)
+        distances = [0.0] * (tip_count * (tip_count - 1) // 2)
+        out_idx = 0
+        for i in range(tip_count - 1):
+            path_a = tip_paths[i]
+            depth_a = depths[tip_indices[i]]
+            for j in range(i + 1, tip_count):
+                mrca = 0
+                for clade_a, clade_b in zip(path_a, tip_paths[j]):
+                    if clade_a != clade_b:
+                        break
+                    mrca = clade_a
+                distances[out_idx] = depth_a + depths[tip_indices[j]] - 2 * depths[mrca]
+                out_idx += 1
+
+        return distances
+
+    @staticmethod
+    def _pairwise_tip_distance_values_from_lca_index(
+        tip_indices,
+        parent_indices,
+        levels,
+        depths,
+        max_tip_level,
+    ) -> list[float]:
+        jump_count = max(1, max_tip_level.bit_length())
+        ancestors = [parent_indices]
+        for _ in range(1, jump_count):
+            previous = ancestors[-1]
+            ancestors.append([
+                previous[parent_idx] if parent_idx != -1 else -1
+                for parent_idx in previous
+            ])
+
+        def lca_index(node_a, node_b):
+            if levels[node_a] < levels[node_b]:
+                node_a, node_b = node_b, node_a
+
+            level_diff = levels[node_a] - levels[node_b]
+            bit = 0
+            while level_diff:
+                if level_diff & 1:
+                    node_a = ancestors[bit][node_a]
+                level_diff >>= 1
+                bit += 1
+
+            if node_a == node_b:
+                return node_a
+
+            for bit in range(jump_count - 1, -1, -1):
+                ancestor_a = ancestors[bit][node_a]
+                ancestor_b = ancestors[bit][node_b]
+                if ancestor_a != ancestor_b:
+                    node_a = ancestor_a
+                    node_b = ancestor_b
+
+            return parent_indices[node_a]
+
+        distances = []
+        for i in range(len(tip_indices) - 1):
+            tip_a = tip_indices[i]
+            depth_a = depths[tip_a]
+            for j in range(i + 1, len(tip_indices)):
+                tip_b = tip_indices[j]
+                mrca = lca_index(tip_a, tip_b)
+                distances.append(depth_a + depths[tip_b] - 2 * depths[mrca])
+
+        return distances
+
     def calculate_patristic_distances(
         self,
         tree: Newick.Tree,
-    ) -> Tuple[
-        List[float],
-        List[Tuple[str, str]],
-        Dict[str, float],
+    ) -> tuple[
+        list[float],
+        list[tuple[str, str]],
+        dict[str, float],
     ]:
         tips = self.get_tip_names_from_tree(tree)
 
@@ -139,3 +722,11 @@ class PatristicDistances(Tree):
         stats = calculate_summary_statistics_from_arr(patristic_distances)
 
         return patristic_distances, combos, stats
+
+    def calculate_patristic_distance_stats(
+        self,
+        tree: Newick.Tree,
+    ) -> dict[str, float]:
+        tips = self.get_tip_names_from_tree(tree)
+        patristic_distances = self.calculate_distance_values_between_pairs(tips, tree)
+        return calculate_summary_statistics_from_arr(patristic_distances)

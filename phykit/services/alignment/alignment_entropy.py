@@ -1,10 +1,202 @@
-from typing import Dict, List
-
-import numpy as np
+from math import log2
 
 from .base import Alignment
-from ...helpers.json_output import print_json
-from ...helpers.plot_config import PlotConfig
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
+
+
+class _LazyNumpy:
+    def __init__(self):
+        self._module = None
+
+    def __getattr__(self, name):
+        module = self._module
+        if module is None:
+            import numpy as _np
+
+            module = _np
+            self._module = module
+
+        attr = getattr(module, name)
+        setattr(self, name, attr)
+        return attr
+
+
+np = _LazyNumpy()
+_DNA_GAP_CODES = None
+_PROTEIN_GAP_CODES = None
+_DNA_ALPHABET_BYTES = b"ACGT"
+_DNA_GAP_BYTES = b"N-?*X"
+_PROTEIN_GAP_BYTES = b"-?*X"
+_DNA_GAP_CHARS = frozenset("-?*XN")
+_PROTEIN_GAP_CHARS = frozenset("-?*X")
+_PLOT_DIRECT_MAX_LIMIT = 100_000
+_ASCII_ENTROPY_BLOCK_SIZE = 512
+_ENTROPY_SCALAR_MAX_CELLS = 8192
+
+
+def _get_gap_codes(is_protein: bool):
+    global _DNA_GAP_CODES, _PROTEIN_GAP_CODES
+    if is_protein:
+        if _PROTEIN_GAP_CODES is None:
+            _PROTEIN_GAP_CODES = np.frombuffer(_PROTEIN_GAP_BYTES, dtype=np.uint8)
+        return _PROTEIN_GAP_CODES
+
+    if _DNA_GAP_CODES is None:
+        _DNA_GAP_CODES = np.frombuffer(b"-?*XN", dtype=np.uint8)
+    return _DNA_GAP_CODES
+
+
+def _entropy_from_ascii_codes(
+    alignment_array,
+    valid_mask,
+    valid_chars,
+    block_size: int = _ASCII_ENTROPY_BLOCK_SIZE,
+    all_valid: bool = False,
+) -> list[float]:
+    aln_len = alignment_array.shape[1]
+    entropies = np.zeros(aln_len, dtype=np.float64)
+    symbol_codes = valid_chars.astype(np.intp, copy=False)
+
+    for start in range(0, aln_len, block_size):
+        stop = min(start + block_size, aln_len)
+        width = stop - start
+        block = alignment_array[:, start:stop]
+
+        block_by_site = block.T.astype(np.intp, copy=False)
+        site_offsets = np.arange(width, dtype=np.intp)[:, None] * 256
+        if all_valid:
+            count_index = (block_by_site + site_offsets).ravel()
+        else:
+            block_valid = valid_mask[:, start:stop]
+            if not block_valid.any():
+                continue
+            count_index = (block_by_site + site_offsets)[block_valid.T]
+        counts = np.bincount(
+            count_index,
+            minlength=width * 256,
+        ).reshape(width, 256)[:, symbol_codes].T.astype(np.float64, copy=False)
+        totals = _entropy_count_totals(counts)
+
+        entropies[start:stop] = _entropy_from_counts(counts, totals)
+
+    return _entropy_values_to_list(entropies)
+
+
+def _entropy_values_to_list(entropies):
+    return entropies.tolist()
+
+
+def _bounded_ascii_symbol_counts(alignment_array, valid_chars):
+    num_records = alignment_array.shape[0]
+    if num_records <= 0xFFFF:
+        count_dtype = np.uint16
+    elif num_records <= 0xFFFFFFFF:
+        count_dtype = np.uint32
+    else:
+        count_dtype = np.uint64
+
+    return np.vstack(
+        [
+            (alignment_array == char).sum(axis=0, dtype=count_dtype)
+            for char in valid_chars
+        ]
+    ).astype(np.float64)
+
+
+def _entropy_count_totals(counts):
+    if counts.shape[1] <= 20000 or counts.shape[0] >= 8:
+        return counts.sum(axis=0)
+    return np.sum(counts, axis=0)
+
+
+def _entropy_columns_from_probabilities(probs, log_probs):
+    return -np.einsum("ij,ij->j", probs, log_probs)
+
+
+def _plot_max(values):
+    if values.size <= _PLOT_DIRECT_MAX_LIMIT:
+        return values.max()
+    return np.max(values)
+
+
+def _entropy_from_counts(counts, totals):
+    with np.errstate(divide="ignore", invalid="ignore"):
+        probs = np.divide(
+            counts,
+            totals,
+            out=np.zeros_like(counts, dtype=np.float64),
+            where=totals > 0,
+        )
+        positive = probs > 0
+        log_probs = np.zeros_like(probs, dtype=np.float64)
+        np.log2(probs, out=log_probs, where=positive)
+
+    entropies = _entropy_columns_from_probabilities(probs, log_probs)
+    entropies[totals == 0] = 0.0
+    return entropies
+
+
+def _site_entropies_scalar(
+    sequences: list[str],
+    aln_len: int,
+    is_protein: bool,
+) -> list[float] | None:
+    if not sequences or (len(sequences) * aln_len) > _ENTROPY_SCALAR_MAX_CELLS:
+        return None
+    if any(len(sequence) != aln_len for sequence in sequences):
+        return None
+
+    gap_chars = _PROTEIN_GAP_CHARS if is_protein else _DNA_GAP_CHARS
+    entropies = []
+    for column_idx in range(aln_len):
+        counts = {}
+        total = 0
+        for sequence in sequences:
+            char = sequence[column_idx]
+            if char in gap_chars:
+                continue
+            counts[char] = counts.get(char, 0) + 1
+            total += 1
+        if total <= 1 or len(counts) <= 1:
+            entropies.append(0.0)
+            continue
+        entropy = 0.0
+        for count in counts.values():
+            probability = count / total
+            entropy -= probability * log2(probability)
+        entropies.append(entropy)
+    return entropies
+
+
+def _prepare_entropy_plot_series(entropies):
+    count = len(entropies)
+    sites = np.arange(1, count + 1, dtype=np.int32)
+    entropy_values = np.fromiter(
+        (round(entropy, 4) for entropy in entropies),
+        dtype=np.float64,
+        count=count,
+    )
+    return sites, entropy_values
+
+
+def _prepare_entropy_row_plot_series(rows):
+    count = len(rows)
+    sites = np.fromiter(
+        (int(row["site"]) for row in rows),
+        dtype=np.int32,
+        count=count,
+    )
+    entropies = np.fromiter(
+        (float(row["entropy"]) for row in rows),
+        dtype=np.float64,
+        count=count,
+    )
+    return sites, entropies
 
 
 class AlignmentEntropy(Alignment):
@@ -18,17 +210,32 @@ class AlignmentEntropy(Alignment):
 
     def run(self) -> None:
         alignment, _, is_protein = self.get_alignment_and_format()
-        entropies = self.calculate_site_entropies(alignment, is_protein)
-        rows = [
-            dict(site=idx, entropy=round(entropy, 4))
-            for idx, entropy in enumerate(entropies, start=1)
-        ]
+        mean_entropy = None
+        if not self.verbose and not self.plot:
+            mean_entropy = self._mean_entropy_if_identical(alignment)
 
-        if self.plot:
+        if mean_entropy is None:
+            entropies = self.calculate_site_entropies(alignment, is_protein)
+        else:
+            entropies = None
+        rows = None
+
+        if self.plot and self.verbose:
+            rows = [
+                {"site": idx, "entropy": round(entropy, 4)}
+                for idx, entropy in enumerate(entropies, start=1)
+            ]
             self._plot_alignment_entropy(rows)
+        elif self.plot:
+            self._plot_alignment_entropy_values(entropies)
 
         if self.json_output:
             if self.verbose:
+                if rows is None:
+                    rows = [
+                        {"site": idx, "entropy": round(entropy, 4)}
+                        for idx, entropy in enumerate(entropies, start=1)
+                    ]
                 payload = dict(
                     verbose=True,
                     rows=rows,
@@ -37,7 +244,12 @@ class AlignmentEntropy(Alignment):
             else:
                 payload = dict(
                     verbose=False,
-                    mean_entropy=round(float(np.mean(entropies)), 4) if entropies else 0.0,
+                    mean_entropy=round(
+                        mean_entropy
+                        if mean_entropy is not None
+                        else (sum(entropies) / len(entropies) if entropies else 0.0),
+                        4,
+                    ),
                 )
             if self.plot:
                 payload["plot_output"] = self.plot_output
@@ -45,28 +257,86 @@ class AlignmentEntropy(Alignment):
             return
 
         if self.verbose:
-            for row in rows:
-                print(f"{row['site']}\t{row['entropy']}")
+            if rows is None:
+                lines = [
+                    f"{idx}\t{round(entropy, 4)}"
+                    for idx, entropy in enumerate(entropies, start=1)
+                ]
+            else:
+                lines = [
+                    f"{row['site']}\t{row['entropy']}"
+                    for row in rows
+                ]
+            if lines:
+                print("\n".join(lines))
         else:
-            if entropies:
-                print(round(float(np.mean(entropies)), 4))
+            if mean_entropy is not None:
+                print(round(mean_entropy, 4))
+            elif entropies:
+                print(round(sum(entropies) / len(entropies), 4))
             else:
                 print(0.0)
 
         if self.plot:
             print(f"Saved alignment entropy plot: {self.plot_output}")
 
-    def process_args(self, args) -> Dict[str, str]:
+    def process_args(self, args) -> dict[str, str]:
+        plot = getattr(args, "plot", False)
+        plot_config = None
+        if plot:
+            from ...helpers.plot_config import PlotConfig
+
+            plot_config = PlotConfig.from_args(args)
+
         return dict(
             alignment_file_path=args.alignment,
             verbose=args.verbose,
             json_output=getattr(args, "json", False),
-            plot=getattr(args, "plot", False),
+            plot=plot,
             plot_output=getattr(args, "plot_output", "alignment_entropy_plot.png"),
-            plot_config=PlotConfig.from_args(args),
+            plot_config=plot_config,
         )
 
-    def _plot_alignment_entropy(self, rows: List[Dict[str, float]]) -> None:
+    @staticmethod
+    def _mean_entropy_if_identical(alignment) -> float | None:
+        try:
+            record_count = len(alignment)
+        except TypeError:
+            return None
+
+        if record_count == 0:
+            return 0.0
+
+        try:
+            first_record = alignment[0]
+            first_raw_sequence = str(first_record.seq)
+        except (AttributeError, IndexError, TypeError):
+            return None
+
+        first_sequence = first_raw_sequence.upper()
+        for sample_idx in {record_count // 2, record_count - 1}:
+            if sample_idx == 0:
+                continue
+            try:
+                sample_sequence = str(alignment[sample_idx].seq)
+            except (AttributeError, IndexError, TypeError):
+                return None
+            if (
+                sample_sequence != first_raw_sequence
+                and sample_sequence.upper() != first_sequence
+            ):
+                return None
+
+        for idx in range(1, record_count):
+            sequence = str(alignment[idx].seq)
+            if (
+                sequence != first_raw_sequence
+                and sequence.upper() != first_sequence
+            ):
+                return None
+        return 0.0
+
+    def _plot_alignment_entropy(self, rows: list[dict[str, float]]) -> None:
         try:
             import matplotlib
             matplotlib.use("Agg")
@@ -78,9 +348,25 @@ class AlignmentEntropy(Alignment):
         if not rows:
             return
 
-        sites = np.array([int(row["site"]) for row in rows], dtype=np.int32)
-        entropies = np.array([float(row["entropy"]) for row in rows], dtype=np.float64)
+        sites, entropies = _prepare_entropy_row_plot_series(rows)
+        self._render_alignment_entropy_plot(sites, entropies, plt)
 
+    def _plot_alignment_entropy_values(self, entropies) -> None:
+        try:
+            import matplotlib
+            matplotlib.use("Agg")
+            import matplotlib.pyplot as plt
+        except ImportError:
+            print("matplotlib is required for --plot in alignment_entropy. Install matplotlib and retry.")
+            raise SystemExit(2)
+
+        if not entropies:
+            return
+
+        sites, entropies = _prepare_entropy_plot_series(entropies)
+        self._render_alignment_entropy_plot(sites, entropies, plt)
+
+    def _render_alignment_entropy_plot(self, sites, entropies, plt) -> None:
         config = self.plot_config
         config.resolve(n_rows=len(sites), n_cols=None)
         default_colors = ["#2b8cbe"]
@@ -91,8 +377,8 @@ class AlignmentEntropy(Alignment):
         ax.scatter(sites, entropies, s=8, color=colors[0], alpha=0.75, edgecolors="none")
         ax.set_xlabel("Alignment site")
         ax.set_ylabel("Shannon entropy")
-        ax.set_xlim(1, int(np.max(sites)))
-        max_entropy = float(np.max(entropies)) if entropies.size else 0.0
+        ax.set_xlim(1, int(_plot_max(sites)))
+        max_entropy = float(_plot_max(entropies)) if entropies.size else 0.0
         ax.set_ylim(0, max(1.0, max_entropy * 1.1))
 
         if config.show_title:
@@ -101,31 +387,94 @@ class AlignmentEntropy(Alignment):
             ax.xaxis.label.set_fontsize(config.axis_fontsize)
             ax.yaxis.label.set_fontsize(config.axis_fontsize)
 
-        fig.tight_layout()
         fig.savefig(self.plot_output, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
 
-    def calculate_site_entropies(self, alignment, is_protein: bool) -> List[float]:
-        if is_protein:
-            invalid_chars = np.array(["-", "?", "*", "X"], dtype="U1")
+    def calculate_site_entropies(self, alignment, is_protein: bool) -> list[float]:
+        raw_sequences = [str(record.seq) for record in alignment]
+        if not raw_sequences:
+            return []
+
+        first_raw_sequence = raw_sequences[0]
+        aln_len = len(first_raw_sequence)
+        first_sequence = first_raw_sequence.upper()
+        for idx in range(1, len(raw_sequences)):
+            sequence = raw_sequences[idx]
+            if sequence != first_raw_sequence and sequence.upper() != first_sequence:
+                break
         else:
-            invalid_chars = np.array(["-", "?", "*", "X", "N"], dtype="U1")
-        alignment_array = np.array(
-            [[c.upper() for c in str(record.seq)] for record in alignment],
-            dtype="U1",
-        )
+            return [0.0] * aln_len
+        sequences = [sequence.upper() for sequence in raw_sequences]
 
-        site_entropies: List[float] = []
-        for col_idx in range(alignment_array.shape[1]):
-            column = alignment_array[:, col_idx]
-            valid = column[~np.isin(column, invalid_chars)]
-            if valid.size == 0:
-                site_entropies.append(0.0)
-                continue
+        scalar_entropies = _site_entropies_scalar(sequences, aln_len, is_protein)
+        if scalar_entropies is not None:
+            return scalar_entropies
 
-            _, counts = np.unique(valid, return_counts=True)
-            probs = counts / counts.sum()
-            entropy = float(-np.sum(probs * np.log2(probs)))
-            site_entropies.append(entropy)
+        try:
+            alignment_bytes = "".join(sequences).encode("ascii")
+            alignment_array = np.frombuffer(
+                alignment_bytes,
+                dtype=np.uint8,
+            ).reshape(len(sequences), aln_len)
+            gap_bytes = _PROTEIN_GAP_BYTES if is_protein else _DNA_GAP_BYTES
+            if not any(gap_code in alignment_bytes for gap_code in gap_bytes):
+                valid_mask = None
+                all_valid = True
+                if (
+                    not is_protein
+                    and not alignment_bytes.translate(None, _DNA_ALPHABET_BYTES)
+                ):
+                    valid_chars = np.fromiter(
+                        (
+                            code
+                            for code in _DNA_ALPHABET_BYTES
+                            if code in alignment_bytes
+                        ),
+                        dtype=np.uint8,
+                    )
+                else:
+                    valid_chars = np.unique(alignment_array)
+            else:
+                invalid_mask = np.zeros(alignment_array.shape, dtype=np.bool_)
+                for gap_code in _get_gap_codes(is_protein):
+                    invalid_mask |= alignment_array == gap_code
+                valid_mask = ~invalid_mask
+                valid_chars = np.unique(alignment_array[valid_mask])
+                all_valid = bool(valid_mask.all())
+        except UnicodeEncodeError:
+            invalid_chars = {char.upper() for char in self.get_gap_chars(is_protein)}
+            alignment_array = np.array([list(seq) for seq in sequences], dtype="U1")
+            invalid_chars_array = np.array(list(invalid_chars), dtype="U1")
+            valid_mask = ~np.isin(alignment_array, invalid_chars_array)
+            valid_chars = np.unique(alignment_array[valid_mask])
+            all_valid = False
 
-        return site_entropies
+        if alignment_array.size == 0:
+            return []
+
+        if valid_chars.size == 0:
+            return [0.0] * alignment_array.shape[1]
+        if valid_chars.size == 1:
+            return [0.0] * alignment_array.shape[1]
+
+        if alignment_array.dtype == np.uint8 and valid_chars.size > 8:
+            return _entropy_from_ascii_codes(
+                alignment_array,
+                valid_mask,
+                valid_chars,
+                all_valid=all_valid,
+            )
+
+        if alignment_array.dtype == np.uint8:
+            counts = _bounded_ascii_symbol_counts(alignment_array, valid_chars)
+        else:
+            counts = np.vstack(
+                [
+                    np.sum(alignment_array == char, axis=0)
+                    for char in valid_chars
+                ]
+            ).astype(np.float64)
+        totals = _entropy_count_totals(counts)
+
+        entropies = _entropy_from_counts(counts, totals)
+        return _entropy_values_to_list(entropies)

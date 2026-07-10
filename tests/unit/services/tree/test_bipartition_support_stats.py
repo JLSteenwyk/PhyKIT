@@ -1,10 +1,15 @@
 import pytest
 import sys
+import subprocess
 from argparse import Namespace
+from io import StringIO
 from mock import patch, call
 import numpy as np
+from Bio import Phylo
+from Bio.Phylo.BaseTree import TreeMixin
 
 from phykit.phykit import Phykit
+import phykit.services.tree.bipartition_support_stats as bss_module
 from phykit.services.tree.bipartition_support_stats import BipartitionSupportStats
 
 @pytest.fixture
@@ -14,6 +19,31 @@ def args():
 
 
 class TestBipartitionSupportStats(object):
+    def test_module_import_defers_numpy_and_biophylo(self):
+        code = """
+import sys
+import phykit.services.tree.bipartition_support_stats as module
+
+assert callable(module._json_dumps)
+assert hasattr(module.np, "__getattr__")
+assert "json" not in sys.modules
+assert "phykit.helpers.stats_summary" not in sys.modules
+assert "typing" not in sys.modules
+assert "numpy" not in sys.modules
+assert "Bio.Phylo" not in sys.modules
+"""
+
+        subprocess.run([sys.executable, "-c", code], check=True)
+
+    def test_lazy_numpy_caches_resolved_attributes(self):
+        lazy_np = bss_module._LazyNumpy()
+
+        sort_attr = lazy_np.sort
+
+        assert lazy_np.__dict__["sort"] is sort_attr
+        assert lazy_np.sort is sort_attr
+        assert lazy_np._module is not None
+
     def test_init_sets_tree_file_path(self, args):
         t = BipartitionSupportStats(args)
         assert t.tree_file_path == args.tree
@@ -82,6 +112,138 @@ class TestBipartitionSupportStats(object):
             {"threshold": 100.0, "count_below": 2, "fraction_below": 0.5},
         ]
 
+    def test_threshold_stats_single_threshold_does_not_sort(self, args, monkeypatch):
+        args.thresholds = "90"
+        t = BipartitionSupportStats(args)
+
+        def fail_bisect(*_args, **_kwargs):
+            raise AssertionError("single-threshold path should scan once")
+
+        monkeypatch.setattr(bss_module, "bisect_left", fail_bisect)
+
+        stats = t.calculate_threshold_stats([85.0, 85.0, 100.0, 100.0], t.thresholds)
+
+        assert stats == [
+            {"threshold": 90.0, "count_below": 2, "fraction_below": 0.5},
+        ]
+
+    def test_threshold_stats_multiple_thresholds_uses_bisect(self, args, monkeypatch):
+        args.thresholds = "90,100"
+        t = BipartitionSupportStats(args)
+        calls = []
+        real_bisect = bss_module.bisect_left
+
+        def track_bisect(values, threshold):
+            calls.append(threshold)
+            return real_bisect(values, threshold)
+
+        monkeypatch.setattr(bss_module, "bisect_left", track_bisect)
+
+        stats = t.calculate_threshold_stats([85.0, 85.0, 100.0, 100.0], t.thresholds)
+
+        assert calls == [90.0, 100.0]
+        assert stats == [
+            {"threshold": 90.0, "count_below": 2, "fraction_below": 0.5},
+            {"threshold": 100.0, "count_below": 2, "fraction_below": 0.5},
+        ]
+
+    def test_threshold_stats_numpy_values_use_searchsorted(self, args, mocker):
+        args.thresholds = "90,100"
+        t = BipartitionSupportStats(args)
+        values = np.array([85.0, 85.0, 100.0, 100.0])
+        mocked_searchsorted = mocker.spy(bss_module.np, "searchsorted")
+
+        stats = t.calculate_threshold_stats(values, t.thresholds)
+
+        mocked_searchsorted.assert_called_once()
+        assert stats == [
+            {"threshold": 90.0, "count_below": 2, "fraction_below": 0.5},
+            {"threshold": 100.0, "count_below": 2, "fraction_below": 0.5},
+        ]
+        assert isinstance(stats[0]["count_below"], int)
+        assert isinstance(stats[0]["fraction_below"], float)
+
+    def test_threshold_stats_many_thresholds_use_numpy_searchsorted(
+        self, args, mocker
+    ):
+        t = BipartitionSupportStats(args)
+        values = [float(index % 100) for index in range(5000)]
+        thresholds = [float(index) for index in range(20)]
+        mocked_searchsorted = mocker.spy(bss_module.np, "searchsorted")
+
+        stats = t.calculate_threshold_stats(values, thresholds)
+
+        mocked_searchsorted.assert_called_once()
+        assert stats[0] == {
+            "threshold": 0.0,
+            "count_below": 0,
+            "fraction_below": 0.0,
+        }
+        assert stats[10] == {
+            "threshold": 10.0,
+            "count_below": 500,
+            "fraction_below": 0.1,
+        }
+
+    def test_threshold_stats_numpy_single_threshold_uses_count_nonzero(
+        self, args, mocker
+    ):
+        args.thresholds = "90"
+        t = BipartitionSupportStats(args)
+        values = np.array([85.0, 85.0, 100.0, 100.0])
+        mocked_count_nonzero = mocker.spy(bss_module.np, "count_nonzero")
+        mocked_searchsorted = mocker.spy(bss_module.np, "searchsorted")
+
+        stats = t.calculate_threshold_stats(values, t.thresholds)
+
+        mocked_count_nonzero.assert_called_once()
+        mocked_searchsorted.assert_not_called()
+        assert stats == [
+            {"threshold": 90.0, "count_below": 2, "fraction_below": 0.5},
+        ]
+        assert isinstance(stats[0]["count_below"], int)
+        assert isinstance(stats[0]["fraction_below"], float)
+
+    def test_threshold_stats_large_single_threshold_list_scans_once(
+        self, args, mocker, monkeypatch
+    ):
+        args.thresholds = "50"
+        t = BipartitionSupportStats(args)
+        values = [float(index % 100) for index in range(5000)]
+        mocked_count_nonzero = mocker.spy(bss_module.np, "count_nonzero")
+
+        def fail_bisect(*_args, **_kwargs):
+            raise AssertionError("single-threshold path should not sort and bisect")
+
+        monkeypatch.setattr(bss_module, "bisect_left", fail_bisect)
+
+        stats = t.calculate_threshold_stats(values, t.thresholds)
+
+        mocked_count_nonzero.assert_not_called()
+        assert stats == [
+            {"threshold": 50.0, "count_below": 2500, "fraction_below": 0.5},
+        ]
+
+    def test_threshold_stats_very_large_single_threshold_list_uses_numpy_count(
+        self, args, mocker, monkeypatch
+    ):
+        args.thresholds = "50"
+        t = BipartitionSupportStats(args)
+        values = [float(index % 100) for index in range(100_000)]
+        mocked_count_nonzero = mocker.spy(bss_module.np, "count_nonzero")
+
+        def fail_bisect(*_args, **_kwargs):
+            raise AssertionError("single-threshold path should not sort and bisect")
+
+        monkeypatch.setattr(bss_module, "bisect_left", fail_bisect)
+
+        stats = t.calculate_threshold_stats(values, t.thresholds)
+
+        mocked_count_nonzero.assert_called_once()
+        assert stats == [
+            {"threshold": 50.0, "count_below": 50000, "fraction_below": 0.5},
+        ]
+
     def test_threshold_stats_empty_bs_vals(self, args):
         args.thresholds = "70,90"
         t = BipartitionSupportStats(args)
@@ -91,11 +253,55 @@ class TestBipartitionSupportStats(object):
             {"threshold": 90.0, "count_below": 0, "fraction_below": 0.0},
         ]
 
+    def test_threshold_stats_empty_thresholds_do_not_scan_values(self, args):
+        class NoIterList(list):
+            def __iter__(self):
+                raise AssertionError("empty thresholds should return before scanning values")
+
+        t = BipartitionSupportStats(args)
+
+        assert t.calculate_threshold_stats(NoIterList([90.0, 100.0]), []) == []
+
+    def test_scan_simple_newick_bipartitions_preserves_preorder(self, tmp_path):
+        tree = tmp_path / "tree.tre"
+        tree.write_text("((A:1,B:1)90:1,(C:1,D:1)80:1)70:1;\n")
+
+        vals, names = BipartitionSupportStats._scan_simple_newick_bipartitions(
+            str(tree)
+        )
+
+        assert vals == [70.0, 90.0, 80.0]
+        assert names == [["A", "B", "C", "D"], ["A", "B"], ["C", "D"]]
+
+    def test_scan_simple_newick_bipartitions_rejects_annotations(self, tmp_path):
+        tree = tmp_path / "tree.tre"
+        tree.write_text("((A:1,B:1)90[comment]:1,C:1);\n")
+
+        assert (
+            BipartitionSupportStats._scan_simple_newick_bipartitions(str(tree))
+            is None
+        )
+
     def test_to_builtin_converts_numpy_scalars(self, args):
         t = BipartitionSupportStats(args)
         value = {"a": np.int64(1), "b": [np.float64(1.5)]}
         converted = t._to_builtin(value)
         assert converted == {"a": 1, "b": [1.5]}
+
+    def test_to_builtin_returns_builtin_payload_unchanged(self, args):
+        t = BipartitionSupportStats(args)
+        value = {
+            "verbose": True,
+            "thresholds": [
+                {"threshold": 95.0, "count_below": 1, "fraction_below": 0.5}
+            ],
+            "bipartitions": [
+                {"support": 90.0, "terminals": ["A", "B"]},
+                {"support": 100.0, "terminals": ["C", "D"]},
+            ],
+        }
+
+        assert t._to_builtin(value) is value
 
     def test_get_bipartition_support_vals(self, small_aspergillus_tree, args):
         t = BipartitionSupportStats(args)
@@ -103,6 +309,127 @@ class TestBipartitionSupportStats(object):
         assert len(vals) == len(names)
         assert len(vals) > 0
         assert isinstance(names[0], list)
+
+    def test_get_bipartition_support_vals_matches_terminal_scan(
+        self, small_aspergillus_tree, args
+    ):
+        t = BipartitionSupportStats(args)
+        vals, names = t.get_bipartition_support_vals(small_aspergillus_tree)
+
+        expected_vals = []
+        expected_names = []
+        for nonterminal in small_aspergillus_tree.get_nonterminals():
+            if nonterminal.confidence is not None:
+                expected_vals.append(nonterminal.confidence)
+                expected_names.append([
+                    term.name for term in nonterminal.get_terminals()
+                ])
+
+        assert vals == expected_vals
+        assert names == expected_names
+
+    def test_get_bipartition_support_vals_uses_direct_traversal(
+        self, monkeypatch, args
+    ):
+        t = BipartitionSupportStats(args)
+        tree = Phylo.read(StringIO("((A:1,B:1)90:1,(C:1,D:1)80:1);"), "newick")
+
+        def fail_generic_traversal(*_args, **_kwargs):
+            raise AssertionError("standard trees should use direct traversal")
+
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_generic_traversal)
+        monkeypatch.setattr(TreeMixin, "get_nonterminals", fail_generic_traversal)
+
+        vals, names = t.get_bipartition_support_vals(tree)
+
+        assert vals == [90, 80]
+        assert names == [["A", "B"], ["C", "D"]]
+
+    def test_bipartition_support_vals_direct_preserves_order_without_child_reversed(
+        self,
+    ):
+        class NoReversedList(list):
+            def __reversed__(self):
+                raise AssertionError("direct traversal should push children directly")
+
+        class Clade:
+            def __init__(self, name=None, confidence=None, clades=None):
+                self.name = name
+                self.confidence = confidence
+                self.clades = NoReversedList(clades or [])
+
+        tree = type(
+            "Tree",
+            (),
+            {
+                "root": Clade(
+                    confidence=70.0,
+                    clades=[
+                        Clade(
+                            confidence=90.0,
+                            clades=[Clade("A"), Clade("B")],
+                        ),
+                        Clade(
+                            confidence=80.0,
+                            clades=[Clade("C"), Clade("D")],
+                        ),
+                    ],
+                )
+            },
+        )()
+
+        vals, names = BipartitionSupportStats._get_bipartition_support_vals_direct(
+            tree
+        )
+
+        assert vals == [70.0, 90.0, 80.0]
+        assert names == [["A", "B", "C", "D"], ["A", "B"], ["C", "D"]]
+
+    def test_get_bipartition_support_values_uses_direct_array_path(
+        self, monkeypatch, args
+    ):
+        t = BipartitionSupportStats(args)
+        tree = Phylo.read(StringIO("((A:1,B:1)90:1,(C:1,D:1)80:1);"), "newick")
+
+        def fail_generic_traversal(*_args, **_kwargs):
+            raise AssertionError("values-only path should use direct traversal")
+
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_generic_traversal)
+        monkeypatch.setattr(TreeMixin, "get_nonterminals", fail_generic_traversal)
+
+        vals = t.get_bipartition_support_values(tree)
+
+        assert vals.tolist() == [90.0, 80.0]
+
+    def test_bipartition_support_values_array_preserves_order_without_reversed(self):
+        class NoReversedList(list):
+            def __reversed__(self):
+                raise AssertionError("array path should push children directly")
+
+        class Clade:
+            def __init__(self, confidence=None, clades=None):
+                self.confidence = confidence
+                self.clades = NoReversedList(clades or [])
+
+        tree = type(
+            "Tree",
+            (),
+            {
+                "root": Clade(
+                    70.0,
+                    [
+                        Clade(90.0, [Clade(), Clade()]),
+                        Clade(80.0, [Clade(), Clade()]),
+                    ],
+                )
+            },
+        )()
+
+        vals = BipartitionSupportStats._get_bipartition_support_values_array_direct(
+            tree
+        )
+
+        assert vals.tolist() == [70.0, 90.0, 80.0]
 
     def test_build_json_output_verbose(self, args):
         args.verbose = True
@@ -127,21 +454,54 @@ class TestBipartitionSupportStats(object):
         assert payload["verbose"] is False
         assert "summary" in payload
 
+    def test_to_builtin_reuses_already_builtin_payload(self, args):
+        t = BipartitionSupportStats(args)
+        payload = {
+            "rows": [
+                {"support": 90.0, "terminals": ["A", "B"]},
+                {"support": 100.0, "terminals": ["C", "D"]},
+            ],
+            "verbose": True,
+        }
+
+        converted = t._to_builtin(payload)
+
+        assert converted is payload
+
+    def test_to_builtin_converts_nested_numpy_values(self, args):
+        t = BipartitionSupportStats(args)
+        payload = {
+            "rows": [
+                {"support": np.float64(90.0), "terminals": ["A", "B"]},
+            ],
+            "thresholds": np.array([80.0, 95.0]),
+        }
+
+        converted = t._to_builtin(payload)
+
+        assert converted == {
+            "rows": [{"support": 90.0, "terminals": ["A", "B"]}],
+            "thresholds": [80.0, 95.0],
+        }
+        assert converted is not payload
+        assert converted["rows"] is not payload["rows"]
+        assert converted["rows"][0] is not payload["rows"][0]
+
     @patch("builtins.print")
     def test_json_output_mode(self, mocked_print, mocker, args):
         args.json = True
         args.verbose = False
         t = BipartitionSupportStats(args)
         mock_tree = mocker.Mock()
-        mocker.patch.object(t, "read_tree_file", return_value=mock_tree)
+        mocker.patch.object(t, "read_tree_file_unmodified", return_value=mock_tree)
         mocker.patch.object(
             t,
-            "get_bipartition_support_vals",
-            return_value=([85.0, 100.0], [["a", "b"], ["c", "d"]]),
+            "get_bipartition_support_values",
+            return_value=np.array([85.0, 100.0]),
         )
         dumped_json = '{"summary":{"mean":92.5},"verbose":false,"thresholds":[]}'
         mock_dumps = mocker.patch(
-            "phykit.services.tree.bipartition_support_stats.json.dumps",
+            "phykit.services.tree.bipartition_support_stats._json_dumps",
             return_value=dumped_json,
         )
 
@@ -157,30 +517,108 @@ class TestBipartitionSupportStats(object):
         args.json = True
         args.verbose = True
         t = BipartitionSupportStats(args)
-        mocker.patch.object(t, "read_tree_file", return_value=object())
+        mocker.patch.object(t, "read_tree_file_unmodified", return_value=object())
         mocker.patch.object(t, "get_bipartition_support_vals", return_value=([85.0], [["a", "b"]]))
         mocker.patch.object(t, "calculate_threshold_stats", return_value=[])
-        mocker.patch("phykit.services.tree.bipartition_support_stats.json.dumps", return_value='{"ok": true}')
+        mocker.patch("phykit.services.tree.bipartition_support_stats._json_dumps", return_value='{"ok": true}')
         mocker.patch("builtins.print", side_effect=BrokenPipeError)
         t.run()
 
-    def test_run_verbose_prints_bipartitions(self, mocker, args):
+    def test_build_json_output_verbose_bipartition_rows(self, args):
+        args.verbose = True
+        t = BipartitionSupportStats(args)
+
+        payload = t.build_json_output(
+            [85.0, 90.0],
+            [["a", "b"], ["c", "d"]],
+            [],
+        )
+
+        assert payload["verbose"] is True
+        assert payload["bipartitions"] == [
+            {"support": 85.0, "terminals": ["a", "b"]},
+            {"support": 90.0, "terminals": ["c", "d"]},
+        ]
+
+    def test_run_verbose_prints_bipartitions(self, mocker, args, capsys):
         args.verbose = True
         args.json = False
         t = BipartitionSupportStats(args)
-        mocker.patch.object(t, "read_tree_file", return_value=object())
-        mocker.patch.object(t, "get_bipartition_support_vals", return_value=([85.0], [["a", "b"]]))
+        mocker.patch.object(t, "read_tree_file_unmodified", return_value=object())
+        mocker.patch.object(
+            t,
+            "get_bipartition_support_vals",
+            return_value=([85.0, 100], [["a", "b"], ["c", "d"]]),
+        )
         mocker.patch.object(t, "calculate_threshold_stats", return_value=[])
-        mocked_print = mocker.patch("builtins.print")
         t.run()
-        mocked_print.assert_called_with(85.0, "a;b")
+        captured = capsys.readouterr()
+        assert captured.out == "85.0 a;b\n100 c;d\n"
+
+    def test_format_verbose_text_preserves_order_and_terminal_join(self):
+        observed = BipartitionSupportStats._format_verbose_text(
+            [85.0, 100],
+            [["a", "b"], ["c", "d", "e"]],
+        )
+
+        assert observed == "85.0 a;b\n100 c;d;e"
+
+    def test_run_verbose_empty_bipartitions_prints_nothing(self, mocker, args, capsys):
+        args.verbose = True
+        args.json = False
+        t = BipartitionSupportStats(args)
+        mocker.patch.object(t, "read_tree_file_unmodified", return_value=object())
+        mocker.patch.object(t, "get_bipartition_support_vals", return_value=([], []))
+        mocker.patch.object(t, "calculate_threshold_stats", return_value=[])
+
+        t.run()
+
+        captured = capsys.readouterr()
+        assert captured.out == ""
+
+    def test_run_uses_unmodified_tree_read(self, mocker, args):
+        args.verbose = False
+        args.json = False
+        tree = object()
+        t = BipartitionSupportStats(args)
+        read_tree = mocker.patch.object(
+            t,
+            "read_tree_file_unmodified",
+            return_value=tree,
+        )
+        mocker.patch.object(t, "get_bipartition_support_values", return_value=np.array([85.0]))
+        mocker.patch.object(t, "calculate_threshold_stats", return_value=[])
+        mocker.patch("phykit.services.tree.bipartition_support_stats.print_summary_statistics")
+
+        t.run()
+
+        read_tree.assert_called_once_with()
+
+    def test_run_uses_simple_newick_bipartition_scan(self, mocker, args):
+        args.verbose = True
+        args.json = False
+        t = BipartitionSupportStats(args)
+        mocker.patch.object(
+            t,
+            "_scan_simple_newick_bipartitions",
+            return_value=([70.0, 90.0], [["A", "B"], ["C", "D"]]),
+        )
+        read_tree = mocker.patch.object(
+            t,
+            "read_tree_file_unmodified",
+            side_effect=AssertionError("simple Newick should skip tree parsing"),
+        )
+
+        t.run()
+
+        read_tree.assert_not_called()
 
     def test_run_nonverbose_prints_summary_and_thresholds(self, mocker, args):
         args.verbose = False
         args.json = False
         t = BipartitionSupportStats(args)
-        mocker.patch.object(t, "read_tree_file", return_value=object())
-        mocker.patch.object(t, "get_bipartition_support_vals", return_value=([85.0, 100.0], [["a"], ["b"]]))
+        mocker.patch.object(t, "read_tree_file_unmodified", return_value=object())
+        mocker.patch.object(t, "get_bipartition_support_values", return_value=np.array([85.0, 100.0]))
         mocker.patch.object(
             t,
             "calculate_threshold_stats",
@@ -190,8 +628,23 @@ class TestBipartitionSupportStats(object):
         mocked_print = mocker.patch("builtins.print")
         t.run()
         mocked_summary.assert_called_once()
-        mocked_print.assert_called_with("below 90.0: 1 (50.0%)")
+        mocked_print.assert_called_once_with("below 90.0: 1 (50.0%)")
 
+    def test_print_threshold_stats_batches_output(self, mocker, args):
+        t = BipartitionSupportStats(args)
+        mocked_print = mocker.patch("builtins.print")
+
+        t._print_threshold_stats(
+            [
+                {"threshold": 70.12345, "count_below": 2, "fraction_below": 0.25},
+                {"threshold": 90.0, "count_below": 3, "fraction_below": 0.375},
+            ]
+        )
+
+        mocked_print.assert_called_once_with(
+            "below 70.1235: 2 (25.0%)\n"
+            "below 90.0: 3 (37.5%)"
+        )
 
     # def test_calculate_bipartition_support_stats(self, small_aspergillus_tree, args):
     #     t = BipartitionSupportStats(args)

@@ -35,19 +35,30 @@ class TestPrintTree(object):
 
     @patch("builtins.print")
     def test_print_tree_wrong_input(self, mocked_print):
+        testargs = [
+            "phykit",
+            "print_tree",
+            f"{here.parent.parent.parent}/sample_files/tree_simple.tx",
+        ]
 
-        with pytest.raises(SystemExit) as pytest_wrapped_e:
-            Phykit()
+        with patch.object(sys, "argv", testargs):
+            with pytest.raises(SystemExit) as pytest_wrapped_e:
+                Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2
 
     @patch("builtins.print")
     def test_print_tree_alias0(self, mocked_print):
+        testargs = [
+            "phykit",
+            "print",
+            f"{here.parent.parent.parent}/sample_files/tree_simple.tx",
+        ]
 
-
-        with pytest.raises(SystemExit) as pytest_wrapped_e:
-            Phykit()
+        with patch.object(sys, "argv", testargs):
+            with pytest.raises(SystemExit) as pytest_wrapped_e:
+                Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2
@@ -55,30 +66,47 @@ class TestPrintTree(object):
 
     @patch("builtins.print")
     def test_print_tree_alias1(self, mocked_print):
+        testargs = [
+            "phykit",
+            "pt",
+            f"{here.parent.parent.parent}/sample_files/tree_simple.tx",
+        ]
 
-
-        with pytest.raises(SystemExit) as pytest_wrapped_e:
-            Phykit()
+        with patch.object(sys, "argv", testargs):
+            with pytest.raises(SystemExit) as pytest_wrapped_e:
+                Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2
 
     @patch("builtins.print")
     def test_print_tree_remove_branch_lengths_short(self, mocked_print):
+        testargs = [
+            "phykit",
+            "print_tree",
+            f"{here.parent.parent.parent}/sample_files/tree_simple.tx",
+            "-r",
+        ]
 
-
-        with pytest.raises(SystemExit) as pytest_wrapped_e:
-            Phykit()
+        with patch.object(sys, "argv", testargs):
+            with pytest.raises(SystemExit) as pytest_wrapped_e:
+                Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2
 
     @patch("builtins.print")
     def test_print_tree_remove_branch_lengths_long(self, mocked_print):
+        testargs = [
+            "phykit",
+            "print_tree",
+            f"{here.parent.parent.parent}/sample_files/tree_simple.tx",
+            "--remove",
+        ]
 
-
-        with pytest.raises(SystemExit) as pytest_wrapped_e:
-            Phykit()
+        with patch.object(sys, "argv", testargs):
+            with pytest.raises(SystemExit) as pytest_wrapped_e:
+                Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2

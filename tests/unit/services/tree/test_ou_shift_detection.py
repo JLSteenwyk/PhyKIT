@@ -1,10 +1,20 @@
+import builtins
 import copy
+import importlib
+import pickle as stdlib_pickle
+import subprocess
+import sys
+from io import StringIO
 
 import numpy as np
 import pytest
 from argparse import Namespace
 from pathlib import Path
 
+from Bio import Phylo
+from Bio.Phylo.BaseTree import Clade, TreeMixin
+
+import phykit.services.tree.ou_shift_detection as ou_shift_detection_module
 from phykit.services.tree.ou_shift_detection import OUShiftDetection
 from phykit.errors import PhykitUserError
 
@@ -13,6 +23,206 @@ here = Path(__file__)
 SAMPLE_FILES = here.parent.parent.parent.parent / "sample_files"
 TREE_SIMPLE = str(SAMPLE_FILES / "tree_simple.tre")
 TRAITS_FILE = str(SAMPLE_FILES / "tree_simple_traits.tsv")
+
+
+def test_module_import_does_not_import_numpy_scipy_or_sklearn():
+    code = """
+import sys
+import phykit.services.tree.ou_shift_detection as module
+
+assert callable(module.print_json)
+assert hasattr(module.np, "__getattr__")
+assert "typing" not in sys.modules
+assert "json" not in sys.modules
+assert "pickle" not in sys.modules
+assert "phykit.helpers.json_output" not in sys.modules
+assert "numpy" not in sys.modules
+assert "scipy.linalg" not in sys.modules
+assert "scipy.optimize" not in sys.modules
+assert "sklearn" not in sys.modules
+assert "sklearn.linear_model" not in sys.modules
+assert module._CHO_FACTOR is None
+assert module._CHO_SOLVE is None
+assert module._SOLVE_TRIANGULAR is None
+assert module._MINIMIZE_SCALAR is None
+"""
+    subprocess.run([sys.executable, "-c", code], check=True)
+
+
+def test_lazy_numpy_caches_module_and_resolved_attributes():
+    lazy_np = ou_shift_detection_module._LazyNumpy()
+
+    sqrt = lazy_np.sqrt
+
+    assert lazy_np._module is not None
+    assert lazy_np.sqrt is sqrt
+
+
+def test_lazy_pickle_caches_resolved_copy_helpers(monkeypatch):
+    lazy_pickle = ou_shift_detection_module._LazyPickle()
+
+    def cached_dumps(value, **_kwargs):
+        return f"cached:{value}".encode("ascii")
+
+    def cached_loads(value):
+        return value.decode("ascii").removeprefix("cached:")
+
+    def uncached_dumps(*_args, **_kwargs):
+        raise AssertionError("cached dumps should be reused")
+
+    def uncached_loads(*_args, **_kwargs):
+        raise AssertionError("cached loads should be reused")
+
+    monkeypatch.setattr(stdlib_pickle, "dumps", cached_dumps)
+    monkeypatch.setattr(stdlib_pickle, "loads", cached_loads)
+
+    protocol = lazy_pickle.HIGHEST_PROTOCOL
+    assert lazy_pickle.loads(lazy_pickle.dumps("tree", protocol=protocol)) == "tree"
+
+    monkeypatch.setattr(stdlib_pickle, "dumps", uncached_dumps)
+    monkeypatch.setattr(stdlib_pickle, "loads", uncached_loads)
+
+    assert lazy_pickle.loads(lazy_pickle.dumps("tree2", protocol=protocol)) == "tree2"
+    assert lazy_pickle.__dict__["dumps"] is cached_dumps
+    assert lazy_pickle.__dict__["loads"] is cached_loads
+    assert lazy_pickle.__dict__["HIGHEST_PROTOCOL"] == stdlib_pickle.HIGHEST_PROTOCOL
+
+
+def test_module_import_does_not_import_heavy_optional_packages(monkeypatch):
+    module_name = "phykit.services.tree.ou_shift_detection"
+    previous = sys.modules.pop(module_name, None)
+    original_import = builtins.__import__
+
+    def guarded_import(name, globals=None, locals=None, fromlist=(), level=0):
+        if (
+            name == "sklearn.linear_model"
+            or name.startswith("sklearn.linear_model.")
+            or name == "scipy.linalg"
+            or name.startswith("scipy.linalg.")
+            or name == "scipy.optimize"
+            or name.startswith("scipy.optimize.")
+        ):
+            raise AssertionError(
+                "ou_shift_detection module import should not import sklearn or SciPy linalg/optimize"
+            )
+        return original_import(name, globals, locals, fromlist, level)
+
+    monkeypatch.setattr(builtins, "__import__", guarded_import)
+    try:
+        importlib.import_module(module_name)
+    finally:
+        imported = sys.modules.pop(module_name, None)
+        if previous is not None:
+            sys.modules[module_name] = previous
+        parent_name, _, child_name = module_name.rpartition(".")
+        parent = sys.modules.get(parent_name)
+        if parent is not None:
+            if previous is not None:
+                setattr(parent, child_name, previous)
+            elif getattr(parent, child_name, None) is imported:
+                delattr(parent, child_name)
+
+
+def test_repeated_cholesky_calls_cache_scipy_linalg_imports(monkeypatch):
+    previous_cho_factor = ou_shift_detection_module._CHO_FACTOR
+    previous_cho_solve = ou_shift_detection_module._CHO_SOLVE
+    ou_shift_detection_module._CHO_FACTOR = None
+    ou_shift_detection_module._CHO_SOLVE = None
+    original_import = builtins.__import__
+    scipy_linalg_imports = 0
+
+    def counting_import(name, globals=None, locals=None, fromlist=(), level=0):
+        nonlocal scipy_linalg_imports
+        if name == "scipy.linalg":
+            scipy_linalg_imports += 1
+        return original_import(name, globals, locals, fromlist, level)
+
+    monkeypatch.setattr(builtins, "__import__", counting_import)
+    try:
+        rng = np.random.default_rng(20260628)
+        svc = OUShiftDetection.__new__(OUShiftDetection)
+        n = 12
+        A = rng.normal(size=(n, n))
+        V = A @ A.T + np.eye(n)
+        W = np.column_stack([np.ones(n), rng.normal(size=(n, 2))])
+        x = rng.normal(size=n)
+
+        svc._gls_profile_likelihood_cholesky(x, W, V)
+        first_call_imports = scipy_linalg_imports
+        svc._gls_profile_likelihood_cholesky(x, W, V)
+    finally:
+        ou_shift_detection_module._CHO_FACTOR = previous_cho_factor
+        ou_shift_detection_module._CHO_SOLVE = previous_cho_solve
+
+    assert first_call_imports > 0
+    assert scipy_linalg_imports == first_call_imports
+
+
+def test_repeated_solve_triangular_calls_cache_scipy_linalg_imports(monkeypatch):
+    previous_solve_triangular = ou_shift_detection_module._SOLVE_TRIANGULAR
+    ou_shift_detection_module._SOLVE_TRIANGULAR = None
+    original_import = builtins.__import__
+    scipy_linalg_imports = 0
+
+    def counting_import(name, globals=None, locals=None, fromlist=(), level=0):
+        nonlocal scipy_linalg_imports
+        if name == "scipy.linalg":
+            scipy_linalg_imports += 1
+        return original_import(name, globals, locals, fromlist, level)
+
+    monkeypatch.setattr(builtins, "__import__", counting_import)
+    try:
+        matrix = np.eye(3)
+        values = np.array([1.0, 2.0, 3.0])
+
+        first = ou_shift_detection_module.solve_triangular(
+            matrix, values, lower=True, check_finite=False
+        )
+        first_call_imports = scipy_linalg_imports
+        second = ou_shift_detection_module.solve_triangular(
+            matrix, values, lower=True, check_finite=False
+        )
+    finally:
+        ou_shift_detection_module._SOLVE_TRIANGULAR = previous_solve_triangular
+
+    np.testing.assert_allclose(first, values)
+    np.testing.assert_allclose(second, values)
+    assert first_call_imports > 0
+    assert scipy_linalg_imports == first_call_imports
+
+
+def test_repeated_minimize_scalar_calls_cache_scipy_optimize_imports(monkeypatch):
+    previous_minimize_scalar = ou_shift_detection_module._MINIMIZE_SCALAR
+    ou_shift_detection_module._MINIMIZE_SCALAR = None
+    original_import = builtins.__import__
+    scipy_optimize_imports = 0
+
+    def counting_import(name, globals=None, locals=None, fromlist=(), level=0):
+        nonlocal scipy_optimize_imports
+        if name == "scipy.optimize":
+            scipy_optimize_imports += 1
+        return original_import(name, globals, locals, fromlist, level)
+
+    monkeypatch.setattr(builtins, "__import__", counting_import)
+    try:
+        first = ou_shift_detection_module.minimize_scalar(
+            lambda value: (value - 0.25) ** 2,
+            bounds=(0.0, 1.0),
+            method="bounded",
+        )
+        first_call_imports = scipy_optimize_imports
+        second = ou_shift_detection_module.minimize_scalar(
+            lambda value: (value - 0.75) ** 2,
+            bounds=(0.0, 1.0),
+            method="bounded",
+        )
+    finally:
+        ou_shift_detection_module._MINIMIZE_SCALAR = previous_minimize_scalar
+
+    assert first.x == pytest.approx(0.25, abs=1e-4)
+    assert second.x == pytest.approx(0.75, abs=1e-4)
+    assert first_call_imports > 0
+    assert scipy_optimize_imports == first_call_imports
 
 
 @pytest.fixture
@@ -81,6 +291,91 @@ def precomputed(svc):
 
 
 class TestEnumerateEdges:
+    def test_iter_postorder_matches_biopython_order(self, svc):
+        tree = Phylo.read(
+            StringIO("((A:1,B:2,C:3):4,(D:5,E:6):7,F:8):0;"),
+            "newick",
+        )
+
+        direct = list(svc._iter_postorder(tree.root))
+        reference = list(tree.find_clades(order="postorder"))
+
+        assert [id(clade) for clade in direct] == [
+            id(clade) for clade in reference
+        ]
+
+    def test_setup_helpers_use_direct_tree_traversal(self, svc, monkeypatch):
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        ordered_names = ["A", "B", "C", "D"]
+
+        def fail_traversal(*args, **kwargs):
+            raise AssertionError("optimized path should use direct traversal")
+
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_traversal)
+        monkeypatch.setattr(TreeMixin, "get_terminals", fail_traversal)
+
+        parent_map = svc._build_parent_map(tree)
+        lineage = svc._build_lineage_info_no_regime(tree, ordered_names, parent_map)
+        edges = svc._enumerate_edges(tree, parent_map)
+        counts = svc._count_descendants(tree, edges)
+
+        assert len(parent_map) == 6
+        assert len(lineage) == 4
+        assert len(edges) == 6
+        assert sum(counts.values()) == 8
+        assert sum(bl for _, bl, _, _ in lineage["A"]) == pytest.approx(2.0)
+
+    def test_parent_map_handles_mixed_child_counts_without_preorder(
+        self, svc, monkeypatch
+    ):
+        tree = Phylo.read(
+            StringIO("(A:1,(B:1,C:1):1,(D:1,E:1,F:1):1);"),
+            "newick",
+        )
+
+        def fail_iter_preorder(*args, **kwargs):
+            raise AssertionError("parent map should build directly")
+
+        monkeypatch.setattr(svc, "_iter_preorder", fail_iter_preorder)
+
+        parent_map = svc._build_parent_map(tree)
+
+        terminal, binary, trifurcating = tree.root.clades
+        assert id(tree.root) not in parent_map
+        assert parent_map[id(terminal)] is tree.root
+        assert parent_map[id(binary)] is tree.root
+        assert parent_map[id(trifurcating)] is tree.root
+        assert all(parent_map[id(child)] is binary for child in binary.clades)
+        assert all(
+            parent_map[id(child)] is trifurcating for child in trifurcating.clades
+        )
+
+    def test_iter_preorder_preserves_order_without_reversed(self, svc):
+        class NoReversedList(list):
+            def __reversed__(self):
+                raise AssertionError("_iter_preorder should push children directly")
+
+        root = Clade(name="root")
+        left = Clade(name="left")
+        middle = Clade(name="middle")
+        right = Clade(name="right")
+        left.clades = NoReversedList([Clade(name="left_a"), Clade(name="left_b")])
+        middle.clades = NoReversedList([Clade(name="middle_a")])
+        right.clades = NoReversedList()
+        root.clades = NoReversedList([left, middle, right])
+
+        order = [clade.name for clade in svc._iter_preorder(root)]
+
+        assert order == [
+            "root",
+            "left",
+            "left_a",
+            "left_b",
+            "middle",
+            "middle_a",
+            "right",
+        ]
+
     def test_correct_count_excludes_root(self, precomputed):
         edges = precomputed["edges"]
         tree = precomputed["tree"]
@@ -103,6 +398,23 @@ class TestEnumerateEdges:
 
 
 class TestCountDescendants:
+    def test_mixed_child_counts(self, svc):
+        tree = Phylo.read(
+            StringIO("(A:1,(B:1,C:1):1,(D:1,E:1,F:1):1);"),
+            "newick",
+        )
+        parent_map = svc._build_parent_map(tree)
+        edges = svc._enumerate_edges(tree, parent_map)
+
+        counts = svc._count_descendants(tree, edges)
+
+        terminal, binary, trifurcating = tree.root.clades
+        assert counts[id(terminal)] == 1
+        assert counts[id(binary)] == 2
+        assert counts[id(trifurcating)] == 3
+        assert all(counts[id(child)] == 1 for child in binary.clades)
+        assert all(counts[id(child)] == 1 for child in trifurcating.clades)
+
     def test_terminal_edges_have_one_descendant(self, precomputed):
         edges = precomputed["edges"]
         descendant_counts = precomputed["descendant_counts"]
@@ -145,6 +457,23 @@ class TestBuildShiftWeightMatrix:
         )
         row_sums = W.sum(axis=1)
         np.testing.assert_allclose(row_sums, 1.0, atol=1e-10)
+
+    def test_baseline_weight_uses_array_sum(self, precomputed, monkeypatch):
+        svc = precomputed["svc"]
+        ordered_names = precomputed["ordered_names"]
+        lineage_info = precomputed["lineage_info"]
+        edges = precomputed["edges"]
+        tree_height = precomputed["tree_height"]
+
+        def fail_sum(*_args, **_kwargs):
+            raise AssertionError("baseline shift weights should use ndarray.sum")
+
+        monkeypatch.setattr(ou_shift_detection_module.np, "sum", fail_sum)
+
+        W = svc._build_shift_weight_matrix(
+            ordered_names, lineage_info, edges, 1.0, tree_height
+        )
+        np.testing.assert_allclose(W.sum(axis=1), 1.0, atol=1e-10)
 
     def test_all_weights_nonnegative(self, precomputed):
         svc = precomputed["svc"]
@@ -200,6 +529,110 @@ class TestBuildIndicatorDesignMatrix:
                 assert W[:, 1].sum() == 1.0
                 break
 
+    def test_uses_cached_lineage_rows(self, precomputed):
+        svc = precomputed["svc"]
+        shift_indices = list(range(min(3, len(svc._edges))))
+
+        expected = np.zeros((svc._n, len(shift_indices) + 1))
+        expected[:, 0] = 1.0
+        shift_clade_ids = {
+            svc._edges[edge_idx][0]: col_idx + 1
+            for col_idx, edge_idx in enumerate(shift_indices)
+        }
+        for row_idx, name in enumerate(svc._ordered_names):
+            for clade_id, *_ in svc._lineage_info[name]:
+                if clade_id in shift_clade_ids:
+                    expected[row_idx, shift_clade_ids[clade_id]] = 1.0
+
+        W = svc._build_indicator_design_matrix(shift_indices)
+
+        np.testing.assert_array_equal(W, expected)
+        assert svc._lineage_rows_by_clade_id is not None
+
+
+class TestExtractLassoConfigs:
+    def test_column_l2_norms_matches_linalg_norm(self):
+        matrix = np.array(
+            [
+                [3.0, 1.0, 0.0],
+                [4.0, 2.0, 0.0],
+                [0.0, 2.0, 0.0],
+            ]
+        )
+
+        observed = ou_shift_detection_module._column_l2_norms(matrix)
+        expected = np.linalg.norm(matrix, axis=0)
+
+        np.testing.assert_allclose(observed, expected)
+
+    def test_uses_flat_nonzero_for_coefficient_path(self, monkeypatch):
+        svc = OUShiftDetection.__new__(OUShiftDetection)
+        svc._n = 5
+        X_star = np.column_stack(
+            [
+                np.ones(5),
+                np.array([0.0, 1.0, 0.0, 1.0, 0.0]),
+                np.array([1.0, 0.0, 1.0, 0.0, 1.0]),
+                np.array([0.0, 0.0, 1.0, 1.0, 0.0]),
+            ]
+        )
+        y_star = np.array([0.2, 1.0, 0.4, 1.2, 0.6])
+        coefs_path = np.array(
+            [
+                [0.0, 0.5, 0.5, 0.0],
+                [0.0, 0.0, 0.25, 0.25],
+                [0.0, 0.0, 0.0, 0.5],
+            ]
+        )
+
+        def fake_lars_path(_X, _y, method, max_iter):
+            assert method == "lasso"
+            assert max_iter == 3
+            return None, None, coefs_path
+
+        def fail_where(*_args, **_kwargs):
+            raise AssertionError("lasso config extraction should use flat indices")
+
+        monkeypatch.setattr(ou_shift_detection_module, "_lars_path", fake_lars_path)
+        monkeypatch.setattr(ou_shift_detection_module.np, "where", fail_where)
+
+        configs = svc._extract_lasso_configs(X_star, y_star, max_shifts=3)
+
+        assert configs == [[0], [0, 1], [1, 2]]
+
+    def test_extract_lasso_configs_avoids_linalg_norm(self, monkeypatch):
+        svc = OUShiftDetection.__new__(OUShiftDetection)
+        svc._n = 5
+        X_star = np.column_stack(
+            [
+                np.ones(5),
+                np.array([0.0, 1.0, 0.0, 1.0, 0.0]),
+                np.array([1.0, 0.0, 1.0, 0.0, 1.0]),
+            ]
+        )
+        y_star = np.array([0.2, 1.0, 0.4, 1.2, 0.6])
+        coefs_path = np.array(
+            [
+                [0.0, 0.5, 0.5],
+                [0.0, 0.0, 0.25],
+            ]
+        )
+
+        def fake_lars_path(_X, _y, method, max_iter):
+            assert method == "lasso"
+            assert max_iter == 2
+            return None, None, coefs_path
+
+        def fail_norm(*_args, **_kwargs):
+            raise AssertionError("LASSO column scaling should use column L2 helper")
+
+        monkeypatch.setattr(ou_shift_detection_module, "_lars_path", fake_lars_path)
+        monkeypatch.setattr(ou_shift_detection_module.np.linalg, "norm", fail_norm)
+
+        configs = svc._extract_lasso_configs(X_star, y_star, max_shifts=2)
+
+        assert configs == [[0], [0, 1]]
+
 
 class TestComputePBIC:
     def test_returns_finite_for_valid_model(self, precomputed):
@@ -221,6 +654,73 @@ class TestComputePBIC:
 
         pbic = svc._compute_pbic(n, ll, 0, W, V_inv, sig2, x)
         assert np.isfinite(pbic)
+
+    def test_vcv_pbic_matches_inverse_pbic(self, precomputed):
+        svc = precomputed["svc"]
+        n = svc._n
+        x = svc._x
+
+        alpha = 1.0
+        V = svc._build_ou_vcv_fast(alpha)
+        V_inv = np.linalg.inv(V)
+        W = svc._build_indicator_design_matrix([0, 1])
+        theta = svc._gls_theta_hat(x, W, V_inv)
+        e = x - W @ theta
+        sig2 = float(e @ V_inv @ e) / n
+        sign, logdet = np.linalg.slogdet(V)
+        ll = -0.5 * (n * np.log(2 * np.pi) + n * np.log(sig2) + logdet + n)
+
+        expected = svc._compute_pbic(n, ll, 2, W, V_inv, sig2, x)
+        observed = svc._compute_pbic_from_vcv(n, ll, 2, W, V, sig2, x)
+
+        np.testing.assert_allclose(observed, expected, rtol=1e-10, atol=1e-10)
+
+    def test_pbic_from_info_matches_scaled_inverse_formula(self):
+        rng = np.random.default_rng(20260628)
+        svc = OUShiftDetection.__new__(OUShiftDetection)
+        svc._n_edges = 80
+        n = 60
+        k = 4
+        d = k + 1
+        x = rng.normal(size=n)
+        A = rng.normal(size=(d, d))
+        info = A @ A.T + np.eye(d)
+        sigma2 = 1.25
+        ll = -12.5
+
+        var_y = np.var(x, ddof=1)
+        scaled = sigma2 * np.linalg.inv(info) * (n - d) / (var_y * n)
+        _, ld = np.linalg.slogdet(scaled)
+        expected = (
+            2.0 * k * np.log(svc._n_edges - 1)
+            - 2.0 * ll
+            + 2.0 * np.log(n)
+            - ld
+        )
+
+        observed = svc._compute_pbic_from_info(n, ll, k, info, sigma2, x)
+
+        assert observed == pytest.approx(expected)
+
+    def test_pbic_from_info_avoids_inverse(self, monkeypatch):
+        rng = np.random.default_rng(20260628)
+        svc = OUShiftDetection.__new__(OUShiftDetection)
+        svc._n_edges = 80
+        n = 60
+        k = 3
+        d = k + 1
+        x = rng.normal(size=n)
+        A = rng.normal(size=(d, d))
+        info = A @ A.T + np.eye(d)
+
+        def fail_inverse(_matrix):
+            raise AssertionError("pBIC should not invert the information matrix")
+
+        monkeypatch.setattr(np.linalg, "inv", fail_inverse)
+
+        observed = svc._compute_pbic_from_info(n, -12.5, k, info, 1.25, x)
+
+        assert np.isfinite(observed)
 
     def test_more_shifts_higher_penalty(self, precomputed):
         """pBIC penalty should increase with number of shifts."""
@@ -311,6 +811,54 @@ class TestTransformToIndependent:
         np.testing.assert_allclose(transformed_V, np.eye(len(x)), atol=1e-10)
 
 
+class TestGLSProfileLikelihood:
+    def test_cholesky_matches_inverse(self, precomputed):
+        svc = precomputed["svc"]
+        x = precomputed["x"]
+        V = svc._build_ou_vcv_fast(alpha=1.0)
+        W = svc._build_indicator_design_matrix([0, 1])
+
+        theta_fast, sig2_fast, ll_fast = svc._gls_profile_likelihood_cholesky(
+            x, W, V
+        )
+        theta_inv, sig2_inv, ll_inv = svc._gls_profile_likelihood_inverse(
+            x, W, V
+        )
+
+        np.testing.assert_allclose(theta_fast, theta_inv)
+        np.testing.assert_allclose(sig2_fast, sig2_inv)
+        np.testing.assert_allclose(ll_fast, ll_inv)
+
+    def test_cholesky_uses_single_solve(self, precomputed, monkeypatch):
+        svc = precomputed["svc"]
+        x = precomputed["x"]
+        V = svc._build_ou_vcv_fast(alpha=1.0)
+        W = svc._build_indicator_design_matrix([0, 1])
+        original = ou_shift_detection_module.cho_solve
+        calls = 0
+
+        def counting_cho_solve(*args, **kwargs):
+            nonlocal calls
+            calls += 1
+            return original(*args, **kwargs)
+
+        monkeypatch.setattr(
+            ou_shift_detection_module, "cho_solve", counting_cho_solve
+        )
+
+        theta_fast, sig2_fast, ll_fast = svc._gls_profile_likelihood_cholesky(
+            x, W, V
+        )
+        theta_inv, sig2_inv, ll_inv = svc._gls_profile_likelihood_inverse(
+            x, W, V
+        )
+
+        assert calls == 1
+        np.testing.assert_allclose(theta_fast, theta_inv)
+        np.testing.assert_allclose(sig2_fast, sig2_inv)
+        np.testing.assert_allclose(ll_fast, ll_inv)
+
+
 class TestFitOU1ForAlpha:
     def test_returns_positive_alpha(self, precomputed):
         svc = precomputed["svc"]
@@ -337,6 +885,15 @@ class TestPrecomputeSharedPathLengths:
         S = svc._S
         np.testing.assert_allclose(S, S.T, atol=1e-12)
 
+    def test_precompute_populates_lineage_row_cache(self, precomputed):
+        svc = precomputed["svc"]
+        rows_by_clade_id = svc._get_lineage_rows_by_clade_id()
+
+        assert rows_by_clade_id is svc._lineage_rows_by_clade_id
+        for row_idx, name in enumerate(svc._ordered_names):
+            for clade_id, *_ in svc._lineage_info[name]:
+                assert row_idx in rows_by_clade_id[clade_id]
+
 
 class TestBuildOUVCVFast:
     def test_matches_slow_path(self, precomputed):
@@ -351,6 +908,43 @@ class TestBuildOUVCVFast:
         )
         V_fast = svc._build_ou_vcv_fast(alpha, 1.0)
         np.testing.assert_allclose(V_fast, V_slow, atol=1e-10)
+
+    def test_no_regime_vcv_uses_block_shared_paths(self):
+        class IterOnlyPath:
+            def __init__(self, items):
+                self.items = items
+
+            def __iter__(self):
+                return iter(self.items)
+
+            def __getitem__(self, _index):
+                raise AssertionError(
+                    "no-regime OU VCV should not use pairwise path indexing"
+                )
+
+        svc = OUShiftDetection.__new__(OUShiftDetection)
+        ordered_names = ["a", "b"]
+        lineage_info = {
+            "a": IterOnlyPath([(0, 1.0, 0.0, 1.0), (1, 2.0, 1.0, 3.0)]),
+            "b": IterOnlyPath([(0, 1.0, 0.0, 1.0), (2, 4.0, 1.0, 5.0)]),
+        }
+        alpha = 0.5
+        sigma2 = 2.0
+        shared = np.array([[3.0, 1.0], [1.0, 5.0]])
+        heights = np.array([3.0, 5.0])
+        distance = heights[:, None] + heights[None, :] - 2.0 * shared
+        expected = (sigma2 / (2.0 * alpha)) * np.exp(-alpha * distance) * (
+            1.0 - np.exp(-2.0 * alpha * shared)
+        )
+
+        observed = svc._build_ou_vcv_single_alpha_no_regime(
+            ordered_names,
+            lineage_info,
+            alpha,
+            sigma2,
+        )
+
+        np.testing.assert_allclose(observed, expected, atol=1e-12)
 
     def test_bm_limit(self, precomputed):
         """Alpha near 0 should give BM covariance."""
@@ -387,6 +981,166 @@ class TestEndToEnd:
         with patch("builtins.print"):
             svc.run()
 
+    def test_run_uses_fast_tip_name_helper_for_prune_setup(self, default_args, mocker):
+        svc = OUShiftDetection(default_args)
+        spy = mocker.spy(svc, "get_tip_names_from_tree")
+        mocker.patch("builtins.print")
+
+        svc.run()
+
+        assert spy.call_count == 1
+
+    def test_prepare_shared_trait_data_skips_prune_scan_when_all_shared(self):
+        tree_tips = ["A", "B", "C"]
+        traits = {"A": 1.0, "B": 2.0, "C": 3.0}
+
+        to_prune, ordered_names = OUShiftDetection._prepare_shared_trait_data(
+            tree_tips,
+            traits,
+        )
+
+        assert to_prune == []
+        assert ordered_names == ["A", "B", "C"]
+
+    def test_prepare_shared_trait_data_preserves_partial_prune_order(self):
+        tree_tips = ["A", "B", "C", "D"]
+        traits = {"A": 1.0, "C": 3.0, "B": 2.0}
+
+        to_prune, ordered_names = OUShiftDetection._prepare_shared_trait_data(
+            tree_tips,
+            traits,
+        )
+
+        assert to_prune == ["D"]
+        assert ordered_names == ["A", "B", "C"]
+
+    def test_run_uses_unmodified_tree_read(self, default_args, mocker):
+        svc = OUShiftDetection(default_args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        traits = {"A": 1.0, "B": 2.0, "C": 3.0, "D": 4.0}
+        lineage = {name: [(0, 1.0, 0, 1)] for name in traits}
+        best = {"shifts": [], "alpha": 0.0, "pBIC": 1.0, "BIC": 1.0, "AICc": 1.0}
+
+        read_unmodified = mocker.patch.object(
+            svc, "read_tree_file_unmodified", return_value=tree
+        )
+        mocker.patch.object(
+            svc,
+            "read_tree_file",
+            side_effect=AssertionError("run should use read_tree_file_unmodified"),
+        )
+        validate = mocker.patch.object(svc, "validate_tree")
+        mocker.patch.object(svc, "get_tip_names_from_tree", return_value=list(traits))
+        mocker.patch.object(svc, "_parse_trait_file", return_value=traits)
+        mocker.patch.object(svc, "_build_parent_map", return_value={})
+        mocker.patch.object(
+            svc, "_build_lineage_info_no_regime", return_value=lineage
+        )
+        mocker.patch.object(svc, "_enumerate_edges", return_value=[])
+        mocker.patch.object(
+            svc, "_precompute_shared_path_lengths", return_value=(None, None)
+        )
+        mocker.patch.object(svc, "_fit_and_score_config", return_value=best)
+        build_result = mocker.patch.object(
+            svc, "_build_final_result", return_value={"ok": True}
+        )
+        mocker.patch.object(svc, "_output")
+        fast_copy = mocker.patch.object(
+            svc,
+            "_fast_copy",
+            side_effect=AssertionError("all-shared analysis should not copy tree"),
+        )
+
+        svc.run()
+
+        read_unmodified.assert_called_once_with()
+        validate.assert_called_once()
+        fast_copy.assert_not_called()
+        assert build_result.call_args.args[1] is tree
+
+    def test_run_copies_before_pruning_missing_tree_tips(self, default_args, mocker):
+        svc = OUShiftDetection(default_args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        tree_copy = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        traits = {"A": 1.0, "B": 2.0, "C": 3.0}
+        lineage = {name: [(0, 1.0, 0, 1)] for name in traits}
+        best = {"shifts": [], "alpha": 0.0, "pBIC": 1.0, "BIC": 1.0, "AICc": 1.0}
+
+        mocker.patch.object(svc, "read_tree_file_unmodified", return_value=tree)
+        mocker.patch.object(svc, "validate_tree")
+        mocker.patch.object(
+            svc, "get_tip_names_from_tree", return_value=["A", "B", "C", "D"]
+        )
+        mocker.patch.object(svc, "_parse_trait_file", return_value=traits)
+        fast_copy = mocker.patch.object(svc, "_fast_copy", return_value=tree_copy)
+        prune = mocker.spy(tree_copy, "prune")
+        mocker.patch.object(svc, "_build_parent_map", return_value={})
+        mocker.patch.object(
+            svc, "_build_lineage_info_no_regime", return_value=lineage
+        )
+        mocker.patch.object(svc, "_enumerate_edges", return_value=[])
+        mocker.patch.object(
+            svc, "_precompute_shared_path_lengths", return_value=(None, None)
+        )
+        mocker.patch.object(svc, "_fit_and_score_config", return_value=best)
+        build_result = mocker.patch.object(
+            svc, "_build_final_result", return_value={"ok": True}
+        )
+        mocker.patch.object(svc, "_output")
+
+        svc.run()
+
+        fast_copy.assert_called_once_with(tree)
+        prune.assert_called_once_with("D")
+        assert build_result.call_args.args[1] is tree_copy
+
+
+class TestOutput:
+    def test_print_text_output_batches_detected_shifts(self, svc, mocker):
+        printed = mocker.patch("builtins.print")
+        result = {
+            "n_tips": 8,
+            "n_shifts": 2,
+            "criterion": "pBIC",
+            "alpha": 1.234567,
+            "sigma2": 0.987654,
+            "theta_root": 2.345678,
+            "log_likelihood": -123.456789,
+            "pBIC": 456.789,
+            "BIC": 567.891,
+            "AICc": 345.678,
+            "shifts": [
+                {"description": "terminal branch to A", "optimum": 1.25},
+                {"description": "stem of clade B,C", "optimum": -0.5},
+            ],
+        }
+
+        svc._print_text_output(result)
+
+        printed.assert_called_once_with(
+            "============================================================\n"
+            "OU Shift Detection (l1ou)\n"
+            "============================================================\n"
+            "Number of tips:       8\n"
+            "Number of shifts:     2\n"
+            "Selection criterion:  pBIC\n"
+            "Alpha (OU strength):  1.234567\n"
+            "Sigma² (BM rate):     0.987654\n"
+            "Root optimum (θ₀):    2.345678\n"
+            "Log-likelihood:       -123.4568\n"
+            "pBIC:                 456.7890\n"
+            "BIC:                  567.8910\n"
+            "AICc:                 345.6780\n"
+            "\n"
+            "Detected shifts:\n"
+            "------------------------------------------------------------\n"
+            "  Shift 1: terminal branch to A\n"
+            "           New optimum: 1.250000\n"
+            "  Shift 2: stem of clade B,C\n"
+            "           New optimum: -0.500000\n"
+            "============================================================"
+        )
+
 
 class TestDescribeEdge:
     def test_terminal(self, precomputed):
@@ -408,6 +1162,20 @@ class TestDescribeEdge:
                 desc = svc._describe_edge(clade, tree)
                 assert "stem of" in desc
                 break
+
+    def test_uses_direct_terminal_name_traversal(self, precomputed, monkeypatch):
+        from Bio.Phylo.BaseTree import Clade
+
+        svc = precomputed["svc"]
+        tree = precomputed["tree"]
+
+        def fail_get_terminals(self):
+            raise AssertionError("edge descriptions should use direct traversal")
+
+        monkeypatch.setattr(Clade, "get_terminals", fail_get_terminals)
+
+        desc = svc._describe_edge(tree.root, tree)
+        assert desc.startswith("stem of")
 
 
 class TestProcessArgs:
@@ -433,3 +1201,88 @@ class TestProcessArgs:
             )
             svc = OUShiftDetection(args)
             assert svc.criterion == crit
+
+
+class TestTraitParsing:
+    def test_comments_and_blanks(self, tmp_path, default_args):
+        trait_file = tmp_path / "traits.tsv"
+        trait_file.write_text(
+            "# comment\n\nraccoon\t1.0\nbear\t2.0\nsea_lion\t3.0\n"
+            "seal\t4.0\nmonkey\t5.0\ncat\t6.0\nweasel\t7.0\ndog\t8.0\n"
+        )
+        svc = OUShiftDetection(default_args)
+        tree = svc.read_tree_file()
+        tree_tips = svc.get_tip_names_from_tree(tree)
+
+        traits = svc._parse_trait_file(str(trait_file), tree_tips)
+
+        assert len(traits) == 8
+        assert traits["raccoon"] == pytest.approx(1.0)
+
+    def test_all_shared_trait_file_emits_no_warnings(
+        self, tmp_path, default_args, capsys
+    ):
+        trait_file = tmp_path / "traits.tsv"
+        trait_file.write_text(
+            "raccoon\t1.0\nbear\t2.0\nsea_lion\t3.0\nseal\t4.0\n"
+            "monkey\t5.0\ncat\t6.0\nweasel\t7.0\ndog\t8.0\n"
+        )
+        svc = OUShiftDetection(default_args)
+        tree = svc.read_tree_file()
+        tree_tips = svc.get_tip_names_from_tree(tree)
+
+        traits = svc._parse_trait_file(str(trait_file), tree_tips)
+
+        stderr = capsys.readouterr().err
+        assert set(traits) == set(tree_tips)
+        assert stderr == ""
+
+    def test_ordered_all_shared_trait_file_skips_sets(
+        self, tmp_path, default_args, monkeypatch
+    ):
+        trait_file = tmp_path / "traits.tsv"
+        trait_file.write_text("A\t1.0\nB\t2.0\nC\t3.0\n")
+        svc = OUShiftDetection(default_args)
+        original_set = builtins.set
+
+        def fail_set(*args, **kwargs):
+            raise AssertionError("ordered exact path should not build sets")
+
+        monkeypatch.setattr(builtins, "set", fail_set)
+        traits = svc._parse_trait_file(str(trait_file), ["A", "B", "C"])
+
+        assert traits == {"A": 1.0, "B": 2.0, "C": 3.0}
+        assert builtins.set is fail_set
+        monkeypatch.setattr(builtins, "set", original_set)
+
+    def test_extra_columns_error(self, tmp_path, default_args):
+        trait_file = tmp_path / "traits.tsv"
+        trait_file.write_text(
+            "raccoon\t1.0\nbear\t2.0\nsea_lion\t3.0\ndog\t4.0\nextra\t1.0\t2.0\n"
+        )
+        svc = OUShiftDetection(default_args)
+        tree = svc.read_tree_file()
+        tree_tips = svc.get_tip_names_from_tree(tree)
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            svc._parse_trait_file(str(trait_file), tree_tips)
+
+        assert (
+            "Line 5 in trait file has 3 columns; expected 2."
+            in exc_info.value.messages
+        )
+
+    def test_non_numeric_trait_error(self, tmp_path, default_args):
+        trait_file = tmp_path / "traits.tsv"
+        trait_file.write_text("raccoon\t1.0\nbear\tbad\nsea_lion\t3.0\ndog\t4.0\n")
+        svc = OUShiftDetection(default_args)
+        tree = svc.read_tree_file()
+        tree_tips = svc.get_tip_names_from_tree(tree)
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            svc._parse_trait_file(str(trait_file), tree_tips)
+
+        assert (
+            "Non-numeric trait value 'bad' for taxon 'bear' on line 2."
+            in exc_info.value.messages
+        )

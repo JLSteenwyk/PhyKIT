@@ -37,8 +37,14 @@ class TestDVMC(object):
 
     @patch("builtins.print")
     def test_dvmc_incorrect_tree_file(self, mocked_print):
-        with pytest.raises(SystemExit) as pytest_wrapped_e:
-            Phykit()
+        testargs = [
+            "phykit",
+            "dvmc",
+            f"{here.parent.parent.parent}/sample_files/does_not_exist.tre",
+        ]
+        with patch.object(sys, "argv", testargs):
+            with pytest.raises(SystemExit) as pytest_wrapped_e:
+                Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2

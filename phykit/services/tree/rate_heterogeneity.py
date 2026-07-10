@@ -1,31 +1,110 @@
-import pickle
-import sys
-from typing import Dict, List, Tuple
+from __future__ import annotations
 
-import numpy as np
-from scipy.optimize import minimize
-from scipy.stats import chi2
+import math
+import sys
+from collections import Counter
 
 from .base import Tree
-from ...helpers.json_output import print_json
-from ...helpers.plot_config import PlotConfig, compute_node_x_cladogram
-from ...helpers.circular_layout import (
-    compute_circular_coords,
-    draw_circular_branches,
-    draw_circular_tip_labels,
-    draw_circular_colored_branch,
-    draw_circular_colored_arc,
-    circular_branch_points,
-    radial_offset,
-)
-from ...helpers.color_annotations import (
-    parse_color_file,
-    resolve_mrca,
-    draw_range_rect,
-    draw_range_wedge,
-    build_color_legend_handles,
-)
 from ...errors import PhykitUserError
+
+
+class _LazyNumpy:
+    _module = None
+
+    def __getattr__(self, name):
+        module = self._module
+        if module is None:
+            import numpy as _np
+
+            module = _np
+            self._module = module
+
+        value = getattr(module, name)
+        setattr(self, name, value)
+        return value
+
+
+np = _LazyNumpy()
+_CHO_FACTOR = None
+_CHO_SOLVE = None
+_MINIMIZE = None
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
+
+
+def _same_ordered_keys(left, right) -> bool:
+    if len(left) != len(right):
+        return False
+    for left_key, right_key in zip(left, right):
+        if left_key != right_key:
+            return False
+    return True
+
+
+def cho_factor(*args, **kwargs):
+    global _CHO_FACTOR
+
+    if _CHO_FACTOR is None:
+        from scipy.linalg import cho_factor as _cho_factor
+
+        _CHO_FACTOR = _cho_factor
+
+    return _CHO_FACTOR(*args, **kwargs)
+
+
+def cho_solve(*args, **kwargs):
+    global _CHO_SOLVE
+
+    if _CHO_SOLVE is None:
+        from scipy.linalg import cho_solve as _cho_solve
+
+        _CHO_SOLVE = _cho_solve
+
+    return _CHO_SOLVE(*args, **kwargs)
+
+
+def minimize(*args, **kwargs):
+    global _MINIMIZE
+
+    if _MINIMIZE is None:
+        from scipy.optimize import minimize as _minimize
+
+        _MINIMIZE = _minimize
+
+    return _MINIMIZE(*args, **kwargs)
+
+
+def _chi2_sf(lrt_stat: float, df: int) -> float:
+    if df == 1:
+        return math.erfc(math.sqrt(lrt_stat / 2.0))
+    if df == 2:
+        return math.exp(-lrt_stat / 2.0)
+
+    from scipy.stats import chi2
+    return float(chi2.sf(lrt_stat, df=df))
+
+
+def _merge_nonempty_child_state_sets(state_sets, children):
+    intersection = None
+    union = None
+    for child in children:
+        child_set = state_sets.get(id(child))
+        if not child_set:
+            continue
+        if intersection is None:
+            intersection = child_set
+            union = child_set
+        else:
+            intersection = intersection & child_set
+            union = union | child_set
+
+    if intersection is None:
+        return set()
+    return intersection if intersection else union
 
 
 class RateHeterogeneity(Tree):
@@ -41,7 +120,7 @@ class RateHeterogeneity(Tree):
         self.plot_config = parsed["plot_config"]
 
     def run(self) -> None:
-        tree = self.read_tree_file()
+        tree = self.read_tree_file_unmodified()
         self.validate_tree(tree, min_tips=3, require_branch_lengths=True, context="rate heterogeneity test")
 
         tree_tips = self.get_tip_names_from_tree(tree)
@@ -50,32 +129,29 @@ class RateHeterogeneity(Tree):
             self.regime_data_path, tree_tips
         )
 
-        # Use intersection of all three sets
-        shared = set(trait_values.keys()) & set(regime_assignments.keys())
-        if len(shared) < 3:
-            raise PhykitUserError(
-                [
-                    f"Only {len(shared)} shared taxa among tree, trait, and regime files.",
-                    "At least 3 shared taxa are required.",
-                ],
-                code=2,
+        (
+            trait_values,
+            regime_assignments,
+            tips_to_prune,
+            ordered_names,
+            regimes,
+        ) = self._prepare_shared_trait_regime_data(
+            tree_tips,
+            trait_values,
+            regime_assignments,
+        )
+        needs_working_copy = bool(tips_to_prune) or bool(
+            self.plot_output and self.plot_config.ladderize
+        )
+        tree_for_analysis = self._fast_copy(tree) if needs_working_copy else tree
+        if tips_to_prune:
+            tree_for_analysis = self.prune_tree_using_taxa_list(
+                tree_for_analysis, tips_to_prune
             )
 
-        trait_values = {k: trait_values[k] for k in shared}
-        regime_assignments = {k: regime_assignments[k] for k in shared}
-
-        # Prune tree to shared taxa
-        tree_copy = pickle.loads(pickle.dumps(tree, protocol=pickle.HIGHEST_PROTOCOL))
-        tip_names_in_tree = [t.name for t in tree_copy.get_terminals()]
-        tips_to_prune = [t for t in tip_names_in_tree if t not in shared]
-        if tips_to_prune:
-            tree_copy = self.prune_tree_using_taxa_list(tree_copy, tips_to_prune)
-
-        ordered_names = sorted(trait_values.keys())
         n = len(ordered_names)
         y = np.array([trait_values[name] for name in ordered_names])
 
-        regimes = sorted(set(regime_assignments.values()))
         k = len(regimes)
 
         if k < 2:
@@ -84,19 +160,24 @@ class RateHeterogeneity(Tree):
                 code=2,
             )
 
+        preorder_clades = list(self._iter_preorder(tree_for_analysis.root))
+        postorder_clades = list(reversed(preorder_clades))
+
         # Assign regimes to branches via Fitch parsimony
-        parent_map = self._build_parent_map(tree_copy)
+        parent_map = self._build_parent_map(tree_for_analysis, preorder_clades)
         branch_regimes = self._assign_branch_regimes(
-            tree_copy, regime_assignments, parent_map
+            tree_for_analysis, regime_assignments, parent_map,
+            preorder_clades, postorder_clades,
         )
 
         # Build per-regime VCV matrices
         per_regime_vcv = self._build_per_regime_vcv(
-            tree_copy, ordered_names, regimes, branch_regimes, parent_map
+            tree_for_analysis, ordered_names, regimes, branch_regimes, parent_map,
+            preorder_clades,
         )
 
         # Build total VCV
-        C_total = sum(per_regime_vcv.values())
+        C_total = self._sum_vcv_matrices(per_regime_vcv)
 
         # Fit single-rate model
         sigma2_single, anc_single, ll_single = self._fit_single_rate(y, C_total)
@@ -112,7 +193,7 @@ class RateHeterogeneity(Tree):
         lrt_stat = 2.0 * (ll_multi - ll_single)
         lrt_stat = max(lrt_stat, 0.0)
         df = k - 1
-        chi2_p = float(chi2.sf(lrt_stat, df=df))
+        chi2_p = _chi2_sf(lrt_stat, df=df)
 
         # Parametric bootstrap
         sim_p = None
@@ -125,21 +206,17 @@ class RateHeterogeneity(Tree):
         # Plot
         if self.plot_output:
             if self.plot_config.ladderize:
-                tree_copy.ladderize()
-                parent_map = self._build_parent_map(tree_copy)
+                tree_for_analysis.ladderize()
+                parent_map = self._build_parent_map(tree_for_analysis)
             self._plot_regime_tree(
-                tree_copy, branch_regimes, regimes, parent_map, self.plot_output
+                tree_for_analysis, branch_regimes, regimes, parent_map, self.plot_output
             )
 
         # Build sigma2_multi dict
         sigma2_multi_dict = {regimes[i]: float(sigma2_multi[i]) for i in range(k)}
 
         # Compute R²_regime: 1 - (σ²_multi_weighted / σ²_single)
-        regime_tip_counts = {}
-        for r_name in regimes:
-            regime_tip_counts[r_name] = sum(
-                1 for t in regime_assignments.values() if t == r_name
-            )
+        regime_tip_counts = self._count_regime_tips(regime_assignments, regimes)
         sig2_weighted = sum(
             (regime_tip_counts[r_name] / n) * sigma2_multi_dict[r_name]
             for r_name in regimes
@@ -191,7 +268,9 @@ class RateHeterogeneity(Tree):
                 r2_regime=r2_regime,
             )
 
-    def process_args(self, args) -> Dict:
+    def process_args(self, args) -> dict:
+        from ...helpers.plot_config import PlotConfig
+
         return dict(
             tree_file_path=args.tree,
             trait_data_path=args.trait_data,
@@ -203,12 +282,128 @@ class RateHeterogeneity(Tree):
             plot_config=PlotConfig.from_args(args),
         )
 
-    def _parse_trait_file(
-        self, path: str, tree_tips: List[str]
-    ) -> Dict[str, float]:
+    @staticmethod
+    def _prepare_shared_trait_regime_data(
+        tree_tips,
+        trait_values,
+        regime_assignments,
+    ):
+        if _same_ordered_keys(trait_values, regime_assignments):
+            if len(trait_values) < 3:
+                raise PhykitUserError(
+                    [
+                        "Only "
+                        f"{len(trait_values)} shared taxa among tree, trait, and regime files.",
+                        "At least 3 shared taxa are required.",
+                    ],
+                    code=2,
+                )
+            tips_to_prune = Tree._tips_to_prune_for_ordered_mapping(
+                tree_tips, trait_values
+            )
+            ordered_names = sorted(trait_values)
+            regimes = sorted(set(regime_assignments.values()))
+            return (
+                trait_values,
+                regime_assignments,
+                tips_to_prune,
+                ordered_names,
+                regimes,
+            )
+
+        shared = RateHeterogeneity._shared_trait_regime_taxa(
+            trait_values,
+            regime_assignments,
+        )
+        if len(shared) < 3:
+            raise PhykitUserError(
+                [
+                    f"Only {len(shared)} shared taxa among tree, trait, and regime files.",
+                    "At least 3 shared taxa are required.",
+                ],
+                code=2,
+            )
+
+        if len(shared) == len(trait_values) == len(regime_assignments):
+            shared_trait_values = trait_values
+            shared_regime_assignments = regime_assignments
+        else:
+            shared_trait_values = {name: trait_values[name] for name in shared}
+            shared_regime_assignments = {
+                name: regime_assignments[name]
+                for name in shared
+            }
+
+        tips_to_prune = [name for name in tree_tips if name not in shared]
+        ordered_names = sorted(shared)
+        regimes = sorted(set(shared_regime_assignments.values()))
+        return (
+            shared_trait_values,
+            shared_regime_assignments,
+            tips_to_prune,
+            ordered_names,
+            regimes,
+        )
+
+    @staticmethod
+    def _shared_trait_regime_taxa(
+        trait_values: dict[str, float],
+        regime_assignments: dict[str, str],
+    ) -> set[str]:
+        if len(regime_assignments) < len(trait_values):
+            return {name for name in regime_assignments if name in trait_values}
+        return {name for name in trait_values if name in regime_assignments}
+
+    @staticmethod
+    def _count_regime_tips(
+        regime_assignments: dict[str, str],
+        regimes: list[str],
+    ) -> dict[str, int]:
+        counts = Counter(regime_assignments.values())
+        return {regime: counts[regime] for regime in regimes}
+
+    @staticmethod
+    def _sum_vcv_matrices(per_regime_vcv):
+        matrices = iter(per_regime_vcv.values())
         try:
+            total = next(matrices).copy()
+        except StopIteration:
+            return 0
+
+        for matrix in matrices:
+            total += matrix
+        return total
+
+    def _parse_trait_file(
+        self, path: str, tree_tips: list[str]
+    ) -> dict[str, float]:
+        try:
+            traits = {}
             with open(path) as f:
-                lines = f.readlines()
+                for line_num, line in enumerate(f, 1):
+                    line = line.strip()
+                    if not line or line[0] == "#":
+                        continue
+                    parts = line.split("\t", 2)
+                    if len(parts) != 2:
+                        column_count = line.count("\t") + 1
+                        raise PhykitUserError(
+                            [
+                                f"Line {line_num} in trait file has {column_count} columns; expected 2.",
+                                "Each line should be: taxon_name<tab>trait_value",
+                            ],
+                                code=2,
+                            )
+                    taxon, value_str = parts
+                    try:
+                        traits[taxon] = float(value_str)
+                    except ValueError:
+                        raise PhykitUserError(
+                            [
+                                f"Non-numeric trait value '{value_str}' for taxon '{taxon}' on line {line_num}.",
+                            ],
+                            code=2,
+                        )
         except FileNotFoundError:
             raise PhykitUserError(
                 [
@@ -218,33 +413,24 @@ class RateHeterogeneity(Tree):
                 code=2,
             )
 
-        traits = {}
-        for line_num, line in enumerate(lines, 1):
-            line = line.strip()
-            if not line or line.startswith("#"):
-                continue
-            parts = line.split("\t")
-            if len(parts) != 2:
-                raise PhykitUserError(
-                    [
-                        f"Line {line_num} in trait file has {len(parts)} columns; expected 2.",
-                        "Each line should be: taxon_name<tab>trait_value",
-                    ],
-                    code=2,
-                )
-            taxon, value_str = parts
-            try:
-                traits[taxon] = float(value_str)
-            except ValueError:
-                raise PhykitUserError(
-                    [
-                        f"Non-numeric trait value '{value_str}' for taxon '{taxon}' on line {line_num}.",
-                    ],
-                    code=2,
-                )
+        if (
+            len(tree_tips) >= 3
+            and len(tree_tips) == len(traits)
+            and next(iter(traits)) == tree_tips[0]
+            and next(reversed(traits)) == tree_tips[-1]
+            and list(traits) == tree_tips
+        ):
+            return traits
 
         tree_tip_set = set(tree_tips)
-        trait_taxa_set = set(traits.keys())
+        if (
+            len(tree_tip_set) >= 3
+            and len(tree_tip_set) == len(traits)
+            and tree_tip_set == traits.keys()
+        ):
+            return traits
+
+        trait_taxa_set = set(traits)
         shared = tree_tip_set & trait_taxa_set
 
         tree_only = tree_tip_set - trait_taxa_set
@@ -275,11 +461,29 @@ class RateHeterogeneity(Tree):
         return {taxon: traits[taxon] for taxon in shared}
 
     def _parse_regime_file(
-        self, path: str, tree_tips: List[str]
-    ) -> Dict[str, str]:
+        self, path: str, tree_tips: list[str]
+    ) -> dict[str, str]:
         try:
-            with open(path) as f:
-                lines = f.readlines()
+            regimes = {}
+            with open(path, "rb") as f:
+                for line_num, line in enumerate(f, 1):
+                    line = line.strip()
+                    if not line or line[0] == 35:
+                        continue
+                    parts = line.split(b"\t", 2)
+                    if len(parts) != 2:
+                        column_count = line.count(b"\t") + 1
+                        raise PhykitUserError(
+                            [
+                                f"Line {line_num} in regime file has {column_count} columns; expected 2.",
+                                "Each line should be: taxon_name<tab>regime_label",
+                            ],
+                            code=2,
+                        )
+                    taxon, regime = parts
+                    taxon = taxon.decode()
+                    regime = regime.decode()
+                    regimes[taxon] = regime
         except FileNotFoundError:
             raise PhykitUserError(
                 [
@@ -289,25 +493,24 @@ class RateHeterogeneity(Tree):
                 code=2,
             )
 
-        regimes = {}
-        for line_num, line in enumerate(lines, 1):
-            line = line.strip()
-            if not line or line.startswith("#"):
-                continue
-            parts = line.split("\t")
-            if len(parts) != 2:
-                raise PhykitUserError(
-                    [
-                        f"Line {line_num} in regime file has {len(parts)} columns; expected 2.",
-                        "Each line should be: taxon_name<tab>regime_label",
-                    ],
-                    code=2,
-                )
-            taxon, regime = parts
-            regimes[taxon] = regime
+        if (
+            len(tree_tips) >= 3
+            and len(tree_tips) == len(regimes)
+            and next(iter(regimes)) == tree_tips[0]
+            and next(reversed(regimes)) == tree_tips[-1]
+            and list(regimes) == tree_tips
+        ):
+            return dict(regimes)
 
         tree_tip_set = set(tree_tips)
-        regime_taxa_set = set(regimes.keys())
+        if (
+            len(tree_tip_set) >= 3
+            and len(tree_tip_set) == len(regimes)
+            and tree_tip_set == regimes.keys()
+        ):
+            return dict(regimes)
+
+        regime_taxa_set = set(regimes)
         shared = tree_tip_set & regime_taxa_set
 
         tree_only = tree_tip_set - regime_taxa_set
@@ -337,57 +540,111 @@ class RateHeterogeneity(Tree):
 
         return {taxon: regimes[taxon] for taxon in shared}
 
-    def _build_parent_map(self, tree) -> Dict:
+    @staticmethod
+    def _iter_preorder(root):
+        stack = [root]
+        pop = stack.pop
+        append = stack.append
+        while stack:
+            clade = pop()
+            yield clade
+            children = clade.clades
+            if children:
+                append(children[-1])
+                if len(children) == 2:
+                    append(children[0])
+                else:
+                    for idx in range(len(children) - 2, -1, -1):
+                        append(children[idx])
+
+    @staticmethod
+    def _iter_postorder(root):
+        clades = []
+        stack = [root]
+        pop = stack.pop
+        append_clade = clades.append
+        extend = stack.extend
+        while stack:
+            clade = pop()
+            append_clade(clade)
+            children = clade.clades
+            if children:
+                extend(children)
+        yield from reversed(clades)
+
+    def _build_parent_map(self, tree, preorder_clades=None) -> dict:
         parent_map = {}
-        for clade in tree.find_clades(order="preorder"):
-            for child in clade.clades:
+        if preorder_clades is not None:
+            for clade in preorder_clades:
+                for child in clade.clades:
+                    parent_map[id(child)] = clade
+            return parent_map
+
+        stack = [tree.root]
+        pop = stack.pop
+        extend = stack.extend
+        while stack:
+            clade = pop()
+            children = clade.clades
+            for child in children:
                 parent_map[id(child)] = clade
+            if children:
+                extend(children)
         return parent_map
 
     def _assign_branch_regimes(
-        self, tree, tip_regimes: Dict[str, str], parent_map: Dict
-    ) -> Dict:
+        self, tree, tip_regimes: dict[str, str], parent_map: dict,
+        preorder_clades=None, postorder_clades=None,
+    ) -> dict:
         """Assign regime labels to all branches using Fitch parsimony.
 
         Returns dict mapping id(clade) -> regime_label for every non-root clade.
         """
+        if preorder_clades is None:
+            preorder_clades = list(self._iter_preorder(tree.root))
+        if postorder_clades is None:
+            postorder_clades = reversed(preorder_clades)
+
         # Postorder pass: build state sets
         state_sets = {}
-        for clade in tree.find_clades(order="postorder"):
+        for clade in postorder_clades:
             if clade.is_terminal():
                 if clade.name in tip_regimes:
                     state_sets[id(clade)] = {tip_regimes[clade.name]}
                 else:
                     state_sets[id(clade)] = set()
             else:
-                child_sets = [
-                    state_sets[id(c)] for c in clade.clades
-                    if id(c) in state_sets and state_sets[id(c)]
-                ]
-                if not child_sets:
-                    state_sets[id(clade)] = set()
-                else:
-                    intersection = child_sets[0]
-                    for cs in child_sets[1:]:
-                        intersection = intersection & cs
-                    if intersection:
-                        state_sets[id(clade)] = intersection
+                children = clade.clades
+                if len(children) == 2:
+                    left = state_sets.get(id(children[0]))
+                    right = state_sets.get(id(children[1]))
+                    if left and right:
+                        intersection = left & right
+                        state_sets[id(clade)] = (
+                            intersection if intersection else left | right
+                        )
+                    elif left:
+                        state_sets[id(clade)] = left
+                    elif right:
+                        state_sets[id(clade)] = right
                     else:
-                        union = set()
-                        for cs in child_sets:
-                            union = union | cs
-                        state_sets[id(clade)] = union
+                        state_sets[id(clade)] = set()
+                else:
+                    state_sets[id(clade)] = _merge_nonempty_child_state_sets(
+                        state_sets,
+                        children,
+                    )
 
         # Preorder pass: resolve ambiguities
         node_regimes = {}
         root = tree.root
         root_set = state_sets.get(id(root), set())
         if root_set:
-            node_regimes[id(root)] = sorted(root_set)[0]
+            node_regimes[id(root)] = min(root_set)
         else:
             node_regimes[id(root)] = sorted(set(tip_regimes.values()))[0]
 
-        for clade in tree.find_clades(order="preorder"):
+        for clade in preorder_clades:
             if clade == root:
                 continue
             clade_set = state_sets.get(id(clade), set())
@@ -404,13 +661,13 @@ class RateHeterogeneity(Tree):
                 if parent_regime in clade_set:
                     node_regimes[id(clade)] = parent_regime
                 else:
-                    node_regimes[id(clade)] = sorted(clade_set)[0]
+                    node_regimes[id(clade)] = min(clade_set)
             else:
-                node_regimes[id(clade)] = sorted(clade_set)[0]
+                node_regimes[id(clade)] = min(clade_set)
 
         # Branch regime = regime of the child node
         branch_regimes = {}
-        for clade in tree.find_clades(order="preorder"):
+        for clade in preorder_clades:
             if clade == root:
                 continue
             branch_regimes[id(clade)] = node_regimes.get(id(clade), "unknown")
@@ -418,18 +675,22 @@ class RateHeterogeneity(Tree):
         return branch_regimes
 
     def _build_root_to_tip_paths(
-        self, tree, ordered_names: List[str], parent_map: Dict
-    ) -> Dict[str, List]:
+        self, tree, ordered_names: list[str], parent_map: dict,
+        preorder_clades=None,
+    ) -> dict[str, list]:
         """Build root-to-tip paths for each tip.
 
         Returns dict mapping tip_name -> list of (clade_id, branch_length)
         tuples from root to tip.
         """
         # Map tip names to clade objects
+        ordered_set = set(ordered_names)
         tip_map = {}
-        for tip in tree.get_terminals():
-            if tip.name in ordered_names:
-                tip_map[tip.name] = tip
+        if preorder_clades is None:
+            preorder_clades = self._iter_preorder(tree.root)
+        for clade in preorder_clades:
+            if not clade.clades and clade.name in ordered_set:
+                tip_map[clade.name] = clade
 
         paths = {}
         for name in ordered_names:
@@ -446,48 +707,80 @@ class RateHeterogeneity(Tree):
         return paths
 
     def _build_per_regime_vcv(
-        self, tree, ordered_names: List[str], regimes: List[str],
-        branch_regimes: Dict, parent_map: Dict,
-    ) -> Dict[str, np.ndarray]:
+        self, tree, ordered_names: list[str], regimes: list[str],
+        branch_regimes: dict, parent_map: dict, preorder_clades=None,
+    ) -> dict[str, np.ndarray]:
         """Build separate VCV matrix for each regime.
 
         C_r[i,j] = portion of shared path in regime r between tips i and j.
         """
         n = len(ordered_names)
-        paths = self._build_root_to_tip_paths(tree, ordered_names, parent_map)
+        paths = self._build_root_to_tip_paths(
+            tree, ordered_names, parent_map, preorder_clades
+        )
 
         per_regime_vcv = {r: np.zeros((n, n)) for r in regimes}
 
-        for i in range(n):
-            path_i = paths[ordered_names[i]]
-            # Diagonal: sum branch lengths where regime == r
-            for clade_id, bl in path_i:
-                r = branch_regimes.get(clade_id, regimes[0])
-                per_regime_vcv[r][i, i] += bl
+        clade_indices = {}
+        clade_lengths = {}
+        for idx, name in enumerate(ordered_names):
+            for clade_id, bl in paths[name]:
+                clade_indices.setdefault(clade_id, []).append(idx)
+                clade_lengths.setdefault(clade_id, bl)
 
-            for j in range(i + 1, n):
-                path_j = paths[ordered_names[j]]
-                # Find shared prefix (matching clade_ids from root)
-                min_len = min(len(path_i), len(path_j))
-                for s in range(min_len):
-                    if path_i[s][0] == path_j[s][0]:
-                        clade_id = path_i[s][0]
-                        bl = path_i[s][1]
-                        r = branch_regimes.get(clade_id, regimes[0])
-                        per_regime_vcv[r][i, j] += bl
-                        per_regime_vcv[r][j, i] += bl
-                    else:
-                        break
+        for clade_id, indices in clade_indices.items():
+            r = branch_regimes.get(clade_id, regimes[0])
+            branch_length = clade_lengths[clade_id]
+            if len(indices) == 1:
+                per_regime_vcv[r][indices[0], indices[0]] += branch_length
+                continue
+            idx = np.asarray(indices, dtype=np.intp)
+            per_regime_vcv[r][np.ix_(idx, idx)] += branch_length
 
         return per_regime_vcv
 
     def _fit_single_rate(
         self, y: np.ndarray, C_total: np.ndarray
-    ) -> Tuple[float, float, float]:
+    ) -> tuple[float, float, float]:
         """Fit single-rate BM model.
 
         Returns (sigma2, ancestral_state, log_likelihood).
         """
+        try:
+            return self._fit_single_rate_cholesky(y, C_total)
+        except (np.linalg.LinAlgError, FloatingPointError, ValueError):
+            return self._fit_single_rate_inverse(y, C_total)
+
+    def _fit_single_rate_cholesky(
+        self, y: np.ndarray, C_total: np.ndarray
+    ) -> tuple[float, float, float]:
+        """Cholesky-backed single-rate BM fit for positive-definite VCVs."""
+        n = len(y)
+        factor = cho_factor(C_total, lower=True, check_finite=False)
+        ones = np.ones(n)
+        solve_rhs = np.empty((n, 2), dtype=np.result_type(y, C_total))
+        solve_rhs[:, 0] = 1.0
+        solve_rhs[:, 1] = y
+        solved = cho_solve(factor, solve_rhs, check_finite=False)
+        C_inv_ones = solved[:, 0]
+        C_inv_y = solved[:, 1]
+
+        a_hat = float(ones @ C_inv_y) / float(ones @ C_inv_ones)
+        e = y - a_hat
+        C_inv_e = C_inv_y - C_inv_ones * a_hat
+        sigma2 = float(e @ C_inv_e) / n
+
+        logdet = 2.0 * float(np.log(np.diagonal(factor[0])).sum())
+        if sigma2 <= 0:
+            return sigma2, a_hat, float("-inf")
+
+        ll = -0.5 * (n * np.log(2 * np.pi) + n * np.log(sigma2) + logdet + n)
+        return float(sigma2), float(a_hat), float(ll)
+
+    def _fit_single_rate_inverse(
+        self, y: np.ndarray, C_total: np.ndarray
+    ) -> tuple[float, float, float]:
+        """Inverse-based single-rate BM fit retained as a fallback."""
         n = len(y)
         try:
             C_inv = np.linalg.inv(C_total)
@@ -513,9 +806,9 @@ class RateHeterogeneity(Tree):
         return float(sigma2), float(a_hat), float(ll)
 
     def _fit_multi_rate(
-        self, y: np.ndarray, per_regime_vcv: Dict[str, np.ndarray],
-        regimes: List[str],
-    ) -> Tuple[np.ndarray, float, float]:
+        self, y: np.ndarray, per_regime_vcv: dict[str, np.ndarray],
+        regimes: list[str],
+    ) -> tuple[np.ndarray, float, float]:
         """Fit multi-rate BM model by optimizing per-regime sigma2 values.
 
         Returns (sigma2_array, ancestral_state, log_likelihood).
@@ -530,24 +823,12 @@ class RateHeterogeneity(Tree):
             for i_r in range(k):
                 V += sigma2s[i_r] * regime_matrices[i_r]
 
-            try:
-                sign, logdet = np.linalg.slogdet(V)
-                if sign <= 0:
-                    return 1e20
-                V_inv = np.linalg.inv(V)
-            except np.linalg.LinAlgError:
+            _, ll = self._multi_rate_log_likelihood(y, V, ones)
+            if not np.isfinite(ll):
                 return 1e20
-
-            ones = np.ones(n)
-            denom = float(ones @ V_inv @ ones)
-            if denom == 0:
-                return 1e20
-            a_hat = float(ones @ V_inv @ y) / denom
-            e = y - a_hat
-            quad = float(e @ V_inv @ e)
-
-            ll = -0.5 * (n * np.log(2 * np.pi) + logdet + quad)
             return -ll
+
+        ones = np.ones(n)
 
         # Multi-start optimization
         starting_scales = [0.001, 0.01, 0.1, 1.0, 10.0]
@@ -586,25 +867,72 @@ class RateHeterogeneity(Tree):
         for i_r in range(k):
             V += sigma2s[i_r] * regime_matrices[i_r]
 
-        try:
-            V_inv = np.linalg.inv(V)
-        except np.linalg.LinAlgError:
+        a_hat, ll = self._multi_rate_log_likelihood(y, V, ones)
+        if not np.isfinite(ll):
             return sigma2s, 0.0, float("-inf")
-
-        ones = np.ones(n)
-        a_hat = float(ones @ V_inv @ y) / float(ones @ V_inv @ ones)
-        e = y - a_hat
-        sign, logdet = np.linalg.slogdet(V)
-        quad = float(e @ V_inv @ e)
-        ll = -0.5 * (n * np.log(2 * np.pi) + logdet + quad)
 
         return sigma2s, float(a_hat), float(ll)
 
+    def _multi_rate_log_likelihood(
+        self, y: np.ndarray, V: np.ndarray, ones: np.ndarray
+    ) -> tuple[float, float]:
+        """GLS ancestral state and log-likelihood for a multi-rate covariance."""
+        try:
+            return self._multi_rate_log_likelihood_cholesky(y, V, ones)
+        except (np.linalg.LinAlgError, FloatingPointError, ValueError):
+            return self._multi_rate_log_likelihood_inverse(y, V, ones)
+
+    def _multi_rate_log_likelihood_cholesky(
+        self, y: np.ndarray, V: np.ndarray, ones: np.ndarray
+    ) -> tuple[float, float]:
+        n = len(y)
+        factor = cho_factor(V, lower=True, check_finite=False)
+        solve_rhs = np.empty((n, 2), dtype=np.result_type(y, V))
+        solve_rhs[:, 0] = ones
+        solve_rhs[:, 1] = y
+        solved = cho_solve(factor, solve_rhs, check_finite=False)
+        V_inv_ones = solved[:, 0]
+        V_inv_y = solved[:, 1]
+
+        denom = float(ones @ V_inv_ones)
+        if denom == 0:
+            return 0.0, float("-inf")
+
+        a_hat = float(ones @ V_inv_y) / denom
+        e = y - a_hat
+        V_inv_e = V_inv_y - V_inv_ones * a_hat
+        quad = float(e @ V_inv_e)
+        logdet = 2.0 * float(np.log(np.diagonal(factor[0])).sum())
+        ll = -0.5 * (n * np.log(2 * np.pi) + logdet + quad)
+        return a_hat, ll
+
+    def _multi_rate_log_likelihood_inverse(
+        self, y: np.ndarray, V: np.ndarray, ones: np.ndarray
+    ) -> tuple[float, float]:
+        n = len(y)
+        try:
+            V_inv = np.linalg.inv(V)
+        except np.linalg.LinAlgError:
+            return 0.0, float("-inf")
+
+        denom = float(ones @ V_inv @ ones)
+        if denom == 0:
+            return 0.0, float("-inf")
+
+        a_hat = float(ones @ V_inv @ y) / denom
+        e = y - a_hat
+        sign, logdet = np.linalg.slogdet(V)
+        if sign <= 0:
+            return 0.0, float("-inf")
+        quad = float(e @ V_inv @ e)
+        ll = -0.5 * (n * np.log(2 * np.pi) + logdet + quad)
+        return a_hat, ll
+
     def _parametric_bootstrap(
         self, y: np.ndarray, C_total: np.ndarray,
-        per_regime_vcv: Dict[str, np.ndarray], regimes: List[str],
+        per_regime_vcv: dict[str, np.ndarray], regimes: list[str],
         observed_lrt: float, n_sim: int, seed=None,
-    ) -> Tuple[float, int]:
+    ) -> tuple[float, int]:
         """Parametric bootstrap p-value for the LRT.
 
         Simulate data under the single-rate null, refit both models,
@@ -645,13 +973,16 @@ class RateHeterogeneity(Tree):
         return float(p_value), n_sim
 
     def _plot_regime_tree(
-        self, tree, branch_regimes: Dict, regimes: List[str],
-        parent_map: Dict, output_path: str,
+        self, tree, branch_regimes: dict, regimes: list[str],
+        parent_map: dict, output_path: str,
     ) -> None:
+        from ...helpers.plot_config import compute_node_positions
+
         try:
             import matplotlib
             matplotlib.use("Agg")
             import matplotlib.pyplot as plt
+            from matplotlib.collections import LineCollection
             from matplotlib.lines import Line2D
         except ImportError:
             print(
@@ -666,34 +997,15 @@ class RateHeterogeneity(Tree):
             regimes[i]: cmap(i / max(k - 1, 1)) for i in range(k)
         }
 
-        node_x = {}
-        node_y = {}
-        tips = list(tree.get_terminals())
-
-        for i, tip in enumerate(tips):
-            node_y[id(tip)] = i
-
         root = tree.root
-        if self.plot_config.cladogram:
-            node_x = compute_node_x_cladogram(tree, parent_map)
-        else:
-            for clade in tree.find_clades(order="preorder"):
-                if clade == root:
-                    node_x[id(clade)] = 0.0
-                elif id(clade) in parent_map:
-                    parent = parent_map[id(clade)]
-                    t = clade.branch_length if clade.branch_length else 0.0
-                    node_x[id(clade)] = node_x[id(parent)] + t
-
-        for clade in tree.find_clades(order="postorder"):
-            if not clade.is_terminal() and id(clade) not in node_y:
-                child_ys = [
-                    node_y[id(c)] for c in clade.clades if id(c) in node_y
-                ]
-                if child_ys:
-                    node_y[id(clade)] = np.mean(child_ys)
-                else:
-                    node_y[id(clade)] = 0.0
+        preorder_clades = list(self._iter_preorder(root))
+        tips = [clade for clade in preorder_clades if not clade.clades]
+        node_x, node_y = compute_node_positions(
+            tree,
+            parent_map,
+            cladogram=self.plot_config.cladogram,
+            preorder_clades=preorder_clades,
+        )
 
         config = self.plot_config
         config.resolve(n_rows=len(tips), n_cols=None)
@@ -702,12 +1014,25 @@ class RateHeterogeneity(Tree):
         if self.plot_config.circular:
             # --- Circular mode ---
             import math
-            coords = compute_circular_coords(tree, node_x, parent_map)
+            from ...helpers.circular_layout import (
+                compute_circular_coords,
+                draw_circular_tip_labels,
+            )
+
+            coords = compute_circular_coords(
+                tree,
+                node_x,
+                parent_map,
+                preorder_clades=preorder_clades,
+                terminal_clades=tips,
+            )
             ax.set_aspect("equal")
             ax.axis("off")
 
             # Draw each branch individually with its regime color
-            for clade in tree.find_clades(order="preorder"):
+            radial_segments = []
+            radial_colors = []
+            for clade in preorder_clades:
                 if clade == root:
                     continue
                 cid = id(clade)
@@ -720,12 +1045,34 @@ class RateHeterogeneity(Tree):
                 regime = branch_regimes.get(cid, regimes[0])
                 color = regime_colors[regime]
 
-                # Draw radial segment
-                draw_circular_colored_branch(ax, coords[id(parent)], coords[cid], color, lw=2.5)
+                angle = coords[cid]["angle"]
+                r_p = coords[id(parent)]["radius"]
+                r_c = coords[cid]["radius"]
+                x0 = r_p * math.cos(angle)
+                y0 = r_p * math.sin(angle)
+                x1 = r_c * math.cos(angle)
+                y1 = r_c * math.sin(angle)
+                radial_segments.append(((x0, y0), (x1, y1)))
+                radial_colors.append(color)
+
+            if radial_segments:
+                ax.add_collection(
+                    LineCollection(
+                        radial_segments,
+                        colors=radial_colors,
+                        linewidths=2.5,
+                        capstyle="round",
+                        zorder=2,
+                    ),
+                    autolim=True,
+                )
 
             # Draw arcs at internal nodes colored by regime
-            for clade in tree.find_clades(order="preorder"):
-                if clade.is_terminal() or not clade.clades:
+            arc_segments = []
+            arc_colors = []
+            arc_fractions = [idx / 60 for idx in range(61)]
+            for clade in preorder_clades:
+                if not clade.clades:
                     continue
                 cid = id(clade)
                 pc = coords[cid]
@@ -741,7 +1088,35 @@ class RateHeterogeneity(Tree):
                 arc_color = "gray"
                 if cid in branch_regimes:
                     arc_color = regime_colors.get(branch_regimes[cid], "gray")
-                draw_circular_colored_arc(ax, 0.0, 0.0, pc["radius"], start_a, end_a, arc_color, lw=1.5)
+
+                start = start_a % (2.0 * math.pi)
+                end = end_a % (2.0 * math.pi)
+                diff = (end - start) % (2.0 * math.pi)
+                if diff > math.pi:
+                    diff = diff - 2.0 * math.pi
+                radius = pc["radius"]
+                arc_segments.append([
+                    (
+                        radius * math.cos(start + diff * fraction),
+                        radius * math.sin(start + diff * fraction),
+                    )
+                    for fraction in arc_fractions
+                ])
+                arc_colors.append(arc_color)
+
+            if arc_segments:
+                ax.add_collection(
+                    LineCollection(
+                        arc_segments,
+                        colors=arc_colors,
+                        linewidths=1.5,
+                        capstyle="round",
+                        zorder=1,
+                    ),
+                    autolim=True,
+                )
+            if radial_segments or arc_segments:
+                ax.autoscale_view()
 
             # Tip labels
             max_x = max(node_x.values()) if node_x else 1.0
@@ -751,16 +1126,20 @@ class RateHeterogeneity(Tree):
 
             # Apply color annotations (range + label only; branches are trait-colored)
             if self.plot_config.color_file:
+                from ...helpers.color_annotations import (
+                    build_color_legend_handles,
+                    apply_label_colors,
+                    draw_range_wedge,
+                    parse_color_file,
+                    resolve_mrca,
+                )
+
                 color_data = parse_color_file(self.plot_config.color_file)
                 for taxa_list, clr, lbl in color_data["ranges"]:
                     mrca = resolve_mrca(tree, taxa_list)
                     if mrca is not None:
                         draw_range_wedge(ax, tree, mrca, clr, coords)
-                for taxon, lbl_color in color_data["labels"].items():
-                    for text_obj in ax.texts:
-                        if text_obj.get_text() == taxon:
-                            text_obj.set_color(lbl_color)
-                            break
+                apply_label_colors(ax, color_data["labels"])
 
             # Legend
             handles = [
@@ -777,39 +1156,63 @@ class RateHeterogeneity(Tree):
 
             if config.show_title:
                 ax.set_title(config.title or "Regime Tree (Rate Heterogeneity)", fontsize=config.title_fontsize)
-            fig.tight_layout()
             fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
             plt.close(fig)
             print(f"Saved regime tree plot: {output_path}")
 
         else:
             # --- Rectangular mode ---
-            for clade in tree.find_clades(order="preorder"):
+            from matplotlib.collections import LineCollection
+
+            vertical_segments = []
+            horizontal_segments = []
+            horizontal_colors = []
+            for clade in preorder_clades:
                 if clade == root:
                     continue
-                if id(clade) not in parent_map:
+                cid = id(clade)
+                if cid not in parent_map:
                     continue
 
-                parent = parent_map[id(clade)]
-                parent_x = node_x[id(parent)]
-                parent_y = node_y[id(parent)]
-                child_y = node_y[id(clade)]
-                child_x = node_x[id(clade)]
+                parent = parent_map[cid]
+                pid = id(parent)
+                if pid not in node_x or cid not in node_x:
+                    continue
 
-                regime = branch_regimes.get(id(clade), regimes[0])
+                parent_x = node_x[pid]
+                parent_y = node_y[pid]
+                child_y = node_y[cid]
+                child_x = node_x[cid]
+
+                regime = branch_regimes.get(cid, regimes[0])
                 color = regime_colors[regime]
 
-                # Vertical connector
-                ax.plot(
-                    [parent_x, parent_x], [parent_y, child_y],
-                    color="gray", linewidth=0.8, zorder=1,
-                )
+                vertical_segments.append(((parent_x, parent_y), (parent_x, child_y)))
+                horizontal_segments.append(((parent_x, child_y), (child_x, child_y)))
+                horizontal_colors.append(color)
 
-                # Horizontal branch
-                ax.plot(
-                    [parent_x, child_x], [child_y, child_y],
-                    color=color, linewidth=2.5, solid_capstyle="butt", zorder=2,
+            if vertical_segments:
+                ax.add_collection(
+                    LineCollection(
+                        vertical_segments,
+                        colors="gray",
+                        linewidths=0.8,
+                        zorder=1,
+                    ),
+                    autolim=True,
                 )
+            if horizontal_segments:
+                ax.add_collection(
+                    LineCollection(
+                        horizontal_segments,
+                        colors=horizontal_colors,
+                        linewidths=2.5,
+                        capstyle="butt",
+                        zorder=2,
+                    ),
+                    autolim=True,
+                )
+            ax.autoscale_view()
 
             max_x = max(node_x.values()) if node_x else 0
             offset = max_x * 0.02
@@ -823,16 +1226,20 @@ class RateHeterogeneity(Tree):
 
             # Apply color annotations (range + label only; branches are trait-colored)
             if self.plot_config.color_file:
+                from ...helpers.color_annotations import (
+                    build_color_legend_handles,
+                    apply_label_colors,
+                    draw_range_rect,
+                    parse_color_file,
+                    resolve_mrca,
+                )
+
                 color_data = parse_color_file(self.plot_config.color_file)
                 for taxa_list, clr, lbl in color_data["ranges"]:
                     mrca = resolve_mrca(tree, taxa_list)
                     if mrca is not None:
                         draw_range_rect(ax, tree, mrca, clr, node_x, node_y)
-                for taxon, lbl_color in color_data["labels"].items():
-                    for text_obj in ax.texts:
-                        if text_obj.get_text() == taxon:
-                            text_obj.set_color(lbl_color)
-                            break
+                apply_label_colors(ax, color_data["labels"])
 
             handles = [
                 Line2D([0], [0], color=regime_colors[r], linewidth=3, label=r)
@@ -853,7 +1260,6 @@ class RateHeterogeneity(Tree):
             ax.spines["left"].set_visible(False)
             if config.show_title:
                 ax.set_title(config.title or "Regime Tree (Rate Heterogeneity)", fontsize=config.title_fontsize)
-            fig.tight_layout()
             fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
             plt.close(fig)
             print(f"Saved regime tree plot: {output_path}")
@@ -863,40 +1269,41 @@ class RateHeterogeneity(Tree):
         aic_single, sigma2_multi_dict, anc_multi, ll_multi, aic_multi,
         lrt_stat, df, chi2_p, sim_p, n_sim_done, r2_regime,
     ) -> None:
-        print("Rate Heterogeneity Test (Multi-rate Brownian Motion)")
-
-        print(f"\nRegimes: {len(regimes)} ({', '.join(regimes)})")
-        print(f"Number of tips: {n_tips}")
-
-        print("\nSingle-rate model (H0):")
-        print(f"  Sigma-squared:      {sigma2_single:.4f}")
-        print(f"  Ancestral state:    {anc_single:.4f}")
-        print(f"  Log-likelihood:     {ll_single:.2f}")
-        print(f"  AIC:                {aic_single:.2f}")
-
-        print("\nMulti-rate model (H1):")
-        print(f"  {'Regime':<20s}{'Sigma-squared':>14s}")
-        for r in regimes:
-            print(f"  {r:<20s}{sigma2_multi_dict[r]:>14.4f}")
-        print(f"  Ancestral state:    {anc_multi:.4f}")
-        print(f"  Log-likelihood:     {ll_multi:.2f}")
-        print(f"  AIC:                {aic_multi:.2f}")
-
-        print("\nLikelihood ratio test:")
-        print(f"  LRT statistic:      {lrt_stat:.4f}")
-        print(f"  Degrees of freedom: {df}")
-        print(f"  Chi-squared p-value: {chi2_p:.4f}")
+        lines = [
+            "Rate Heterogeneity Test (Multi-rate Brownian Motion)",
+            f"\nRegimes: {len(regimes)} ({', '.join(regimes)})",
+            f"Number of tips: {n_tips}",
+            "\nSingle-rate model (H0):",
+            f"  Sigma-squared:      {sigma2_single:.4f}",
+            f"  Ancestral state:    {anc_single:.4f}",
+            f"  Log-likelihood:     {ll_single:.2f}",
+            f"  AIC:                {aic_single:.2f}",
+            "\nMulti-rate model (H1):",
+            f"  {'Regime':<20s}{'Sigma-squared':>14s}",
+        ]
+        lines.extend(f"  {r:<20s}{sigma2_multi_dict[r]:>14.4f}" for r in regimes)
+        lines.extend(
+            [
+                f"  Ancestral state:    {anc_multi:.4f}",
+                f"  Log-likelihood:     {ll_multi:.2f}",
+                f"  AIC:                {aic_multi:.2f}",
+                "\nLikelihood ratio test:",
+                f"  LRT statistic:      {lrt_stat:.4f}",
+                f"  Degrees of freedom: {df}",
+                f"  Chi-squared p-value: {chi2_p:.4f}",
+            ]
+        )
         if sim_p is not None:
-            print(f"  Simulated p-value:  {sim_p:.4f} ({n_sim_done} simulations)")
+            lines.append(f"  Simulated p-value:  {sim_p:.4f} ({n_sim_done} simulations)")
 
-        print(f"\nEffect size:")
-        print(f"  R2_regime: {r2_regime:.4f}")
+        lines.extend([f"\nEffect size:", f"  R2_regime: {r2_regime:.4f}"])
+        print("\n".join(lines))
 
     def _format_result(
         self, *, n_tips, regimes, sigma2_single, anc_single, ll_single,
         aic_single, sigma2_multi_dict, anc_multi, ll_multi, aic_multi,
         lrt_stat, df, chi2_p, sim_p, n_sim_done, r2_regime,
-    ) -> Dict:
+    ) -> dict:
         return {
             "n_tips": n_tips,
             "regimes": regimes,

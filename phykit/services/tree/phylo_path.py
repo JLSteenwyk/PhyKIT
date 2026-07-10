@@ -4,23 +4,124 @@ Phylogenetic path analysis (von Hardenberg & Gonzalez-Voyer 2013).
 Compares competing causal DAGs using d-separation tests via PGLS,
 ranks models by CICc, and estimates (model-averaged) path coefficients.
 """
+from __future__ import annotations
+
+import math
 import sys
 from collections import defaultdict
-from typing import Dict, List, Tuple
-
-import numpy as np
-from scipy.stats import chi2, t as t_dist
 
 from .base import Tree
-from ...helpers.json_output import print_json
-from ...helpers.plot_config import PlotConfig
-from ...helpers.pgls_utils import (
-    estimate_lambda,
-    pgls_log_likelihood,
-    fit_gls,
-    apply_lambda,
-)
 from ...errors import PhykitUserError
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
+
+
+def trait_matrix_from_rows(*args, **kwargs):
+    from ...helpers.trait_parsing import (
+        trait_matrix_from_rows as _trait_matrix_from_rows,
+    )
+
+    return _trait_matrix_from_rows(*args, **kwargs)
+
+
+class _LazyNumpy:
+    def __init__(self):
+        self._module = None
+
+    def __getattr__(self, name):
+        module = self._module
+        if module is None:
+            import numpy as _np
+
+            module = _np
+            self._module = module
+
+        attr = getattr(module, name)
+        setattr(self, name, attr)
+        return attr
+
+
+np = _LazyNumpy()
+
+
+_CHO_FACTOR = None
+_CHO_SOLVE = None
+_CHDTRC = None
+_STDTR = None
+
+
+def cho_factor(*args, **kwargs):
+    global _CHO_FACTOR
+    if _CHO_FACTOR is None:
+        from scipy.linalg import cho_factor as _CHO_FACTOR
+
+    return _CHO_FACTOR(*args, **kwargs)
+
+
+def cho_solve(*args, **kwargs):
+    global _CHO_SOLVE
+    if _CHO_SOLVE is None:
+        from scipy.linalg import cho_solve as _CHO_SOLVE
+
+    return _CHO_SOLVE(*args, **kwargs)
+
+
+def _chi2_sf(value: float, df: int) -> float:
+    if df > 0 and df % 2 == 0:
+        if value <= 0:
+            return 1.0
+        half_value = value / 2.0
+        exp_term = math.exp(-half_value)
+        if df == 2:
+            return exp_term
+        if df == 4:
+            return exp_term * (1.0 + half_value)
+        if df == 6:
+            return exp_term * (1.0 + half_value + half_value * half_value / 2.0)
+        term = 1.0
+        total = 1.0
+        try:
+            for j in range(1, df // 2):
+                term *= half_value / j
+                total += term
+            return exp_term * total
+        except OverflowError:
+            pass
+
+    global _CHDTRC
+
+    if _CHDTRC is None:
+        from scipy.special import chdtrc as _chdtrc
+
+        _CHDTRC = _chdtrc
+
+    return float(_CHDTRC(df, value))
+
+
+def _fishers_c_from_p_values(p_values: list[float]) -> float:
+    log_total = 0.0
+    for p_value in p_values:
+        log_total += math.log(p_value)
+    return -2.0 * log_total
+
+
+def _relative_likelihood_from_delta(delta: float) -> float:
+    return math.exp(-0.5 * delta)
+
+
+def _t_two_tailed_p_value(t_stat: float, df: int) -> float:
+    global _STDTR
+
+    if _STDTR is None:
+        from scipy.special import stdtr as _stdtr
+
+        _STDTR = _stdtr
+
+    return float(2.0 * _STDTR(df, -abs(t_stat)))
 
 
 class PhyloPath(Tree):
@@ -35,7 +136,9 @@ class PhyloPath(Tree):
         self.json_output = parsed["json_output"]
         self.plot_config = parsed["plot_config"]
 
-    def process_args(self, args) -> Dict:
+    def process_args(self, args) -> dict:
+        from ...helpers.plot_config import PlotConfig
+
         return dict(
             tree_file_path=args.tree,
             trait_data_path=args.traits,
@@ -50,7 +153,9 @@ class PhyloPath(Tree):
     def run(self) -> None:
         from .vcv_utils import build_vcv_matrix
 
-        tree = self.read_tree_file()
+        tree = self.read_tree_file_unmodified()
+        if self._needs_default_branch_lengths(tree):
+            tree = self._fast_copy(tree)
         self.validate_tree(tree, min_tips=4, assign_default_branch_length=1e-8, context="path analysis")
 
         tree_tips = self.get_tip_names_from_tree(tree)
@@ -59,6 +164,11 @@ class PhyloPath(Tree):
         )
         models = self._parse_models_file(self.models_path)
 
+        trait_name_to_idx = {}
+        for idx, name in enumerate(trait_names):
+            if name not in trait_name_to_idx:
+                trait_name_to_idx[name] = idx
+
         # Validate all variables in models exist in trait file
         all_vars = set()
         for name, edges in models.items():
@@ -66,7 +176,7 @@ class PhyloPath(Tree):
                 all_vars.add(src)
                 all_vars.add(dst)
         for var in all_vars:
-            if var not in trait_names:
+            if var not in trait_name_to_idx:
                 raise PhykitUserError(
                     [
                         f"Variable '{var}' in model file not found in trait file.",
@@ -82,20 +192,16 @@ class PhyloPath(Tree):
         n = len(ordered_names)
 
         # Z-score standardize traits
-        raw_data = {}
-        for var in variables:
-            idx = trait_names.index(var)
-            vals = np.array([traits[name][idx] for name in ordered_names])
-            raw_data[var] = vals
-
+        trait_matrix = trait_matrix_from_rows(traits, ordered_names)
         z_data = {}
         for var in variables:
-            vals = raw_data[var]
-            sd = np.std(vals, ddof=0)
+            vals = trait_matrix[:, trait_name_to_idx[var]].copy()
+            mean = float(vals.mean())
+            sd = float(vals.std(ddof=0))
+            vals -= mean
             if sd > 0:
-                z_data[var] = (vals - np.mean(vals)) / sd
-            else:
-                z_data[var] = vals - np.mean(vals)
+                vals /= sd
+            z_data[var] = vals
 
         # Build VCV + lambda estimation
         vcv = build_vcv_matrix(tree, ordered_names)
@@ -122,8 +228,8 @@ class PhyloPath(Tree):
 
             # Fisher's C
             if k > 0:
-                C = -2.0 * sum(np.log(p) for p in p_values)
-                model_p = 1.0 - chi2.cdf(C, 2 * k)
+                C = _fishers_c_from_p_values(p_values)
+                model_p = _chi2_sf(C, 2 * k)
             else:
                 C = 0.0
                 model_p = 1.0
@@ -151,7 +257,7 @@ class PhyloPath(Tree):
         min_CICc = min(r["CICc"] for r in model_results.values())
         for r in model_results.values():
             r["delta"] = r["CICc"] - min_CICc
-            r["rel_lik"] = np.exp(-0.5 * r["delta"])
+            r["rel_lik"] = _relative_likelihood_from_delta(r["delta"])
 
         sum_lik = sum(r["rel_lik"] for r in model_results.values())
         for r in model_results.values():
@@ -189,53 +295,110 @@ class PhyloPath(Tree):
                 avg_coefs, variables, self.plot_output, best_edges
             )
 
+    @staticmethod
+    def _needs_default_branch_lengths(tree) -> bool:
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            return True
+
+        stack = [root]
+        pop = stack.pop
+        extend = stack.extend
+        try:
+            while stack:
+                clade = pop()
+                children = clade.clades
+                if clade is not root and clade.branch_length is None:
+                    return True
+                if children:
+                    extend(children)
+        except AttributeError:
+            return True
+
+        return False
+
     # ---- File parsing ----
 
     def _parse_trait_file(
-        self, path: str, tree_tips: List[str]
-    ) -> Tuple[List[str], Dict[str, List[float]]]:
+        self, path: str, tree_tips: list[str]
+    ) -> tuple[list[str], dict[str, list[float]]]:
         try:
             with open(path) as f:
-                lines = f.readlines()
+                header_parts = None
+                for line in f:
+                    stripped = line.strip()
+                    if stripped and stripped[0] != "#":
+                        header_parts = stripped.split("\t")
+                        break
+
+                if header_parts is None:
+                    raise PhykitUserError(
+                        ["Trait file must have a header row and at least one data row."],
+                        code=2,
+                    )
+
+                trait_names = header_parts[1:]
+
+                traits = {}
+                line_idx = 2
+                saw_data = False
+                for line in f:
+                    stripped = line.strip()
+                    if not stripped or stripped[0] == "#":
+                        continue
+                    saw_data = True
+                    parts = stripped.split("\t")
+                    taxon = parts[0]
+                    value_parts = parts[1:]
+                    try:
+                        values = [float(val_str) for val_str in value_parts]
+                    except ValueError:
+                        values = []
+                        for val_str in value_parts:
+                            try:
+                                values.append(float(val_str))
+                            except ValueError:
+                                raise PhykitUserError(
+                                    [
+                                        f"Non-numeric value '{val_str}' for taxon "
+                                        f"'{taxon}' on line {line_idx}.",
+                                    ],
+                                    code=2,
+                                )
+                    traits[taxon] = values
+                    line_idx += 1
+
+                if not saw_data:
+                    raise PhykitUserError(
+                        ["Trait file must have a header row and at least one data row."],
+                        code=2,
+                    )
         except FileNotFoundError:
             raise PhykitUserError(
                 [f"{path} corresponds to no such file or directory."],
                 code=2,
             )
 
-        data_lines = [
-            l.strip() for l in lines
-            if l.strip() and not l.strip().startswith("#")
-        ]
-        if len(data_lines) < 2:
-            raise PhykitUserError(
-                ["Trait file must have a header row and at least one data row."],
-                code=2,
-            )
-
-        header_parts = data_lines[0].split("\t")
-        trait_names = header_parts[1:]
-
-        traits = {}
-        for line_idx, line in enumerate(data_lines[1:], 2):
-            parts = line.split("\t")
-            taxon = parts[0]
-            values = []
-            for i, val_str in enumerate(parts[1:]):
-                try:
-                    values.append(float(val_str))
-                except ValueError:
-                    raise PhykitUserError(
-                        [
-                            f"Non-numeric value '{val_str}' for taxon "
-                            f"'{taxon}' on line {line_idx}.",
-                        ],
-                        code=2,
-                    )
-            traits[taxon] = values
+        if (
+            len(tree_tips) >= 4
+            and len(tree_tips) == len(traits)
+            and next(iter(traits)) == tree_tips[0]
+            and next(reversed(traits)) == tree_tips[-1]
+            and list(traits) == tree_tips
+        ):
+            return trait_names, traits
 
         tree_tip_set = set(tree_tips)
-        shared = tree_tip_set & set(traits.keys())
+        if (
+            len(tree_tip_set) >= 4
+            and len(tree_tip_set) == len(traits)
+            and tree_tip_set == traits.keys()
+        ):
+            return trait_names, traits
+
+        shared = tree_tip_set & set(traits)
         if len(shared) < 4:
             raise PhykitUserError(
                 [
@@ -248,51 +411,49 @@ class PhyloPath(Tree):
         filtered = {t: traits[t] for t in shared}
         return trait_names, filtered
 
-    def _parse_models_file(self, path: str) -> Dict[str, List[Tuple[str, str]]]:
+    def _parse_models_file(self, path: str) -> dict[str, list[tuple[str, str]]]:
         try:
+            models = {}
             with open(path) as f:
-                lines = f.readlines()
+                for line_num, line in enumerate(f, 1):
+                    stripped = line.strip()
+                    if not stripped or stripped[0] == "#":
+                        continue
+                    name, sep, edge_str = stripped.partition(":")
+                    if not sep:
+                        raise PhykitUserError(
+                            [
+                                f"Line {line_num} in model file is malformed.",
+                                "Expected format: model_name: A->B, B->C, ...",
+                            ],
+                            code=2,
+                        )
+                    name = name.strip()
+                    edges = []
+                    for part in edge_str.split(","):
+                        part = part.strip()
+                        if not part:
+                            continue
+                        src, sep, dst = part.partition("->")
+                        if not sep:
+                            raise PhykitUserError(
+                                [
+                                    f"Invalid edge '{part}' in model '{name}'.",
+                                    "Edges must use '->' syntax (e.g., A->B).",
+                                ],
+                                code=2,
+                            )
+                        edges.append((src.strip(), dst.strip()))
+                    if not edges:
+                        raise PhykitUserError(
+                            [f"Model '{name}' has no edges."], code=2
+                        )
+                    models[name] = edges
         except FileNotFoundError:
             raise PhykitUserError(
                 [f"{path} corresponds to no such file or directory."],
                 code=2,
             )
-
-        models = {}
-        for line_num, line in enumerate(lines, 1):
-            stripped = line.strip()
-            if not stripped or stripped.startswith("#"):
-                continue
-            if ":" not in stripped:
-                raise PhykitUserError(
-                    [
-                        f"Line {line_num} in model file is malformed.",
-                        "Expected format: model_name: A->B, B->C, ...",
-                    ],
-                    code=2,
-                )
-            name, edge_str = stripped.split(":", 1)
-            name = name.strip()
-            edges = []
-            for part in edge_str.split(","):
-                part = part.strip()
-                if not part:
-                    continue
-                if "->" not in part:
-                    raise PhykitUserError(
-                        [
-                            f"Invalid edge '{part}' in model '{name}'.",
-                            "Edges must use '->' syntax (e.g., A->B).",
-                        ],
-                        code=2,
-                    )
-                src, dst = part.split("->", 1)
-                edges.append((src.strip(), dst.strip()))
-            if not edges:
-                raise PhykitUserError(
-                    [f"Model '{name}' has no edges."], code=2
-                )
-            models[name] = edges
 
         if len(models) < 2:
             raise PhykitUserError(
@@ -306,15 +467,15 @@ class PhyloPath(Tree):
 
     @staticmethod
     def _build_adjacency(
-        variables: List[str], edges: List[Tuple[str, str]]
-    ) -> Dict[str, set]:
+        variables: list[str], edges: list[tuple[str, str]]
+    ) -> dict[str, set]:
         adj = {v: set() for v in variables}
         for src, dst in edges:
             adj[src].add(dst)
         return adj
 
     @staticmethod
-    def _is_dag(adj: Dict[str, set], variables: List[str]) -> bool:
+    def _is_dag(adj: dict[str, set], variables: list[str]) -> bool:
         """Check for cycles using topological sort (Kahn's algorithm)."""
         in_degree = {v: 0 for v in variables}
         for v in variables:
@@ -323,8 +484,10 @@ class PhyloPath(Tree):
 
         queue = [v for v in variables if in_degree[v] == 0]
         visited = 0
-        while queue:
-            node = queue.pop(0)
+        queue_idx = 0
+        while queue_idx < len(queue):
+            node = queue[queue_idx]
+            queue_idx += 1
             visited += 1
             for child in adj[node]:
                 in_degree[child] -= 1
@@ -335,16 +498,18 @@ class PhyloPath(Tree):
 
     @staticmethod
     def _topological_order(
-        adj: Dict[str, set], variables: List[str]
-    ) -> List[str]:
+        adj: dict[str, set], variables: list[str]
+    ) -> list[str]:
         in_degree = {v: 0 for v in variables}
         for v in variables:
             for child in adj[v]:
                 in_degree[child] += 1
         queue = sorted([v for v in variables if in_degree[v] == 0])
         order = []
-        while queue:
-            node = queue.pop(0)
+        queue_idx = 0
+        while queue_idx < len(queue):
+            node = queue[queue_idx]
+            queue_idx += 1
             order.append(node)
             for child in sorted(adj[node]):
                 in_degree[child] -= 1
@@ -354,36 +519,39 @@ class PhyloPath(Tree):
 
     @staticmethod
     def _get_parents(
-        adj: Dict[str, set], variables: List[str], node: str
+        adj: dict[str, set], variables: list[str], node: str
     ) -> set:
         return {v for v in variables if node in adj[v]}
 
     def _basis_set(
-        self, adj: Dict[str, set], variables: List[str]
-    ) -> List[Tuple[str, str, set]]:
+        self, adj: dict[str, set], variables: list[str]
+    ) -> list[tuple[str, str, set]]:
         """Derive the basis set of d-separation statements (Shipley 2000)."""
         order = self._topological_order(adj, variables)
-        order_idx = {v: i for i, v in enumerate(order)}
 
-        # Build set of existing edges (both directions for adjacency check)
+        # Build existing edges and parent sets in one pass over the model graph.
         adjacent = set()
+        parents = {v: set() for v in variables}
         for src in variables:
             for dst in adj[src]:
                 adjacent.add((src, dst))
                 adjacent.add((dst, src))
+                parents[dst].add(src)
 
         basis = []
         for i, vi in enumerate(order):
-            for j, vj in enumerate(order):
-                if j <= i:
-                    continue
+            parents_i = parents[vi]
+            for j in range(i + 1, len(order)):
+                vj = order[j]
                 # Check non-adjacent
                 if (vi, vj) in adjacent:
                     continue
                 # Conditioning set: parents of both, excluding i and j
-                parents_i = self._get_parents(adj, variables, vi)
-                parents_j = self._get_parents(adj, variables, vj)
-                cond = (parents_i | parents_j) - {vi, vj}
+                parents_j = parents[vj]
+                if parents_i or parents_j:
+                    cond = (parents_i | parents_j) - {vi, vj}
+                else:
+                    cond = set()
                 basis.append((vi, vj, cond))
 
         return basis
@@ -392,27 +560,24 @@ class PhyloPath(Tree):
 
     def _dsep_test(
         self, response: str, predictor: str,
-        conditioning: List[str], z_data: Dict[str, np.ndarray],
+        conditioning: list[str], z_data: dict[str, np.ndarray],
         vcv: np.ndarray, n: int,
     ) -> float:
         """Test independence of predictor and response via PGLS. Returns p-value."""
+        from ...helpers.pgls_utils import apply_lambda, estimate_lambda
+
         y = z_data[response]
         predictors = conditioning + [predictor]
-        X = np.column_stack(
-            [np.ones(n)] + [z_data[p] for p in predictors]
-        )
+        X = self._design_matrix_from_z(z_data, predictors, n)
 
         lambda_val, _ = estimate_lambda(y, X, vcv)
         vcv_lam = apply_lambda(vcv, lambda_val)
 
         try:
-            C_inv = np.linalg.inv(vcv_lam)
-        except np.linalg.LinAlgError:
-            return 1.0
-
-        try:
-            beta_hat, residuals, sigma2, var_beta = fit_gls(y, X, C_inv)
-        except SystemExit:
+            beta_hat, residuals, sigma2, var_beta = self._fit_gls_from_vcv(
+                y, X, vcv_lam
+            )
+        except (SystemExit, np.linalg.LinAlgError):
             return 1.0
 
         df_resid = n - X.shape[1]
@@ -424,32 +589,103 @@ class PhyloPath(Tree):
         if se <= 0:
             return 1.0
         t_stat = beta_hat[pred_idx] / se
-        p_val = 2.0 * t_dist.sf(abs(t_stat), df=df_resid)
+        p_val = _t_two_tailed_p_value(t_stat, df_resid)
 
         return float(p_val)
+
+    @staticmethod
+    def _design_matrix_from_z(
+        z_data: dict[str, np.ndarray],
+        predictors: list[str],
+        n: int,
+    ) -> np.ndarray:
+        X = np.empty((n, len(predictors) + 1), dtype=np.float64)
+        X[:, 0] = 1.0
+        for idx, predictor in enumerate(predictors, 1):
+            X[:, idx] = z_data[predictor]
+        return X
 
     def _pgls_fit(
         self, y: np.ndarray, X: np.ndarray,
         vcv: np.ndarray, n: int,
-    ) -> Tuple[np.ndarray, np.ndarray, float]:
+    ) -> tuple[np.ndarray, np.ndarray, float]:
         """Fit PGLS with lambda. Returns (beta, se, sigma2)."""
+        from ...helpers.pgls_utils import apply_lambda, estimate_lambda
+
         lambda_val, _ = estimate_lambda(y, X, vcv)
         vcv_lam = apply_lambda(vcv, lambda_val)
 
-        C_inv = np.linalg.inv(vcv_lam)
-        beta_hat, residuals, sigma2, var_beta = fit_gls(y, X, C_inv)
-        se = np.sqrt(np.maximum(np.diag(var_beta), 0.0))
+        beta_hat, residuals, sigma2, var_beta = self._fit_gls_from_vcv(
+            y, X, vcv_lam
+        )
+        se = np.sqrt(np.maximum(var_beta.diagonal(), 0.0))
 
         return beta_hat, se, sigma2
+
+    def _fit_gls_from_vcv(
+        self, y: np.ndarray, X: np.ndarray, vcv: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray, float, np.ndarray]:
+        try:
+            factor = cho_factor(vcv, lower=True, check_finite=False)
+        except (np.linalg.LinAlgError, FloatingPointError, ValueError):
+            return self._fit_gls_from_vcv_inverse(y, X, vcv)
+
+        n_predictors = X.shape[1]
+        solve_rhs = np.empty(
+            (len(y), n_predictors + 1),
+            dtype=np.result_type(X, y, vcv),
+        )
+        solve_rhs[:, :n_predictors] = X
+        solve_rhs[:, n_predictors] = y
+        solved = cho_solve(factor, solve_rhs, check_finite=False)
+        C_inv_X = solved[:, :n_predictors]
+        C_inv_y = solved[:, n_predictors]
+
+        XtCiX = X.T @ C_inv_X
+        try:
+            normal_rhs = np.empty(
+                (n_predictors, n_predictors + 1),
+                dtype=XtCiX.dtype,
+            )
+            normal_rhs[:, 0] = X.T @ C_inv_y
+            normal_rhs[:, 1:] = np.eye(n_predictors, dtype=XtCiX.dtype)
+            normal_solved = np.linalg.solve(XtCiX, normal_rhs)
+        except np.linalg.LinAlgError:
+            raise PhykitUserError(
+                [
+                    "Singular design matrix: cannot estimate coefficients.",
+                    "Check that predictors are not collinear.",
+                ],
+                code=2,
+            )
+
+        beta_hat = normal_solved[:, 0]
+        XtCiX_inv = normal_solved[:, 1:]
+        residuals = y - X @ beta_hat
+        C_inv_residuals = C_inv_y - C_inv_X @ beta_hat
+
+        df_resid = len(y) - X.shape[1]
+        sigma2 = float(residuals @ C_inv_residuals) / max(df_resid, 1)
+        var_beta = sigma2 * XtCiX_inv
+
+        return beta_hat, residuals, sigma2, var_beta
+
+    def _fit_gls_from_vcv_inverse(
+        self, y: np.ndarray, X: np.ndarray, vcv: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray, float, np.ndarray]:
+        from ...helpers.pgls_utils import fit_gls
+
+        C_inv = np.linalg.inv(vcv)
+        return fit_gls(y, X, C_inv)
 
     # ---- Path coefficient estimation ----
 
     def _estimate_path_coefficients(
-        self, edges: List[Tuple[str, str]],
-        variables: List[str],
-        z_data: Dict[str, np.ndarray],
+        self, edges: list[tuple[str, str]],
+        variables: list[str],
+        z_data: dict[str, np.ndarray],
         vcv: np.ndarray, n: int,
-    ) -> Dict[str, Dict]:
+    ) -> dict[str, dict]:
         """For each edge i->j, fit PGLS j ~ parents(j) and extract coef for i."""
         adj = self._build_adjacency(variables, edges)
         coefficients = {}
@@ -461,9 +697,7 @@ class PhyloPath(Tree):
 
         for response, parents in response_parents.items():
             y = z_data[response]
-            X = np.column_stack(
-                [np.ones(n)] + [z_data[p] for p in parents]
-            )
+            X = self._design_matrix_from_z(z_data, parents, n)
             beta, se, sigma2 = self._pgls_fit(y, X, vcv, n)
 
             df_resid = n - X.shape[1]
@@ -474,7 +708,7 @@ class PhyloPath(Tree):
                     if se[coef_idx] > 0 else 0.0
                 )
                 p_val = (
-                    2.0 * t_dist.sf(abs(t_stat), df=max(df_resid, 1))
+                    _t_two_tailed_p_value(t_stat, max(df_resid, 1))
                     if se[coef_idx] > 0 else 1.0
                 )
                 edge_key = f"{parent} -> {response}"
@@ -489,47 +723,39 @@ class PhyloPath(Tree):
     # ---- Model averaging ----
 
     def _model_average(
-        self, model_results: Dict, variables: List[str]
-    ) -> Dict[str, Dict]:
+        self, model_results: dict, variables: list[str]
+    ) -> dict[str, dict]:
         """Conditional model averaging of path coefficients."""
-        all_edges = set()
+        edge_entries = defaultdict(list)
         for r in model_results.values():
-            all_edges.update(r["coefficients"].keys())
+            weight = r["weight"]
+            for edge, vals in r["coefficients"].items():
+                edge_entries[edge].append((vals["coef"], vals["se"], weight))
 
         avg_coefs = {}
-        for edge in sorted(all_edges):
-            coefs = []
-            ses = []
-            weights = []
-            for r in model_results.values():
-                if edge in r["coefficients"]:
-                    coefs.append(r["coefficients"][edge]["coef"])
-                    ses.append(r["coefficients"][edge]["se"])
-                    weights.append(r["weight"])
-
-            if not coefs:
-                continue
-
-            w = np.array(weights)
-            w_sum = w.sum()
+        for edge in sorted(edge_entries):
+            entries = edge_entries[edge]
+            w_sum = 0.0
+            coef_sum = 0.0
+            for coef, _se, weight in entries:
+                w_sum += weight
+                coef_sum += weight * coef
             if w_sum <= 0:
                 continue
-            w_norm = w / w_sum
 
-            c = np.array(coefs)
-            s = np.array(ses)
-
-            avg_coef = float(np.sum(w_norm * c))
+            avg_coef = coef_sum / w_sum
             # Combined SE: within-model + between-model variance
-            avg_se = float(np.sqrt(
-                np.sum(w_norm * (s**2 + (c - avg_coef)**2))
-            ))
+            se_sum = 0.0
+            for coef, se, weight in entries:
+                coef_diff = coef - avg_coef
+                se_sum += weight * (se * se + coef_diff * coef_diff)
+            avg_se = math.sqrt(se_sum / w_sum)
 
             avg_coefs[edge] = {
-                "coef": avg_coef,
-                "se": avg_se,
-                "lower": avg_coef - 1.96 * avg_se,
-                "upper": avg_coef + 1.96 * avg_se,
+                "coef": float(avg_coef),
+                "se": float(avg_se),
+                "lower": float(avg_coef - 1.96 * avg_se),
+                "upper": float(avg_coef + 1.96 * avg_se),
             }
 
         return avg_coefs
@@ -538,35 +764,54 @@ class PhyloPath(Tree):
 
     def _print_text(self, ranked, avg_coefs, coef_label, n) -> None:
         try:
-            print(f"Phylogenetic Path Analysis (n = {n} taxa)")
-            print(f"\nModel comparison (ranked by CICc):")
-            print(
+            lines = [
+                f"Phylogenetic Path Analysis (n = {n} taxa)",
+                "",
+                "Model comparison (ranked by CICc):",
                 f"  {'Model':<20s} {'k':>4s} {'q':>4s} "
                 f"{'C':>10s} {'CICc':>10s} {'delta':>8s} "
-                f"{'weight':>8s} {'p':>8s}"
+                f"{'weight':>8s} {'p':>8s}",
+                "  " + "-" * 74,
+            ]
+            append = lines.append
+            model_row = (
+                "  %-20s %4d %4d %10.4f %10.4f "
+                "%8.4f %8.4f %8.4f"
             )
-            print("  " + "-" * 74)
             for name, r in ranked:
-                print(
-                    f"  {name:<20s} {r['k']:>4d} {r['q']:>4d} "
-                    f"{r['C']:>10.4f} {r['CICc']:>10.4f} "
-                    f"{r['delta']:>8.4f} {r['weight']:>8.4f} "
-                    f"{r['p']:>8.4f}"
+                append(
+                    model_row % (
+                        name,
+                        r["k"],
+                        r["q"],
+                        r["C"],
+                        r["CICc"],
+                        r["delta"],
+                        r["weight"],
+                        r["p"],
+                    )
                 )
 
             best_name = ranked[0][0]
-            print(f"\nBest model: {best_name} "
-                  f"(CICc weight = {ranked[0][1]['weight']:.4f})")
+            append("")
+            append(
+                f"Best model: {best_name} "
+                f"(CICc weight = {ranked[0][1]['weight']:.4f})"
+            )
 
-            print(f"\nPath coefficients ({coef_label}):")
-            print(
+            append("")
+            append(f"Path coefficients ({coef_label}):")
+            append(
                 f"  {'Path':<25s} {'coef':>10s} {'SE':>10s} "
                 f"{'lower':>10s} {'upper':>10s}"
             )
-            print("  " + "-" * 67)
+            append("  " + "-" * 67)
+            coef_row = "  %-25s %10.4f %10.4f %10.4f %10.4f %s"
             for edge, vals in sorted(avg_coefs.items()):
-                lower = vals.get("lower", vals["coef"] - 1.96 * vals["se"])
-                upper = vals.get("upper", vals["coef"] + 1.96 * vals["se"])
+                coef = vals["coef"]
+                se = vals["se"]
+                lower = vals.get("lower", coef - 1.96 * se)
+                upper = vals.get("upper", coef + 1.96 * se)
                 sig = "*" if vals.get("p", 0) < 0.05 else " "
                 if "p" in vals:
                     sig = (
@@ -575,19 +820,18 @@ class PhyloPath(Tree):
                         else "*" if vals["p"] < 0.05
                         else ""
                     )
-                print(
-                    f"  {edge:<25s} {vals['coef']:>10.4f} "
-                    f"{vals['se']:>10.4f} {lower:>10.4f} "
-                    f"{upper:>10.4f} {sig}"
+                append(
+                    coef_row % (edge, coef, se, lower, upper, sig)
                 )
+            print("\n".join(lines))
 
         except BrokenPipeError:
             return
 
-    def _print_json(self, ranked, avg_coefs, coef_label, variables, n):
-        models = []
-        for name, r in ranked:
-            models.append({
+    @staticmethod
+    def _format_json_payload(ranked, avg_coefs, coef_label, variables, n):
+        models = [
+            {
                 "model": name,
                 "k": r["k"],
                 "q": r["q"],
@@ -601,13 +845,16 @@ class PhyloPath(Tree):
                     k: {kk: round(vv, 4) for kk, vv in v.items()}
                     for k, v in r["coefficients"].items()
                 },
-            })
+            }
+            for name, r in ranked
+        ]
 
-        coefs = {}
-        for edge, vals in sorted(avg_coefs.items()):
-            coefs[edge] = {k: round(v, 4) for k, v in vals.items()}
+        coefs = {
+            edge: {k: round(v, 4) for k, v in vals.items()}
+            for edge, vals in sorted(avg_coefs.items())
+        }
 
-        payload = {
+        return {
             "n_taxa": n,
             "variables": variables,
             "n_models": len(ranked),
@@ -616,6 +863,15 @@ class PhyloPath(Tree):
             "path_coefficients": coefs,
             "coefficient_type": coef_label,
         }
+
+    def _print_json(self, ranked, avg_coefs, coef_label, variables, n):
+        payload = self._format_json_payload(
+            ranked,
+            avg_coefs,
+            coef_label,
+            variables,
+            n,
+        )
         print_json(payload, sort_keys=False)
 
     def _write_csv(self, ranked, avg_coefs, csv_path):
@@ -644,6 +900,7 @@ class PhyloPath(Tree):
             import matplotlib
             matplotlib.use("Agg")
             import matplotlib.pyplot as plt
+            from matplotlib.collections import PatchCollection
             from matplotlib.patches import FancyArrowPatch, Circle
         except ImportError:
             print("matplotlib is required for plotting.")
@@ -672,12 +929,21 @@ class PhyloPath(Tree):
 
         # Draw nodes
         node_radius = 0.25
-        for var, (x, y) in pos.items():
-            circle = Circle(
-                (x, y), node_radius, facecolor="white",
-                edgecolor="black", linewidth=1.5, zorder=3,
+        node_patches = [
+            Circle((x, y), node_radius)
+            for x, y in pos.values()
+        ]
+        if node_patches:
+            ax.add_collection(
+                PatchCollection(
+                    node_patches,
+                    facecolor="white",
+                    edgecolor="black",
+                    linewidths=1.5,
+                    zorder=3,
+                )
             )
-            ax.add_patch(circle)
+        for var, (x, y) in pos.items():
             ax.text(
                 x, y, var, ha="center", va="center",
                 fontsize=9, fontweight="bold", zorder=4,
@@ -738,7 +1004,6 @@ class PhyloPath(Tree):
                 fontsize=config.title_fontsize,
             )
 
-        fig.tight_layout()
         fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
         print(f"Plot saved: {output_path}")

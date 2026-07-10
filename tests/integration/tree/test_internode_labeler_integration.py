@@ -72,9 +72,10 @@ class TestInternodeLabeler(object):
 
     @patch("builtins.print")
     def test_internode_labeler_incorrect_path(self, mocked_print):
-
-        with pytest.raises(SystemExit) as pytest_wrapped_e:
-            Phykit()
+        testargs = ["phykit", "internode_labeler", "/does/not/exist.tre"]
+        with patch.object(sys, "argv", testargs):
+            with pytest.raises(SystemExit) as pytest_wrapped_e:
+                Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2

@@ -1,7 +1,14 @@
-from typing import Dict
+from __future__ import annotations
+
+import sys
 
 from .base import Tree
-from ...helpers.json_output import print_json
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
 
 
 class TipLabels(Tree):
@@ -11,16 +18,23 @@ class TipLabels(Tree):
         self.json_output = parsed["json_output"]
 
     def run(self) -> None:
-        tree = self.read_tree_file()
-        tips = [tip.name for tip in tree.get_terminals()]
+        simple_tips = self._get_simple_newick_tip_names(
+            self.tree_file_path,
+            "tree_file_path",
+        )
+        if simple_tips is None:
+            tree = self.read_tree_file_unmodified()
+            tips = self.get_tip_names_from_tree(tree)
+        else:
+            tips = list(simple_tips)
         if self.json_output:
-            rows = [dict(taxon=tip) for tip in tips]
+            rows = [{"taxon": tip} for tip in tips]
             print_json(dict(rows=rows, tips=tips))
             return
         try:
-            print("\n".join(tips))
+            sys.stdout.write("\n".join(tips) + "\n")
         except BrokenPipeError:
             pass
 
-    def process_args(self, args) -> Dict[str, str]:
+    def process_args(self, args) -> dict[str, str]:
         return dict(tree_file_path=args.tree, json_output=getattr(args, "json", False))

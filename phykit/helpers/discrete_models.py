@@ -5,17 +5,72 @@ Provides Q-matrix construction, Felsenstein pruning (likelihood computation),
 maximum-likelihood Q-matrix fitting, and discrete trait data parsing. Used by
 stochastic_character_map, ancestral_reconstruction, and fit_discrete.
 """
-import sys
-from typing import Dict, List, Tuple
+from __future__ import annotations
 
-import numpy as np
-from scipy.linalg import expm
-from scipy.optimize import minimize
+import math
+import sys
 
 from ..errors import PhykitUserError
 
 
 VALID_DISCRETE_MODELS = frozenset(["ER", "SYM", "ARD"])
+_EXPM = None
+_MINIMIZE = None
+_MINIMIZE_SCALAR = None
+_FIT_Q_MATRIX_CACHE = {}
+_FIT_Q_MATRIX_CACHE_MAXSIZE = 32
+
+
+class _LazyNumpy:
+    _module = None
+
+    def __getattr__(self, name):
+        module = self._module
+        if module is None:
+            import numpy as _np
+
+            module = _np
+            self._module = module
+
+        value = getattr(module, name)
+        setattr(self, name, value)
+        return value
+
+
+np = _LazyNumpy()
+
+
+def expm(*args, **kwargs):
+    global _EXPM
+
+    if _EXPM is None:
+        from scipy.linalg import expm as _expm
+
+        _EXPM = _expm
+
+    return _EXPM(*args, **kwargs)
+
+
+def minimize(*args, **kwargs):
+    global _MINIMIZE
+
+    if _MINIMIZE is None:
+        from scipy.optimize import minimize as _minimize
+
+        _MINIMIZE = _minimize
+
+    return _MINIMIZE(*args, **kwargs)
+
+
+def minimize_scalar(*args, **kwargs):
+    global _MINIMIZE_SCALAR
+
+    if _MINIMIZE_SCALAR is None:
+        from scipy.optimize import minimize_scalar as _minimize_scalar
+
+        _MINIMIZE_SCALAR = _minimize_scalar
+
+    return _MINIMIZE_SCALAR(*args, **kwargs)
 
 
 def count_params(k: int, model: str) -> int:
@@ -32,77 +87,194 @@ def count_params(k: int, model: str) -> int:
         )
 
 
+_SYM_INDEX_CACHE = {}
+_ARD_MASK_CACHE = {}
+
+
+def _sym_offdiag_indices(k: int):
+    indices = _SYM_INDEX_CACHE.get(k)
+    if indices is None:
+        indices = np.triu_indices(k, 1)
+        _SYM_INDEX_CACHE[k] = indices
+    return indices
+
+
+def _ard_offdiag_mask(k: int):
+    mask = _ARD_MASK_CACHE.get(k)
+    if mask is None:
+        mask = ~np.eye(k, dtype=bool)
+        _ARD_MASK_CACHE[k] = mask
+    return mask
+
+
 def build_q_matrix(params: np.ndarray, k: int, model: str) -> np.ndarray:
     """Build a Q-matrix from parameters for ER, SYM, or ARD models.
 
     Rows sum to zero (standard continuous-time Markov chain convention).
     """
-    Q = np.zeros((k, k))
     if model == "ER":
         rate = params[0]
-        Q[:] = rate
-        np.fill_diagonal(Q, 0.0)
+        Q = np.empty((k, k), dtype=float)
+        Q.fill(rate)
+        Q.flat[:: k + 1] = -rate * (k - 1)
     elif model == "SYM":
-        idx = 0
-        for i in range(k):
-            for j in range(i + 1, k):
-                Q[i, j] = params[idx]
-                Q[j, i] = params[idx]
-                idx += 1
+        if k == 2:
+            rate = params[0]
+            Q = np.empty((2, 2), dtype=float)
+            Q[0, 0] = -rate
+            Q[0, 1] = rate
+            Q[1, 0] = rate
+            Q[1, 1] = -rate
+        elif k == 3:
+            rate01, rate02, rate12 = params
+            Q = np.empty((3, 3), dtype=float)
+            Q[0, 0] = -(rate01 + rate02)
+            Q[0, 1] = rate01
+            Q[0, 2] = rate02
+            Q[1, 0] = rate01
+            Q[1, 1] = -(rate01 + rate12)
+            Q[1, 2] = rate12
+            Q[2, 0] = rate02
+            Q[2, 1] = rate12
+            Q[2, 2] = -(rate02 + rate12)
+        else:
+            Q = np.zeros((k, k))
+            rows, cols = _sym_offdiag_indices(k)
+            Q[rows, cols] = params
+            Q[cols, rows] = params
+            np.fill_diagonal(Q, -Q.sum(axis=1))
     elif model == "ARD":
-        idx = 0
-        for i in range(k):
-            for j in range(k):
-                if i != j:
-                    Q[i, j] = params[idx]
-                    idx += 1
-    for i in range(k):
-        Q[i, i] = -np.sum(Q[i, :])
+        if k == 2:
+            rate01, rate10 = params
+            Q = np.empty((2, 2), dtype=float)
+            Q[0, 0] = -rate01
+            Q[0, 1] = rate01
+            Q[1, 0] = rate10
+            Q[1, 1] = -rate10
+        elif k == 3:
+            rate01, rate02, rate10, rate12, rate20, rate21 = params
+            Q = np.empty((3, 3), dtype=float)
+            Q[0, 0] = -(rate01 + rate02)
+            Q[0, 1] = rate01
+            Q[0, 2] = rate02
+            Q[1, 0] = rate10
+            Q[1, 1] = -(rate10 + rate12)
+            Q[1, 2] = rate12
+            Q[2, 0] = rate20
+            Q[2, 1] = rate21
+            Q[2, 2] = -(rate20 + rate21)
+        else:
+            Q = np.zeros((k, k))
+            Q[_ard_offdiag_mask(k)] = params
+            np.fill_diagonal(Q, -Q.sum(axis=1))
     return Q
 
 
 def matrix_exp(Q: np.ndarray, t: float) -> np.ndarray:
     """Compute the matrix exponential P = exp(Q * t)."""
+    two_state_transition = _matrix_exp_two_state(Q, t)
+    if two_state_transition is not None:
+        return two_state_transition
     return expm(Q * t)
 
 
-def make_transition_probability_fn(Q: np.ndarray):
-    """Return a callable t -> P(t) = exp(Q * t).
-
-    The transition probabilities for many branch lengths are needed for every
-    likelihood evaluation, so eigendecompose Q once and reconstruct
-    P(t) = V @ diag(exp(w * t)) @ V_inv per branch. This is mathematically
-    equivalent to scipy's expm but avoids recomputing a full matrix
-    exponential (scaling-and-squaring Pade) for every branch, which dominates
-    runtime for multi-state models.
-
-    Falls back to expm when the eigendecomposition is numerically unreliable
-    (e.g. a defective / ill-conditioned eigenvector matrix), so results are
-    unchanged.
-    """
+def _matrix_exp_eigendecomp_context(Q: np.ndarray):
+    exp = np.exp
     try:
-        w, V = np.linalg.eig(Q)
-        V_inv = np.linalg.inv(V)
-        if not (np.all(np.isfinite(V)) and np.all(np.isfinite(V_inv))):
-            raise np.linalg.LinAlgError("non-finite eigendecomposition")
-        if np.linalg.cond(V) > 1e12:
-            raise np.linalg.LinAlgError("ill-conditioned eigenvectors")
+        if _is_exact_symmetric_matrix(Q):
+            eigenvalues, eigenvectors = np.linalg.eigh(Q)
+            if not (np.isfinite(eigenvalues).all() and np.isfinite(eigenvectors).all()):
+                return None
+            return "symmetric", eigenvalues, eigenvectors, eigenvectors.T, exp
+    except (np.linalg.LinAlgError, ValueError, FloatingPointError):
+        return None
 
-        def P(t: float) -> np.ndarray:
-            return np.real((V * np.exp(w * t)) @ V_inv)
+    try:
+        eigenvalues, eigenvectors = np.linalg.eig(Q)
+        if np.iscomplexobj(eigenvalues) or np.iscomplexobj(eigenvectors):
+            return None
+        inverse_eigenvectors = np.linalg.inv(eigenvectors)
+        if np.iscomplexobj(inverse_eigenvectors):
+            return None
+        if _eigenvector_condition_estimate(
+            eigenvectors, inverse_eigenvectors
+        ) > 1e8:
+            return None
+    except (np.linalg.LinAlgError, ValueError, FloatingPointError):
+        return None
 
-        return P
-    except (np.linalg.LinAlgError, ValueError):
-        def P(t: float) -> np.ndarray:
-            return expm(Q * t)
+    if not (
+        np.isfinite(eigenvalues).all()
+        and np.isfinite(eigenvectors).all()
+        and np.isfinite(inverse_eigenvectors).all()
+    ):
+        return None
+    return "generic", eigenvalues, eigenvectors, inverse_eigenvectors, exp
 
-        return P
+
+def _eigenvector_condition_estimate(eigenvectors, inverse_eigenvectors) -> float:
+    size = eigenvectors.shape[0]
+    max_vector_row_sum = 0.0
+    max_inverse_row_sum = 0.0
+    for row in range(size):
+        vector_row_sum = 0.0
+        inverse_row_sum = 0.0
+        for col in range(size):
+            vector_row_sum += abs(float(eigenvectors[row, col]))
+            inverse_row_sum += abs(float(inverse_eigenvectors[row, col]))
+        if vector_row_sum > max_vector_row_sum:
+            max_vector_row_sum = vector_row_sum
+        if inverse_row_sum > max_inverse_row_sum:
+            max_inverse_row_sum = inverse_row_sum
+    return max_vector_row_sum * max_inverse_row_sum
+
+
+def _is_exact_symmetric_matrix(Q: np.ndarray) -> bool:
+    try:
+        size = Q.shape[0]
+        if Q.shape[1] != size:
+            return False
+    except (AttributeError, IndexError):
+        return False
+
+    for row in range(1, size):
+        for col in range(row):
+            if Q[row, col] != Q[col, row]:
+                return False
+    return True
+
+
+def _matrix_exp_from_eigendecomp(context, t: float):
+    if context[0] == "symmetric":
+        _, eigenvalues, eigenvectors, eigenvectors_t, exp = context
+        return (eigenvectors * exp(eigenvalues * t)) @ eigenvectors_t
+
+    _, eigenvalues, eigenvectors, inverse_eigenvectors, exp = context
+    return (eigenvectors * exp(eigenvalues * t)) @ inverse_eigenvectors
+
+
+def _matrix_exp_two_state(Q: np.ndarray, t: float):
+    rates = _two_state_ctmc_rates(Q)
+    if rates is None:
+        return None
+
+    rate01, rate10 = rates
+    total_rate = rate01 + rate10
+    if total_rate == 0.0:
+        return np.eye(2, dtype=float)
+
+    decay = math.exp(-total_rate * t)
+    stay0 = (rate10 / total_rate) + (rate01 / total_rate) * decay
+    to1 = (rate01 / total_rate) * (1.0 - decay)
+    to0 = (rate10 / total_rate) * (1.0 - decay)
+    stay1 = (rate01 / total_rate) + (rate10 / total_rate) * decay
+    return np.array([[stay0, to1], [to0, stay1]], dtype=float)
 
 
 def felsenstein_pruning(
-    tree, tip_states: Dict[str, str], Q: np.ndarray,
-    pi: np.ndarray, states: List[str]
-) -> Tuple[Dict, float]:
+    tree, tip_states: dict[str, str], Q: np.ndarray,
+    pi: np.ndarray, states: list[str]
+) -> tuple[dict, float]:
     """Postorder traversal computing conditional likelihoods and log-likelihood.
 
     Returns (cond_liks, loglik) where cond_liks maps clade id to
@@ -111,11 +283,18 @@ def felsenstein_pruning(
     k = len(states)
     state_idx = {s: i for i, s in enumerate(states)}
     cond_liks = {}
+    transition_cache = {}
+    eigendecomp_context = (
+        _matrix_exp_eigendecomp_context(Q)
+        if k >= 3
+        else None
+    )
 
-    # Eigendecompose Q once and reuse it for every branch length.
-    transition_probability = make_transition_probability_fn(Q)
+    postorder = _postorder_clades_direct(tree)
+    if postorder is None:
+        postorder = tree.find_clades(order="postorder")
 
-    for clade in tree.find_clades(order="postorder"):
+    for clade in postorder:
         if clade.is_terminal():
             lik = np.zeros(k)
             if clade.name in tip_states:
@@ -125,25 +304,460 @@ def felsenstein_pruning(
             lik = np.ones(k)
             for child in clade.clades:
                 t = child.branch_length if child.branch_length else 1e-8
-                P = transition_probability(t)
+                P = transition_cache.get(t)
+                if P is None:
+                    if eigendecomp_context is None:
+                        P = matrix_exp(Q, t)
+                    else:
+                        P = _matrix_exp_from_eigendecomp(
+                            eigendecomp_context, t
+                        )
+                        if P is None:
+                            P = matrix_exp(Q, t)
+                    transition_cache[t] = P
                 child_lik = cond_liks[id(child)]
                 lik *= P @ child_lik
             cond_liks[id(clade)] = lik
 
     root_lik = cond_liks[id(tree.root)]
-    total_lik = np.sum(pi * root_lik)
+    total_lik = float(np.dot(pi, root_lik))
     if total_lik <= 0:
         loglik = -1e20
     else:
-        loglik = np.log(total_lik)
+        loglik = math.log(total_lik)
 
     return cond_liks, loglik
 
 
+def _prepare_felsenstein_context(tree, tip_states: dict[str, str], states: list[str]):
+    """Precompute tree/state metadata reused by repeated pruning evaluations."""
+    state_idx = {s: i for i, s in enumerate(states)}
+    postorder = _postorder_clades_direct(tree)
+    if postorder is None:
+        postorder = list(tree.find_clades(order="postorder"))
+    node_index = {id(clade): i for i, clade in enumerate(postorder)}
+
+    child_indices = []
+    branch_lengths = []
+    branch_length_to_index = {}
+    unique_branch_lengths = []
+    tip_state_indices = np.full(len(postorder), -1, dtype=np.intp)
+    internal_entries = []
+    internal_entries_by_length_index = []
+
+    for idx, clade in enumerate(postorder):
+        if clade.is_terminal():
+            if clade.name in tip_states:
+                tip_state_indices[idx] = state_idx[tip_states[clade.name]]
+            child_indices.append(())
+            branch_lengths.append(())
+        else:
+            children = tuple(node_index[id(child)] for child in clade.clades)
+            lengths = tuple(
+                child.branch_length if child.branch_length else 1e-8
+                for child in clade.clades
+            )
+            length_indices = []
+            for length in lengths:
+                length_index = branch_length_to_index.get(length)
+                if length_index is None:
+                    length_index = len(unique_branch_lengths)
+                    branch_length_to_index[length] = length_index
+                    unique_branch_lengths.append(length)
+                length_indices.append(length_index)
+
+            child_indices.append(children)
+            branch_lengths.append(lengths)
+            internal_entries.append((idx, children, lengths))
+            internal_entries_by_length_index.append(
+                (idx, children, tuple(length_indices))
+            )
+
+    tip_liks = np.zeros((len(postorder), len(states)), dtype=float)
+    observed_tip_rows = np.nonzero(tip_state_indices >= 0)[0]
+    tip_liks[
+        observed_tip_rows,
+        tip_state_indices[observed_tip_rows],
+    ] = 1.0
+
+    fit_q_matrix_cache_key = (
+        len(states),
+        tuple(int(idx) for idx in tip_state_indices),
+        tuple(child_indices),
+        tuple(branch_lengths),
+        node_index[id(tree.root)],
+    )
+
+    return {
+        "child_indices": child_indices,
+        "branch_lengths": branch_lengths,
+        "tip_state_indices": tip_state_indices,
+        "tip_liks": tip_liks,
+        "internal_entries": internal_entries,
+        "internal_entries_by_length_index": internal_entries_by_length_index,
+        "unique_branch_lengths": tuple(unique_branch_lengths),
+        "root_index": node_index[id(tree.root)],
+        "n_states": len(states),
+        "fit_q_matrix_cache_key": fit_q_matrix_cache_key,
+    }
+
+
+def _postorder_clades_direct(tree):
+    try:
+        root = tree.root
+        root.clades
+    except AttributeError:
+        return None
+
+    clades = []
+    stack = [root]
+    try:
+        while stack:
+            clade = stack.pop()
+            clades.append(clade)
+            stack.extend(clade.clades)
+    except AttributeError:
+        return None
+    clades.reverse()
+    return clades
+
+
+def _felsenstein_loglik_prepared(context, Q: np.ndarray, pi: np.ndarray) -> float:
+    k = context["n_states"]
+    tip_liks = context.get("tip_liks")
+    internal_entries = context.get("internal_entries")
+    indexed_entries = context.get("internal_entries_by_length_index")
+    unique_branch_lengths = context.get("unique_branch_lengths")
+    if tip_liks is None or internal_entries is None:
+        tip_state_indices = context["tip_state_indices"]
+        child_indices = context["child_indices"]
+        branch_lengths = context["branch_lengths"]
+        cond_liks = np.zeros((len(tip_state_indices), k), dtype=float)
+        internal_entries = []
+
+        for idx in range(len(tip_state_indices)):
+            state_idx = tip_state_indices[idx]
+            if state_idx >= 0:
+                cond_liks[idx, state_idx] = 1.0
+                continue
+
+            children = child_indices[idx]
+            if children:
+                internal_entries.append((idx, children, branch_lengths[idx]))
+    else:
+        cond_liks = tip_liks.copy()
+
+    use_indexed_lengths = (
+        indexed_entries is not None and unique_branch_lengths is not None
+    )
+    if use_indexed_lengths:
+        transition_cache = [None] * len(unique_branch_lengths)
+    else:
+        transition_cache = {}
+
+    two_state_rates = _two_state_ctmc_rates(Q) if k == 2 else None
+    if two_state_rates is not None:
+        rate01, rate10 = two_state_rates
+        total_rate = rate01 + rate10
+        entries = indexed_entries if use_indexed_lengths else internal_entries
+        for idx, children, lengths in entries:
+            lik0 = 1.0
+            lik1 = 1.0
+            for child_idx, t in zip(children, lengths):
+                if use_indexed_lengths:
+                    transition = transition_cache[t]
+                    length = unique_branch_lengths[t]
+                else:
+                    transition = transition_cache.get(t)
+                    length = t
+                if transition is None:
+                    if total_rate == 0.0:
+                        transition = (1.0, 0.0, 0.0, 1.0)
+                    else:
+                        decay = math.exp(-total_rate * length)
+                        transition = (
+                            (rate10 / total_rate)
+                            + (rate01 / total_rate) * decay,
+                            (rate01 / total_rate) * (1.0 - decay),
+                            (rate10 / total_rate) * (1.0 - decay),
+                            (rate01 / total_rate)
+                            + (rate10 / total_rate) * decay,
+                        )
+                    transition_cache[t] = transition
+                p00, p01, p10, p11 = transition
+                child_lik = cond_liks[child_idx]
+                child0 = child_lik[0]
+                child1 = child_lik[1]
+                lik0 *= (p00 * child0) + (p01 * child1)
+                lik1 *= (p10 * child0) + (p11 * child1)
+            cond_liks[idx, 0] = lik0
+            cond_liks[idx, 1] = lik1
+
+        total_lik = (pi[0] * cond_liks[context["root_index"], 0]) + (
+            pi[1] * cond_liks[context["root_index"], 1]
+        )
+        if total_lik <= 0:
+            return -1e20
+        return math.log(total_lik)
+
+    eigendecomp_context = (
+        _matrix_exp_eigendecomp_context(Q)
+        if k >= 3
+        else None
+    )
+
+    entries = indexed_entries if use_indexed_lengths else internal_entries
+    for idx, children, lengths in entries:
+        lik = np.ones(k)
+        for child_idx, t in zip(children, lengths):
+            if use_indexed_lengths:
+                P = transition_cache[t]
+                length = unique_branch_lengths[t]
+            else:
+                P = transition_cache.get(t)
+                length = t
+            if P is None:
+                if eigendecomp_context is None:
+                    P = matrix_exp(Q, length)
+                else:
+                    P = _matrix_exp_from_eigendecomp(eigendecomp_context, length)
+                    if P is None:
+                        P = matrix_exp(Q, length)
+                transition_cache[t] = P
+            lik *= P @ cond_liks[child_idx]
+        cond_liks[idx] = lik
+
+    total_lik = float(np.dot(pi, cond_liks[context["root_index"]]))
+    if total_lik <= 0:
+        return -1e20
+    return math.log(total_lik)
+
+
+def _felsenstein_loglik_two_state_er_rate(
+    context, rate: float, pi: np.ndarray
+) -> float:
+    tip_liks = context.get("tip_liks")
+    internal_entries = context.get("internal_entries")
+    if tip_liks is None or internal_entries is None:
+        Q = build_q_matrix(np.array([rate]), 2, "ER")
+        return _felsenstein_loglik_prepared(context, Q, pi)
+
+    cond_liks = tip_liks.copy()
+    transition_cache = {}
+    for idx, children, lengths in internal_entries:
+        lik0 = 1.0
+        lik1 = 1.0
+        for child_idx, t in zip(children, lengths):
+            transition = transition_cache.get(t)
+            if transition is None:
+                decay = math.exp(-2.0 * rate * t)
+                same = 0.5 + (0.5 * decay)
+                different = 0.5 - (0.5 * decay)
+                transition = (same, different)
+                transition_cache[t] = transition
+            else:
+                same, different = transition
+            child_lik = cond_liks[child_idx]
+            child0 = child_lik[0]
+            child1 = child_lik[1]
+            lik0 *= (same * child0) + (different * child1)
+            lik1 *= (different * child0) + (same * child1)
+        cond_liks[idx, 0] = lik0
+        cond_liks[idx, 1] = lik1
+
+    root_lik = cond_liks[context["root_index"]]
+    total_lik = (pi[0] * root_lik[0]) + (pi[1] * root_lik[1])
+    if total_lik <= 0:
+        return -1e20
+    return math.log(total_lik)
+
+
+def _felsenstein_loglik_er_rate(context, rate: float, pi: np.ndarray) -> float:
+    k = context["n_states"]
+    if k == 2:
+        return _felsenstein_loglik_two_state_er_rate(context, rate, pi)
+
+    tip_liks = context.get("tip_liks")
+    internal_entries = context.get("internal_entries")
+    if tip_liks is None or internal_entries is None:
+        Q = build_q_matrix(np.array([rate]), k, "ER")
+        return _felsenstein_loglik_prepared(context, Q, pi)
+
+    cond_liks = tip_liks.copy()
+    indexed_entries = context.get("internal_entries_by_length_index")
+    unique_branch_lengths = context.get("unique_branch_lengths")
+    use_indexed_lengths = (
+        indexed_entries is not None and unique_branch_lengths is not None
+    )
+    if use_indexed_lengths:
+        transition_cache = [None] * len(unique_branch_lengths)
+        entries = indexed_entries
+    else:
+        transition_cache = {}
+        entries = internal_entries
+    inv_k = 1.0 / k
+
+    if k == 3:
+        for idx, children, lengths in entries:
+            lik0 = 1.0
+            lik1 = 1.0
+            lik2 = 1.0
+            for child_idx, t in zip(children, lengths):
+                if use_indexed_lengths:
+                    transition = transition_cache[t]
+                    length = unique_branch_lengths[t]
+                else:
+                    transition = transition_cache.get(t)
+                    length = t
+                if transition is None:
+                    decay = math.exp(-3.0 * rate * length)
+                    different = inv_k * (1.0 - decay)
+                    transition = (decay, different)
+                    transition_cache[t] = transition
+                else:
+                    decay, different = transition
+                child_lik = cond_liks[child_idx]
+                child0 = child_lik[0]
+                child1 = child_lik[1]
+                child2 = child_lik[2]
+                child_total = child0 + child1 + child2
+                lik0 *= (different * child_total) + (decay * child0)
+                lik1 *= (different * child_total) + (decay * child1)
+                lik2 *= (different * child_total) + (decay * child2)
+            cond_liks[idx, 0] = lik0
+            cond_liks[idx, 1] = lik1
+            cond_liks[idx, 2] = lik2
+
+        root_lik = cond_liks[context["root_index"]]
+        total_lik = (pi[0] * root_lik[0]) + (pi[1] * root_lik[1]) + (
+            pi[2] * root_lik[2]
+        )
+        if total_lik <= 0:
+            return -1e20
+        return math.log(total_lik)
+
+    if k == 4:
+        for idx, children, lengths in entries:
+            lik0 = 1.0
+            lik1 = 1.0
+            lik2 = 1.0
+            lik3 = 1.0
+            for child_idx, t in zip(children, lengths):
+                if use_indexed_lengths:
+                    transition = transition_cache[t]
+                    length = unique_branch_lengths[t]
+                else:
+                    transition = transition_cache.get(t)
+                    length = t
+                if transition is None:
+                    decay = math.exp(-4.0 * rate * length)
+                    different = inv_k * (1.0 - decay)
+                    transition = (decay, different)
+                    transition_cache[t] = transition
+                else:
+                    decay, different = transition
+                child_lik = cond_liks[child_idx]
+                child0 = child_lik[0]
+                child1 = child_lik[1]
+                child2 = child_lik[2]
+                child3 = child_lik[3]
+                child_total = child0 + child1 + child2 + child3
+                lik0 *= (different * child_total) + (decay * child0)
+                lik1 *= (different * child_total) + (decay * child1)
+                lik2 *= (different * child_total) + (decay * child2)
+                lik3 *= (different * child_total) + (decay * child3)
+            cond_liks[idx, 0] = lik0
+            cond_liks[idx, 1] = lik1
+            cond_liks[idx, 2] = lik2
+            cond_liks[idx, 3] = lik3
+
+        root_lik = cond_liks[context["root_index"]]
+        total_lik = (
+            (pi[0] * root_lik[0])
+            + (pi[1] * root_lik[1])
+            + (pi[2] * root_lik[2])
+            + (pi[3] * root_lik[3])
+        )
+        if total_lik <= 0:
+            return -1e20
+        return math.log(total_lik)
+
+    for idx, children, lengths in entries:
+        lik = np.ones(k)
+        for child_idx, t in zip(children, lengths):
+            if use_indexed_lengths:
+                transition = transition_cache[t]
+                length = unique_branch_lengths[t]
+            else:
+                transition = transition_cache.get(t)
+                length = t
+            if transition is None:
+                decay = math.exp(-k * rate * length)
+                different = inv_k * (1.0 - decay)
+                transition = (decay, different)
+                transition_cache[t] = transition
+            else:
+                decay, different = transition
+            child_lik = cond_liks[child_idx]
+            if k == 3:
+                child_total = float(child_lik[0] + child_lik[1] + child_lik[2])
+            elif k == 4:
+                child_total = float(
+                    child_lik[0] + child_lik[1] + child_lik[2] + child_lik[3]
+                )
+            else:
+                child_total = float(child_lik.sum())
+            lik *= (different * child_total) + (decay * child_lik)
+        cond_liks[idx] = lik
+
+    total_lik = float(np.dot(pi, cond_liks[context["root_index"]]))
+    if total_lik <= 0:
+        return -1e20
+    return math.log(total_lik)
+
+
+def _two_state_ctmc_rates(Q):
+    try:
+        if Q.shape[0] != 2 or Q.shape[1] != 2:
+            return None
+    except (AttributeError, IndexError):
+        return None
+
+    rate01 = float(Q[0, 1])
+    rate10 = float(Q[1, 0])
+    if rate01 < 0.0 or rate10 < 0.0:
+        return None
+    if Q[0, 0] != -rate01 or Q[1, 1] != -rate10:
+        return None
+    return rate01, rate10
+
+
+def _fit_two_state_er_rate(pruning_context, pi: np.ndarray):
+    def neg_loglik_rate(rate):
+        rate = float(abs(rate))
+        ll = _felsenstein_loglik_two_state_er_rate(
+            pruning_context,
+            rate,
+            pi,
+        )
+        return -ll
+
+    result = minimize_scalar(
+        neg_loglik_rate,
+        bounds=(1e-8, 100.0),
+        method="bounded",
+        options={"xatol": 1e-10, "maxiter": 500},
+    )
+    rate = abs(float(result.x))
+    Q = build_q_matrix(np.array([rate]), 2, "ER")
+    loglik = _felsenstein_loglik_two_state_er_rate(pruning_context, rate, pi)
+    return Q, loglik
+
+
 def fit_q_matrix(
-    tree, tip_states: Dict[str, str],
-    states: List[str], model: str
-) -> Tuple[np.ndarray, float]:
+    tree, tip_states: dict[str, str],
+    states: list[str], model: str, pruning_context=None
+) -> tuple[np.ndarray, float]:
     """Fit Q-matrix parameters via maximum likelihood.
 
     Uses multi-start optimization with L-BFGS-B and Nelder-Mead,
@@ -154,10 +768,37 @@ def fit_q_matrix(
     k = len(states)
     n_params = count_params(k, model)
     pi = np.ones(k) / k
+    if pruning_context is None:
+        pruning_context = _prepare_felsenstein_context(tree, tip_states, states)
+
+    context_cache_key = (
+        pruning_context.get("fit_q_matrix_cache_key")
+        if hasattr(pruning_context, "get")
+        else None
+    )
+    cache_key = (model, context_cache_key) if context_cache_key is not None else None
+    if cache_key is not None:
+        cached = _FIT_Q_MATRIX_CACHE.get(cache_key)
+        if cached is not None:
+            Q, loglik = cached
+            return Q.copy(), loglik
+
+    if model == "ER" and k == 2:
+        Q, loglik = _fit_two_state_er_rate(pruning_context, pi)
+        if cache_key is not None:
+            _cache_fit_q_matrix_result(cache_key, Q, loglik)
+        return Q, loglik
 
     def neg_loglik(params):
-        Q = build_q_matrix(np.abs(params), k, model)
-        _, ll = felsenstein_pruning(tree, tip_states, Q, pi, states)
+        if model == "ER":
+            ll = _felsenstein_loglik_er_rate(
+                pruning_context,
+                float(abs(params[0])),
+                pi,
+            )
+        else:
+            Q = build_q_matrix(np.abs(params), k, model)
+            ll = _felsenstein_loglik_prepared(pruning_context, Q, pi)
         return -ll
 
     bounds = [(1e-8, 100.0)] * n_params
@@ -197,14 +838,30 @@ def fit_q_matrix(
         pass
 
     Q = build_q_matrix(best_params, k, model)
-    _, loglik = felsenstein_pruning(tree, tip_states, Q, pi, states)
+    if model == "ER":
+        loglik = _felsenstein_loglik_er_rate(
+            pruning_context,
+            float(best_params[0]),
+            pi,
+        )
+    else:
+        loglik = _felsenstein_loglik_prepared(pruning_context, Q, pi)
+
+    if cache_key is not None:
+        _cache_fit_q_matrix_result(cache_key, Q, loglik)
 
     return Q, loglik
 
 
+def _cache_fit_q_matrix_result(cache_key, Q: np.ndarray, loglik: float) -> None:
+    if len(_FIT_Q_MATRIX_CACHE) >= _FIT_Q_MATRIX_CACHE_MAXSIZE:
+        _FIT_Q_MATRIX_CACHE.pop(next(iter(_FIT_Q_MATRIX_CACHE)))
+    _FIT_Q_MATRIX_CACHE[cache_key] = (Q.copy(), loglik)
+
+
 def parse_discrete_traits(
-    path: str, tree_tips: List[str], trait_column: str = None
-) -> Dict[str, str]:
+    path: str, tree_tips: list[str], trait_column: str = None
+) -> dict[str, str]:
     """Parse discrete trait data from a TSV file.
 
     If trait_column is None: expects 2-column format (taxon<tab>state),
@@ -217,7 +874,9 @@ def parse_discrete_traits(
     """
     try:
         with open(path) as f:
-            lines = f.readlines()
+            if trait_column is None:
+                return _parse_two_column_stream(f, tree_tips)
+            return _parse_multi_column_stream(f, path, tree_tips, trait_column)
     except FileNotFoundError:
         raise PhykitUserError(
             [
@@ -227,22 +886,10 @@ def parse_discrete_traits(
             code=2,
         )
 
-    data_lines = []
-    for line in lines:
-        stripped = line.strip()
-        if not stripped or stripped.startswith("#"):
-            continue
-        data_lines.append(stripped)
-
-    if trait_column is not None:
-        return _parse_multi_column(data_lines, path, tree_tips, trait_column)
-    else:
-        return _parse_two_column(data_lines, path, tree_tips)
-
 
 def _parse_multi_column(
-    data_lines: List[str], path: str, tree_tips: List[str], trait_column: str
-) -> Dict[str, str]:
+    data_lines: list[str], path: str, tree_tips: list[str], trait_column: str
+) -> dict[str, str]:
     if len(data_lines) < 2:
         raise PhykitUserError(
             ["Trait file must have a header row and at least one data row."],
@@ -268,17 +915,20 @@ def _parse_multi_column(
 
     col_idx = trait_names.index(trait_column)
     n_cols = len(header_parts)
+    target_idx = 1 + col_idx
+    max_splits = target_idx + 1
 
     traits = {}
     for line_idx, line in enumerate(data_lines[1:], 2):
-        parts = line.split("\t")
-        if len(parts) != n_cols:
+        column_count = line.count("\t") + 1
+        if column_count != n_cols:
             raise PhykitUserError(
-                [f"Line {line_idx} has {len(parts)} columns; expected {n_cols}."],
+                [f"Line {line_idx} has {column_count} columns; expected {n_cols}."],
                 code=2,
             )
+        parts = line.split("\t", max_splits)
         taxon = parts[0]
-        value = parts[1 + col_idx].strip()
+        value = parts[target_idx].strip()
         if not value:
             raise PhykitUserError(
                 [f"Missing trait value for taxon '{taxon}' on line {line_idx}."],
@@ -290,26 +940,129 @@ def _parse_multi_column(
 
 
 def _parse_two_column(
-    data_lines: List[str], path: str, tree_tips: List[str]
-) -> Dict[str, str]:
+    data_lines: list[str], path: str, tree_tips: list[str]
+) -> dict[str, str]:
     traits = {}
     for line_idx, line in enumerate(data_lines, 1):
-        parts = line.split("\t")
-        if len(parts) != 2:
+        taxon, sep, state = line.partition("\t")
+        if not sep or "\t" in state:
+            column_count = line.count("\t") + 1
             raise PhykitUserError(
-                [f"Line {line_idx} has {len(parts)} columns; expected 2 (taxon, state)."],
+                [f"Line {line_idx} has {column_count} columns; expected 2 (taxon, state)."],
                 code=2,
             )
-        traits[parts[0]] = parts[1].strip()
+        traits[taxon] = state.strip()
+
+    return _validate_shared_taxa(traits, tree_tips)
+
+
+def _parse_two_column_stream(lines, tree_tips: list[str]) -> dict[str, str]:
+    traits = {}
+    line_idx = 1
+    for line in lines:
+        line = line.strip()
+        if not line or line[0] == "#":
+            continue
+        taxon, sep, state = line.partition("\t")
+        if not sep or "\t" in state:
+            column_count = line.count("\t") + 1
+            raise PhykitUserError(
+                [f"Line {line_idx} has {column_count} columns; expected 2 (taxon, state)."],
+                code=2,
+            )
+        traits[taxon] = state.strip()
+        line_idx += 1
+
+    return _validate_shared_taxa(traits, tree_tips)
+
+
+def _parse_multi_column_stream(
+    lines, path: str, tree_tips: list[str], trait_column: str
+) -> dict[str, str]:
+    header_parts = None
+    col_idx = None
+    n_cols = 0
+    traits = {}
+    line_idx = 0
+
+    for line in lines:
+        line = line.strip()
+        if not line or line[0] == "#":
+            continue
+        line_idx += 1
+
+        if header_parts is None:
+            header_parts = line.split("\t")
+            if len(header_parts) < 2:
+                raise PhykitUserError(
+                    ["Header must have at least 2 columns (taxon + at least 1 trait)."],
+                    code=2,
+                )
+
+            trait_names = header_parts[1:]
+            if trait_column not in trait_names:
+                raise PhykitUserError(
+                    [
+                        f"Column '{trait_column}' not found in trait file.",
+                        f"Available columns: {', '.join(trait_names)}",
+                    ],
+                    code=2,
+                )
+
+            col_idx = trait_names.index(trait_column)
+            n_cols = len(header_parts)
+            target_idx = 1 + col_idx
+            max_splits = target_idx + 1
+            continue
+
+        column_count = line.count("\t") + 1
+        if column_count != n_cols:
+            raise PhykitUserError(
+                [f"Line {line_idx} has {column_count} columns; expected {n_cols}."],
+                code=2,
+            )
+        parts = line.split("\t", max_splits)
+        taxon = parts[0]
+        value = parts[target_idx].strip()
+        if not value:
+            raise PhykitUserError(
+                [f"Missing trait value for taxon '{taxon}' on line {line_idx}."],
+                code=2,
+            )
+        traits[taxon] = value
+
+    if header_parts is None or line_idx < 2:
+        raise PhykitUserError(
+            ["Trait file must have a header row and at least one data row."],
+            code=2,
+        )
 
     return _validate_shared_taxa(traits, tree_tips)
 
 
 def _validate_shared_taxa(
-    traits: Dict[str, str], tree_tips: List[str]
-) -> Dict[str, str]:
+    traits: dict[str, str], tree_tips: list[str]
+) -> dict[str, str]:
+    trait_count = len(traits)
+    trait_names = None
+    if trait_count >= 3 and len(tree_tips) == trait_count:
+        if tree_tips[0] == next(iter(traits)):
+            if tree_tips[-1] == next(reversed(traits)):
+                trait_names = list(traits)
+                if trait_names == tree_tips:
+                    return traits
+
     tree_tip_set = set(tree_tips)
-    trait_taxa_set = set(traits.keys())
+    if (
+        len(tree_tip_set) >= 3
+        and len(tree_tip_set) == trait_count
+        and tree_tip_set == traits.keys()
+    ):
+        return traits
+
+    trait_taxa_set = (
+        set(trait_names) if trait_names is not None else set(traits.keys())
+    )
     shared = tree_tip_set & trait_taxa_set
 
     tree_only = tree_tip_set - trait_taxa_set

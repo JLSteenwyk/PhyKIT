@@ -1,14 +1,132 @@
-import pickle
-from typing import Dict, List, Tuple
+from __future__ import annotations
 
-import numpy as np
-from scipy.optimize import minimize
-from scipy.stats import norm as norm_dist
+from math import exp, sqrt
 
 from .base import Tree
-from ...helpers.json_output import print_json
-from ...helpers.trait_parsing import parse_multi_trait_file
 from ...errors import PhykitUserError
+
+
+class _LazyNumpy:
+    _module = None
+
+    def __getattr__(self, name):
+        module = self._module
+        if module is None:
+            import numpy as _np
+
+            module = _np
+            self._module = module
+
+        value = getattr(module, name)
+        setattr(self, name, value)
+        return value
+
+
+np = _LazyNumpy()
+_CHO_FACTOR = None
+_CHO_SOLVE = None
+_MINIMIZE = None
+_SPECIAL_ERFC = None
+
+
+def _binary_response_class_counts(y: np.ndarray) -> tuple[int, int]:
+    n1 = int(np.count_nonzero(y))
+    return n1, int(y.size - n1)
+
+
+def _bernoulli_log_likelihood(y: np.ndarray, mu: np.ndarray) -> float:
+    return float(np.where(y, np.log(mu), np.log1p(-mu)).sum())
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
+
+
+def parse_multi_trait_file(*args, **kwargs):
+    from ...helpers.trait_parsing import (
+        parse_multi_trait_file as _parse_multi_trait_file,
+    )
+
+    return _parse_multi_trait_file(*args, **kwargs)
+
+
+def response_predictor_arrays(*args, **kwargs):
+    from ...helpers.trait_parsing import (
+        response_predictor_arrays as _response_predictor_arrays,
+    )
+
+    return _response_predictor_arrays(*args, **kwargs)
+
+
+def cho_factor(*args, **kwargs):
+    global _CHO_FACTOR
+
+    if _CHO_FACTOR is None:
+        from scipy.linalg import cho_factor as _cho_factor
+
+        _CHO_FACTOR = _cho_factor
+
+    return _CHO_FACTOR(*args, **kwargs)
+
+
+def cho_solve(*args, **kwargs):
+    global _CHO_SOLVE
+
+    if _CHO_SOLVE is None:
+        from scipy.linalg import cho_solve as _cho_solve
+
+        _CHO_SOLVE = _cho_solve
+
+    return _CHO_SOLVE(*args, **kwargs)
+
+
+def minimize(*args, **kwargs):
+    global _MINIMIZE
+
+    if _MINIMIZE is None:
+        from scipy.optimize import minimize as _minimize
+
+        _MINIMIZE = _minimize
+
+    return _MINIMIZE(*args, **kwargs)
+
+
+def special_erfc(*args, **kwargs):
+    global _SPECIAL_ERFC
+
+    if _SPECIAL_ERFC is None:
+        from scipy.special import erfc as _erfc
+
+        _SPECIAL_ERFC = _erfc
+
+    return _SPECIAL_ERFC(*args, **kwargs)
+
+
+def _normal_two_tailed_p_values(z_stats: np.ndarray) -> np.ndarray:
+    z_values = np.asarray(z_stats, dtype=float)
+    p_values = special_erfc(
+        np.abs(z_values) / sqrt(2.0),
+    )
+    return np.asarray(p_values, dtype=np.float64).reshape(z_values.shape)
+
+
+def _standard_errors_from_info_matrix(info_matrix: np.ndarray) -> np.ndarray:
+    try:
+        factor = cho_factor(info_matrix, lower=True, check_finite=False)
+        info_inv_diag = cho_solve(
+            factor,
+            np.eye(info_matrix.shape[0]),
+            check_finite=False,
+        ).diagonal()
+    except (np.linalg.LinAlgError, FloatingPointError, ValueError):
+        try:
+            info_inv_diag = np.linalg.inv(info_matrix).diagonal()
+        except np.linalg.LinAlgError:
+            return np.full(info_matrix.shape[0], np.nan)
+
+    return np.sqrt(np.abs(info_inv_diag))
 
 
 class PhyloLogistic(Tree):
@@ -35,18 +153,28 @@ class PhyloLogistic(Tree):
     def run(self) -> None:
         from .vcv_utils import build_vcv_matrix
 
-        tree = self.read_tree_file()
-        self.validate_tree(tree, min_tips=3, require_branch_lengths=True, context="phylogenetic logistic regression")
+        tree = self.read_tree_file_unmodified()
+        self.validate_tree(
+            tree,
+            min_tips=3,
+            require_branch_lengths=True,
+            context="phylogenetic logistic regression",
+        )
 
         tree_tips = self.get_tip_names_from_tree(tree)
         trait_names, traits = parse_multi_trait_file(
             self.trait_data_path, tree_tips
         )
 
+        trait_name_to_idx = {}
+        for idx, name in enumerate(trait_names):
+            if name not in trait_name_to_idx:
+                trait_name_to_idx[name] = idx
+
         # Validate column names
         all_columns = [self.response] + list(self.predictors)
         for col in all_columns:
-            if col not in trait_names:
+            if col not in trait_name_to_idx:
                 raise PhykitUserError(
                     [
                         f"Column '{col}' not found in trait file.",
@@ -77,14 +205,12 @@ class PhyloLogistic(Tree):
             )
 
         # Build response vector y and design matrix X (with intercept)
-        resp_idx = trait_names.index(self.response)
-        pred_indices = [trait_names.index(p) for p in self.predictors]
+        resp_idx = trait_name_to_idx[self.response]
+        pred_indices = [trait_name_to_idx[p] for p in self.predictors]
 
-        y = np.array([traits[name][resp_idx] for name in ordered_names])
-        X_pred = np.array(
-            [[traits[name][j] for j in pred_indices] for name in ordered_names]
+        y, X = response_predictor_arrays(
+            traits, ordered_names, resp_idx, pred_indices
         )
-        X = np.column_stack([np.ones(n), X_pred])
 
         # Validate binary response
         unique_vals = set(y)
@@ -116,7 +242,7 @@ class PhyloLogistic(Tree):
         else:
             self._print_text_output(result)
 
-    def process_args(self, args) -> Dict[str, str]:
+    def process_args(self, args) -> dict[str, str]:
         predictors_raw = getattr(args, "predictor", "")
         if isinstance(predictors_raw, list):
             predictors = predictors_raw
@@ -135,9 +261,56 @@ class PhyloLogistic(Tree):
     # VCV construction with OU-transformed branch lengths
     # ----------------------------------------------------------------
 
+    @staticmethod
+    def _root_tip_distances(tree, ordered_names: list[str]) -> np.ndarray:
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            root = None
+
+        if root is not None:
+            try:
+                distance_by_name = {}
+                stack = [(root, 0.0)]
+                while stack:
+                    clade, distance = stack.pop()
+                    children = clade.clades
+                    if children:
+                        for child in reversed(children):
+                            stack.append(
+                                (
+                                    child,
+                                    distance + (child.branch_length or 0.0),
+                                )
+                            )
+                    else:
+                        distance_by_name[clade.name] = distance
+                return np.array([distance_by_name[name] for name in ordered_names])
+            except (AttributeError, KeyError, TypeError):
+                pass
+
+        try:
+            depths = tree.depths()
+            root_depth = depths[tree.root]
+            terminals = tree.get_terminals()
+            terminal_by_name = {terminal.name: terminal for terminal in terminals}
+            return np.array([
+                depths[terminal_by_name[name]] - root_depth for name in ordered_names
+            ])
+        except (AttributeError, KeyError, TypeError):
+            return np.array([
+                tree.distance(tree.root, name) for name in ordered_names
+            ])
+
     def _build_logistic_vcv(
-        self, tree, alpha: float, ordered_names: List[str], build_vcv_fn
-    ) -> Tuple[np.ndarray, np.ndarray]:
+        self,
+        tree,
+        alpha: float,
+        ordered_names: list[str],
+        build_vcv_fn,
+        root_tip_distances: np.ndarray | None = None,
+    ) -> tuple[np.ndarray, np.ndarray]:
         """Build the OU-transformed VCV + diagonal correction.
 
         For a given alpha, transform the phylogenetic tree:
@@ -155,30 +328,38 @@ class PhyloLogistic(Tree):
             diag_corr = np.ones(len(ordered_names))
             return vcv, diag_corr
 
-        # Transform branch lengths
-        tree_t = pickle.loads(pickle.dumps(tree, protocol=pickle.HIGHEST_PROTOCOL))
-        for clade in tree_t.find_clades():
-            if clade.branch_length is not None and clade.branch_length > 0:
-                bl = clade.branch_length
-                clade.branch_length = (1 - np.exp(-2 * alpha * bl)) / (2 * alpha)
+        def transform_branch_length(branch_length):
+            if branch_length <= 0:
+                return 0.0
+            return (1 - exp(-2 * alpha * branch_length)) / (2 * alpha)
 
-        vcv = build_vcv_fn(tree_t, ordered_names)
+        from .vcv_utils import build_transformed_vcv_matrix, build_vcv_matrix
 
-        # Diagonal correction
-        diag_corr = np.zeros(len(ordered_names))
-        for i, name in enumerate(ordered_names):
-            dist = tree.distance(tree.root, name)  # original tree distances
-            diag_corr[i] = np.exp(-2 * alpha * dist)
+        if build_vcv_fn is build_vcv_matrix:
+            vcv = build_transformed_vcv_matrix(
+                tree, ordered_names, transform_branch_length
+            )
+        else:
+            import pickle
+
+            tree_t = pickle.loads(pickle.dumps(tree, protocol=pickle.HIGHEST_PROTOCOL))
+            for clade in tree_t.find_clades():
+                if clade.branch_length is not None and clade.branch_length > 0:
+                    clade.branch_length = transform_branch_length(clade.branch_length)
+            vcv = build_vcv_fn(tree_t, ordered_names)
+
+        if root_tip_distances is None:
+            root_tip_distances = self._root_tip_distances(tree, ordered_names)
+        diag_corr = np.exp(-2 * alpha * root_tip_distances)
 
         # Add diagonal correction to VCV
-        np.fill_diagonal(vcv, np.diag(vcv) + diag_corr)
+        vcv.ravel()[:: vcv.shape[0] + 1] += diag_corr
 
         return vcv, diag_corr
 
-    def _mean_root_tip_distance(self, tree, ordered_names: List[str]) -> float:
+    def _mean_root_tip_distance(self, tree, ordered_names: list[str]) -> float:
         """Mean root-to-tip distance across all tips."""
-        dists = [tree.distance(tree.root, name) for name in ordered_names]
-        return float(np.mean(dists))
+        return float(self._root_tip_distances(tree, ordered_names).mean())
 
     # ----------------------------------------------------------------
     # Starting values
@@ -196,13 +377,16 @@ class PhyloLogistic(Tree):
             eta = np.clip(eta, -btol, btol)
             mu = 1.0 / (1.0 + np.exp(-eta))
             mu = np.clip(mu, 1e-6, 1 - 1e-6)
-            W = np.diag(mu * (1 - mu))
-            z = eta + (y - mu) / (mu * (1 - mu))
+            weights = mu * (1 - mu)
+            z = eta + (y - mu) / weights
             try:
-                beta_new = np.linalg.solve(X.T @ W @ X, X.T @ W @ z)
+                beta_new = np.linalg.solve(
+                    X.T @ (weights[:, None] * X),
+                    X.T @ (weights * z),
+                )
             except np.linalg.LinAlgError:
                 break
-            if np.max(np.abs(beta_new - beta)) < 1e-8:
+            if np.abs(beta_new - beta).max() < 1e-8:
                 beta = beta_new
                 break
             beta = beta_new
@@ -221,13 +405,31 @@ class PhyloLogistic(Tree):
         I(beta) = X^T @ W^{1/2} @ V^{-1} @ W^{1/2} @ X
         where W = diag(mu*(1-mu)) and V is the OU-transformed VCV.
         """
-        W_sqrt = np.diag(np.sqrt(mu * (1 - mu)))
+        try:
+            return self._compute_info_matrix_cholesky(X, mu, vcv)
+        except (np.linalg.LinAlgError, FloatingPointError, ValueError):
+            return self._compute_info_matrix_inverse(X, mu, vcv)
+
+    def _compute_info_matrix_cholesky(
+        self, X: np.ndarray, mu: np.ndarray, vcv: np.ndarray
+    ) -> np.ndarray:
+        weights = np.sqrt(mu * (1 - mu))
+        X_weighted = X * weights[:, None]
+        factor = cho_factor(vcv, lower=True, check_finite=False)
+        V_inv_X_weighted = cho_solve(factor, X_weighted, check_finite=False)
+        return X_weighted.T @ V_inv_X_weighted
+
+    def _compute_info_matrix_inverse(
+        self, X: np.ndarray, mu: np.ndarray, vcv: np.ndarray
+    ) -> np.ndarray:
+        weights = np.sqrt(mu * (1 - mu))
+        X_weighted = X * weights[:, None]
         try:
             V_inv = np.linalg.inv(vcv)
         except np.linalg.LinAlgError:
             return np.eye(X.shape[1]) * 1e-10
 
-        return X.T @ W_sqrt @ V_inv @ W_sqrt @ X
+        return X_weighted.T @ V_inv @ X_weighted
 
     def _neg_pen_loglik(
         self,
@@ -235,8 +437,9 @@ class PhyloLogistic(Tree):
         X: np.ndarray,
         y: np.ndarray,
         tree,
-        ordered_names: List[str],
+        ordered_names: list[str],
         build_vcv_fn,
+        root_tip_distances: np.ndarray,
         btol: float = 10,
     ) -> float:
         """Negative penalized log-likelihood for logistic MPLE.
@@ -255,7 +458,7 @@ class PhyloLogistic(Tree):
 
         # Linear predictor
         eta = X @ beta
-        if np.any(np.abs(eta) >= btol):
+        if (np.abs(eta) >= btol).any():
             return 1e10
 
         mu = 1.0 / (1.0 + np.exp(-np.clip(eta, -btol, btol)))
@@ -264,13 +467,13 @@ class PhyloLogistic(Tree):
         # Build VCV
         try:
             vcv, diag_corr = self._build_logistic_vcv(
-                tree, alpha, ordered_names, build_vcv_fn
+                tree, alpha, ordered_names, build_vcv_fn, root_tip_distances
             )
         except Exception:
             return 1e10
 
         # Standard Bernoulli log-likelihood
-        ll = float(np.sum(y * np.log(mu) + (1 - y) * np.log(1 - mu)))
+        ll = _bernoulli_log_likelihood(y, mu)
         if not np.isfinite(ll):
             return 1e10
 
@@ -298,9 +501,9 @@ class PhyloLogistic(Tree):
         tree,
         y: np.ndarray,
         X: np.ndarray,
-        ordered_names: List[str],
+        ordered_names: list[str],
         build_vcv_fn,
-    ) -> Dict:
+    ) -> dict:
         """Run the optimisation and compute results."""
         n, p = X.shape
         k = p - 1  # number of predictors (excluding intercept)
@@ -309,17 +512,16 @@ class PhyloLogistic(Tree):
         # Starting values
         beta0 = self._logistic_starting_values(y, X, btol)
         eta0 = X @ beta0
-        if np.any(np.abs(eta0) >= btol):
+        if (np.abs(eta0) >= btol).any():
             beta0 = np.zeros(p)
-            n1 = np.sum(y == 1)
-            n0 = np.sum(y == 0)
+            n1, n0 = _binary_response_class_counts(y)
             if n1 > 0 and n0 > 0:
                 beta0[0] = np.log(n1 / n0)
-                if np.any(np.abs(X @ beta0) >= btol):
+                if (np.abs(X @ beta0) >= btol).any():
                     beta0[0] = 0.0
 
-        # Alpha bounds
-        mean_rt = self._mean_root_tip_distance(tree, ordered_names)
+        root_tip_distances = self._root_tip_distances(tree, ordered_names)
+        mean_rt = float(root_tip_distances.mean())
         log_alpha_bound = 4.0
         lL_init = np.log(max(mean_rt, 1e-10))
         lL_lower = lL_init - log_alpha_bound
@@ -333,7 +535,7 @@ class PhyloLogistic(Tree):
         result = minimize(
             self._neg_pen_loglik,
             x0,
-            args=(X, y, tree, ordered_names, build_vcv_fn, btol),
+            args=(X, y, tree, ordered_names, build_vcv_fn, root_tip_distances, btol),
             method="L-BFGS-B",
             bounds=bounds,
             options={"maxiter": 500, "ftol": 2.2e-4, "gtol": 1e-5},
@@ -349,11 +551,11 @@ class PhyloLogistic(Tree):
         mu = np.clip(mu, 1e-16, 1 - 1e-16)
 
         # Unpenalized log-likelihood
-        ll = float(np.sum(y * np.log(mu) + (1 - y) * np.log(1 - mu)))
+        ll = _bernoulli_log_likelihood(y, mu)
 
         # Penalized log-likelihood and standard errors
         vcv, diag_corr = self._build_logistic_vcv(
-            tree, alpha_hat, ordered_names, build_vcv_fn
+            tree, alpha_hat, ordered_names, build_vcv_fn, root_tip_distances
         )
         info_matrix = self._compute_info_matrix(X, mu, vcv)
 
@@ -366,15 +568,10 @@ class PhyloLogistic(Tree):
         except np.linalg.LinAlgError:
             pen_ll = ll
 
-        # Standard errors from inverse of info matrix
-        try:
-            I_inv = np.linalg.inv(info_matrix)
-            se = np.sqrt(np.abs(np.diag(I_inv)))
-        except np.linalg.LinAlgError:
-            se = np.full(p, np.nan)
+        se = _standard_errors_from_info_matrix(info_matrix)
 
         z_stats = beta_hat / se
-        p_values = 2.0 * norm_dist.sf(np.abs(z_stats))
+        p_values = _normal_two_tailed_p_values(z_stats)
 
         # AIC: -2*ll + 2*(p+1) where p coefficients + alpha
         aic = -2.0 * ll + 2.0 * (p + 1)
@@ -416,43 +613,54 @@ class PhyloLogistic(Tree):
         else:
             return " "
 
-    def _print_text_output(self, result: Dict) -> None:
-        print("Phylogenetic Logistic Regression (Ives & Garland 2010)")
-        print("=" * 54)
-        print(f"Response: {self.response}")
-        print(f"Predictor(s): {', '.join(self.predictors)}")
-        print(f"Formula: {result['formula']}")
-        print(f"Method: {result['method']}")
-        print(f"Taxa: {result['n_taxa']}")
-        print(f"Alpha: {result['alpha']:.6f}")
-
-        print("\nCoefficients:")
-        print(
+    def _print_text_output(self, result: dict) -> None:
+        lines = [
+            "Phylogenetic Logistic Regression (Ives & Garland 2010)",
+            "=" * 54,
+            f"Response: {self.response}",
+            f"Predictor(s): {', '.join(self.predictors)}",
+            f"Formula: {result['formula']}",
+            f"Method: {result['method']}",
+            f"Taxa: {result['n_taxa']}",
+            f"Alpha: {result['alpha']:.6f}",
+            "\nCoefficients:",
             f"{'':20s}{'Estimate':>12s}{'Std.Error':>12s}"
-            f"{'z-value':>12s}{'Pr(>|z|)':>12s}"
-        )
+            f"{'z-value':>12s}{'Pr(>|z|)':>12s}",
+        ]
 
-        coefficients = result["coefficients"]
-        for name in coefficients:
-            coef = coefficients[name]
-            sig = self._signif_code(coef["p_value"])
-            print(
+        append = lines.append
+        for name, coef in result["coefficients"].items():
+            p_value = coef["p_value"]
+            if p_value < 0.001:
+                sig = "***"
+            elif p_value < 0.01:
+                sig = "**"
+            elif p_value < 0.05:
+                sig = "*"
+            elif p_value < 0.1:
+                sig = "."
+            else:
+                sig = " "
+            append(
                 f"{name:20s}{coef['estimate']:12.4f}{coef['std_error']:12.4f}"
-                f"{coef['z_value']:12.4f}{coef['p_value']:12.6f}    {sig}"
+                f"{coef['z_value']:12.4f}{p_value:12.6f}    {sig}"
             )
 
-        print("---")
-        print("Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1")
+        lines.append("---")
+        lines.append("Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1")
 
-        print(f"\nLog-likelihood: {result['log_likelihood']:.4f}")
-        print(f"Penalized log-likelihood: {result['penalized_log_likelihood']:.4f}")
-        print(f"AIC: {result['aic']:.4f}")
+        lines.append(f"\nLog-likelihood: {result['log_likelihood']:.4f}")
+        lines.append(
+            f"Penalized log-likelihood: {result['penalized_log_likelihood']:.4f}"
+        )
+        lines.append(f"AIC: {result['aic']:.4f}")
+        print("\n".join(lines))
 
     def _format_result(
         self,
         *,
         method: str,
-        coef_names: List[str],
+        coef_names: list[str],
         beta_hat: np.ndarray,
         se: np.ndarray,
         z_stats: np.ndarray,
@@ -463,18 +671,21 @@ class PhyloLogistic(Tree):
         formula: str,
         n: int,
         k: int,
-        ordered_names: List[str],
+        ordered_names: list[str],
         alpha: float,
         convergence: int,
-    ) -> Dict:
-        coefficients = {}
-        for i, name in enumerate(coef_names):
-            coefficients[name] = {
-                "estimate": float(beta_hat[i]),
-                "std_error": float(se[i]),
-                "z_value": float(z_stats[i]),
-                "p_value": float(p_values[i]),
+    ) -> dict:
+        coefficients = {
+            name: {
+                "estimate": float(beta),
+                "std_error": float(std_error),
+                "z_value": float(z_stat),
+                "p_value": float(p_value),
             }
+            for name, beta, std_error, z_stat, p_value in zip(
+                coef_names, beta_hat, se, z_stats, p_values
+            )
+        }
 
         result = {
             "method": method,

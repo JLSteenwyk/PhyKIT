@@ -1,27 +1,34 @@
-import sys
-from typing import Dict, List
+from __future__ import annotations
 
-import numpy as np
+import sys
 
 from .base import Tree
-from .stochastic_character_map import StochasticCharacterMap
-from ...helpers.json_output import print_json
-from ...helpers.plot_config import PlotConfig, compute_node_x_cladogram
-from ...helpers.circular_layout import (
-    compute_circular_coords,
-    draw_circular_tip_labels,
-    draw_circular_colored_branch,
-    draw_circular_colored_arc,
-    draw_circular_multi_segment_branch,
-)
-from ...helpers.color_annotations import (
-    parse_color_file,
-    resolve_mrca,
-    draw_range_rect,
-    draw_range_wedge,
-    build_color_legend_handles,
-)
 from ...errors import PhykitUserError
+
+
+class _LazyNumpy:
+    _module = None
+
+    def __getattr__(self, name):
+        module = self._module
+        if module is None:
+            import numpy as _np
+
+            module = _np
+            self._module = module
+
+        value = getattr(module, name)
+        setattr(self, name, value)
+        return value
+
+
+np = _LazyNumpy()
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
 
 
 class DensityMap(Tree):
@@ -36,7 +43,9 @@ class DensityMap(Tree):
         self.json_output = parsed["json_output"]
         self.plot_config = parsed["plot_config"]
 
-    def process_args(self, args) -> Dict:
+    def process_args(self, args) -> dict:
+        from ...helpers.plot_config import PlotConfig
+
         return dict(
             tree_file_path=args.tree,
             trait_data_path=args.trait_data,
@@ -49,7 +58,9 @@ class DensityMap(Tree):
         )
 
     def run(self) -> None:
-        tree = self.read_tree_file()
+        tree = self.read_tree_file_unmodified()
+
+        from .stochastic_character_map import StochasticCharacterMap
 
         # Use StochasticCharacterMap to do the heavy lifting
         scm = StochasticCharacterMap.__new__(StochasticCharacterMap)
@@ -71,14 +82,16 @@ class DensityMap(Tree):
                 code=2,
             )
 
-        # Prune tree to shared taxa
-        tips_in_tree = set(self.get_tip_names_from_tree(tree))
-        tips_to_prune = [t for t in tips_in_tree if t not in tip_states]
-        if tips_to_prune:
-            for tip_name in tips_to_prune:
-                tree.prune(tip_name)
+        copied_tree = False
+        missing_tip_state_count = scm._count_missing_tip_states(tree, tip_states)
+        if missing_tip_state_count is None or missing_tip_state_count:
+            tree = self._fast_copy(tree)
+            copied_tree = True
+            scm._prune_tree_to_tip_states(tree, tip_states)
 
         if self.plot_config.ladderize:
+            if not copied_tree:
+                tree = self._fast_copy(tree)
             tree.ladderize()
 
         # Fit Q matrix using ER model
@@ -93,14 +106,20 @@ class DensityMap(Tree):
 
         # Build parent lookup
         parent_map = scm._build_parent_map(tree)
+        simulation_metadata = scm._build_simulation_metadata(
+            tree, tip_states, states, parent_map
+        )
 
         # Run stochastic mappings
         rng = np.random.default_rng(self.seed)
         mappings = []
+        transition_cache = {}
         for _ in range(self.n_sim):
             mapping = scm._run_single_simulation(
                 tree, tip_states, Q, pi, states, rng,
                 cond_liks=cond_liks, parent_map=parent_map,
+                transition_cache=transition_cache,
+                simulation_metadata=simulation_metadata,
             )
             mappings.append(mapping)
 
@@ -111,7 +130,7 @@ class DensityMap(Tree):
         )
 
         # Text output
-        tips = list(tree.get_terminals())
+        tips = self._terminal_clades(tree)
         n_tips = len(tips)
 
         if self.json_output:
@@ -123,17 +142,23 @@ class DensityMap(Tree):
             }
             print_json(result)
         else:
-            print("Density Map")
-            print(
-                f"\nStates: {len(states)} "
-                f"({', '.join(states)})"
+            self._print_text_output(states, n_tips)
+
+    def _print_text_output(self, states, n_tips: int) -> None:
+        print(
+            "\n".join(
+                [
+                    "Density Map",
+                    f"\nStates: {len(states)} ({', '.join(states)})",
+                    f"Number of tips: {n_tips}",
+                    f"Number of simulations: {self.n_sim}",
+                    f"Saved density map plot: {self.output_path}",
+                ]
             )
-            print(f"Number of tips: {n_tips}")
-            print(f"Number of simulations: {self.n_sim}")
-            print(f"Saved density map plot: {self.output_path}")
+        )
 
     @staticmethod
-    def _get_state_at_position(history: List, t_query: float,
+    def _get_state_at_position(history: list, t_query: float,
                                branch_length: float) -> int:
         """Find which state is active at position t_query along a branch.
 
@@ -148,8 +173,8 @@ class DensityMap(Tree):
         return current_state
 
     def _compute_branch_posteriors(
-        self, mappings: List[Dict], clade_id: int,
-        branch_length: float, states: List[str],
+        self, mappings: list[dict], clade_id: int,
+        branch_length: float, states: list[str],
         n_segments: int = 50,
     ) -> np.ndarray:
         """Compute posterior state probabilities at points along a branch.
@@ -160,50 +185,56 @@ class DensityMap(Tree):
         k = len(states)
         n_sim = len(mappings)
         posteriors = np.zeros((n_segments, k))
+        histories_for_branch = []
+        for mapping in mappings:
+            history = mapping["branch_histories"].get(clade_id)
+            if history:
+                histories_for_branch.append(history)
 
         if branch_length <= 0:
             # For zero-length branches, just count states at position 0
-            for mapping in mappings:
-                histories = mapping["branch_histories"]
-                if clade_id in histories:
-                    state = histories[clade_id][0][1]
-                    posteriors[0, state] += 1
+            for history in histories_for_branch:
+                posteriors[0, history[0][1]] += 1
             if n_sim > 0:
                 posteriors[0] /= n_sim
             # Fill all segments with the same value
-            for seg in range(1, n_segments):
-                posteriors[seg] = posteriors[0]
+            if n_segments > 1:
+                posteriors[1:] = posteriors[0]
             return posteriors
 
-        for seg in range(n_segments):
-            frac_s = seg / n_segments
-            frac_e = (seg + 1) / n_segments
-            t_mid = (frac_s + frac_e) / 2.0 * branch_length
+        if histories_for_branch:
+            midpoint_scale = branch_length / n_segments
+            for history in histories_for_branch:
+                history_idx = 1
+                history_len = len(history)
+                state = history[0][1]
+                for seg in range(n_segments):
+                    t_mid = (seg + 0.5) * midpoint_scale
+                    while (
+                        history_idx < history_len
+                        and history[history_idx][0] <= t_mid
+                    ):
+                        state = history[history_idx][1]
+                        history_idx += 1
+                    posteriors[seg, state] += 1
 
-            for mapping in mappings:
-                histories = mapping["branch_histories"]
-                if clade_id not in histories:
-                    continue
-                history = histories[clade_id]
-                state = self._get_state_at_position(
-                    history, t_mid, branch_length
-                )
-                posteriors[seg, state] += 1
-
-            if n_sim > 0:
-                posteriors[seg] /= n_sim
+        if n_sim > 0:
+            posteriors /= n_sim
 
         return posteriors
 
     def _plot_density_map(
-        self, tree, mappings: List[Dict], states: List[str],
-        output_path: str, parent_map: Dict = None,
-        scm: StochasticCharacterMap = None,
+        self, tree, mappings: list[dict], states: list[str],
+        output_path: str, parent_map: dict = None,
+        scm=None,
     ) -> None:
+        from ...helpers.plot_config import compute_node_positions
+
         try:
             import matplotlib
             matplotlib.use("Agg")
             import matplotlib.pyplot as plt
+            from matplotlib.collections import LineCollection
             from matplotlib.lines import Line2D
             from matplotlib.colors import LinearSegmentedColormap
             import matplotlib.colorbar as mcolorbar
@@ -227,37 +258,17 @@ class DensityMap(Tree):
             state_colors_rgb.append(
                 np.array(tab10(i / max(k - 1, 1))[:3])
             )
-
-        # Compute node positions: x = distance from root, y = tip ordering
-        node_x = {}
-        node_y = {}
-
-        tips = list(tree.get_terminals())
-        for i, tip in enumerate(tips):
-            node_y[id(tip)] = i
+        state_color_matrix = np.asarray(state_colors_rgb)
 
         root = tree.root
-        if self.plot_config.cladogram:
-            node_x = compute_node_x_cladogram(tree, parent_map)
-        else:
-            for clade in tree.find_clades(order="preorder"):
-                if clade == root:
-                    node_x[id(clade)] = 0.0
-                else:
-                    parent = scm._get_parent(tree, clade, parent_map)
-                    if parent is not None:
-                        t = clade.branch_length if clade.branch_length else 0.0
-                        node_x[id(clade)] = node_x[id(parent)] + t
-
-        for clade in tree.find_clades(order="postorder"):
-            if not clade.is_terminal() and id(clade) not in node_y:
-                child_ys = [
-                    node_y[id(c)] for c in clade.clades if id(c) in node_y
-                ]
-                if child_ys:
-                    node_y[id(clade)] = np.mean(child_ys)
-                else:
-                    node_y[id(clade)] = 0.0
+        preorder_clades = list(self._iter_preorder(root))
+        tips = [clade for clade in preorder_clades if not clade.clades]
+        node_x, node_y = compute_node_positions(
+            tree,
+            parent_map,
+            cladogram=self.plot_config.cladogram,
+            preorder_clades=preorder_clades,
+        )
 
         config = self.plot_config
         config.resolve(n_rows=len(tips), n_cols=None)
@@ -265,19 +276,31 @@ class DensityMap(Tree):
 
         if self.plot_config.circular:
             # --- Circular mode ---
-            # Build parent_map keyed by id(child) -> parent clade
-            circ_parent_map = {}
-            for clade in tree.find_clades(order="preorder"):
-                for child in clade.clades:
-                    circ_parent_map[id(child)] = clade
-            coords = compute_circular_coords(tree, node_x, circ_parent_map)
+            from ...helpers.circular_layout import (
+                _arc_fractions_array,
+                compute_circular_coords,
+                draw_circular_tip_labels,
+            )
+            import math as _math
+
+            coords = compute_circular_coords(
+                tree,
+                node_x,
+                parent_map,
+                preorder_clades=preorder_clades,
+                terminal_clades=tips,
+            )
             ax.set_aspect("equal")
             ax.axis("off")
 
-            for clade in tree.find_clades(order="preorder"):
+            branch_segments = []
+            branch_colors = []
+            frac_starts = np.arange(n_segments) / n_segments
+            frac_ends = (np.arange(n_segments) + 1) / n_segments
+            for clade in preorder_clades:
                 if clade == root:
                     continue
-                parent = scm._get_parent(tree, clade, parent_map)
+                parent = parent_map.get(id(clade))
                 if parent is None:
                     continue
 
@@ -293,44 +316,48 @@ class DensityMap(Tree):
                     mappings, cid, t, states, n_segments=n_segments
                 )
 
-                # Build multi-segment data: each segment gets a blended color
-                # We use draw_circular_colored_branch for each sub-segment
-                if t > 0:
-                    for seg in range(n_segments):
-                        frac_s = seg / n_segments
-                        frac_e = (seg + 1) / n_segments
-                        # Compute weighted color
-                        color = np.zeros(3)
-                        for si in range(k):
-                            color += posteriors[seg, si] * state_colors_rgb[si]
-                        color = np.clip(color, 0, 1)
+                color_values = np.clip(posteriors @ state_color_matrix, 0, 1)
+                angle = coords[cid]["angle"]
+                cos_angle = _math.cos(angle)
+                sin_angle = _math.sin(angle)
+                r_p = coords[pid]["radius"]
+                r_c = coords[cid]["radius"]
 
-                        # Draw sub-segment along the radial branch
-                        import math as _math
-                        angle = coords[cid]["angle"]
-                        r_p = coords[pid]["radius"]
-                        r_c = coords[cid]["radius"]
-                        r0 = r_p + (r_c - r_p) * frac_s
-                        r1 = r_p + (r_c - r_p) * frac_e
-                        x0 = r0 * _math.cos(angle)
-                        y0 = r0 * _math.sin(angle)
-                        x1 = r1 * _math.cos(angle)
-                        y1 = r1 * _math.sin(angle)
-                        ax.plot([x0, x1], [y0, y1], color=color,
-                                linewidth=2.5, solid_capstyle="butt")
+                if t > 0:
+                    radius_delta = r_c - r_p
+                    r0s = r_p + radius_delta * frac_starts
+                    r1s = r_p + radius_delta * frac_ends
+                    for seg in range(len(color_values)):
+                        branch_segments.append((
+                            (r0s[seg] * cos_angle, r0s[seg] * sin_angle),
+                            (r1s[seg] * cos_angle, r1s[seg] * sin_angle),
+                        ))
+                    branch_colors.extend(color_values)
                 else:
-                    # Zero-length branch
-                    color = np.zeros(3)
-                    for si in range(k):
-                        color += posteriors[0, si] * state_colors_rgb[si]
-                    color = np.clip(color, 0, 1)
-                    draw_circular_colored_branch(
-                        ax, coords[pid], coords[cid], color=color, lw=2.5
-                    )
+                    branch_segments.append((
+                        (r_p * cos_angle, r_p * sin_angle),
+                        (r_c * cos_angle, r_c * sin_angle),
+                    ))
+                    branch_colors.append(color_values[0])
+
+            if branch_segments:
+                ax.add_collection(
+                    LineCollection(
+                        branch_segments,
+                        colors=np.asarray(branch_colors, dtype=float),
+                        linewidths=2.5,
+                        capstyle="butt",
+                        zorder=2,
+                    ),
+                    autolim=True,
+                )
 
             # Arcs at internal nodes colored by parent state (gray)
-            for clade in tree.find_clades(order="preorder"):
-                if clade.is_terminal() or not clade.clades:
+            arc_segments = []
+            arc_fractions = _arc_fractions_array()
+            tau = 2.0 * _math.pi
+            for clade in preorder_clades:
+                if not clade.clades:
                     continue
                 cid = id(clade)
                 if cid not in coords:
@@ -340,10 +367,30 @@ class DensityMap(Tree):
                     continue
                 min_a = min(child_angles)
                 max_a = max(child_angles)
-                draw_circular_colored_arc(
-                    ax, 0, 0, coords[cid]["radius"],
-                    min_a, max_a, color="gray", lw=0.8,
+                start = min_a % tau
+                end = max_a % tau
+                diff = (end - start) % tau
+                if diff > _math.pi:
+                    diff = diff - tau
+                angles = start + diff * arc_fractions
+                radius = coords[cid]["radius"]
+                arc_segments.append(
+                    np.column_stack((radius * np.cos(angles), radius * np.sin(angles)))
                 )
+
+            if arc_segments:
+                ax.add_collection(
+                    LineCollection(
+                        arc_segments,
+                        colors="gray",
+                        linewidths=0.8,
+                        capstyle="round",
+                        zorder=1,
+                    ),
+                    autolim=True,
+                )
+            if branch_segments or arc_segments:
+                ax.autoscale_view()
 
             # Tip labels
             max_x = max(node_x.values()) if node_x else 1.0
@@ -353,16 +400,20 @@ class DensityMap(Tree):
 
             # Apply color annotations (range + label only; branches are trait-colored)
             if self.plot_config.color_file:
+                from ...helpers.color_annotations import (
+                    build_color_legend_handles,
+                    apply_label_colors,
+                    draw_range_wedge,
+                    parse_color_file,
+                    resolve_mrca,
+                )
+
                 color_data = parse_color_file(self.plot_config.color_file)
                 for taxa_list, clr, lbl in color_data["ranges"]:
                     mrca = resolve_mrca(tree, taxa_list)
                     if mrca is not None:
                         draw_range_wedge(ax, tree, mrca, clr, coords)
-                for taxon, lbl_color in color_data["labels"].items():
-                    for text_obj in ax.texts:
-                        if text_obj.get_text() == taxon:
-                            text_obj.set_color(lbl_color)
-                            break
+                apply_label_colors(ax, color_data["labels"])
 
             # Add colorbar for 2-state case or legend for k-state
             if k == 2:
@@ -397,10 +448,15 @@ class DensityMap(Tree):
                 ax.set_title(config.title or "Density Map", fontsize=config.title_fontsize)
         else:
             # --- Rectangular mode ---
-            for clade in tree.find_clades(order="preorder"):
+            vertical_segments = []
+            branch_segments = []
+            branch_colors = []
+            frac_starts = np.arange(n_segments) / n_segments
+            frac_ends = (np.arange(n_segments) + 1) / n_segments
+            for clade in preorder_clades:
                 if clade == root:
                     continue
-                parent = scm._get_parent(tree, clade, parent_map)
+                parent = parent_map.get(id(clade))
                 if parent is None:
                     continue
 
@@ -410,11 +466,7 @@ class DensityMap(Tree):
                 child_y = node_y[id(clade)]
                 t = clade.branch_length if clade.branch_length else 0.0
 
-                # Draw vertical connector at parent x
-                ax.plot(
-                    [parent_x, parent_x], [parent_y, child_y],
-                    color="gray", linewidth=0.8, zorder=1
-                )
+                vertical_segments.append(((parent_x, parent_y), (parent_x, child_y)))
 
                 # Compute posterior probabilities along this branch
                 clade_id = id(clade)
@@ -422,35 +474,43 @@ class DensityMap(Tree):
                     mappings, clade_id, t, states, n_segments=n_segments
                 )
 
-                # Draw horizontal branch as colored segments
+                color_values = np.clip(posteriors @ state_color_matrix, 0, 1)
                 if t > 0:
-                    for seg in range(n_segments):
-                        frac_s = seg / n_segments
-                        frac_e = (seg + 1) / n_segments
-                        x0 = parent_x + frac_s * t
-                        x1 = parent_x + frac_e * t
-
-                        # Compute weighted color from state posteriors
-                        color = np.zeros(3)
-                        for si in range(k):
-                            color += posteriors[seg, si] * state_colors_rgb[si]
-                        color = np.clip(color, 0, 1)
-
-                        ax.plot(
-                            [x0, x1], [child_y, child_y],
-                            color=color, linewidth=2.5,
-                            solid_capstyle="butt", zorder=2,
-                        )
+                    x0s = parent_x + frac_starts * t
+                    x1s = parent_x + frac_ends * t
+                    for seg in range(len(color_values)):
+                        branch_segments.append((
+                            (x0s[seg], child_y),
+                            (x1s[seg], child_y),
+                        ))
+                    branch_colors.extend(color_values)
                 else:
-                    # Zero-length branch: just draw a point
-                    color = np.zeros(3)
-                    for si in range(k):
-                        color += posteriors[0, si] * state_colors_rgb[si]
-                    color = np.clip(color, 0, 1)
-                    ax.plot(
-                        [parent_x, child_x], [child_y, child_y],
-                        color=color, linewidth=2.5, zorder=2,
-                    )
+                    branch_segments.append(((parent_x, child_y), (child_x, child_y)))
+                    branch_colors.append(color_values[0])
+
+            if vertical_segments:
+                ax.add_collection(
+                    LineCollection(
+                        vertical_segments,
+                        colors="gray",
+                        linewidths=0.8,
+                        zorder=1,
+                    ),
+                    autolim=True,
+                )
+            if branch_segments:
+                ax.add_collection(
+                    LineCollection(
+                        branch_segments,
+                        colors=np.asarray(branch_colors, dtype=float),
+                        linewidths=2.5,
+                        capstyle="butt",
+                        zorder=2,
+                    ),
+                    autolim=True,
+                )
+            if vertical_segments or branch_segments:
+                ax.autoscale_view()
 
             # Tip labels
             max_x = max(node_x.values()) if node_x else 0
@@ -465,16 +525,20 @@ class DensityMap(Tree):
 
             # Apply color annotations (range + label only; branches are trait-colored)
             if self.plot_config.color_file:
+                from ...helpers.color_annotations import (
+                    build_color_legend_handles,
+                    apply_label_colors,
+                    draw_range_rect,
+                    parse_color_file,
+                    resolve_mrca,
+                )
+
                 color_data = parse_color_file(self.plot_config.color_file)
                 for taxa_list, clr, lbl in color_data["ranges"]:
                     mrca = resolve_mrca(tree, taxa_list)
                     if mrca is not None:
                         draw_range_rect(ax, tree, mrca, clr, node_x, node_y)
-                for taxon, lbl_color in color_data["labels"].items():
-                    for text_obj in ax.texts:
-                        if text_obj.get_text() == taxon:
-                            text_obj.set_color(lbl_color)
-                            break
+                apply_label_colors(ax, color_data["labels"])
 
             # Add colorbar for 2-state case or legend for k-state
             if k == 2:
@@ -524,6 +588,51 @@ class DensityMap(Tree):
             if config.show_title:
                 ax.set_title(config.title or "Density Map", fontsize=config.title_fontsize)
 
-        fig.tight_layout()
         fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
+
+    @staticmethod
+    def _iter_preorder(root):
+        stack = [root]
+        pop = stack.pop
+        append = stack.append
+        while stack:
+            clade = pop()
+            yield clade
+            children = clade.clades
+            if children:
+                child_count = len(children)
+                if child_count == 2:
+                    append(children[1])
+                    append(children[0])
+                else:
+                    for index in range(child_count - 1, -1, -1):
+                        append(children[index])
+
+    @staticmethod
+    def _terminal_clades(tree):
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            return list(tree.get_terminals())
+
+        tips = []
+        stack = [root]
+        pop = stack.pop
+        append = stack.append
+        append_tip = tips.append
+        while stack:
+            clade = pop()
+            children = clade.clades
+            if children:
+                child_count = len(children)
+                if child_count == 2:
+                    append(children[1])
+                    append(children[0])
+                else:
+                    for index in range(child_count - 1, -1, -1):
+                        append(children[index])
+            else:
+                append_tip(clade)
+        return tips

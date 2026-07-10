@@ -1,14 +1,93 @@
 import pytest
 import json
+import math
 import os
+import subprocess
+import sys
 from io import StringIO
 from argparse import Namespace
 from pathlib import Path
+from unittest.mock import Mock
 
 from Bio import Phylo
+from Bio.Phylo.BaseTree import TreeMixin
 
-from phykit.services.tree.ltt import LTT
+from phykit.services.tree.ltt import (
+    LTT,
+    _gamma_st_and_stat_sum,
+    _ltt_from_internal_depths,
+    _max_tip_height,
+)
 from phykit.errors import PhykitUserError
+
+
+def test_max_tip_height_scans_tips_once():
+    class SinglePassTips:
+        def __init__(self, tips):
+            self.tips = tips
+            self.iterations = 0
+
+        def __iter__(self):
+            self.iterations += 1
+            if self.iterations > 1:
+                raise AssertionError("tips should be scanned once")
+            return iter(self.tips)
+
+    tips = [object(), object(), object()]
+    depths = {tips[0]: 1.25, tips[1]: 4.5, tips[2]: 2.0}
+    iterable = SinglePassTips(tips)
+
+    assert _max_tip_height(iterable, depths, 0.5) == 4.0
+    assert iterable.iterations == 1
+
+
+def test_gamma_st_and_stat_sum_matches_explicit_formula():
+    g = [0.7, 0.5, 0.25, 0.125]
+    n_tips = len(g) + 1
+    expected_st = sum((k + 2) * g[k] for k in range(n_tips - 1))
+    running = 0.0
+    expected_stat_sum = 0.0
+    for k in range(n_tips - 2):
+        running += (k + 2) * g[k]
+        expected_stat_sum += running
+
+    st, stat_sum = _gamma_st_and_stat_sum(g, n_tips)
+
+    assert st == pytest.approx(expected_st)
+    assert stat_sum == pytest.approx(expected_stat_sum)
+
+
+def test_ltt_from_internal_depths_does_not_slice_rows():
+    class NoSliceList(list):
+        def __getitem__(self, key):
+            if isinstance(key, slice):
+                raise AssertionError("LTT row construction should not slice")
+            return super().__getitem__(key)
+
+    internal_depths = NoSliceList([0.0, 1.25, 2.5])
+
+    assert _ltt_from_internal_depths(internal_depths, 4.0) == [
+        (0.0, 2),
+        (1.25, 3),
+        (2.5, 4),
+        (4.0, 4),
+    ]
+
+
+def test_module_import_does_not_import_json_plot_numpy_or_matplotlib():
+    code = """
+import sys
+import phykit.services.tree.ltt as module
+assert callable(module.print_json)
+assert "typing" not in sys.modules
+assert "json" not in sys.modules
+assert "phykit.helpers.json_output" not in sys.modules
+assert "phykit.helpers.plot_config" not in sys.modules
+assert "numpy" not in sys.modules
+assert "matplotlib" not in sys.modules
+assert "matplotlib.pyplot" not in sys.modules
+"""
+    subprocess.run([sys.executable, "-c", code], check=True)
 
 
 here = Path(__file__)
@@ -19,7 +98,30 @@ RECENT_BURST_TREE = str(SAMPLE_FILES / "ltt_test_recent_burst.tre")
 EARLY_BURST_TREE = str(SAMPLE_FILES / "ltt_test_early_burst.tre")
 
 
+class _NoReversedList(list):
+    def __reversed__(self):
+        raise AssertionError("binary depth traversal should not call reversed")
+
+
+def _wrap_binary_child_lists_no_reversed(clade):
+    children = clade.clades
+    if len(children) == 2:
+        clade.clades = _NoReversedList(children)
+    for child in clade.clades:
+        _wrap_binary_child_lists_no_reversed(child)
+
+
 class TestGammaStat:
+    def test_terminal_clades_preserves_order_with_mixed_child_counts(self):
+        tree = Phylo.read(
+            StringIO("(A:1,(B:1,C:1):1,(D:1,E:1,F:1):1);"),
+            "newick",
+        )
+
+        tips = LTT._terminal_clades(tree)
+
+        assert [tip.name for tip in tips] == ["A", "B", "C", "D", "E", "F"]
+
     def test_balanced_tree_matches_r(self):
         """R: gammaStat(balanced_8) = -1.414214"""
         tree = Phylo.read(
@@ -86,11 +188,199 @@ class TestGammaStat:
         gamma, p_val, _, _ = LTT._compute_gamma(tree)
         assert gamma < 0
 
+    def test_gamma_p_value_uses_standard_library_erfc(self, monkeypatch):
+        tree = Phylo.read(
+            StringIO("(((A:1,B:1):1,(C:1,D:1):1):1,E:3);"), "newick"
+        )
+        real_import = __import__
+
+        def fail_scipy_import(name, *args, **kwargs):
+            if name == "scipy" or name.startswith("scipy."):
+                raise AssertionError("gamma p-value should not import scipy")
+            return real_import(name, *args, **kwargs)
+
+        monkeypatch.setattr("builtins.__import__", fail_scipy_import)
+
+        gamma, p_val, _, _ = LTT._compute_gamma(tree)
+
+        assert p_val == pytest.approx(math.erfc(abs(gamma) / math.sqrt(2.0)))
+
     def test_too_few_tips_raises(self):
         """Need at least 3 tips."""
         tree = Phylo.read(StringIO("(A:1,B:1);"), "newick")
         with pytest.raises(SystemExit):
             LTT._compute_gamma(tree)
+
+    def test_gamma_fast_path_does_not_call_distance(self, monkeypatch):
+        newick = "(((A:1,B:1):1,(C:1,D:1):1):1,E:3):0.5;"
+        expected_gamma, _, expected_bt, expected_g = LTT._compute_gamma(
+            Phylo.read(StringIO(newick), "newick")
+        )
+        tree = Phylo.read(StringIO(newick), "newick")
+
+        def fail_distance(*args, **kwargs):
+            raise AssertionError("distance fallback should not be called")
+
+        monkeypatch.setattr(tree, "distance", fail_distance)
+        gamma, _, bt, g = LTT._compute_gamma(tree)
+
+        assert gamma == pytest.approx(expected_gamma)
+        assert bt == expected_bt
+        assert g == expected_g
+
+    def test_gamma_default_tips_use_direct_terminal_traversal(self, monkeypatch):
+        newick = "(((A:1,B:1):1,(C:1,D:1):1):1,E:3):0.5;"
+        expected_gamma, _, expected_bt, expected_g = LTT._compute_gamma(
+            Phylo.read(StringIO(newick), "newick")
+        )
+        tree = Phylo.read(StringIO(newick), "newick")
+
+        def fail_get_terminals(*_args, **_kwargs):
+            raise AssertionError("generic terminal traversal should not be used")
+
+        monkeypatch.setattr(TreeMixin, "get_terminals", fail_get_terminals)
+
+        gamma, _, bt, g = LTT._compute_gamma(tree)
+
+        assert gamma == pytest.approx(expected_gamma)
+        assert bt == expected_bt
+        assert g == expected_g
+
+    def test_depths_from_root_uses_direct_standard_tree_traversal(self, monkeypatch):
+        tree = Phylo.read(
+            StringIO("(((A:1,B:1):1,(C:1,D:1):1):1,E:3):0.5;"),
+            "newick",
+        )
+
+        def fail_depths(*_args, **_kwargs):
+            raise AssertionError("generic tree.depths() should not be used")
+
+        monkeypatch.setattr(tree, "depths", fail_depths)
+
+        root, depths, root_depth = LTT._depths_from_root(tree)
+
+        assert root is tree.root
+        assert root_depth == 0.0
+        assert max(depths[tip] for tip in tree.get_terminals()) == pytest.approx(3.0)
+
+    def test_depths_from_root_binary_path_avoids_reversed_children(self):
+        tree = Phylo.read(
+            StringIO("((A:1,B:2):3,(C:4,D:5):6);"),
+            "newick",
+        )
+        _wrap_binary_child_lists_no_reversed(tree.root)
+
+        root, depths, root_depth = LTT._depths_from_root(tree)
+
+        assert root is tree.root
+        assert root_depth == 0.0
+        assert {
+            tip.name: depths[tip]
+            for tip in tree.get_terminals()
+        } == {
+            "A": 4.0,
+            "B": 5.0,
+            "C": 10.0,
+            "D": 11.0,
+        }
+
+    def test_internal_depths_from_root_handles_mixed_child_counts(self, monkeypatch):
+        tree = Phylo.read(
+            StringIO("(A:1,(B:1,C:1):2,(D:1,E:1,F:1):3);"),
+            "newick",
+        )
+        depth_data = LTT._depths_from_root(tree)
+
+        def fail_find_clades(*args, **kwargs):
+            raise AssertionError("generic clade traversal should not be used")
+
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_find_clades)
+
+        with_root = LTT._internal_depths_from_root(
+            tree,
+            depth_data,
+            include_root=True,
+        )
+        without_root = LTT._internal_depths_from_root(
+            tree,
+            depth_data,
+            include_root=False,
+        )
+
+        assert with_root == pytest.approx([0.0, 2.0, 3.0])
+        assert without_root == pytest.approx([2.0, 3.0])
+
+    def test_gamma_uses_provided_tree_context(self, monkeypatch):
+        newick = "(((A:1,B:1):1,(C:1,D:1):1):1,E:3):0.5;"
+        expected_gamma, _, expected_bt, expected_g = LTT._compute_gamma(
+            Phylo.read(StringIO(newick), "newick")
+        )
+        tree = Phylo.read(StringIO(newick), "newick")
+        tips = list(tree.get_terminals())
+        depth_data = LTT._depths_from_root(tree)
+
+        def fail_traversal(*args, **kwargs):
+            raise AssertionError("provided context should avoid setup traversal")
+
+        monkeypatch.setattr(tree, "get_terminals", fail_traversal)
+        monkeypatch.setattr(tree, "depths", fail_traversal)
+        monkeypatch.setattr(tree, "distance", fail_traversal)
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_traversal)
+
+        gamma, _, bt, g = LTT._compute_gamma(
+            tree, tips=tips, depth_data=depth_data
+        )
+
+        assert gamma == pytest.approx(expected_gamma)
+        assert bt == expected_bt
+        assert g == expected_g
+
+    def test_combined_gamma_and_ltt_matches_standalone_helpers(self):
+        newick = "(((A:1,B:1):1,(C:1,D:1):1):1,E:3):0.5;"
+        tree = Phylo.read(StringIO(newick), "newick")
+        tips = LTT._terminal_clades(tree)
+        depth_data = LTT._depths_from_root(tree)
+
+        expected_gamma, expected_p, expected_bt, expected_g = LTT._compute_gamma(
+            tree, tips=tips, depth_data=depth_data
+        )
+        expected_ltt = LTT._compute_ltt(tree, tips=tips, depth_data=depth_data)
+
+        gamma, p_value, bt, g, ltt_data = LTT._compute_gamma_and_ltt(
+            tree, tips=tips, depth_data=depth_data
+        )
+
+        assert gamma == pytest.approx(expected_gamma)
+        assert p_value == pytest.approx(expected_p)
+        assert bt == expected_bt
+        assert g == expected_g
+        assert ltt_data == expected_ltt
+
+    def test_combined_gamma_and_ltt_direct_path_avoids_setup_helpers(
+        self, monkeypatch
+    ):
+        newick = "(((A:1,B:1):1,(C:1,D:1):1):1,E:3):0.5;"
+        expected = LTT._compute_gamma_and_ltt(Phylo.read(StringIO(newick), "newick"))
+        tree = Phylo.read(StringIO(newick), "newick")
+
+        def fail_setup(*args, **kwargs):
+            raise AssertionError("combined LTT path should use one direct traversal")
+
+        monkeypatch.setattr(LTT, "_terminal_clades", fail_setup)
+        monkeypatch.setattr(LTT, "_depths_from_root", fail_setup)
+        monkeypatch.setattr(LTT, "_internal_depths_from_root", fail_setup)
+        monkeypatch.setattr(tree, "get_terminals", fail_setup)
+        monkeypatch.setattr(tree, "depths", fail_setup)
+        monkeypatch.setattr(tree, "distance", fail_setup)
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_setup)
+
+        observed = LTT._compute_gamma_and_ltt(tree)
+
+        assert observed[0] == pytest.approx(expected[0])
+        assert observed[1] == pytest.approx(expected[1])
+        assert observed[2] == expected[2]
+        assert observed[3] == expected[3]
+        assert observed[4] == expected[4]
 
 
 class TestLTTData:
@@ -130,6 +420,44 @@ class TestLTTData:
         assert ltt[0] == (0.0, 2)
         assert any(abs(t - 1.0) < 1e-6 and n == 3 for t, n in ltt)
 
+    def test_ltt_fast_path_does_not_call_distance(self, monkeypatch):
+        tree = Phylo.read(StringIO("((A:1,B:1):1,C:2):0.5;"), "newick")
+
+        def fail_distance(*args, **kwargs):
+            raise AssertionError("distance fallback should not be called")
+
+        monkeypatch.setattr(tree, "distance", fail_distance)
+        ltt = LTT._compute_ltt(tree)
+
+        assert ltt == [(0.0, 2), (1.0, 3), (2.0, 3)]
+
+    def test_ltt_default_tips_use_direct_terminal_traversal(self, monkeypatch):
+        tree = Phylo.read(StringIO("((A:1,B:1):1,C:2):0.5;"), "newick")
+
+        def fail_get_terminals(*_args, **_kwargs):
+            raise AssertionError("generic terminal traversal should not be used")
+
+        monkeypatch.setattr(TreeMixin, "get_terminals", fail_get_terminals)
+
+        assert LTT._compute_ltt(tree) == [(0.0, 2), (1.0, 3), (2.0, 3)]
+
+    def test_ltt_uses_provided_tree_context(self, monkeypatch):
+        newick = "(((A:1,B:1):1,(C:1,D:1):1):1,E:3):0.5;"
+        expected = LTT._compute_ltt(Phylo.read(StringIO(newick), "newick"))
+        tree = Phylo.read(StringIO(newick), "newick")
+        tips = list(tree.get_terminals())
+        depth_data = LTT._depths_from_root(tree)
+
+        def fail_traversal(*args, **kwargs):
+            raise AssertionError("provided context should avoid setup traversal")
+
+        monkeypatch.setattr(tree, "get_terminals", fail_traversal)
+        monkeypatch.setattr(tree, "depths", fail_traversal)
+        monkeypatch.setattr(tree, "distance", fail_traversal)
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_traversal)
+
+        assert LTT._compute_ltt(tree, tips=tips, depth_data=depth_data) == expected
+
 
 class TestLTTPlot:
     def test_plot_creates_file(self, tmp_path):
@@ -141,6 +469,26 @@ class TestLTTPlot:
         plot_path = str(tmp_path / "ltt.png")
         instance = LTT(Namespace(tree="dummy.tre"))
         instance._plot_ltt(ltt_data, plot_path, gamma=-0.5, p_value=0.6)
+        assert os.path.exists(plot_path)
+        assert os.path.getsize(plot_path) > 0
+
+    def test_plot_skips_redundant_tight_layout(self, tmp_path, monkeypatch):
+        tree = Phylo.read(
+            StringIO("(((A:1,B:1):1,(C:1,D:1):1):1,E:3);"), "newick"
+        )
+        ltt_data = LTT._compute_ltt(tree)
+        plot_path = str(tmp_path / "ltt.png")
+        instance = LTT(Namespace(tree="dummy.tre"))
+
+        pytest.importorskip("matplotlib")
+        from matplotlib.figure import Figure
+
+        def fail_tight_layout(self, *args, **kwargs):
+            raise AssertionError("bbox_inches='tight' handles saved bounds")
+
+        monkeypatch.setattr(Figure, "tight_layout", fail_tight_layout)
+        instance._plot_ltt(ltt_data, plot_path, gamma=-0.5, p_value=0.6)
+
         assert os.path.exists(plot_path)
         assert os.path.getsize(plot_path) > 0
 
@@ -165,6 +513,34 @@ class TestProcessArgs:
 
 
 class TestRun:
+    def test_run_uses_unmodified_tree_read(self, monkeypatch):
+        tree = object()
+        tips = ["a", "b", "c"]
+        depth_data = object()
+        args = Namespace(tree="dummy.tre", verbose=False, json=False, plot_output=None)
+        svc = LTT(args)
+
+        read_tree = Mock(return_value=tree)
+        monkeypatch.setattr(svc, "read_tree_file_unmodified", read_tree)
+        monkeypatch.setattr(
+            svc,
+            "read_tree_file",
+            Mock(side_effect=AssertionError("copying tree reader should not be used")),
+        )
+        monkeypatch.setattr(svc, "validate_tree", Mock())
+        monkeypatch.setattr(svc, "_terminal_clades", Mock(return_value=tips))
+        monkeypatch.setattr(svc, "_depths_from_root", Mock(return_value=depth_data))
+        monkeypatch.setattr(
+            svc,
+            "_compute_gamma_and_ltt",
+            Mock(return_value=(0.0, 1.0, [], [], [(0.0, 2), (1.0, 3)])),
+        )
+        monkeypatch.setattr(svc, "_output_text", Mock())
+
+        svc.run()
+
+        read_tree.assert_called_once_with()
+
     def test_text_output(self, capsys):
         args = Namespace(
             tree=BALANCED_TREE, verbose=False, json=False, plot_output=None
@@ -188,6 +564,33 @@ class TestRun:
         assert "Branching times" in out
         assert "Lineage-through-time" in out
 
+    def test_output_text_batches_verbose_report(self, monkeypatch):
+        args = Namespace(tree=BALANCED_TREE, verbose=True, json=False, plot_output=None)
+        svc = LTT(args)
+        printed = Mock()
+        monkeypatch.setattr("builtins.print", printed)
+
+        svc._output_text(
+            -1.23456,
+            0.04567,
+            [(0.0, 2), (0.5, 3)],
+            [0.25, 0.75],
+            [],
+        )
+
+        printed.assert_called_once_with(
+            "-1.2346\t0.0457\n"
+            "\n"
+            "Branching times (node ages):\n"
+            "  1\t0.250000\n"
+            "  2\t0.750000\n"
+            "\n"
+            "Lineage-through-time:\n"
+            "  time_from_root\tn_lineages\n"
+            "  0.000000\t2\n"
+            "  0.500000\t3"
+        )
+
     def test_json_output(self, capsys):
         args = Namespace(
             tree=BALANCED_TREE, verbose=False, json=True, plot_output=None
@@ -201,6 +604,27 @@ class TestRun:
         assert "branching_times" in data
         assert "ltt" in data
         assert abs(data["gamma"] - (-1.414214)) < 1e-4
+
+    def test_output_json_converts_numeric_series(self, mocker):
+        args = Namespace(tree=BALANCED_TREE, verbose=False, json=True, plot_output=None)
+        svc = LTT(args)
+        mocked_json = mocker.patch("phykit.services.tree.ltt.print_json")
+
+        svc._output_json(
+            -1.25,
+            0.125,
+            [(0, "2"), (1.5, 3.0)],
+            [0, 0.75],
+            [1, 0.25],
+        )
+
+        payload = mocked_json.call_args.args[0]
+        assert payload["branching_times"] == [0.0, 0.75]
+        assert payload["internode_intervals"] == [1.0, 0.25]
+        assert payload["ltt"] == [
+            {"time_from_root": 0.0, "n_lineages": 2},
+            {"time_from_root": 1.5, "n_lineages": 3},
+        ]
 
     def test_plot_output(self, tmp_path):
         plot_path = str(tmp_path / "test_ltt.png")

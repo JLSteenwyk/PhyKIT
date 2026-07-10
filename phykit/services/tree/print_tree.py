@@ -1,10 +1,23 @@
-from typing import Dict
-import pickle
-
-from Bio import Phylo
+from __future__ import annotations
 
 from .base import Tree
-from ...helpers.json_output import print_json
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
+
+
+class _LazyPhylo:
+    def draw_ascii(self, *args, **kwargs):
+        from Bio import Phylo as _Phylo
+
+        self.draw_ascii = _Phylo.draw_ascii
+        return self.draw_ascii(*args, **kwargs)
+
+
+Phylo = _LazyPhylo()
 
 
 class PrintTree(Tree):
@@ -17,13 +30,10 @@ class PrintTree(Tree):
         self.json_output = parsed["json_output"]
 
     def run(self):
-        tree = self.read_tree_file()
+        tree = self.read_tree_file() if self.remove else self.read_tree_file_unmodified()
 
         if self.remove:
-            # Make a deep copy to avoid modifying the cached tree
-            tree = pickle.loads(pickle.dumps(tree, protocol=pickle.HIGHEST_PROTOCOL))
-            for node in tree.get_terminals() + tree.get_nonterminals():
-                node.branch_length = None
+            self.remove_branch_lengths(tree)
 
         if self.json_output:
             print_json(
@@ -39,9 +49,36 @@ class PrintTree(Tree):
         except BrokenPipeError:
             pass
 
-    def process_args(self, args) -> Dict[str, str]:
+    def process_args(self, args) -> dict[str, str]:
         return dict(
             tree_file_path=args.tree,
             remove=args.remove,
             json_output=getattr(args, "json", False),
         )
+
+    def remove_branch_lengths(self, tree) -> None:
+        if self._remove_standard_tree_branch_lengths(tree):
+            return
+
+        for node in tree.find_clades(order="preorder"):
+            node.branch_length = None
+
+    @staticmethod
+    def _remove_standard_tree_branch_lengths(tree) -> bool:
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            return False
+
+        stack = [root]
+        try:
+            pop = stack.pop
+            extend = stack.extend
+            while stack:
+                node = pop()
+                node.branch_length = None
+                extend(node.clades)
+        except AttributeError:
+            return False
+        return True

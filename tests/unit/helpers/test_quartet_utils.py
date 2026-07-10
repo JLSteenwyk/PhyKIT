@@ -5,16 +5,33 @@ Tests gCF/gDF computation via bipartition matching and ASTRAL
 q1/q2/q3 annotation parsing. Ground truth values computed from
 tests/sample_files/tree_simple.tre + gene_trees_simple.nwk.
 """
+import subprocess
+import sys
+
 import pytest
 
 from Bio import Phylo
 
 from phykit.helpers.quartet_utils import (
+    _collect_clade_tip_sets,
+    _collect_clade_tip_sets_direct,
+    _preorder_clades_direct,
     canonical_split,
     compute_gcf_per_node,
     parse_astral_annotations,
+    parse_astral_branch_info,
     _parse_qs_from_label,
 )
+
+
+def test_module_import_does_not_import_typing_or_biopython():
+    code = """
+import sys
+import phykit.helpers.quartet_utils
+assert "typing" not in sys.modules
+assert "Bio" not in sys.modules
+"""
+    subprocess.run([sys.executable, "-c", code], check=True)
 
 
 class TestCanonicalSplit:
@@ -24,8 +41,109 @@ class TestCanonicalSplit:
         s2 = canonical_split(frozenset(["C", "D"]), all_taxa)
         assert s1 == s2  # Same split from either side
 
+    def test_returns_frozen_tip_and_complement_sets(self):
+        all_taxa = frozenset(["A", "B", "C", "D"])
+        split = canonical_split(frozenset(["A", "C"]), all_taxa)
+
+        assert split == frozenset(
+            [
+                frozenset(["A", "C"]),
+                frozenset(["B", "D"]),
+            ]
+        )
+
+
+class TestCollectCladeTipSets:
+    def test_filters_to_allowed_taxa(self):
+        from io import StringIO
+
+        tree = Phylo.read(StringIO("((A,B),(C,(D,E)));"), "newick")
+        allowed = frozenset(["A", "B", "C", "D"])
+        clade_tips = _collect_clade_tip_sets(tree, allowed)
+
+        assert clade_tips[id(tree.root)] == allowed
+        for clade in tree.find_clades(order="preorder"):
+            assert "E" not in clade_tips[id(clade)]
+
+    def test_direct_helper_matches_standard_postorder_with_filter(self, monkeypatch):
+        from io import StringIO
+        from Bio.Phylo.BaseTree import TreeMixin
+
+        tree = Phylo.read(StringIO("((A,B),(C,(D,E)));"), "newick")
+        allowed = frozenset(["A", "B", "C", "D"])
+        expected = _collect_clade_tip_sets(tree, allowed)
+
+        def fail_find_clades(*_args, **_kwargs):
+            raise AssertionError("direct clade-tip helper should not use find_clades")
+
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_find_clades)
+
+        assert _collect_clade_tip_sets_direct(tree, allowed) == expected
+
+    def test_direct_helper_handles_mixed_child_counts_with_filter(self, monkeypatch):
+        from io import StringIO
+        from Bio.Phylo.BaseTree import TreeMixin
+
+        tree = Phylo.read(StringIO("(A,(B,C),(D,E,F));"), "newick")
+        allowed = frozenset(["A", "B", "D", "F"])
+
+        def fail_find_clades(*_args, **_kwargs):
+            raise AssertionError("direct clade-tip helper should not use find_clades")
+
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_find_clades)
+
+        clade_tips = _collect_clade_tip_sets_direct(tree, allowed)
+        terminal, binary, trifurcating = tree.root.clades
+
+        assert clade_tips[id(terminal)] == frozenset({"A"})
+        assert clade_tips[id(binary)] == frozenset({"B"})
+        assert clade_tips[id(trifurcating)] == frozenset({"D", "F"})
+        assert clade_tips[id(tree.root)] == allowed
+
+    def test_direct_preorder_preserves_mixed_child_order(self, monkeypatch):
+        from io import StringIO
+        from Bio.Phylo.BaseTree import TreeMixin
+
+        tree = Phylo.read(StringIO("(A,(B,C,D),(E,F));"), "newick")
+        expected = [
+            id(clade)
+            for clade in tree.find_clades(order="preorder")
+        ]
+
+        def fail_find_clades(*_args, **_kwargs):
+            raise AssertionError("direct preorder helper should not use find_clades")
+
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_find_clades)
+
+        observed = [id(clade) for clade in _preorder_clades_direct(tree)]
+
+        assert observed == expected
+
 
 class TestComputeGcfPerNode:
+    def test_standard_trees_use_direct_traversal(self, monkeypatch):
+        from io import StringIO
+        from Bio.Phylo.BaseTree import TreeMixin
+
+        species_tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        gene_trees = [
+            Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick"),
+            Phylo.read(StringIO("((A:1,C:1):1,(B:1,D:1):1);"), "newick"),
+        ]
+
+        def fail_get_terminals(*args, **kwargs):
+            raise AssertionError("standard trees should not call get_terminals")
+
+        def fail_get_nonterminals(*args, **kwargs):
+            raise AssertionError("standard trees should not call get_nonterminals")
+
+        monkeypatch.setattr(TreeMixin, "get_terminals", fail_get_terminals)
+        monkeypatch.setattr(TreeMixin, "get_nonterminals", fail_get_nonterminals)
+
+        result = compute_gcf_per_node(species_tree, gene_trees)
+
+        assert result
+
     def test_ground_truth_values(self):
         """Validate against manually computed ground truth."""
         species_tree = Phylo.read(
@@ -74,8 +192,47 @@ class TestComputeGcfPerNode:
         for cid, vals in result.items():
             assert vals[0] == 1.0
 
+    def test_counts_repeated_gene_tree_splits_once_per_tree(self):
+        from io import StringIO
+
+        species_tree = Phylo.read(
+            StringIO("((A:1,B:1):1,(C:1,D:1):1);"),
+            "newick",
+        )
+        gene_trees = [
+            Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick"),
+            Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick"),
+            Phylo.read(StringIO("((A:1,C:1):1,(B:1,D:1):1);"), "newick"),
+        ]
+
+        result = compute_gcf_per_node(species_tree, gene_trees)
+        internal = next(
+            clade for clade in species_tree.find_clades(order="preorder")
+            if not clade.is_terminal() and clade != species_tree.root
+        )
+
+        assert result[id(internal)] == pytest.approx(
+            (1.0, 0.0, 0.0, 2, 0, 0)
+        )
+
 
 class TestParseAstralAnnotations:
+    def test_standard_tree_uses_direct_traversal(self, monkeypatch):
+        from io import StringIO
+        from Bio.Phylo.BaseTree import TreeMixin
+
+        newick = "((A:1,B:1)'[q1=0.5;q2=0.3;q3=0.2]':0.5,(C:1,D:1)'[q1=0.8;q2=0.1;q3=0.1]':0.3);"
+        tree = Phylo.read(StringIO(newick), "newick")
+
+        def fail_find_clades(*_args, **_kwargs):
+            raise AssertionError("generic preorder traversal should not be used")
+
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_find_clades)
+
+        result = parse_astral_annotations(tree)
+
+        assert len(result) == 2
+
     def test_bracket_format(self):
         from io import StringIO
         # Simulate ASTRAL -t 2 output with q1/q2/q3 in node names
@@ -111,6 +268,25 @@ class TestParseAstralAnnotations:
         q1, q2, q3 = by_ntips[7]
         assert q1 == pytest.approx(0.979317, abs=1e-5)
         assert q1 + q2 + q3 == pytest.approx(1.0, abs=1e-4)
+
+
+class TestParseAstralBranchInfo:
+    def test_standard_tree_uses_direct_traversal(self, monkeypatch):
+        from io import StringIO
+        from Bio.Phylo.BaseTree import TreeMixin
+
+        newick = "((A:1,B:1)'[f1=10;pp1=0.9]':0.5,(C:1,D:1)'[f1=5;pp1=0.7]':0.3);"
+        tree = Phylo.read(StringIO(newick), "newick")
+
+        def fail_find_clades(*_args, **_kwargs):
+            raise AssertionError("generic preorder traversal should not be used")
+
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_find_clades)
+
+        result = parse_astral_branch_info(tree)
+
+        assert sorted(entry["f1"] for entry in result.values()) == [5.0, 10.0]
+        assert sorted(entry["pp1"] for entry in result.values()) == [0.7, 0.9]
 
 
 class TestParseQsFromLabel:

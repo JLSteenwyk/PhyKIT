@@ -61,8 +61,14 @@ class TestParsimonyInformativeSites(object):
 
     @patch("builtins.print")
     def test_parsimony_informative_sites_incorrect_input_file(self, mocked_print):
+        testargs = [
+            "phykit",
+            "parsimony_informative_sites",
+            f"{here.parent.parent.parent}/sample_files/does_not_exist.fa",
+        ]
         with pytest.raises(SystemExit) as pytest_wrapped_e:
-            Phykit()
+            with patch.object(sys, "argv", testargs):
+                Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2

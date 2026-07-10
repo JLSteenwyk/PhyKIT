@@ -4,34 +4,120 @@ Chronogram: time-calibrated phylogeny with geological timescale.
 Plots an ultrametric tree with geological epoch/period/era bands
 and a time axis in millions of years ago (Ma).
 """
-import math
-from typing import Dict, List
+from __future__ import annotations
 
-import numpy as np
+import math
 
 from .base import Tree
-from ...helpers.json_output import print_json
-from ...helpers.plot_config import (
-    PlotConfig,
-    build_parent_map,
-    compute_node_positions,
-    draw_tip_labels,
-    cleanup_tree_axes,
-)
-from ...helpers.geological_timescale import get_timescale_for_range
-from ...helpers.circular_layout import (
-    compute_circular_coords,
-    draw_circular_tip_labels,
-)
-from ...helpers.color_annotations import (
-    parse_color_file,
-    resolve_mrca,
-    draw_range_rect,
-    draw_range_wedge,
-    get_clade_branch_ids,
-    build_color_legend_handles,
-)
 from ...errors import PhykitUserError
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
+
+
+def build_parent_map(*args, **kwargs):
+    from ...helpers.plot_config import build_parent_map as _build_parent_map
+
+    return _build_parent_map(*args, **kwargs)
+
+
+def compute_node_positions(*args, **kwargs):
+    from ...helpers.plot_config import compute_node_positions as _compute_node_positions
+
+    return _compute_node_positions(*args, **kwargs)
+
+
+def get_timescale_for_range(*args, **kwargs):
+    from ...helpers.geological_timescale import (
+        get_timescale_for_range as _get_timescale_for_range,
+    )
+
+    return _get_timescale_for_range(*args, **kwargs)
+
+
+def compute_circular_coords(*args, **kwargs):
+    from ...helpers.circular_layout import compute_circular_coords as _compute_circular_coords
+
+    return _compute_circular_coords(*args, **kwargs)
+
+
+def parse_color_file(*args, **kwargs):
+    from ...helpers.color_annotations import parse_color_file as _parse_color_file
+
+    return _parse_color_file(*args, **kwargs)
+
+
+def resolve_mrca(*args, **kwargs):
+    from ...helpers.color_annotations import resolve_mrca as _resolve_mrca
+
+    return _resolve_mrca(*args, **kwargs)
+
+
+def draw_range_rect(*args, **kwargs):
+    from ...helpers.color_annotations import draw_range_rect as _draw_range_rect
+
+    return _draw_range_rect(*args, **kwargs)
+
+
+def draw_range_wedge(*args, **kwargs):
+    from ...helpers.color_annotations import draw_range_wedge as _draw_range_wedge
+
+    return _draw_range_wedge(*args, **kwargs)
+
+
+def get_clade_branch_ids(*args, **kwargs):
+    from ...helpers.color_annotations import get_clade_branch_ids as _get_clade_branch_ids
+
+    return _get_clade_branch_ids(*args, **kwargs)
+
+
+def apply_label_colors(*args, **kwargs):
+    from ...helpers.color_annotations import apply_label_colors as _apply_label_colors
+
+    return _apply_label_colors(*args, **kwargs)
+
+
+class _LazyNumpy:
+    _module = None
+
+    def __getattr__(self, name):
+        module = self._module
+        if module is None:
+            import numpy as _np
+
+            module = _np
+            self._module = module
+
+        value = getattr(module, name)
+        setattr(self, name, value)
+        return value
+
+
+np = _LazyNumpy()
+
+_HPD_PATTERNS = None
+
+
+def _get_hpd_patterns():
+    global _HPD_PATTERNS
+    if _HPD_PATTERNS is None:
+        import re
+
+        _HPD_PATTERNS = (
+            re.compile(
+                r'height_95%_HPD\s*=\s*\{?\s*([\d.eE+-]+)\s*,\s*([\d.eE+-]+)\s*\}?'
+            ),
+            re.compile(
+                r'95%HPD\s*=\s*\{?\s*([\d.eE+-]+)\s*,\s*([\d.eE+-]+)\s*\}?'
+            ),
+            re.compile(
+                r'(?:CI|HPD|hpd_range)\s*=\s*\{?\s*([\d.eE+-]+)\s*,\s*([\d.eE+-]+)\s*\}?'
+            ),
+        )
+    return _HPD_PATTERNS
 
 
 class Chronogram(Tree):
@@ -45,7 +131,9 @@ class Chronogram(Tree):
         self.json_output = parsed["json_output"]
         self.plot_config = parsed["plot_config"]
 
-    def process_args(self, args) -> Dict:
+    def process_args(self, args) -> dict:
+        from ...helpers.plot_config import PlotConfig
+
         return dict(
             tree_file_path=args.tree,
             root_age=args.root_age,
@@ -56,14 +144,81 @@ class Chronogram(Tree):
             plot_config=PlotConfig.from_args(args),
         )
 
+    @staticmethod
+    def _iter_preorder(root):
+        stack = [root]
+        pop = stack.pop
+        append = stack.append
+        while stack:
+            clade = pop()
+            yield clade
+            children = clade.clades
+            if children:
+                append(children[-1])
+                if len(children) == 2:
+                    append(children[0])
+                else:
+                    for idx in range(len(children) - 2, -1, -1):
+                        append(children[idx])
+
+    @staticmethod
+    def _preorder_clades_direct(tree):
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            return None
+
+        clades = []
+        stack = [root]
+        try:
+            pop = stack.pop
+            append = stack.append
+            append_clade = clades.append
+            while stack:
+                clade = pop()
+                append_clade(clade)
+                children = clade.clades
+                if children:
+                    append(children[-1])
+                    if len(children) == 2:
+                        append(children[0])
+                    else:
+                        for idx in range(len(children) - 2, -1, -1):
+                            append(children[idx])
+        except AttributeError:
+            return None
+        return clades
+
+    @staticmethod
+    def _postorder_clades_direct(tree):
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            return None
+
+        clades = []
+        stack = [root]
+        try:
+            while stack:
+                clade = stack.pop()
+                clades.append(clade)
+                stack.extend(clade.clades)
+        except AttributeError:
+            return None
+        clades.reverse()
+        return clades
+
     def run(self) -> None:
-        tree = self.read_tree_file()
+        tree = self.read_tree_file_unmodified()
         self.validate_tree(
             tree, min_tips=3, require_branch_lengths=True,
             context="chronogram",
         )
 
         if self.plot_config.ladderize:
+            tree = self._fast_copy(tree)
             tree.ladderize()
 
         parent_map = build_parent_map(tree)
@@ -86,24 +241,31 @@ class Chronogram(Tree):
         if self.json_output:
             self._print_json(tree, parent_map, scale, root_to_tip, hpd_intervals)
 
-    def _compute_root_to_tip(self, tree) -> Dict[int, float]:
+    def _compute_root_to_tip(self, tree) -> dict[int, float]:
         """Compute root-to-node distance for every node."""
         distances = {}
-        for clade in tree.find_clades(order="preorder"):
-            if clade == tree.root:
-                distances[id(clade)] = 0.0
-            else:
-                parent_dist = 0.0
-                path = tree.get_path(clade)
-                if path:
-                    for node in path:
-                        if node.branch_length:
-                            parent_dist += node.branch_length
-                distances[id(clade)] = parent_dist
+        stack = [(tree.root, 0.0)]
+        pop = stack.pop
+        append = stack.append
+        while stack:
+            clade, distance = pop()
+            distances[id(clade)] = distance
+            children = clade.clades
+            if children:
+                child_count = len(children)
+                if child_count == 2:
+                    child = children[1]
+                    append((child, distance + (child.branch_length or 0.0)))
+                    child = children[0]
+                    append((child, distance + (child.branch_length or 0.0)))
+                else:
+                    for idx in range(child_count - 1, -1, -1):
+                        child = children[idx]
+                        append((child, distance + (child.branch_length or 0.0)))
         return distances
 
     @staticmethod
-    def _parse_hpd_intervals(tree, root_age, scale) -> Dict[int, tuple]:
+    def _parse_hpd_intervals(tree, root_age, scale) -> dict[int, tuple]:
         """Parse 95% HPD intervals from BEAST or MCMCTree annotations.
 
         Looks for these patterns in node comments:
@@ -116,24 +278,15 @@ class Chronogram(Tree):
 
         Returns dict mapping node id -> (age_lower, age_upper).
         """
-        import re
         intervals = {}
 
-        # Detect which format: height-based or age-based
-        # BEAST uses height (distance from tips); MCMCTree may use age
-        height_pattern = re.compile(
-            r'height_95%_HPD\s*=\s*\{?\s*([\d.eE+-]+)\s*,\s*([\d.eE+-]+)\s*\}?'
-        )
-        hpd_pattern = re.compile(
-            r'95%HPD\s*=\s*\{?\s*([\d.eE+-]+)\s*,\s*([\d.eE+-]+)\s*\}?'
-        )
-        # Also try height_range or CI
-        ci_pattern = re.compile(
-            r'(?:CI|HPD|hpd_range)\s*=\s*\{?\s*([\d.eE+-]+)\s*,\s*([\d.eE+-]+)\s*\}?'
-        )
+        height_pattern, hpd_pattern, ci_pattern = _get_hpd_patterns()
+        clades = Chronogram._preorder_clades_direct(tree)
+        if clades is None:
+            clades = tree.find_clades(order="preorder")
 
-        for clade in tree.find_clades(order="preorder"):
-            comment = clade.comment or ""
+        for clade in clades:
+            comment = getattr(clade, "comment", "") or ""
             if not comment:
                 continue
 
@@ -172,13 +325,15 @@ class Chronogram(Tree):
             import matplotlib
             matplotlib.use("Agg")
             import matplotlib.pyplot as plt
+            from matplotlib.collections import LineCollection, PatchCollection
             from matplotlib.patches import Rectangle
         except ImportError:
             print("matplotlib is required for chronogram plotting.")
             raise SystemExit(2)
 
         config = self.plot_config
-        tips = list(tree.get_terminals())
+        preorder_clades = list(self._iter_preorder(tree.root))
+        tips = [clade for clade in preorder_clades if not clade.clades]
         n_tips = len(tips)
         config.resolve(n_rows=n_tips, n_cols=None)
 
@@ -188,21 +343,16 @@ class Chronogram(Tree):
             sharex=True,
         )
 
-        # Compute positions
-        node_y = {}
-        for i, tip in enumerate(tips):
-            node_y[id(tip)] = i
-
-        for clade in tree.find_clades(order="postorder"):
-            if not clade.is_terminal() and id(clade) not in node_y:
-                child_ys = [
-                    node_y[id(c)] for c in clade.clades if id(c) in node_y
-                ]
-                node_y[id(clade)] = float(np.mean(child_ys)) if child_ys else 0.0
-
-        node_x = {}
-        for cid, dist in root_to_tip.items():
-            node_x[cid] = self.root_age - (dist * scale)
+        _, node_y = compute_node_positions(
+            tree,
+            parent_map,
+            cladogram=False,
+            preorder_clades=preorder_clades,
+        )
+        node_x = {
+            cid: self.root_age - (dist * scale)
+            for cid, dist in root_to_tip.items()
+        }
 
         # Geological timescale bands + scale bar
         intervals, colors = get_timescale_for_range(
@@ -257,7 +407,9 @@ class Chronogram(Tree):
         # Draw branches
         root = tree.root
         branch_color = "#2c2c2c"
-        for clade in tree.find_clades(order="preorder"):
+        horizontal_segments = []
+        vertical_segments = []
+        for clade in preorder_clades:
             if clade == root:
                 continue
             pid = id(parent_map.get(id(clade), root))
@@ -270,14 +422,32 @@ class Chronogram(Tree):
             y0 = node_y.get(pid, 0)
             y1 = node_y.get(cid, 0)
 
-            ax_tree.plot(
-                [x0, x1], [y1, y1], color=branch_color,
-                lw=1.2, solid_capstyle="round", zorder=2,
+            horizontal_segments.append(((x0, y1), (x1, y1)))
+            vertical_segments.append(((x0, y0), (x0, y1)))
+
+        if horizontal_segments:
+            ax_tree.add_collection(
+                LineCollection(
+                    horizontal_segments,
+                    colors=branch_color,
+                    linewidths=1.2,
+                    capstyle="round",
+                    zorder=2,
+                ),
+                autolim=True,
             )
-            ax_tree.plot(
-                [x0, x0], [y0, y1], color=branch_color,
-                lw=0.8, solid_capstyle="round", zorder=2,
+        if vertical_segments:
+            ax_tree.add_collection(
+                LineCollection(
+                    vertical_segments,
+                    colors=branch_color,
+                    linewidths=0.8,
+                    capstyle="round",
+                    zorder=2,
+                ),
+                autolim=True,
             )
+        ax_tree.autoscale_view()
 
         # Color annotations
         if config.color_file:
@@ -290,27 +460,47 @@ class Chronogram(Tree):
                 mrca = resolve_mrca(tree, taxa_list)
                 if mrca is not None:
                     clade_ids = get_clade_branch_ids(tree, mrca, parent_map)
-                    for cl in tree.find_clades(order="preorder"):
+                    horizontal_overlay_segments = []
+                    vertical_overlay_segments = []
+                    for cl in preorder_clades:
                         if cl == root:
                             continue
                         if id(cl) in clade_ids and id(cl) in parent_map:
                             p = id(parent_map[id(cl)])
                             c = id(cl)
-                            ax_tree.plot(
-                                [node_x[p], node_x[c]],
-                                [node_y.get(c, 0), node_y.get(c, 0)],
-                                color=clade_color, lw=1.5, zorder=3,
+                            horizontal_overlay_segments.append(
+                                (
+                                    (node_x[p], node_y.get(c, 0)),
+                                    (node_x[c], node_y.get(c, 0)),
+                                )
                             )
-                            ax_tree.plot(
-                                [node_x[p], node_x[p]],
-                                [node_y.get(p, 0), node_y.get(c, 0)],
-                                color=clade_color, lw=1.5, zorder=3,
+                            vertical_overlay_segments.append(
+                                (
+                                    (node_x[p], node_y.get(p, 0)),
+                                    (node_x[p], node_y.get(c, 0)),
+                                )
                             )
-            for taxon, lbl_color in color_data["labels"].items():
-                for text_obj in ax_tree.texts:
-                    if text_obj.get_text() == taxon:
-                        text_obj.set_color(lbl_color)
-                        break
+                    if horizontal_overlay_segments:
+                        ax_tree.add_collection(
+                            LineCollection(
+                                horizontal_overlay_segments,
+                                colors=clade_color,
+                                linewidths=1.5,
+                                zorder=3,
+                            ),
+                            autolim=True,
+                        )
+                    if vertical_overlay_segments:
+                        ax_tree.add_collection(
+                            LineCollection(
+                                vertical_overlay_segments,
+                                colors=clade_color,
+                                linewidths=1.5,
+                                zorder=3,
+                            ),
+                            autolim=True,
+                        )
+            apply_label_colors(ax_tree, color_data["labels"])
 
         # Tip labels (italic for species names)
         label_fs = config.ylabel_fontsize if config.ylabel_fontsize else 9
@@ -327,24 +517,34 @@ class Chronogram(Tree):
         # 95% HPD confidence interval bars
         if hpd_intervals:
             bar_height = max(0.15, 0.6 / max(n_tips, 1))
-            for clade in tree.find_clades(order="preorder"):
-                if clade.is_terminal() or clade == root:
+            hpd_rectangles = []
+            for clade in preorder_clades:
+                if not clade.clades or clade == root:
                     continue
                 cid = id(clade)
                 if cid not in hpd_intervals:
                     continue
                 lo, hi = hpd_intervals[cid]
                 cy = node_y.get(cid, 0)
-                ax_tree.barh(
-                    cy, hi - lo, left=lo, height=bar_height,
-                    color="#2b8cbe", alpha=0.25, edgecolor="none",
-                    zorder=1,
+                hpd_rectangles.append(
+                    Rectangle((lo, cy - bar_height / 2), hi - lo, bar_height)
+                )
+            if hpd_rectangles:
+                ax_tree.add_collection(
+                    PatchCollection(
+                        hpd_rectangles,
+                        facecolor="#2b8cbe",
+                        alpha=0.25,
+                        edgecolor="none",
+                        zorder=1,
+                    ),
+                    autolim=True,
                 )
 
         # Node age labels
         if self.node_ages:
-            for clade in tree.find_clades(order="preorder"):
-                if clade.is_terminal() or clade == root:
+            for clade in preorder_clades:
+                if not clade.clades or clade == root:
                     continue
                 cid = id(clade)
                 age = node_x.get(cid, 0)
@@ -395,13 +595,15 @@ class Chronogram(Tree):
             import matplotlib
             matplotlib.use("Agg")
             import matplotlib.pyplot as plt
+            from matplotlib.collections import LineCollection
             from matplotlib.patches import Wedge
         except ImportError:
             print("matplotlib is required for chronogram plotting.")
             raise SystemExit(2)
 
         config = self.plot_config
-        tips = list(tree.get_terminals())
+        preorder_clades = list(self._iter_preorder(tree.root))
+        tips = [clade for clade in preorder_clades if not clade.clades]
         n_tips = len(tips)
         config.resolve(n_rows=n_tips, n_cols=None)
 
@@ -409,19 +611,13 @@ class Chronogram(Tree):
         ax.set_aspect("equal")
         ax.axis("off")
 
-        # Compute node_x (distance from root) for circular layout
-        node_x = {}
-        for clade in tree.find_clades(order="preorder"):
-            cid = id(clade)
-            if clade == tree.root:
-                node_x[cid] = 0.0
-            else:
-                parent = parent_map.get(id(clade))
-                if parent is not None:
-                    t = clade.branch_length if clade.branch_length else 0.0
-                    node_x[cid] = node_x.get(id(parent), 0.0) + t
-
-        coords = compute_circular_coords(tree, node_x, parent_map)
+        coords = compute_circular_coords(
+            tree,
+            root_to_tip,
+            parent_map,
+            preorder_clades=preorder_clades,
+            terminal_clades=tips,
+        )
 
         max_radius = max(
             c["radius"] for c in coords.values()
@@ -432,6 +628,8 @@ class Chronogram(Tree):
         intervals, colors = get_timescale_for_range(
             self.root_age, self.timescale
         )
+        circle_cos = None
+        circle_sin = None
         for name, start_ma, end_ma in intervals:
             if start_ma <= 0:
                 continue
@@ -452,10 +650,13 @@ class Chronogram(Tree):
             ax.add_patch(ring)
 
             # Faint concentric boundary circle
-            circle_pts = np.linspace(0, 2 * np.pi, 200)
+            if circle_cos is None:
+                circle_pts = np.linspace(0, 2 * np.pi, 200)
+                circle_cos = np.cos(circle_pts)
+                circle_sin = np.sin(circle_pts)
             ax.plot(
-                r_inner * np.cos(circle_pts),
-                r_inner * np.sin(circle_pts),
+                r_inner * circle_cos,
+                r_inner * circle_sin,
                 color="#cccccc", lw=0.3, zorder=0,
             )
 
@@ -494,7 +695,8 @@ class Chronogram(Tree):
         # Draw branches
         branch_color = "#2c2c2c"
         root = tree.root
-        for clade in tree.find_clades(order="preorder"):
+        radial_segments = []
+        for clade in preorder_clades:
             if clade == root:
                 continue
             parent = parent_map.get(id(clade))
@@ -513,37 +715,77 @@ class Chronogram(Tree):
             y0 = r_p * math.sin(angle)
             x1 = r_c * math.cos(angle)
             y1 = r_c * math.sin(angle)
-            ax.plot(
-                [x0, x1], [y0, y1], color=branch_color,
-                lw=1.0, solid_capstyle="round", zorder=2,
+            radial_segments.append(((x0, y0), (x1, y1)))
+
+        if radial_segments:
+            ax.add_collection(
+                LineCollection(
+                    radial_segments,
+                    colors=branch_color,
+                    linewidths=1.0,
+                    capstyle="round",
+                    zorder=2,
+                ),
+                autolim=True,
             )
 
         # Draw arcs at internal nodes
-        for clade in tree.find_clades(order="preorder"):
-            if clade.is_terminal() or not clade.clades:
+        arc_segments = []
+        for clade in preorder_clades:
+            children = clade.clades
+            child_count = len(children)
+            if child_count < 2:
                 continue
             cid = id(clade)
             if cid not in coords:
                 continue
-            child_angles = [
-                coords[id(ch)]["angle"] for ch in clade.clades
-                if id(ch) in coords
-            ]
-            if len(child_angles) < 2:
-                continue
-            min_a = min(child_angles)
-            max_a = max(child_angles)
+            if child_count == 2:
+                first_coord = coords.get(id(children[0]))
+                second_coord = coords.get(id(children[1]))
+                if first_coord is None or second_coord is None:
+                    continue
+                first_angle = first_coord["angle"]
+                second_angle = second_coord["angle"]
+                if first_angle <= second_angle:
+                    min_a = first_angle
+                    max_a = second_angle
+                else:
+                    min_a = second_angle
+                    max_a = first_angle
+            else:
+                child_angles = [
+                    coords[id(ch)]["angle"] for ch in children
+                    if id(ch) in coords
+                ]
+                if len(child_angles) < 2:
+                    continue
+                min_a = min(child_angles)
+                max_a = max(child_angles)
             r = coords[cid]["radius"]
             n_pts = max(20, int((max_a - min_a) * 50))
             angles = np.linspace(min_a, max_a, n_pts)
             xs = r * np.cos(angles)
             ys = r * np.sin(angles)
-            ax.plot(xs, ys, color=branch_color, lw=0.8, zorder=2)
+            arc_segments.append(np.column_stack((xs, ys)))
+
+        if arc_segments:
+            ax.add_collection(
+                LineCollection(
+                    arc_segments,
+                    colors=branch_color,
+                    linewidths=0.8,
+                    zorder=2,
+                ),
+                autolim=True,
+            )
+        if radial_segments or arc_segments:
+            ax.autoscale_view()
 
         # 95% HPD confidence interval arcs
         if hpd_intervals:
-            for clade in tree.find_clades(order="preorder"):
-                if clade.is_terminal() or clade == root:
+            hpd_segments = []
+            for clade in preorder_clades:
+                if not clade.clades or clade == root:
                     continue
                 cid = id(clade)
                 if cid not in hpd_intervals or cid not in coords:
@@ -560,10 +802,18 @@ class Chronogram(Tree):
                 y0 = r_lo * math.sin(angle)
                 x1 = r_hi * math.cos(angle)
                 y1 = r_hi * math.sin(angle)
-                ax.plot(
-                    [x0, x1], [y0, y1],
-                    color="#2b8cbe", alpha=0.3, lw=4,
-                    solid_capstyle="round", zorder=1,
+                hpd_segments.append(((x0, y0), (x1, y1)))
+            if hpd_segments:
+                ax.add_collection(
+                    LineCollection(
+                        hpd_segments,
+                        colors="#2b8cbe",
+                        alpha=0.3,
+                        linewidths=4,
+                        capstyle="round",
+                        zorder=1,
+                    ),
+                    autolim=True,
                 )
 
         # Tip labels (italic)
@@ -597,11 +847,7 @@ class Chronogram(Tree):
                 mrca = resolve_mrca(tree, taxa_list)
                 if mrca is not None:
                     draw_range_wedge(ax, tree, mrca, clr, coords)
-            for taxon, lbl_color in color_data["labels"].items():
-                for text_obj in ax.texts:
-                    if text_obj.get_text() == taxon:
-                        text_obj.set_color(lbl_color)
-                        break
+            apply_label_colors(ax, color_data["labels"])
 
         if config.show_title:
             ax.set_title(
@@ -609,7 +855,6 @@ class Chronogram(Tree):
                 fontsize=config.title_fontsize,
             )
 
-        fig.tight_layout()
         fig.savefig(self.plot_output, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
         if not self.json_output:
@@ -631,16 +876,39 @@ class Chronogram(Tree):
 
     # ---- JSON output ----
 
+    @staticmethod
+    def _build_descendant_tip_name_cache(tree) -> dict[int, tuple[str, ...]]:
+        cache = {}
+        postorder = Chronogram._postorder_clades_direct(tree)
+        if postorder is None:
+            postorder = tree.find_clades(order="postorder")
+
+        for clade in postorder:
+            if clade.is_terminal():
+                cache[id(clade)] = (clade.name,)
+                continue
+
+            names = []
+            for child in clade.clades:
+                names.extend(cache[id(child)])
+            names.sort()
+            cache[id(clade)] = tuple(names)
+        return cache
+
     def _print_json(self, tree, parent_map, scale, root_to_tip, hpd_intervals=None):
         max_height = max(root_to_tip.values()) if root_to_tip else 1.0
+        descendant_tip_names = self._build_descendant_tip_name_cache(tree)
+        preorder = self._preorder_clades_direct(tree)
+        if preorder is None:
+            preorder = tree.find_clades(order="preorder")
         nodes = []
-        for clade in tree.find_clades(order="preorder"):
+        for clade in preorder:
             if clade.is_terminal():
                 continue
             cid = id(clade)
             dist = root_to_tip.get(cid, 0.0)
             age = self.root_age - (dist * scale)
-            desc = sorted(t.name for t in clade.get_terminals())
+            desc = list(descendant_tip_names[cid])
             entry = {
                 "descendants": desc,
                 "age_ma": round(age, 4),
@@ -653,7 +921,7 @@ class Chronogram(Tree):
             nodes.append(entry)
         payload = {
             "root_age": self.root_age,
-            "n_tips": tree.count_terminals(),
+            "n_tips": len(descendant_tip_names.get(id(tree.root), ())),
             "timescale": self.timescale,
             "node_ages": nodes,
             "plot_output": self.plot_output,

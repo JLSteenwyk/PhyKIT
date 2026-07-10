@@ -3,35 +3,26 @@ import sys
 import json
 from mock import patch, call
 from pathlib import Path
-from textwrap import dedent
 
 from phykit.phykit import Phykit
 
 here = Path(__file__)
 
 
+EXPECTED_SIMPLE_ERPS = (
+    "1\t0.0\n"
+    "2\t0.5\n"
+    "3\t0.48\n"
+    "4\t0.0\n"
+    "5\t0.48\n"
+    "6\t0.5"
+)
+
+
 @pytest.mark.integration
 class TestEvolutionaryRatePerSite(object):
     @patch("builtins.print")
     def test_evolutionary_rate_per_site(self, mocked_print):
-        expected_result_0 = dedent(
-            """1\t0.0"""
-        )
-        expected_result_1 = dedent(
-            """2\t0.5"""
-        )
-        expected_result_2 = dedent(
-            """3\t0.48"""  
-        )
-        expected_result_3 = dedent(
-            """4\t0.0"""
-        )
-        expected_result_4 = dedent(
-            """5\t0.48"""
-        )
-        expected_result_5 = dedent(
-            """6\t0.5"""
-        )
         testargs = [
             "phykit",
             "evolutionary_rate_per_site",
@@ -40,35 +31,10 @@ class TestEvolutionaryRatePerSite(object):
 
         with patch.object(sys, "argv", testargs):
             Phykit()
-        assert mocked_print.mock_calls == [
-            call(expected_result_0),
-            call(expected_result_1),
-            call(expected_result_2),
-            call(expected_result_3),
-            call(expected_result_4),
-            call(expected_result_5),
-        ]
+        assert mocked_print.mock_calls == [call(EXPECTED_SIMPLE_ERPS)]
 
     @patch("builtins.print")
     def test_evolutionary_rate_per_site_alias0(self, mocked_print):
-        expected_result_0 = dedent(
-            """1\t0.0"""
-        )
-        expected_result_1 = dedent(
-            """2\t0.5"""
-        )
-        expected_result_2 = dedent(
-            """3\t0.48"""  
-        )
-        expected_result_3 = dedent(
-            """4\t0.0"""
-        )
-        expected_result_4 = dedent(
-            """5\t0.48"""
-        )
-        expected_result_5 = dedent(
-            """6\t0.5"""
-        )
         testargs = [
             "phykit",
             "evo_rate_per_site",
@@ -77,35 +43,10 @@ class TestEvolutionaryRatePerSite(object):
 
         with patch.object(sys, "argv", testargs):
             Phykit()
-        assert mocked_print.mock_calls == [
-            call(expected_result_0),
-            call(expected_result_1),
-            call(expected_result_2),
-            call(expected_result_3),
-            call(expected_result_4),
-            call(expected_result_5),
-        ]
+        assert mocked_print.mock_calls == [call(EXPECTED_SIMPLE_ERPS)]
 
     @patch("builtins.print")
     def test_evolutionary_rate_per_site_alias1(self, mocked_print):
-        expected_result_0 = dedent(
-            """1\t0.0"""
-        )
-        expected_result_1 = dedent(
-            """2\t0.5"""
-        )
-        expected_result_2 = dedent(
-            """3\t0.48"""  
-        )
-        expected_result_3 = dedent(
-            """4\t0.0"""
-        )
-        expected_result_4 = dedent(
-            """5\t0.48"""
-        )
-        expected_result_5 = dedent(
-            """6\t0.5"""
-        )
         testargs = [
             "phykit",
             "erps",
@@ -114,14 +55,7 @@ class TestEvolutionaryRatePerSite(object):
 
         with patch.object(sys, "argv", testargs):
             Phykit()
-        assert mocked_print.mock_calls == [
-            call(expected_result_0),
-            call(expected_result_1),
-            call(expected_result_2),
-            call(expected_result_3),
-            call(expected_result_4),
-            call(expected_result_5),
-        ]
+        assert mocked_print.mock_calls == [call(EXPECTED_SIMPLE_ERPS)]
 
     @patch("builtins.print")
     def test_evolutionary_rate_per_site_json(self, mocked_print):
@@ -138,7 +72,7 @@ class TestEvolutionaryRatePerSite(object):
         assert payload["sites"][0] == {"evolutionary_rate": 0.0, "site": 1}
         assert payload["sites"][2] == {"evolutionary_rate": 0.48, "site": 3}
 
-    @patch("phykit.services.alignment.evolutionary_rate_per_site.EvolutionaryRatePerSite._plot_evolutionary_rate_per_site")
+    @patch("phykit.services.alignment.evolutionary_rate_per_site.EvolutionaryRatePerSite._plot_evolutionary_rate_values")
     @patch("builtins.print")
     def test_evolutionary_rate_per_site_plot(self, mocked_print, mocked_plot):
         testargs = [

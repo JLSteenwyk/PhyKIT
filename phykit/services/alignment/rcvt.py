@@ -1,8 +1,80 @@
-import numpy as np
+from .base import Alignment, _all_sequences_identical
 
-from .base import Alignment
-from ...helpers.json_output import print_json
-from ...helpers.plot_config import PlotConfig
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
+
+
+class _LazyNumpy:
+    _module = None
+
+    def __getattr__(self, name):
+        module = self._module
+        if module is None:
+            import numpy as _np
+
+            module = _np
+            self._module = module
+
+        value = getattr(module, name)
+        setattr(self, name, value)
+        return value
+
+
+np = _LazyNumpy()
+_DNA_INVALID_LOOKUP = None
+_PROTEIN_INVALID_LOOKUP = None
+_ASCII_GLOBAL_BINCOUNT_MIN_RECORDS = 1_000
+_ASCII_GLOBAL_BINCOUNT_MAX_LENGTH = 256
+_NUCLEOTIDE_ALPHABET_BYTES = b"ACGTU"
+
+
+def _get_invalid_lookup(is_protein: bool):
+    global _DNA_INVALID_LOOKUP, _PROTEIN_INVALID_LOOKUP
+    if is_protein:
+        if _PROTEIN_INVALID_LOOKUP is None:
+            lookup = np.zeros(256, dtype=np.bool_)
+            lookup[np.frombuffer("-?*X".encode("ascii"), dtype=np.uint8)] = True
+            _PROTEIN_INVALID_LOOKUP = lookup
+        return _PROTEIN_INVALID_LOOKUP
+
+    if _DNA_INVALID_LOOKUP is None:
+        lookup = np.zeros(256, dtype=np.bool_)
+        lookup[np.frombuffer("-?*XN".encode("ascii"), dtype=np.uint8)] = True
+        _DNA_INVALID_LOOKUP = lookup
+    return _DNA_INVALID_LOOKUP
+
+
+def _row_deviation_sums(deviations):
+    if deviations.shape[1] <= 4:
+        return deviations.sum(axis=1)
+    return np.sum(deviations, axis=1)
+
+
+def _bounded_ascii_count_dtype(max_count: int):
+    if max_count <= 0xFFFF:
+        return np.uint16
+    if max_count <= 0xFFFFFFFF:
+        return np.uint32
+    return np.uint64
+
+
+def _bounded_ascii_valid_lengths(valid_mask):
+    count_dtype = _bounded_ascii_count_dtype(valid_mask.shape[1])
+    return valid_mask.sum(axis=1, dtype=count_dtype).astype(np.float64)
+
+
+def _bounded_ascii_row_symbol_counts(alignment_array, unique_chars):
+    count_dtype = _bounded_ascii_count_dtype(alignment_array.shape[1])
+    return np.array(
+        [
+            (alignment_array == char).sum(axis=1, dtype=count_dtype)
+            for char in unique_chars
+        ],
+        dtype=np.float32,
+    ).T
 
 
 class RelativeCompositionVariabilityTaxon(Alignment):
@@ -26,8 +98,9 @@ class RelativeCompositionVariabilityTaxon(Alignment):
             print_json(payload)
             return
 
-        for row in rows:
-            print(f"{row['taxon']}\t{row['rcvt']}")
+        lines = [f"{row['taxon']}\t{row['rcvt']}" for row in rows]
+        if lines:
+            print("\n".join(lines))
 
         if self.plot:
             self._plot_rcvt(rows)
@@ -42,9 +115,7 @@ class RelativeCompositionVariabilityTaxon(Alignment):
             print("matplotlib is required for --plot in rcvt. Install matplotlib and retry.")
             raise SystemExit(2)
 
-        sorted_rows = sorted(rows, key=lambda row: row["rcvt"], reverse=True)
-        taxa = [row["taxon"] for row in sorted_rows]
-        rcvt_values = [row["rcvt"] for row in sorted_rows]
+        taxa, rcvt_values = self._prepare_rcvt_plot_series(rows)
 
         config = self.plot_config
         config.resolve(n_rows=len(taxa), n_cols=None)
@@ -65,40 +136,114 @@ class RelativeCompositionVariabilityTaxon(Alignment):
         if config.axis_fontsize:
             ax.yaxis.label.set_fontsize(config.axis_fontsize)
 
-        fig.tight_layout()
         fig.savefig(self.plot_output, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
+
+    @staticmethod
+    def _prepare_rcvt_plot_series(rows):
+        taxa = [row["taxon"] for row in rows]
+        rcvt_values = np.fromiter(
+            (row["rcvt"] for row in rows),
+            dtype=np.float64,
+            count=len(rows),
+        )
+        order = np.argsort(-rcvt_values, kind="mergesort")
+        return [taxa[idx] for idx in order], rcvt_values[order]
 
     def calculate_rows(self, alignment, is_protein: bool):
         num_records = len(alignment)
         if num_records == 0:
             return []
+        if num_records == 1:
+            return [{"taxon": alignment[0].id, "rcvt": 0.0}]
 
-        alignment_array = np.array([
-            list(str(record.seq).upper()) for record in alignment
-        ], dtype="U1")
+        raw_sequences = [str(record.seq) for record in alignment]
+        aln_len = alignment.get_alignment_length()
+        first_raw_sequence = raw_sequences[0]
+        first_sequence = first_raw_sequence.upper()
+        all_identical = True
+        for idx in range(1, num_records):
+            sequence = raw_sequences[idx]
+            if sequence != first_raw_sequence and sequence.upper() != first_sequence:
+                all_identical = False
+                break
+
+        if all_identical:
+            return [{"taxon": record.id, "rcvt": 0.0} for record in alignment]
+        sequences = [sequence.upper() for sequence in raw_sequences]
 
         if is_protein:
-            invalid_chars = np.array(["-", "?", "*", "X"], dtype="U1")
+            invalid_chars = ["-", "?", "*", "X"]
         else:
-            invalid_chars = np.array(["-", "?", "*", "X", "N"], dtype="U1")
-        valid_mask = ~np.isin(alignment_array, invalid_chars)
-        valid_lengths = np.sum(valid_mask, axis=1).astype(np.float64)
+            invalid_chars = ["-", "?", "*", "X", "N"]
 
-        valid_chars = alignment_array[valid_mask]
-        if valid_chars.size == 0:
-            return [dict(taxon=record.id, rcvt=0.0) for record in alignment]
+        try:
+            alignment_bytes = "".join(sequences).encode("ascii")
+            alignment_array = np.frombuffer(
+                alignment_bytes,
+                dtype=np.uint8,
+            ).reshape(num_records, aln_len)
+            invalid_lookup = _get_invalid_lookup(is_protein)
+            if (
+                not is_protein
+                and not alignment_bytes.translate(
+                    None,
+                    _NUCLEOTIDE_ALPHABET_BYTES,
+                )
+            ):
+                observed_chars = np.fromiter(
+                    (
+                        code
+                        for code in _NUCLEOTIDE_ALPHABET_BYTES
+                        if code in alignment_bytes
+                    ),
+                    dtype=np.uint8,
+                )
+            else:
+                observed_chars = np.unique(alignment_array)
+            unique_chars = observed_chars[~invalid_lookup[observed_chars]]
+            if unique_chars.size == 0:
+                return [{"taxon": record.id, "rcvt": 0.0} for record in alignment]
+            if unique_chars.size == observed_chars.size:
+                valid_mask = None
+                valid_lengths = np.full(num_records, aln_len, dtype=np.float64)
+            else:
+                valid_mask = ~invalid_lookup[alignment_array]
+                valid_lengths = _bounded_ascii_valid_lengths(valid_mask)
+        except UnicodeEncodeError:
+            alignment_array = np.array([list(seq) for seq in sequences], dtype="U1")
+            invalid_chars_array = np.array(invalid_chars, dtype="U1")
+            valid_mask = ~np.isin(alignment_array, invalid_chars_array)
+            valid_lengths = np.count_nonzero(valid_mask, axis=1).astype(np.float64)
 
-        unique_chars = np.unique(valid_chars)
-        count_matrix = np.zeros((num_records, len(unique_chars)), dtype=np.float32)
-        for seq_idx, seq in enumerate(alignment_array):
-            seq_valid = valid_mask[seq_idx]
-            for char_idx, char in enumerate(unique_chars):
-                count_matrix[seq_idx, char_idx] = np.sum((seq == char) & seq_valid)
+            valid_chars = alignment_array[valid_mask]
+            if valid_chars.size == 0:
+                return [{"taxon": record.id, "rcvt": 0.0} for record in alignment]
 
-        average_counts = np.sum(count_matrix, axis=0) / num_records
+            unique_chars = np.unique(valid_chars)
+        if alignment_array.dtype == np.uint8 and len(unique_chars) > 8:
+            count_matrix = self._ascii_count_matrix(
+                alignment_array,
+                unique_chars,
+                valid_mask,
+            )
+        elif alignment_array.dtype == np.uint8:
+            count_matrix = _bounded_ascii_row_symbol_counts(
+                alignment_array,
+                unique_chars,
+            )
+        else:
+            count_matrix = np.array(
+                [
+                    np.sum(alignment_array == char, axis=1)
+                    for char in unique_chars
+                ],
+                dtype=np.float32,
+            ).T
+
+        average_counts = count_matrix.sum(axis=0) / num_records
         deviations = np.abs(count_matrix - average_counts)
-        seq_sums = np.sum(deviations, axis=1)
+        seq_sums = _row_deviation_sums(deviations)
         denom = num_records * valid_lengths
         rcv_values = np.divide(
             seq_sums,
@@ -108,11 +253,40 @@ class RelativeCompositionVariabilityTaxon(Alignment):
         )
 
         return [
-            dict(taxon=record.id, rcvt=round(float(rcv_values[i]), 4))
-            for i, record in enumerate(alignment)
+            {"taxon": record.id, "rcvt": round(float(value), 4)}
+            for record, value in zip(alignment, rcv_values)
         ]
 
+    @staticmethod
+    def _ascii_count_matrix(alignment_array, unique_chars, valid_mask):
+        num_records, aln_len = alignment_array.shape
+        if (
+            num_records >= _ASCII_GLOBAL_BINCOUNT_MIN_RECORDS
+            and aln_len <= _ASCII_GLOBAL_BINCOUNT_MAX_LENGTH
+        ):
+            encoded = alignment_array.astype(np.int64)
+            encoded += (np.arange(num_records, dtype=np.int64) * 256)[:, None]
+            counts = np.bincount(
+                encoded.ravel(),
+                minlength=num_records * 256,
+            ).reshape(num_records, 256)
+            return counts[:, unique_chars].astype(np.float32, copy=False)
+
+        count_matrix = np.zeros(
+            (num_records, len(unique_chars)),
+            dtype=np.float32,
+        )
+        for row_idx, row in enumerate(alignment_array):
+            row_values = row if valid_mask is None else row[valid_mask[row_idx]]
+            count_matrix[row_idx] = np.bincount(
+                row_values,
+                minlength=256,
+            )[unique_chars]
+        return count_matrix
+
     def process_args(self, args):
+        from ...helpers.plot_config import PlotConfig
+
         return dict(
             alignment_file_path=args.alignment,
             json_output=getattr(args, "json", False),

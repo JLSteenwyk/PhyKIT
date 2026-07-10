@@ -1,7 +1,12 @@
-from typing import Dict
+from __future__ import annotations
 
 from .base import Tree
-from ...helpers.json_output import print_json
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
 
 
 class Treeness(Tree):
@@ -11,13 +16,25 @@ class Treeness(Tree):
         self.json_output = parsed["json_output"]
 
     def run(self) -> None:
-        tree = self.read_tree_file()
-        treeness = self.calculate_treeness(tree)
+        summary = self._get_simple_newick_summary(
+            self.tree_file_path,
+            "tree_file_path",
+        )
+        if summary is None:
+            tree = self.read_tree_file_unmodified()
+            treeness = self.calculate_treeness(tree)
+        else:
+            _, total_len, internal_len = summary
+            try:
+                treeness = float(internal_len / total_len)
+            except ZeroDivisionError:
+                print("Invalid tree. Tree should contain branch lengths")
+                return
         treeness = round(treeness, 4)
         if self.json_output:
             print_json(dict(treeness=treeness))
             return
         print(treeness)
 
-    def process_args(self, args) -> Dict[str, str]:
+    def process_args(self, args) -> dict[str, str]:
         return dict(tree_file_path=args.tree, json_output=getattr(args, "json", False))

@@ -1,4 +1,8 @@
 import pytest
+import builtins
+import importlib
+import subprocess
+import sys
 from argparse import Namespace
 
 from phykit.services.tree.treeness_over_rcv import TreenessOverRCV
@@ -36,36 +40,78 @@ class TestTreenessOverRCV(object):
         )
         assert parsed["json_output"] is False
 
-    def test_run_prints_tab_delimited(self, mocker, capsys):
-        t = TreenessOverRCV(Namespace(tree="x.tre", alignment="x.fa", json=False))
-        mocker.patch.object(TreenessOverRCV, "calculate_treeness", return_value=2.5)
+    def test_module_import_does_not_import_alignment_base(self, monkeypatch):
+        code = """
+import builtins
+import sys
+
+original_import = builtins.__import__
+
+def guarded_import(name, globals=None, locals=None, fromlist=(), level=0):
+    if name == "phykit.services.alignment.base":
+        raise AssertionError(
+            "treeness_over_rcv module import should not import Alignment"
+        )
+    return original_import(name, globals, locals, fromlist, level)
+
+builtins.__import__ = guarded_import
+import phykit.services.tree.treeness_over_rcv as module
+assert callable(module.print_json)
+assert module._Alignment is None
+assert "json" not in sys.modules
+assert "phykit.helpers.json_output" not in sys.modules
+assert "typing" not in sys.modules
+"""
+        subprocess.run([sys.executable, "-c", code], check=True)
+
+    def test_alignment_service_reuses_cached_alignment_class(self, monkeypatch):
+        instances = []
 
         class FakeAlignment:
             def __init__(self, alignment_file_path):
                 self.alignment_file_path = alignment_file_path
+                instances.append(self)
 
-            def calculate_rcv(self):
-                return 0.5
+        monkeypatch.setattr(tor_module, "_Alignment", FakeAlignment)
 
-        mocker.patch.object(tor_module, "Alignment", FakeAlignment)
+        first = tor_module._alignment_service("first.fa")
+        second = tor_module._alignment_service("second.fa")
+
+        assert first.alignment_file_path == "first.fa"
+        assert second.alignment_file_path == "second.fa"
+        assert instances == [first, second]
+        assert tor_module._Alignment is FakeAlignment
+
+    def test_run_prints_tab_delimited(self, mocker, capsys):
+        t = TreenessOverRCV(Namespace(tree="x.tre", alignment="x.fa", json=False))
+        tree = object()
+        read_tree = mocker.patch.object(t, "read_tree_file_unmodified", return_value=tree)
+        calculate_treeness = mocker.patch.object(
+            TreenessOverRCV,
+            "calculate_treeness",
+            return_value=2.5,
+        )
+        mocker.patch.object(TreenessOverRCV, "_calculate_rcv", return_value=0.5)
         t.run()
         out, _ = capsys.readouterr()
+        read_tree.assert_called_once_with()
+        calculate_treeness.assert_called_once_with(tree)
         assert out.strip() == "5.0\t2.5\t0.5"
 
     def test_run_json(self, mocker):
         t = TreenessOverRCV(Namespace(tree="x.tre", alignment="x.fa", json=True))
-        mocker.patch.object(TreenessOverRCV, "calculate_treeness", return_value=1.23456)
-
-        class FakeAlignment:
-            def __init__(self, alignment_file_path):
-                self.alignment_file_path = alignment_file_path
-
-            def calculate_rcv(self):
-                return 0.32109
-
-        mocker.patch.object(tor_module, "Alignment", FakeAlignment)
+        tree = object()
+        read_tree = mocker.patch.object(t, "read_tree_file_unmodified", return_value=tree)
+        calculate_treeness = mocker.patch.object(
+            TreenessOverRCV,
+            "calculate_treeness",
+            return_value=1.23456,
+        )
+        mocker.patch.object(TreenessOverRCV, "_calculate_rcv", return_value=0.32109)
         mocked_json = mocker.patch.object(tor_module, "print_json")
         t.run()
+        read_tree.assert_called_once_with()
+        calculate_treeness.assert_called_once_with(tree)
         mocked_json.assert_called_once_with(
             {"treeness_over_rcv": 3.8449, "treeness": 1.2346, "rcv": 0.3211}
         )

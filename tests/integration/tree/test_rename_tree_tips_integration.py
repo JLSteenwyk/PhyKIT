@@ -76,9 +76,16 @@ class TestRenameTreeTips(object):
 
     @patch("builtins.print")
     def test_rename_tree_tips_incorrect_tree_path(self, mocked_print):
-
-        with pytest.raises(SystemExit) as pytest_wrapped_e:
-            Phykit()
+        testargs = [
+            "phykit",
+            "rename_tree_tips",
+            "/does/not/exist.tre",
+            "-i",
+            f"{here.parent.parent.parent}/sample_files/tree_simple_idmap.txt",
+        ]
+        with patch.object(sys, "argv", testargs):
+            with pytest.raises(SystemExit) as pytest_wrapped_e:
+                Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2

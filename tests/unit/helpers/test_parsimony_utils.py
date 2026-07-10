@@ -5,10 +5,17 @@ Tests Fitch downpass, ACCTRAN/DELTRAN uppass, change detection,
 change classification (synapomorphy/convergence/reversal),
 consistency index, and retention index.
 """
+import subprocess
+import sys
+import builtins
+
 import pytest
+import numpy as np
 from Bio import Phylo
+from Bio.Phylo.BaseTree import TreeMixin
 from io import StringIO
 
+import phykit.helpers.parsimony_utils as parsimony_module
 from phykit.helpers.parsimony_utils import (
     build_parent_map,
     resolve_polytomies,
@@ -20,6 +27,16 @@ from phykit.helpers.parsimony_utils import (
     consistency_index,
     retention_index,
 )
+
+
+def test_module_import_does_not_import_typing_or_biopython():
+    code = """
+import sys
+import phykit.helpers.parsimony_utils
+assert "typing" not in sys.modules
+assert "Bio" not in sys.modules
+"""
+    subprocess.run([sys.executable, "-c", code], check=True)
 
 
 def _make_tree(newick):
@@ -55,6 +72,41 @@ class TestBuildParentMap:
         all_nodes = list(tree.find_clades())
         # Every node except root should be in parent_map
         assert len(pm) == len(all_nodes) - 1
+
+    def test_standard_tree_uses_direct_traversal(self, monkeypatch):
+        tree = _make_tree("((A:1,B:1):1,(C:1,D:1):1);")
+
+        def fail_find_clades(*_args, **_kwargs):
+            raise AssertionError("generic preorder traversal should not be used")
+
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_find_clades)
+
+        pm = build_parent_map(tree)
+
+        assert len(pm) == 6
+        assert pm[id(tree.root.clades[0])] is tree.root
+        assert pm[id(tree.root.clades[1])] is tree.root
+
+    def test_direct_traversal_handles_mixed_child_counts(self, monkeypatch):
+        tree = _make_tree("(A:1,(B:1,C:1):1,(D:1,E:1,F:1):1);")
+
+        def fail_find_clades(*_args, **_kwargs):
+            raise AssertionError("generic preorder traversal should not be used")
+
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_find_clades)
+
+        pm = build_parent_map(tree)
+
+        binary = tree.root.clades[1]
+        trifurcation = tree.root.clades[2]
+        assert pm[id(tree.root.clades[0])] is tree.root
+        assert pm[id(binary)] is tree.root
+        assert pm[id(trifurcation)] is tree.root
+        assert pm[id(binary.clades[0])] is binary
+        assert pm[id(binary.clades[1])] is binary
+        assert pm[id(trifurcation.clades[0])] is trifurcation
+        assert pm[id(trifurcation.clades[1])] is trifurcation
+        assert pm[id(trifurcation.clades[2])] is trifurcation
 
 
 # ---------------------------------------------------------------------------
@@ -103,12 +155,132 @@ class TestResolvePolytomies:
         tips = sorted(t.name for t in tree.get_terminals())
         assert tips == ["A", "B", "C", "D", "E", "F"]
 
+    def test_resolve_polytomies_uses_direct_postorder(self, monkeypatch):
+        tree = _make_tree("(A:1,B:1,C:1,D:1);")
+
+        def fail_find_clades(*_args, **_kwargs):
+            raise AssertionError("generic postorder traversal should not be used")
+
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_find_clades)
+
+        resolve_polytomies(tree)
+
+        stack = [tree.root]
+        while stack:
+            clade = stack.pop()
+            assert len(clade.clades) <= 2
+            stack.extend(clade.clades)
+
+    def test_binary_tree_does_not_import_newick(self, monkeypatch):
+        tree = _make_tree("((A:1,B:1):1,(C:1,D:1):1);")
+        original_import = builtins.__import__
+
+        def guarded_import(name, globals=None, locals=None, fromlist=(), level=0):
+            if name == "Bio.Phylo.Newick" or (
+                name == "Bio.Phylo" and fromlist and "Newick" in fromlist
+            ):
+                raise AssertionError("binary trees should not import Newick helpers")
+            return original_import(name, globals, locals, fromlist, level)
+
+        monkeypatch.setattr(builtins, "__import__", guarded_import)
+
+        resolve_polytomies(tree)
+
+        assert [tip.name for tip in tree.get_terminals()] == ["A", "B", "C", "D"]
+
+    def test_resolve_polytomies_matches_previous_postorder_output(self):
+        newick = "((A:1,B:1,C:1):1,(D:1,E:1,F:1):1,G:1);"
+        expected = _make_tree(newick)
+        actual = _make_tree(newick)
+
+        from Bio.Phylo import Newick
+
+        clades = []
+        stack = [expected.root]
+        while stack:
+            clade = stack.pop()
+            clades.append(clade)
+            stack.extend(clade.clades)
+        clades.reverse()
+        for clade in clades:
+            while len(clade.clades) > 2:
+                child1 = clade.clades.pop()
+                child2 = clade.clades.pop()
+                new_internal = Newick.Clade(branch_length=0.0)
+                new_internal.clades = [child1, child2]
+                clade.clades.append(new_internal)
+
+        resolve_polytomies(actual)
+
+        expected_out = StringIO()
+        actual_out = StringIO()
+        Phylo.write(expected, expected_out, "newick")
+        Phylo.write(actual, actual_out, "newick")
+        assert actual_out.getvalue() == expected_out.getvalue()
+
 
 # ---------------------------------------------------------------------------
 # fitch_downpass
 # ---------------------------------------------------------------------------
 
 class TestFitchDownpass:
+    def test_preorder_direct_binary_children_use_indexed_path(self):
+        from Bio.Phylo.BaseTree import Clade, Tree
+
+        class IndexedOnlyList(list):
+            def __reversed__(self):
+                raise AssertionError("preorder helper should index children")
+
+        left = Clade(
+            name="left",
+            clades=IndexedOnlyList([Clade(name="A"), Clade(name="B")]),
+        )
+        right = Clade(
+            name="right",
+            clades=IndexedOnlyList([Clade(name="C"), Clade(name="D")]),
+        )
+        root = Clade(name="root", clades=IndexedOnlyList([left, right]))
+        tree = Tree(root=root)
+
+        clades = parsimony_module._preorder_clades_direct(tree)
+
+        assert clades == [
+            root,
+            left,
+            left.clades[0],
+            left.clades[1],
+            right,
+            right.clades[0],
+            right.clades[1],
+        ]
+
+    def test_fitch_pipeline_uses_direct_tree_traversal(self, monkeypatch):
+        tree = _make_tree("((A:1,B:1):1,(C:1,D:1):1);")
+        tip_states = {
+            "A": ["0", "0"],
+            "B": ["0", "1"],
+            "C": ["1", "1"],
+            "D": ["1", "0"],
+        }
+
+        def fail_find_clades(*_args, **_kwargs):
+            raise AssertionError("generic tree traversal should not be used")
+
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_find_clades)
+
+        parent_map = build_parent_map(tree)
+        node_state_sets, scores = fitch_downpass(tree, tip_states)
+        acctran_states = fitch_uppass_acctran(tree, node_state_sets, parent_map)
+        deltran_states = fitch_uppass_deltran(tree, node_state_sets, parent_map)
+        acctran_changes = detect_changes(tree, acctran_states, parent_map)
+        deltran_changes = detect_changes(tree, deltran_states, parent_map)
+
+        assert scores == [1, 2]
+        assert id(tree.root) in acctran_states
+        assert id(tree.root) in deltran_states
+        assert acctran_changes
+        assert deltran_changes
+
     def test_simple_no_change(self):
         """All tips same state -> 0 steps."""
         tree = _make_tree("((A:1,B:1):1,(C:1,D:1):1);")
@@ -164,6 +336,59 @@ class TestFitchDownpass:
         node_state_sets, scores = fitch_downpass(tree, tip_states)
         assert scores == [1, 1]
 
+    def test_repeated_terminal_patterns_match_generic_downpass(self, monkeypatch):
+        tree = _make_tree("(((A:1,B:1):1,(C:1,D:1):1):1,((E:1,F:1):1,(G:1,H:1):1):1);")
+        tip_states = {
+            "A": ["0", "1", "0"],
+            "B": ["0", "1", "0"],
+            "C": ["1", "0", "1"],
+            "D": ["1", "0", "1"],
+            "E": ["0", "1", "0"],
+            "F": ["0", "1", "0"],
+            "G": ["1", "0", "1"],
+            "H": ["1", "0", "1"],
+        }
+
+        optimized_sets, optimized_scores = fitch_downpass(tree, tip_states)
+
+        monkeypatch.setattr(
+            parsimony_module,
+            "_postorder_clades_direct",
+            lambda _tree: None,
+        )
+        generic_sets, generic_scores = fitch_downpass(tree, tip_states)
+
+        assert optimized_scores == generic_scores
+        assert optimized_sets[id(tree.root)] == generic_sets[id(tree.root)]
+
+    def test_repeated_terminal_patterns_keep_node_state_lists_independent(self):
+        tree = _make_tree("(((A:1,B:1):1,(C:1,D:1):1):1,((E:1,F:1):1,(G:1,H:1):1):1);")
+        pattern_a = ["0", "1"] * 8
+        pattern_b = ["1", "0"] * 8
+        tip_states = {
+            "A": pattern_a,
+            "B": pattern_a,
+            "C": pattern_b,
+            "D": pattern_b,
+            "E": pattern_a,
+            "F": pattern_a,
+            "G": pattern_b,
+            "H": pattern_b,
+        }
+
+        node_state_sets, scores = fitch_downpass(tree, tip_states)
+        lists_by_value = {}
+        for char_sets in node_state_sets.values():
+            lists_by_value.setdefault(tuple(char_sets), []).append(char_sets)
+
+        repeated_lists = next(
+            group for group in lists_by_value.values() if len(group) > 1
+        )
+
+        assert scores == [2, 2] * 8
+        assert repeated_lists[0] == repeated_lists[1]
+        assert repeated_lists[0] is not repeated_lists[1]
+
     def test_root_state_set_correct(self):
         """Root state set should be intersection or union of children."""
         tree = _make_tree("((A:1,B:1):1,(C:1,D:1):1);")
@@ -181,6 +406,80 @@ class TestFitchDownpass:
         tip_states = {"A": ["?"], "B": ["?"], "C": ["?"], "D": ["?"]}
         node_state_sets, scores = fitch_downpass(tree, tip_states)
         assert scores == [0]
+
+    def test_binary_downpass_wildcard_empty_sets_match_generic_semantics(self):
+        tree = _make_tree("((A:1,B:1):1,(C:1,D:1):1);")
+        resolve_polytomies(tree)
+        tip_states = {
+            "A": ["?", "0"],
+            "B": ["?", "1"],
+            "C": ["1", "?"],
+            "D": ["1", "?"],
+        }
+
+        node_state_sets, scores = fitch_downpass(tree, tip_states)
+
+        assert scores == [0, 1]
+        assert node_state_sets[id(tree.root)][0] == {"1"}
+        assert node_state_sets[id(tree.root)][1] == {"0", "1"}
+
+    def test_binary_downpass_bitmask_path_is_uppass_compatible(self, monkeypatch):
+        tree = _make_tree("((A:1,B:1):1,(C:1,D:1):1);")
+        tip_states = {
+            "A": ["0", "0", "?"],
+            "B": ["0", "1", "1"],
+            "C": ["1", "1", "1"],
+            "D": ["1", "0", "?"],
+        }
+
+        def fail_find_clades(*_args, **_kwargs):
+            raise AssertionError("resolved trees should use direct traversal")
+
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_find_clades)
+
+        parent_map = build_parent_map(tree)
+        node_state_sets, scores = fitch_downpass(tree, tip_states)
+        acctran_states = fitch_uppass_acctran(tree, node_state_sets, parent_map)
+        deltran_states = fitch_uppass_deltran(tree, node_state_sets, parent_map)
+
+        assert scores == [1, 2, 0]
+        assert node_state_sets[id(tree.root)][0] == {"0", "1"}
+        assert node_state_sets[id(tree.root)][1] == {"0", "1"}
+        assert node_state_sets[id(tree.root)][2] == {"1"}
+        assert id(tree.root) in acctran_states
+        assert id(tree.root) in deltran_states
+
+    def test_binary_downpass_uses_small_mask_lookup(self, monkeypatch):
+        tree = _make_tree("((A:1,B:1):1,(C:1,D:1):1);")
+        tip_states = {
+            "A": ["A", "C", "G", "T"],
+            "B": ["A", "G", "G", "T"],
+            "C": ["C", "G", "A", "?"],
+            "D": ["C", "G", "T", "?"],
+        }
+        built_state_counts = []
+        original_lookup_builder = parsimony_module._build_small_mask_set_lookup
+
+        def recording_lookup_builder(states):
+            built_state_counts.append(len(states))
+            return original_lookup_builder(states)
+
+        monkeypatch.setattr(
+            parsimony_module,
+            "_build_small_mask_set_lookup",
+            recording_lookup_builder,
+        )
+
+        node_state_sets, scores = fitch_downpass(tree, tip_states)
+
+        assert built_state_counts == [2, 2, 3, 1]
+        assert scores == [1, 1, 2, 0]
+        assert node_state_sets[id(tree.root)] == [
+            {"A", "C"},
+            {"G"},
+            {"A", "G", "T"},
+            {"T"},
+        ]
 
     def test_polytomy_tree_after_resolve(self):
         """Works on a resolved polytomy tree."""
@@ -359,6 +658,26 @@ class TestDeltranUppass:
 # ---------------------------------------------------------------------------
 
 class TestDetectChanges:
+    def test_single_character_path_skips_per_character_loop(self, monkeypatch):
+        tree = _make_tree("((A:1,B:1):1,(C:1,D:1):1);")
+        resolve_polytomies(tree)
+        tip_states = {"A": ["0"], "B": ["0"], "C": ["1"], "D": ["1"]}
+        node_state_sets, _ = fitch_downpass(tree, tip_states)
+        pm = build_parent_map(tree)
+        node_states = fitch_uppass_acctran(tree, node_state_sets, pm)
+
+        def fail_range(*_args, **_kwargs):
+            raise AssertionError("single-character changes should not loop over range(1)")
+
+        monkeypatch.setattr(parsimony_module, "range", fail_range, raising=False)
+
+        changes = detect_changes(tree, node_states, pm)
+
+        all_changes = [
+            c for branch_changes in changes.values() for c in branch_changes
+        ]
+        assert all_changes == [(0, "0", "1")]
+
     def test_counts_changes(self):
         tree = _make_tree("((A:1,B:1):1,(C:1,D:1):1);")
         resolve_polytomies(tree)
@@ -425,6 +744,43 @@ class TestDetectChanges:
 # ---------------------------------------------------------------------------
 
 class TestClassifyChanges:
+    def test_transition_counts_use_plain_dict(self, monkeypatch):
+        tree = _make_tree("((A:1,B:1):1,(C:1,D:1):1);")
+        root = tree.root
+        left, right = root.clades
+        a, b = left.clades
+        c, d = right.clades
+        pm = build_parent_map(tree)
+        node_states = {
+            id(root): ["0", "0"],
+            id(left): ["1", "0"],
+            id(right): ["0", "0"],
+            id(a): ["0", "1"],
+            id(b): ["1", "1"],
+            id(c): ["0", "0"],
+            id(d): ["0", "1"],
+        }
+        branch_changes = {
+            id(left): [(0, "0", "1")],
+            id(a): [(0, "1", "0")],
+            id(c): [(0, "1", "0")],
+            id(b): [(1, "0", "1")],
+            id(d): [(1, "0", "1")],
+        }
+
+        def fail_counter(*_args, **_kwargs):
+            raise AssertionError("classify_changes should not instantiate Counter")
+
+        monkeypatch.setattr(parsimony_module, "Counter", fail_counter)
+
+        classified = classify_changes(tree, branch_changes, node_states, pm)
+
+        assert classified[id(left)] == [(0, "0", "1", "synapomorphy")]
+        assert classified[id(a)] == [(0, "1", "0", "reversal")]
+        assert classified[id(c)] == [(0, "1", "0", "reversal")]
+        assert classified[id(b)] == [(1, "0", "1", "convergence")]
+        assert classified[id(d)] == [(1, "0", "1", "convergence")]
+
     def test_synapomorphy(self):
         """A change occurring once is a synapomorphy."""
         tree = _make_tree("((A:1,B:1):1,(C:1,D:1):1);")
@@ -583,6 +939,107 @@ class TestConsistencyIndex:
 # ---------------------------------------------------------------------------
 
 class TestRetentionIndex:
+    def test_ascii_symbol_counts_by_character_matches_reference(self):
+        alphabet = np.frombuffer(b"ACGT-?", dtype=np.uint8)
+        matrix = np.array(
+            [
+                [ord("A"), ord("C"), ord("A"), ord("?")],
+                [ord("G"), ord("G"), ord("-"), ord("T")],
+                [ord("C"), ord("C"), ord("C"), ord("A")],
+            ],
+            dtype=np.uint8,
+        )
+        symbols = alphabet[(alphabet != ord("?")) & (alphabet != ord("-"))]
+
+        observed = parsimony_module._ascii_symbol_counts_by_character(
+            matrix,
+            symbols,
+        )
+        expected = np.vstack(
+            [np.count_nonzero(matrix == symbol, axis=1) for symbol in symbols]
+        )
+
+        np.testing.assert_array_equal(observed, expected)
+
+    def test_ascii_symbol_counts_by_character_large_alphabet_uses_bincount(
+        self,
+        monkeypatch,
+    ):
+        alphabet = np.arange(33, 57, dtype=np.uint8)
+        matrix = np.tile(alphabet, 120).reshape(80, -1)
+        symbols = np.unique(matrix)
+        original_bincount = np.bincount
+        calls = 0
+
+        def count_bincount(*args, **kwargs):
+            nonlocal calls
+            calls += 1
+            return original_bincount(*args, **kwargs)
+
+        monkeypatch.setattr(np, "bincount", count_bincount)
+
+        observed = parsimony_module._ascii_symbol_counts_by_character(
+            matrix,
+            symbols,
+        )
+        expected = np.vstack(
+            [np.count_nonzero(matrix == symbol, axis=1) for symbol in symbols]
+        )
+
+        assert calls == 1
+        np.testing.assert_array_equal(observed, expected)
+
+    def test_ascii_symbol_counts_by_character_fifteen_states_uses_bincount(
+        self,
+        monkeypatch,
+    ):
+        alphabet = np.arange(33, 48, dtype=np.uint8)
+        matrix = np.tile(alphabet, 80).reshape(75, -1)
+        symbols = np.unique(matrix)
+        original_bincount = np.bincount
+        calls = 0
+
+        def count_bincount(*args, **kwargs):
+            nonlocal calls
+            calls += 1
+            return original_bincount(*args, **kwargs)
+
+        monkeypatch.setattr(np, "bincount", count_bincount)
+
+        observed = parsimony_module._ascii_symbol_counts_by_character(
+            matrix,
+            symbols,
+        )
+        expected = np.vstack(
+            [np.count_nonzero(matrix == symbol, axis=1) for symbol in symbols]
+        )
+
+        assert calls == 1
+        np.testing.assert_array_equal(observed, expected)
+
+    def test_ascii_symbol_counts_by_character_twelve_states_skips_bincount(
+        self,
+        monkeypatch,
+    ):
+        alphabet = np.arange(33, 45, dtype=np.uint8)
+        matrix = np.tile(alphabet, 100).reshape(80, -1)
+        symbols = np.unique(matrix)
+
+        def fail_bincount(*_args, **_kwargs):
+            raise AssertionError("12-state ASCII counts should use equality scans")
+
+        monkeypatch.setattr(np, "bincount", fail_bincount)
+
+        observed = parsimony_module._ascii_symbol_counts_by_character(
+            matrix,
+            symbols,
+        )
+        expected = np.vstack(
+            [np.count_nonzero(matrix == symbol, axis=1) for symbol in symbols]
+        )
+
+        np.testing.assert_array_equal(observed, expected)
+
     def test_basic(self):
         """RI with known values."""
         # 4 taxa: A=0, B=0, C=1, D=1
@@ -628,6 +1085,15 @@ class TestRetentionIndex:
         )
         assert ri_per_char[0] is None
 
+    def test_ri_all_wildcards(self):
+        """RI is undefined when a column has no observed states."""
+        ri_per_char, ri_overall = retention_index(
+            tip_states_per_char=[["?", "-", "?", "-"]],
+            observed_per_char=[0],
+        )
+        assert ri_per_char[0] is None
+        assert ri_overall is None
+
     def test_multiple_characters(self):
         """RI overall is weighted."""
         ri_per_char, ri_overall = retention_index(
@@ -643,6 +1109,72 @@ class TestRetentionIndex:
         # char0: (2-1)/(2-1)=1, num=1, den=1
         # char1: (2-2)/(2-1)=0, num=0, den=1
         # overall = (1+0)/(1+1) = 0.5
+        assert ri_overall == pytest.approx(0.5)
+
+    def test_ascii_single_character_fast_path_matches_reference(self):
+        tip_states_per_char = [
+            ["0", "0", "1", "1", "?"],
+            ["0", "1", "0", "1", "-"],
+            ["0", "0", "0", "0", "?"],
+        ]
+        observed_per_char = [1, 2, 0]
+
+        ri_per_char, ri_overall = retention_index(
+            tip_states_per_char,
+            observed_per_char,
+        )
+
+        assert ri_per_char == [1.0, 0.0, None]
+        assert ri_overall == pytest.approx(0.5)
+
+    def test_ascii_fast_path_uses_array_reductions(self, monkeypatch):
+        def fail_sum(*_args, **_kwargs):
+            raise AssertionError("ASCII RI fast path should avoid np.sum")
+
+        monkeypatch.setattr(np, "sum", fail_sum)
+
+        ri_per_char, ri_overall = retention_index(
+            tip_states_per_char=[
+                ["0", "0", "1", "1", "?"],
+                ["0", "1", "0", "1", "-"],
+            ],
+            observed_per_char=[1, 2],
+        )
+
+        assert ri_per_char == [1.0, 0.0]
+        assert ri_overall == pytest.approx(0.5)
+
+    def test_small_ascii_retention_index_uses_counter_fallback(self, monkeypatch):
+        def fail_symbol_counts(*_args, **_kwargs):
+            raise AssertionError("small RI matrices should avoid NumPy counting")
+
+        monkeypatch.setattr(
+            parsimony_module,
+            "_ascii_symbol_counts_by_character",
+            fail_symbol_counts,
+        )
+
+        ri_per_char, ri_overall = retention_index(
+            tip_states_per_char=[
+                ["0", "0", "1", "1", "?"],
+                ["0", "1", "0", "1", "-"],
+            ],
+            observed_per_char=[1, 2],
+        )
+
+        assert ri_per_char == [1.0, 0.0]
+        assert ri_overall == pytest.approx(0.5)
+
+    def test_retention_index_fallback_handles_multicharacter_states(self):
+        ri_per_char, ri_overall = retention_index(
+            tip_states_per_char=[
+                ["red", "red", "blue", "blue"],
+                ["α", "β", "α", "β"],
+            ],
+            observed_per_char=[1, 2],
+        )
+
+        assert ri_per_char == [1.0, 0.0]
         assert ri_overall == pytest.approx(0.5)
 
 

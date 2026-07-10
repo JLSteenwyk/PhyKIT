@@ -1,14 +1,24 @@
 """Alignment subsampling: randomly subsample genes, partitions, or sites."""
 
-import random
-import re
-from typing import Dict, List, Tuple
+from __future__ import annotations
 
-from Bio import SeqIO
-
+from ._fasta import read_fasta_first_token
 from .base import Alignment
-from ...helpers.json_output import print_json
 from ...errors import PhykitUserError
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
+
+
+_FASTA_WRITE_CHUNK_ROWS = 8192
+_PARTITION_WRITE_CHUNK_ROWS = 8192
+_RANGE_SITE_SAMPLE_MIN_LENGTH = 1_000_000
+_RANGE_SITE_SAMPLE_MID_MIN_LENGTH = 100_000
+_RANGE_SITE_SAMPLE_MAX_COUNT = 50_000
+_RANGE_SITE_SAMPLE_MAX_FRACTION = 0.1
 
 
 class AlignmentSubsample(Alignment):
@@ -51,6 +61,8 @@ class AlignmentSubsample(Alignment):
         )
 
     def run(self):
+        import random
+
         rng = random.Random(self.seed)
 
         if self.mode == "genes":
@@ -82,8 +94,8 @@ class AlignmentSubsample(Alignment):
 
         out_file = f"{self.output_prefix}.txt"
         with open(out_file, "w") as fh:
-            for path in selected:
-                fh.write(f"{path}\n")
+            fh.write("\n".join(selected))
+            fh.write("\n")
 
         self._print_summary("genes", total, n, [out_file])
 
@@ -104,34 +116,13 @@ class AlignmentSubsample(Alignment):
         n = self._compute_n(total, "partitions")
         selected = self._sample(rng, partitions, n)
 
-        # Build new sequences by concatenating selected partition columns
-        new_sequences: Dict[str, str] = {taxon: "" for taxon in sequences}
-        new_partitions: List[Tuple[str, int, int]] = []
-        current_pos = 1
-
-        # Track duplicate names for bootstrap
-        name_counts: Dict[str, int] = {}
-        for name, start, end in selected:
-            part_len = end - start + 1
-            for taxon in sequences:
-                new_sequences[taxon] += sequences[taxon][start - 1 : end]
-
-            # Handle duplicate partition names (bootstrap)
-            if name in name_counts:
-                name_counts[name] += 1
-                display_name = f"{name}_dup{name_counts[name]}"
-            else:
-                name_counts[name] = 0
-                display_name = name
-
-            new_partitions.append(
-                (display_name, current_pos, current_pos + part_len - 1)
-            )
-            current_pos += part_len
-
         out_aln = f"{self.output_prefix}.fa"
         out_part = f"{self.output_prefix}.partition"
 
+        new_sequences, new_partitions = self._assemble_partition_subsample(
+            sequences,
+            selected,
+        )
         self._write_fasta(out_aln, new_sequences)
         self._write_partition_file(out_part, new_partitions)
 
@@ -148,24 +139,45 @@ class AlignmentSubsample(Alignment):
             )
 
         sequences = self._read_alignment(self.alignment_path)
-        lengths = set(len(seq) for seq in sequences.values())
-        if len(lengths) != 1:
+        seq_iter = iter(sequences.values())
+        try:
+            aln_len = len(next(seq_iter))
+        except StopIteration:
             raise PhykitUserError(
                 ["All sequences in the alignment must have the same length."],
                 code=2,
             )
-        aln_len = lengths.pop()
+        for seq in seq_iter:
+            if len(seq) != aln_len:
+                raise PhykitUserError(
+                    ["All sequences in the alignment must have the same length."],
+                    code=2,
+                )
         n = self._compute_n(aln_len, "sites")
 
-        indices = list(range(aln_len))
-        if self.bootstrap:
-            selected_indices = rng.choices(indices, k=n)
+        if not self.bootstrap and n == aln_len:
+            new_sequences = sequences
         else:
-            selected_indices = sorted(rng.sample(indices, k=n))
+            selected_indices = self._sample_site_indices(
+                rng,
+                aln_len,
+                n,
+                self.bootstrap,
+            )
+            selected_ranges = self._selected_index_ranges(selected_indices)
+            if len(selected_ranges) * 4 < len(selected_indices):
+                new_sequences: dict[str, str] = {
+                    taxon: self._select_site_ranges(seq, selected_ranges)
+                    for taxon, seq in sequences.items()
+                }
+            else:
+                from operator import itemgetter
 
-        new_sequences: Dict[str, str] = {}
-        for taxon, seq in sequences.items():
-            new_sequences[taxon] = "".join(seq[i] for i in selected_indices)
+                site_selector = itemgetter(*selected_indices)
+                new_sequences = {
+                    taxon: self._select_sites(seq, site_selector)
+                    for taxon, seq in sequences.items()
+                }
 
         out_aln = f"{self.output_prefix}.fa"
         self._write_fasta(out_aln, new_sequences)
@@ -177,42 +189,89 @@ class AlignmentSubsample(Alignment):
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _read_list_file(path: str) -> List[str]:
+    def _read_list_file(path: str) -> list[str]:
         entries = []
         with open(path) as fh:
             for line in fh:
                 stripped = line.strip()
-                if stripped and not stripped.startswith("#"):
+                if stripped and stripped[0] != "#":
                     entries.append(stripped)
         return entries
 
     @staticmethod
-    def _read_alignment(path: str) -> Dict[str, str]:
-        sequences: Dict[str, str] = {}
-        for record in SeqIO.parse(path, "fasta"):
-            sequences[record.id] = str(record.seq)
-        return sequences
+    def _read_alignment(path: str) -> dict[str, str]:
+        return read_fasta_first_token(path)
 
     @staticmethod
-    def _parse_partition_file(path: str) -> List[Tuple[str, int, int]]:
+    def _parse_partition_file(path: str) -> list[tuple[str, int, int]]:
         """Parse RAxML-style partition file.
 
         Expected format per line: ``AUTO, name=start-end``
         """
-        partitions: List[Tuple[str, int, int]] = []
-        pattern = re.compile(r"^\s*\S+\s*,\s*(\S+)\s*=\s*(\d+)\s*-\s*(\d+)")
+        partitions: list[tuple[str, int, int]] = []
         with open(path) as fh:
             for line in fh:
                 stripped = line.strip()
-                if not stripped or stripped.startswith("#"):
+                if not stripped or stripped[0] == "#":
                     continue
-                m = pattern.match(stripped)
-                if m:
-                    name = m.group(1)
-                    start = int(m.group(2))
-                    end = int(m.group(3))
-                    partitions.append((name, start, end))
+                partition = AlignmentSubsample._parse_partition_line(stripped)
+                if partition is not None:
+                    partitions.append(partition)
         return partitions
+
+    @staticmethod
+    def _parse_partition_line(line: str) -> tuple[str, int, int] | None:
+        try:
+            model, rest = line.split(", ", 1)
+            name, range_part = rest.split("=", 1)
+            start_text, end_text = range_part.split("-", 1)
+            if (
+                model
+                and " " not in model
+                and name
+                and " " not in name
+                and start_text.isdigit()
+            ):
+                if end_text.isdigit():
+                    return name, int(start_text), int(end_text)
+                end_digits = AlignmentSubsample._leading_digits(end_text)
+                if end_digits.isdigit():
+                    return name, int(start_text), int(end_digits)
+        except (IndexError, ValueError):
+            pass
+
+        try:
+            model, rest = line.split(",", 1)
+            name_part, range_part = rest.lstrip().split("=", 1)
+            start_part, end_part = range_part.lstrip().split("-", 1)
+        except ValueError:
+            return None
+
+        if len(model.split()) != 1:
+            return None
+
+        name = name_part.rstrip()
+        if not name or len(name.split()) != 1:
+            return None
+
+        start_text = start_part.strip()
+        if not start_text.isdigit():
+            return None
+
+        end_text = end_part.lstrip()
+        end_digits = AlignmentSubsample._leading_digits(end_text)
+        if not end_digits.isdigit():
+            return None
+
+        return name, int(start_text), int(end_digits)
+
+    @staticmethod
+    def _leading_digits(text: str) -> str:
+        idx = 0
+        text_len = len(text)
+        while idx < text_len and text[idx].isdigit():
+            idx += 1
+        return text[:idx]
 
     def _compute_n(self, total: int, label: str) -> int:
         if self.number is not None:
@@ -239,20 +298,142 @@ class AlignmentSubsample(Alignment):
             return rng.sample(items, k=n)
 
     @staticmethod
-    def _write_fasta(path: str, sequences: Dict[str, str]) -> None:
+    def _sample_site_indices(
+        rng,
+        aln_len: int,
+        n: int,
+        bootstrap: bool,
+    ) -> list[int]:
+        if bootstrap:
+            return rng.choices(range(aln_len), k=n)
+
+        if (
+            aln_len >= _RANGE_SITE_SAMPLE_MIN_LENGTH
+            and n <= aln_len * _RANGE_SITE_SAMPLE_MAX_FRACTION
+        ) or (
+            aln_len >= _RANGE_SITE_SAMPLE_MID_MIN_LENGTH
+            and n <= _RANGE_SITE_SAMPLE_MAX_COUNT
+        ):
+            return sorted(rng.sample(range(aln_len), k=n))
+
+        return sorted(rng.sample(list(range(aln_len)), k=n))
+
+    @staticmethod
+    def _select_sites(seq: str, site_selector) -> str:
+        selected = site_selector(seq)
+        if isinstance(selected, str):
+            return selected
+        return "".join(selected)
+
+    @staticmethod
+    def _selected_index_ranges(indices: list[int]) -> list[tuple[int, int]]:
+        iterator = iter(indices)
+        try:
+            start = previous = next(iterator)
+        except StopIteration:
+            return []
+
+        ranges: list[tuple[int, int]] = []
+        for index in iterator:
+            if index == previous + 1:
+                previous = index
+                continue
+            ranges.append((start, previous + 1))
+            start = previous = index
+        ranges.append((start, previous + 1))
+        return ranges
+
+    @staticmethod
+    def _select_site_ranges(seq: str, ranges: list[tuple[int, int]]) -> str:
+        if len(ranges) == 1:
+            start, stop = ranges[0]
+            return seq[start:stop]
+        return "".join([seq[start:stop] for start, stop in ranges])
+
+    @staticmethod
+    def _assemble_partition_subsample(
+        sequences: dict[str, str],
+        selected: list[tuple[str, int, int]],
+    ) -> tuple[dict[str, str], list[tuple[str, int, int]]]:
+        selected_slices: list[slice] = []
+        new_partitions: list[tuple[str, int, int]] = []
+        current_pos = 1
+        name_counts: dict[str, int] = {}
+
+        for name, start, end in selected:
+            start_idx = start - 1
+            selected_slices.append(slice(start_idx, end))
+            part_len = end - start_idx
+
+            count = name_counts.get(name, 0)
+            if count:
+                display_name = f"{name}_dup{count}"
+            else:
+                display_name = name
+            name_counts[name] = count + 1
+
+            new_partitions.append(
+                (display_name, current_pos, current_pos + part_len - 1)
+            )
+            current_pos += part_len
+
+        if not selected_slices:
+            new_sequences = {taxon: "" for taxon in sequences}
+        elif len(selected_slices) == 1:
+            selected_slice = selected_slices[0]
+            new_sequences = {
+                taxon: seq[selected_slice] for taxon, seq in sequences.items()
+            }
+        else:
+            from operator import itemgetter
+
+            slice_selector = itemgetter(*selected_slices)
+            new_sequences = {
+                taxon: "".join(slice_selector(seq))
+                for taxon, seq in sequences.items()
+            }
+        return new_sequences, new_partitions
+
+    @staticmethod
+    def _write_fasta(path: str, sequences: dict[str, str]) -> None:
+        from itertools import islice
+
         with open(path, "w") as fh:
-            for taxon, seq in sequences.items():
-                fh.write(f">{taxon}\n{seq}\n")
+            write = fh.write
+            iterator = iter(sequences.items())
+            while True:
+                rows = [
+                    f">{taxon}\n{seq}\n"
+                    for taxon, seq in islice(iterator, _FASTA_WRITE_CHUNK_ROWS)
+                ]
+                if not rows:
+                    break
+                write("".join(rows))
 
     @staticmethod
     def _write_partition_file(
-        path: str, partitions: List[Tuple[str, int, int]]
+        path: str, partitions: list[tuple[str, int, int]]
     ) -> None:
-        with open(path, "w") as fh:
-            for name, start, end in partitions:
-                fh.write(f"AUTO, {name}={start}-{end}\n")
+        from itertools import islice
 
-    def _print_summary(self, mode: str, total: int, selected: int, output_files: List[str]):
+        with open(path, "w") as fh:
+            write = fh.write
+            iterator = iter(partitions)
+            while True:
+                rows = [
+                    f"AUTO, {name}={start}-{end}\n"
+                    for name, start, end in islice(
+                        iterator,
+                        _PARTITION_WRITE_CHUNK_ROWS,
+                    )
+                ]
+                if not rows:
+                    break
+                write("".join(rows))
+
+    def _print_summary(
+        self, mode: str, total: int, selected: int, output_files: list[str]
+    ):
         seed_display = self.seed if self.seed is not None else "random"
         bootstrap_str = "yes" if self.bootstrap else "no"
 
@@ -268,14 +449,17 @@ class AlignmentSubsample(Alignment):
             print_json(payload)
             return
 
+        lines = [
+            "Alignment Subsampling",
+            f"Mode: {mode}",
+            f"Total {mode}: {total}",
+            f"Selected: {selected}",
+            f"Bootstrap: {bootstrap_str}",
+            f"Seed: {seed_display}",
+        ]
+        lines.extend(f"Output: {f}" for f in output_files)
+
         try:
-            print("Alignment Subsampling")
-            print(f"Mode: {mode}")
-            print(f"Total {mode}: {total}")
-            print(f"Selected: {selected}")
-            print(f"Bootstrap: {bootstrap_str}")
-            print(f"Seed: {seed_display}")
-            for f in output_files:
-                print(f"Output: {f}")
+            print("\n".join(lines))
         except BrokenPipeError:
             pass

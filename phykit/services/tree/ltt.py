@@ -1,13 +1,54 @@
+from __future__ import annotations
+
 import math
-from typing import Dict, List, Tuple
 
 from .base import Tree
-from ...helpers.json_output import print_json
-from ...helpers.plot_config import PlotConfig
 from ...errors import PhykitUserError
 
 
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
+
+
+def _max_tip_height(tips, depths, root_depth):
+    iterator = iter(tips)
+    first = next(iterator)
+    local_depths = depths
+    max_height = local_depths[first] - root_depth
+    for tip in iterator:
+        height = local_depths[tip] - root_depth
+        if height > max_height:
+            max_height = height
+    return max_height
+
+
+def _ltt_from_internal_depths(internal_depths, max_height):
+    ltt = [(0.0, 2)]
+    n_lineages = 2
+    append = ltt.append
+    iterator = iter(internal_depths)
+    next(iterator, None)
+    for bt_from_root in iterator:
+        n_lineages += 1
+        append((bt_from_root, n_lineages))
+    append((max_height, n_lineages))
+    return ltt
+
+
+def _gamma_st_and_stat_sum(g, n_tips):
+    running = 0.0
+    stat_sum = 0.0
+    for k in range(n_tips - 2):
+        running += (k + 2) * g[k]
+        stat_sum += running
+    return running + n_tips * g[n_tips - 2], stat_sum
+
+
 class LTT(Tree):
+    _DEPTH_DATA_UNSET = object()
+
     def __init__(self, args) -> None:
         parsed = self.process_args(args)
         super().__init__(tree_file_path=parsed["tree_file_path"])
@@ -17,11 +58,10 @@ class LTT(Tree):
         self.plot_config = parsed["plot_config"]
 
     def run(self) -> None:
-        tree = self.read_tree_file()
+        tree = self.read_tree_file_unmodified()
         self.validate_tree(tree, min_tips=3, context="gamma statistic")
 
-        gamma, p_value, bt, g = self._compute_gamma(tree)
-        ltt_data = self._compute_ltt(tree)
+        gamma, p_value, bt, g, ltt_data = self._compute_gamma_and_ltt(tree)
 
         if self.json_output:
             self._output_json(gamma, p_value, ltt_data, bt, g)
@@ -32,7 +72,9 @@ class LTT(Tree):
         if self.plot_output:
             self._plot_ltt(ltt_data, self.plot_output, gamma=gamma, p_value=p_value)
 
-    def process_args(self, args) -> Dict[str, str]:
+    def process_args(self, args) -> dict[str, str]:
+        from ...helpers.plot_config import PlotConfig
+
         return dict(
             tree_file_path=args.tree,
             verbose=getattr(args, "verbose", False),
@@ -42,7 +84,128 @@ class LTT(Tree):
         )
 
     @staticmethod
-    def _compute_gamma(tree):
+    def _terminal_clades(tree):
+        terminals = LTT._terminal_clades_fast(tree)
+        if terminals is not None:
+            return terminals
+        return list(tree.get_terminals())
+
+    @staticmethod
+    def _terminal_clades_fast(tree):
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            return None
+
+        terminals = []
+        stack = [root]
+        pop = stack.pop
+        append = stack.append
+        append_terminal = terminals.append
+        try:
+            while stack:
+                clade = pop()
+                children = clade.clades
+                if children:
+                    if len(children) == 2:
+                        left, right = children
+                        append(right)
+                        append(left)
+                    else:
+                        for index in range(len(children) - 1, -1, -1):
+                            append(children[index])
+                else:
+                    append_terminal(clade)
+        except AttributeError:
+            return None
+        return terminals
+
+    @staticmethod
+    def _depths_from_root(tree):
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            root = None
+        else:
+            depths = {root: 0.0}
+            stack = [root]
+            try:
+                pop = stack.pop
+                append = stack.append
+                while stack:
+                    clade = pop()
+                    parent_depth = depths[clade]
+                    children = clade.clades
+                    if children:
+                        child_count = len(children)
+                        if child_count == 2:
+                            child = children[1]
+                            depths[child] = parent_depth + (
+                                child.branch_length or 0.0
+                            )
+                            append(child)
+                            child = children[0]
+                            depths[child] = parent_depth + (
+                                child.branch_length or 0.0
+                            )
+                            append(child)
+                        else:
+                            for child in reversed(children):
+                                depths[child] = parent_depth + (
+                                    child.branch_length or 0.0
+                                )
+                                append(child)
+            except (AttributeError, TypeError):
+                pass
+            else:
+                return root, depths, 0.0
+
+        try:
+            depths = tree.depths()
+            root = tree.root
+            root_depth = depths[root]
+        except (AttributeError, KeyError):
+            return None
+        return root, depths, root_depth
+
+    @staticmethod
+    def _internal_depths_from_root(tree, depth_data, include_root):
+        if depth_data is None:
+            return None
+        try:
+            root, depths, root_depth = depth_data
+            root.clades
+        except (AttributeError, TypeError, ValueError):
+            return None
+
+        internal_depths = []
+        stack = [root]
+        pop = stack.pop
+        append = stack.append
+        append_depth = internal_depths.append
+        try:
+            while stack:
+                clade = pop()
+                children = clade.clades
+                if children:
+                    if include_root or clade != root:
+                        append_depth(depths[clade] - root_depth)
+                    child_count = len(children)
+                    if child_count == 2:
+                        append(children[1])
+                        append(children[0])
+                    else:
+                        for index in range(child_count - 1, -1, -1):
+                            append(children[index])
+        except (AttributeError, KeyError):
+            return None
+
+        return internal_depths
+
+    @staticmethod
+    def _compute_gamma(tree, tips=None, depth_data=_DEPTH_DATA_UNSET):
         """Pybus & Harvey (2000) gamma statistic, matching ape::gammaStat().
 
         Replicates the exact algorithm from R's ape source (gammaStat.R):
@@ -55,7 +218,8 @@ class LTT(Tree):
             s <- ST * sqrt(1 / (12 * (N - 2)))
             (stat - m) / s
         """
-        tips = list(tree.get_terminals())
+        if tips is None:
+            tips = LTT._terminal_clades(tree)
         N = len(tips)
 
         if N < 3:
@@ -65,16 +229,34 @@ class LTT(Tree):
             )
 
         # Get branching times (node ages = distance from present/tips)
-        root = tree.root
-        max_height = max(tree.distance(root, tip) for tip in tips)
+        if depth_data is LTT._DEPTH_DATA_UNSET:
+            depth_data = LTT._depths_from_root(tree)
+        if depth_data is None:
+            root = tree.root
+            max_height = max(tree.distance(root, tip) for tip in tips)
+        else:
+            root, depths, root_depth = depth_data
+            max_height = _max_tip_height(tips, depths, root_depth)
 
-        bt = []
-        for clade in tree.find_clades(order="level"):
-            if clade.is_terminal():
-                continue
-            node_dist_from_root = tree.distance(root, clade)
-            node_age = max_height - node_dist_from_root
-            bt.append(node_age)
+        internal_depths = LTT._internal_depths_from_root(
+            tree, depth_data, include_root=True
+        )
+        if internal_depths is None:
+            bt = []
+            for clade in tree.find_clades(order="level"):
+                if clade.is_terminal():
+                    continue
+                if depth_data is None:
+                    node_dist_from_root = tree.distance(root, clade)
+                else:
+                    node_dist_from_root = depths[clade] - root_depth
+                node_age = max_height - node_dist_from_root
+                bt.append(node_age)
+        else:
+            bt = [
+                max_height - node_dist_from_root
+                for node_dist_from_root in internal_depths
+            ]
 
         bt.sort()  # ascending: most recent nodes first
 
@@ -83,52 +265,183 @@ class LTT(Tree):
         g_unreversed = [bt[0]] + [bt[i] - bt[i - 1] for i in range(1, len(bt))]
         g = list(reversed(g_unreversed))
 
-        # ST = sum((2:N) * g)
-        ST = sum((k + 2) * g[k] for k in range(N - 1))
+        # ST = sum((2:N) * g); stat uses the cumulative sum up to N - 1.
+        ST, stat_sum = _gamma_st_and_stat_sum(g, N)
 
-        # stat = sum(cumsum((2:(N-1)) * g[-(N-1)])) / (N-2)
-        # g[-(N-1)] in R removes the last element
-        g_partial = g[:-1]
-        partial = [(k + 2) * g_partial[k] for k in range(N - 2)]
-        cumsum_partial = []
-        running = 0.0
-        for val in partial:
-            running += val
-            cumsum_partial.append(running)
-
-        stat = sum(cumsum_partial) / (N - 2)
+        stat = stat_sum / (N - 2)
 
         m = ST / 2
         s = ST * math.sqrt(1.0 / (12 * (N - 2)))
         gamma = (stat - m) / s
 
-        # Two-tailed p-value from standard normal
-        from scipy.stats import norm
-
-        p_value = 2 * norm.sf(abs(gamma))
+        # Two-tailed p-value from standard normal:
+        # 2 * norm.sf(abs(gamma)) == erfc(abs(gamma) / sqrt(2)).
+        p_value = math.erfc(abs(gamma) / math.sqrt(2.0))
 
         return gamma, p_value, bt, g
 
     @staticmethod
-    def _compute_ltt(tree):
+    def _compute_gamma_and_ltt(tree, tips=None, depth_data=_DEPTH_DATA_UNSET):
+        if tips is None and depth_data is LTT._DEPTH_DATA_UNSET:
+            result = LTT._compute_gamma_and_ltt_direct(tree)
+            if result is not None:
+                return result
+
+        if tips is None:
+            tips = LTT._terminal_clades(tree)
+        N = len(tips)
+
+        if N < 3:
+            raise PhykitUserError(
+                ["Tree must have at least 3 tips for gamma statistic."],
+                code=2,
+            )
+
+        depth_data = (
+            LTT._depths_from_root(tree)
+            if depth_data is LTT._DEPTH_DATA_UNSET
+            else depth_data
+        )
+        if depth_data is None:
+            gamma, p_value, bt, g = LTT._compute_gamma(
+                tree, tips=tips, depth_data=None
+            )
+            ltt_data = LTT._compute_ltt(tree, tips=tips, depth_data=None)
+            return gamma, p_value, bt, g, ltt_data
+
+        root, depths, root_depth = depth_data
+        max_height = _max_tip_height(tips, depths, root_depth)
+
+        internal_depths = LTT._internal_depths_from_root(
+            tree, depth_data, include_root=True
+        )
+        if internal_depths is None:
+            gamma, p_value, bt, g = LTT._compute_gamma(
+                tree, tips=tips, depth_data=depth_data
+            )
+            ltt_data = LTT._compute_ltt(tree, tips=tips, depth_data=depth_data)
+            return gamma, p_value, bt, g, ltt_data
+
+        internal_depths.sort()
+        bt = [max_height - depth for depth in reversed(internal_depths)]
+
+        # Internode intervals reversed (ape: g <- rev(c(bt[1], diff(bt)))).
+        g_unreversed = [bt[0]] + [bt[i] - bt[i - 1] for i in range(1, len(bt))]
+        g = list(reversed(g_unreversed))
+
+        ST, stat_sum = _gamma_st_and_stat_sum(g, N)
+
+        stat = stat_sum / (N - 2)
+        m = ST / 2
+        s = ST * math.sqrt(1.0 / (12 * (N - 2)))
+        gamma = (stat - m) / s
+        p_value = math.erfc(abs(gamma) / math.sqrt(2.0))
+
+        ltt = _ltt_from_internal_depths(internal_depths, max_height)
+
+        return gamma, p_value, bt, g, ltt
+
+    @staticmethod
+    def _compute_gamma_and_ltt_direct(tree):
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            return None
+
+        n_tips = 0
+        max_height = 0.0
+        internal_depths = []
+        stack = [(root, 0.0)]
+        pop = stack.pop
+        append = stack.append
+        append_internal = internal_depths.append
+        try:
+            while stack:
+                clade, depth = pop()
+                children = clade.clades
+                if children:
+                    append_internal(depth)
+                    child_count = len(children)
+                    if child_count == 2:
+                        child = children[1]
+                        append((child, depth + (child.branch_length or 0.0)))
+                        child = children[0]
+                        append((child, depth + (child.branch_length or 0.0)))
+                    else:
+                        for index in range(child_count - 1, -1, -1):
+                            child = children[index]
+                            append((child, depth + (child.branch_length or 0.0)))
+                else:
+                    n_tips += 1
+                    if depth > max_height:
+                        max_height = depth
+        except (AttributeError, TypeError):
+            return None
+
+        if n_tips < 3:
+            raise PhykitUserError(
+                ["Tree must have at least 3 tips for gamma statistic."],
+                code=2,
+            )
+
+        internal_depths.sort()
+        bt = [max_height - depth for depth in reversed(internal_depths)]
+
+        g_unreversed = [bt[0]] + [bt[i] - bt[i - 1] for i in range(1, len(bt))]
+        g = list(reversed(g_unreversed))
+
+        ST, stat_sum = _gamma_st_and_stat_sum(g, n_tips)
+
+        stat = stat_sum / (n_tips - 2)
+        m = ST / 2
+        s = ST * math.sqrt(1.0 / (12 * (n_tips - 2)))
+        gamma = (stat - m) / s
+        p_value = math.erfc(abs(gamma) / math.sqrt(2.0))
+
+        ltt = _ltt_from_internal_depths(internal_depths, max_height)
+
+        return gamma, p_value, bt, g, ltt
+
+    @staticmethod
+    def _compute_ltt(tree, tips=None, depth_data=_DEPTH_DATA_UNSET):
         """Compute lineage-through-time data.
 
         Returns list of (time_from_root, n_lineages) tuples.
         Time runs from 0 (root) to tree_height (present).
         """
         # Get branching times as distances from root
-        root = tree.root
-        max_height = max(
-            tree.distance(root, tip) for tip in tree.get_terminals()
-        )
+        if tips is None:
+            tips = LTT._terminal_clades(tree)
 
-        branching_times_from_root = []
-        for clade in tree.find_clades(order="level"):
-            if clade.is_terminal():
-                continue
-            if clade == root:
-                continue
-            branching_times_from_root.append(tree.distance(root, clade))
+        depth_data = (
+            LTT._depths_from_root(tree)
+            if depth_data is LTT._DEPTH_DATA_UNSET
+            else depth_data
+        )
+        if depth_data is None:
+            root = tree.root
+            max_height = max(
+                tree.distance(root, tip) for tip in tips
+            )
+        else:
+            root, depths, root_depth = depth_data
+            max_height = _max_tip_height(tips, depths, root_depth)
+
+        branching_times_from_root = LTT._internal_depths_from_root(
+            tree, depth_data, include_root=False
+        )
+        if branching_times_from_root is None:
+            branching_times_from_root = []
+            for clade in tree.find_clades(order="level"):
+                if clade.is_terminal():
+                    continue
+                if clade == root:
+                    continue
+                if depth_data is None:
+                    branching_times_from_root.append(tree.distance(root, clade))
+                else:
+                    branching_times_from_root.append(depths[clade] - root_depth)
 
         branching_times_from_root.sort()
 
@@ -181,21 +494,19 @@ class LTT(Tree):
         if config.show_title and config.title:
             ax.set_title(config.title, fontsize=config.title_fontsize)
 
-        fig.tight_layout()
         fig.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
         plt.close(fig)
 
     def _output_text(self, gamma, p_value, ltt_data, bt, g):
         try:
-            print(f"{round(gamma, 4)}\t{round(p_value, 4)}")
+            lines = [f"{round(gamma, 4)}\t{round(p_value, 4)}"]
             if self.verbose:
-                print("\nBranching times (node ages):")
-                for i, t in enumerate(bt):
-                    print(f"  {i + 1}\t{t:.6f}")
-                print("\nLineage-through-time:")
-                print("  time_from_root\tn_lineages")
-                for time_val, n_lin in ltt_data:
-                    print(f"  {time_val:.6f}\t{n_lin}")
+                lines.append("\nBranching times (node ages):")
+                lines.extend(f"  {i + 1}\t{t:.6f}" for i, t in enumerate(bt))
+                lines.append("\nLineage-through-time:")
+                lines.append("  time_from_root\tn_lineages")
+                lines.extend(f"  {time_val:.6f}\t{n_lin}" for time_val, n_lin in ltt_data)
+            print("\n".join(lines))
         except BrokenPipeError:
             pass
 
@@ -203,10 +514,10 @@ class LTT(Tree):
         result = dict(
             gamma=float(gamma),
             p_value=float(p_value),
-            branching_times=[float(t) for t in bt],
-            internode_intervals=[float(v) for v in g],
+            branching_times=list(map(float, bt)),
+            internode_intervals=list(map(float, g)),
             ltt=[
-                dict(time_from_root=float(t), n_lineages=int(n))
+                {"time_from_root": float(t), "n_lineages": int(n)}
                 for t, n in ltt_data
             ],
         )

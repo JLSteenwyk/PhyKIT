@@ -1,12 +1,16 @@
+from __future__ import annotations
+
 from enum import Enum
-from typing import Tuple, Optional
 from functools import lru_cache
-import hashlib
 import os
 
-from Bio import AlignIO
-from Bio.Align import MultipleSeqAlignment
 from ..errors import PhykitUserError
+
+
+_NUCLEOTIDE_CHARS = {
+    "A", "C", "G", "T", "U", "-", "N", "?", "*"
+}
+_NUCLEOTIDE_BYTES = b"ACGTUacgtu-Nn?*"
 
 
 class FileFormat(Enum):
@@ -20,46 +24,147 @@ class FileFormat(Enum):
     stockholm = "stockholm"
 
 
+_FILE_FORMAT_VALUES = tuple(file_format.value for file_format in FileFormat)
+
+
+class _FastaRecord:
+    __slots__ = ("id", "name", "description", "seq")
+
+    def __init__(self, record_id: str, description: str, sequence: str) -> None:
+        self.id = record_id
+        self.name = record_id
+        self.description = description
+        self.seq = sequence
+
+
+class _FastaAlignment(list):
+    __slots__ = ("_alignment_length",)
+
+    def __init__(self, records: list[_FastaRecord], alignment_length: int) -> None:
+        super().__init__(records)
+        self._alignment_length = alignment_length
+
+    def get_alignment_length(self) -> int:
+        return self._alignment_length
+
+
 def _get_file_hash(file_path: str) -> str:
     """Calculate a hash for file content to use as cache key."""
     # Use file path, size, and modification time for cache key
     # This is faster than hashing file contents
     stat = os.stat(file_path)
-    cache_key = f"{file_path}_{stat.st_size}_{stat.st_mtime}"
-    return hashlib.md5(cache_key.encode()).hexdigest()
+    return f"{file_path}_{stat.st_size}_{stat.st_mtime_ns}"
 
-def _detect_format_by_content(file_path: str) -> Optional[str]:
+def _detect_format_by_content(file_path: str) -> str | None:
     """Attempt to detect file format by examining file content."""
     with open(file_path) as f:
-        first_line = f.readline().strip()
+        first_line = f.readline()
+        if first_line and first_line[0].isspace():
+            first_line = first_line.strip()
+        first_char = first_line[:1]
 
         # Quick format detection based on first line
-        if first_line.startswith('>'):
+        if first_char == '>':
             return 'fasta'
         elif first_line.startswith('CLUSTAL'):
             return 'clustal'
-        elif first_line.startswith('#'):
+        elif first_char == '#':
             # Could be Stockholm
             if 'STOCKHOLM' in first_line:
                 return 'stockholm'
-        elif first_line.isdigit() or (len(first_line.split()) == 2 and
-                                      first_line.split()[0].isdigit()):
+        elif first_line.isdigit():
             return 'phylip'
+        elif first_char and "0" <= first_char <= "9":
+            parts = first_line.split(None, 2)
+            if len(parts) == 2 and parts[0].isdigit():
+                return 'phylip'
 
     return None
 
 @lru_cache(maxsize=32)
-def _cached_alignment_read(file_hash: str, file_path: str, file_format: str) -> Tuple[MultipleSeqAlignment, bool]:
+def _cached_detect_format_by_content(
+    file_hash: str,
+    file_path: str,
+) -> str | None:
+    return _detect_format_by_content(file_path)
+
+
+def _clean_fasta_sequence(sequence_parts: list[str]) -> str:
+    if len(sequence_parts) == 1:
+        sequence = sequence_parts[0]
+    else:
+        sequence = "".join(sequence_parts)
+    if " " in sequence:
+        sequence = sequence.replace(" ", "")
+    if "\r" in sequence:
+        sequence = sequence.replace("\r", "")
+    return sequence
+
+
+def _read_fasta_alignment(file_path: str) -> _FastaAlignment:
+    records = []
+    expected_length = None
+
+    with open(file_path) as handle:
+        record_id = None
+        description = None
+        sequence_parts = []
+
+        for line in handle:
+            if not line:
+                continue
+            if line[0] == ">":
+                if record_id is not None:
+                    sequence = _clean_fasta_sequence(sequence_parts)
+                    sequence_length = len(sequence)
+                    if expected_length is None:
+                        expected_length = sequence_length
+                    elif sequence_length != expected_length:
+                        raise ValueError("Sequences must all be the same length")
+                    records.append(_FastaRecord(record_id, description, sequence))
+                description = line[1:].strip()
+                record_id = description.split(None, 1)[0] if description else ""
+                sequence_parts = []
+            elif record_id is not None:
+                sequence_parts.append(line.rstrip())
+
+        if record_id is not None:
+            sequence = _clean_fasta_sequence(sequence_parts)
+            sequence_length = len(sequence)
+            if expected_length is None:
+                expected_length = sequence_length
+            elif sequence_length != expected_length:
+                raise ValueError("Sequences must all be the same length")
+            records.append(_FastaRecord(record_id, description, sequence))
+
+    if expected_length is None:
+        raise ValueError("No records found in handle")
+
+    return _FastaAlignment(records, expected_length)
+
+@lru_cache(maxsize=32)
+def _cached_alignment_read(
+    file_hash: str,
+    file_path: str,
+    file_format: str,
+) -> tuple["MultipleSeqAlignment", bool]:
     """Cached reading of alignment files."""
+    if file_format == "fasta":
+        alignment = _read_fasta_alignment(file_path)
+        return alignment, is_protein_alignment(alignment)
+
+    from Bio import AlignIO
+
     with open(file_path) as f:
         alignment = AlignIO.read(f, file_format)
     return alignment, is_protein_alignment(alignment)
 
 def get_alignment_and_format(
     alignment_file_path: str
-) -> Tuple[MultipleSeqAlignment, str, bool]:
-    # Check if file exists first
-    if not os.path.exists(alignment_file_path):
+) -> tuple["MultipleSeqAlignment", str, bool]:
+    try:
+        file_hash = _get_file_hash(alignment_file_path)
+    except FileNotFoundError:
         raise PhykitUserError(
             [
                 f"{alignment_file_path} corresponds to no such file.",
@@ -69,10 +174,10 @@ def get_alignment_and_format(
         )
 
     # Try to detect format by content first
-    detected_format = _detect_format_by_content(alignment_file_path)
-
-    # Get file hash for caching
-    file_hash = _get_file_hash(alignment_file_path)
+    detected_format = _cached_detect_format_by_content(
+        file_hash,
+        alignment_file_path,
+    )
 
     # If format was detected, try it first
     if detected_format:
@@ -85,16 +190,16 @@ def get_alignment_and_format(
             pass
 
     # Fall back to trying all formats
-    for fileFormat in FileFormat:
+    for file_format in _FILE_FORMAT_VALUES:
         # Skip the already tried format
-        if detected_format and fileFormat.value == detected_format:
+        if detected_format and file_format == detected_format:
             continue
 
         try:
             alignment, is_protein = _cached_alignment_read(
-                file_hash, alignment_file_path, fileFormat.value
+                file_hash, alignment_file_path, file_format
             )
-            return alignment, fileFormat.value, is_protein
+            return alignment, file_format, is_protein
         except (ValueError, AssertionError):
             continue
 
@@ -108,16 +213,17 @@ def get_alignment_and_format(
     )
 
 
-def is_protein_alignment(alignment: MultipleSeqAlignment) -> bool:
-    nucleotide_set = {
-        "A", "C", "G", "T", "U", "-", "N", "?", "*"
-    }
-
+def is_protein_alignment(alignment: "MultipleSeqAlignment") -> bool:
     for record in alignment:
-        seq_set = set(record.seq.upper())
-        if seq_set - nucleotide_set:
-            # if there are chars that are not in the nucl set,
-            # it's likely a protein sequence
+        sequence = str(record.seq)
+        try:
+            has_non_nucleotide = bool(
+                sequence.encode("ascii").translate(None, _NUCLEOTIDE_BYTES)
+            )
+        except UnicodeEncodeError:
+            seq_set = set(sequence.upper())
+            has_non_nucleotide = bool(seq_set - _NUCLEOTIDE_CHARS)
+        if has_non_nucleotide:
             return True
 
     return False
@@ -126,7 +232,7 @@ def is_protein_alignment(alignment: MultipleSeqAlignment) -> bool:
 def read_single_column_file_to_list(single_col_file_path: str) -> list:
     try:
         with open(single_col_file_path) as f:
-            return [line.rstrip("\n").strip() for line in f]
+            return [line.strip() for line in f]
     except FileNotFoundError:
         raise PhykitUserError(
             [

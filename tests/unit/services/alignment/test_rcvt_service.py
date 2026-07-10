@@ -1,5 +1,9 @@
 from argparse import Namespace
+import subprocess
+import sys
+from types import SimpleNamespace
 
+import numpy as np
 import pytest
 import builtins
 from Bio.Align import MultipleSeqAlignment
@@ -26,6 +30,29 @@ def args():
 
 
 class TestRCVT:
+    def test_module_import_does_not_import_numpy(self):
+        code = """
+import sys
+import phykit.services.alignment.rcvt as module
+assert hasattr(module.np, "__getattr__")
+assert "json" not in sys.modules
+assert "phykit.helpers.json_output" not in sys.modules
+assert "phykit.helpers.plot_config" not in sys.modules
+assert "numpy" not in sys.modules
+assert "Bio.Align" not in sys.modules
+assert "Bio.AlignIO" not in sys.modules
+"""
+        subprocess.run([sys.executable, "-c", code], check=True)
+
+    def test_lazy_numpy_proxy_caches_resolved_attributes(self):
+        lazy_np = rcvt_module._LazyNumpy()
+
+        first = lazy_np.count_nonzero
+        second = lazy_np.count_nonzero
+
+        assert first is second
+        assert lazy_np.__dict__["count_nonzero"] is first
+
     def test_init_sets_expected_attrs(self, args):
         service = RelativeCompositionVariabilityTaxon(args)
         assert service.alignment_file_path == args.alignment
@@ -40,10 +67,42 @@ class TestRCVT:
         assert rows[0]["taxon"] == "t1"
         assert isinstance(rows[0]["rcvt"], float)
 
+    def test_calculate_rows_preserves_taxon_value_order(self, args):
+        service = RelativeCompositionVariabilityTaxon(args)
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("AAAAAA"), id="taxon_a"),
+                SeqRecord(Seq("AACCCC"), id="taxon_b"),
+                SeqRecord(Seq("CCCCCC"), id="taxon_c"),
+            ]
+        )
+
+        rows = service.calculate_rows(alignment, is_protein=False)
+
+        assert rows == [
+            {"taxon": "taxon_a", "rcvt": 0.3704},
+            {"taxon": "taxon_b", "rcvt": 0.0741},
+            {"taxon": "taxon_c", "rcvt": 0.2963},
+        ]
+
     def test_calculate_rows_empty_alignment(self, args):
         service = RelativeCompositionVariabilityTaxon(args)
         rows = service.calculate_rows(MultipleSeqAlignment([]), is_protein=False)
         assert rows == []
+
+    def test_calculate_rows_single_record_returns_before_sequence_materialization(
+        self, args
+    ):
+        class UnstringableSequence:
+            def __str__(self):
+                raise AssertionError("single-record RCVT should not inspect sequence")
+
+        service = RelativeCompositionVariabilityTaxon(args)
+        alignment = [SimpleNamespace(seq=UnstringableSequence(), id="t1")]
+
+        rows = service.calculate_rows(alignment, is_protein=False)
+
+        assert rows == [{"taxon": "t1", "rcvt": 0.0}]
 
     def test_run_json_with_plot(self, mocker):
         args = Namespace(alignment="/some/path/to/file.fa", json=True, plot=True, plot_output="rcvt.png")
@@ -83,6 +142,384 @@ class TestRCVT:
         rows = service.calculate_rows(alignment, is_protein=True)
         assert rows == [{"taxon": "t1", "rcvt": 0.0}, {"taxon": "t2", "rcvt": 0.0}]
 
+    def test_calculate_rows_handles_lowercase_ambiguity(self, args):
+        service = RelativeCompositionVariabilityTaxon(args)
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("AnXT"), id="t1"),
+                SeqRecord(Seq("ACxT"), id="t2"),
+                SeqRecord(Seq("AG-T"), id="t3"),
+            ]
+        )
+
+        dna_rows = service.calculate_rows(alignment, is_protein=False)
+        protein_rows = service.calculate_rows(alignment, is_protein=True)
+
+        assert [row["rcvt"] for row in dna_rows] == [0.1111, 0.1111, 0.1111]
+        assert [row["rcvt"] for row in protein_rows] == [0.1481, 0.1481, 0.1481]
+
+    def test_calculate_rows_ascii_path_uses_lookup(self, mocker, args):
+        service = RelativeCompositionVariabilityTaxon(args)
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("AnXT"), id="t1"),
+                SeqRecord(Seq("ACxT"), id="t2"),
+                SeqRecord(Seq("AG-T"), id="t3"),
+            ]
+        )
+        mocker.patch(
+            "phykit.services.alignment.rcvt.np.isin",
+            side_effect=AssertionError("ASCII path should use the lookup table"),
+        )
+
+        rows = service.calculate_rows(alignment, is_protein=False)
+
+        assert [row["rcvt"] for row in rows] == [0.1111, 0.1111, 0.1111]
+
+    def test_calculate_rows_uses_bounded_ascii_valid_lengths(
+        self, mocker, args
+    ):
+        service = RelativeCompositionVariabilityTaxon(args)
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("AnXT"), id="t1"),
+                SeqRecord(Seq("ACxT"), id="t2"),
+                SeqRecord(Seq("AG-T"), id="t3"),
+            ]
+        )
+        valid_length_spy = mocker.spy(
+            rcvt_module,
+            "_bounded_ascii_valid_lengths",
+        )
+
+        rows = service.calculate_rows(alignment, is_protein=False)
+
+        assert [row["rcvt"] for row in rows] == [0.1111, 0.1111, 0.1111]
+        valid_length_spy.assert_called_once()
+
+    @pytest.mark.parametrize("num_sites", [0xFFFF, 0x10000])
+    def test_bounded_ascii_row_counts_do_not_overflow(self, num_sites):
+        alignment_array = rcvt_module.np.full(
+            (2, num_sites),
+            ord("A"),
+            dtype=rcvt_module.np.uint8,
+        )
+        unique_chars = rcvt_module.np.array(
+            [ord("A"), ord("C")],
+            dtype=rcvt_module.np.uint8,
+        )
+
+        counts = rcvt_module._bounded_ascii_row_symbol_counts(
+            alignment_array,
+            unique_chars,
+        )
+        valid_lengths = rcvt_module._bounded_ascii_valid_lengths(
+            rcvt_module.np.ones_like(alignment_array, dtype=bool),
+        )
+
+        rcvt_module.np.testing.assert_array_equal(
+            counts,
+            rcvt_module.np.array(
+                [
+                    [num_sites, 0],
+                    [num_sites, 0],
+                ],
+                dtype=rcvt_module.np.float32,
+            ),
+        )
+        rcvt_module.np.testing.assert_array_equal(
+            valid_lengths,
+            rcvt_module.np.full(2, num_sites, dtype=rcvt_module.np.float64),
+        )
+
+    def test_calculate_rows_protein_ascii_large_alphabet_uses_bincount(
+        self, mocker, args
+    ):
+        service = RelativeCompositionVariabilityTaxon(args)
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("ACDEFGHIKLMNPQRSTVWY"), id="t1"),
+                SeqRecord(Seq("YWVTSRQPNMLKIHGFEDCA"), id="t2"),
+            ]
+        )
+        bincount_spy = mocker.spy(rcvt_module.np, "bincount")
+
+        rows = service.calculate_rows(alignment, is_protein=True)
+
+        assert bincount_spy.call_count == len(alignment)
+        assert [row["taxon"] for row in rows] == ["t1", "t2"]
+
+    def test_calculate_rows_column_totals_use_array_reduction(self, mocker, args):
+        service = RelativeCompositionVariabilityTaxon(args)
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("ACDEFGHIKLMNPQRSTVWY"), id="t1"),
+                SeqRecord(Seq("ACDEFGHIKLMNPQRSTVWA"), id="t2"),
+                SeqRecord(Seq("ACDEFGHIKLMNPQRSTVWC"), id="t3"),
+            ]
+        )
+        sum_spy = mocker.spy(rcvt_module.np, "sum")
+
+        rows = service.calculate_rows(alignment, is_protein=True)
+
+        assert [row["taxon"] for row in rows] == ["t1", "t2", "t3"]
+        assert not any(
+            call.kwargs.get("axis") == 0
+            for call in sum_spy.call_args_list
+        )
+        assert any(
+            call.kwargs.get("axis") == 1
+            for call in sum_spy.call_args_list
+        )
+
+    def test_row_deviation_sums_use_array_reduction_for_narrow_matrices(
+        self, monkeypatch
+    ):
+        deviations = rcvt_module.np.array(
+            [
+                [0.0, 1.0, 0.5, 0.5],
+                [0.25, 0.25, 0.25, 0.25],
+            ],
+            dtype=rcvt_module.np.float32,
+        )
+        expected = deviations.sum(axis=1)
+
+        def fail_sum(*_args, **_kwargs):
+            raise AssertionError("narrow RCVT row sums should use ndarray.sum")
+
+        monkeypatch.setattr(rcvt_module.np, "sum", fail_sum)
+
+        observed = rcvt_module._row_deviation_sums(deviations)
+
+        rcvt_module.np.testing.assert_allclose(observed, expected)
+
+    def test_calculate_rows_no_gap_ascii_uses_full_lengths(self, mocker, args):
+        service = RelativeCompositionVariabilityTaxon(args)
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("ACDEFGHIKLMNPQRSTVWY"), id="t1"),
+                SeqRecord(Seq("ACDEFGHIKLMNPQRSTVWA"), id="t2"),
+            ]
+        )
+        full_spy = mocker.spy(rcvt_module.np, "full")
+        mocker.patch(
+            "phykit.services.alignment.rcvt.np.isin",
+            side_effect=AssertionError("ASCII path should not use Unicode isin"),
+        )
+
+        rows = service.calculate_rows(alignment, is_protein=True)
+
+        assert [row["taxon"] for row in rows] == ["t1", "t2"]
+        full_spy.assert_called_once_with(
+            len(alignment),
+            alignment.get_alignment_length(),
+            dtype=rcvt_module.np.float64,
+        )
+
+    def test_clean_nucleotide_rows_skip_full_symbol_discovery(
+        self,
+        monkeypatch,
+        args,
+    ):
+        service = RelativeCompositionVariabilityTaxon(args)
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("ACGT"), id="t1"),
+                SeqRecord(Seq("AGGT"), id="t2"),
+                SeqRecord(Seq("TCGA"), id="t3"),
+            ]
+        )
+
+        def fail_unique(*args, **kwargs):
+            raise AssertionError("clean nucleotides should use known symbol codes")
+
+        monkeypatch.setattr(rcvt_module.np, "unique", fail_unique)
+
+        assert service.calculate_rows(alignment, is_protein=False) == [
+            {"taxon": "t1", "rcvt": 0.0556},
+            {"taxon": "t2", "rcvt": 0.1111},
+            {"taxon": "t3", "rcvt": 0.0556},
+        ]
+
+    def test_ascii_count_matrix_matches_per_row_bincount_reference(self):
+        alphabet = b"ACDEFGHIKLMNPQRSTVWY"
+        matrix = rcvt_module.np.frombuffer(
+            alphabet + alphabet[::-1] + alphabet[5:] + alphabet[:5],
+            dtype=rcvt_module.np.uint8,
+        ).reshape(3, len(alphabet))
+        unique_chars = rcvt_module.np.unique(matrix)
+
+        observed = RelativeCompositionVariabilityTaxon._ascii_count_matrix(
+            matrix,
+            unique_chars,
+            None,
+        )
+        expected = rcvt_module.np.zeros(
+            (matrix.shape[0], len(unique_chars)),
+            dtype=rcvt_module.np.float32,
+        )
+        for row_idx, row in enumerate(matrix):
+            expected[row_idx] = rcvt_module.np.bincount(
+                row,
+                minlength=256,
+            )[unique_chars]
+
+        rcvt_module.np.testing.assert_array_equal(observed, expected)
+
+    def test_ascii_count_matrix_medium_rows_keep_per_row_bincount(self, monkeypatch):
+        alphabet = b"ACDEFGHIKLMNPQRSTVWY"
+        matrix = rcvt_module.np.tile(
+            rcvt_module.np.frombuffer(alphabet, dtype=rcvt_module.np.uint8),
+            (8, 20),
+        )
+        unique_chars = rcvt_module.np.unique(matrix)
+        bincount_calls = 0
+        original_bincount = rcvt_module.np.bincount
+
+        def count_bincount(*args, **kwargs):
+            nonlocal bincount_calls
+            bincount_calls += 1
+            return original_bincount(*args, **kwargs)
+
+        monkeypatch.setattr(rcvt_module.np, "bincount", count_bincount)
+
+        RelativeCompositionVariabilityTaxon._ascii_count_matrix(
+            matrix,
+            unique_chars,
+            None,
+        )
+
+        assert bincount_calls == matrix.shape[0]
+
+    def test_ascii_count_matrix_short_large_rows_use_global_bincount(
+        self, monkeypatch
+    ):
+        alphabet = b"ACDEFGHIKLMNPQRSTVWY"
+        matrix = rcvt_module.np.tile(
+            rcvt_module.np.frombuffer(alphabet, dtype=rcvt_module.np.uint8),
+            (8, 4),
+        )
+        unique_chars = rcvt_module.np.unique(matrix)
+        monkeypatch.setattr(rcvt_module, "_ASCII_GLOBAL_BINCOUNT_MIN_RECORDS", 8)
+        monkeypatch.setattr(rcvt_module, "_ASCII_GLOBAL_BINCOUNT_MAX_LENGTH", 80)
+        bincount_calls = 0
+        original_bincount = rcvt_module.np.bincount
+
+        def count_bincount(*args, **kwargs):
+            nonlocal bincount_calls
+            bincount_calls += 1
+            return original_bincount(*args, **kwargs)
+
+        monkeypatch.setattr(rcvt_module.np, "bincount", count_bincount)
+
+        observed = RelativeCompositionVariabilityTaxon._ascii_count_matrix(
+            matrix,
+            unique_chars,
+            None,
+        )
+
+        assert bincount_calls == 1
+        assert observed.shape == (matrix.shape[0], len(unique_chars))
+
+    def test_ascii_count_matrix_short_gappy_rows_use_global_bincount(
+        self, monkeypatch
+    ):
+        alphabet = b"ACGTN-?X*"
+        matrix = rcvt_module.np.tile(
+            rcvt_module.np.frombuffer(alphabet, dtype=rcvt_module.np.uint8),
+            (8, 4),
+        )
+        invalid_lookup = rcvt_module._get_invalid_lookup(is_protein=False)
+        observed_chars = rcvt_module.np.unique(matrix)
+        unique_chars = observed_chars[~invalid_lookup[observed_chars]]
+        valid_mask = ~invalid_lookup[matrix]
+        monkeypatch.setattr(rcvt_module, "_ASCII_GLOBAL_BINCOUNT_MIN_RECORDS", 8)
+        monkeypatch.setattr(rcvt_module, "_ASCII_GLOBAL_BINCOUNT_MAX_LENGTH", 80)
+        bincount_calls = 0
+        original_bincount = rcvt_module.np.bincount
+
+        def count_bincount(*args, **kwargs):
+            nonlocal bincount_calls
+            bincount_calls += 1
+            return original_bincount(*args, **kwargs)
+
+        monkeypatch.setattr(rcvt_module.np, "bincount", count_bincount)
+
+        observed = RelativeCompositionVariabilityTaxon._ascii_count_matrix(
+            matrix,
+            unique_chars,
+            valid_mask,
+        )
+        expected = rcvt_module.np.zeros(
+            (matrix.shape[0], len(unique_chars)),
+            dtype=rcvt_module.np.float32,
+        )
+        for row_idx, row in enumerate(matrix):
+            expected[row_idx] = original_bincount(
+                row[valid_mask[row_idx]],
+                minlength=256,
+            )[unique_chars]
+
+        assert bincount_calls == 1
+        rcvt_module.np.testing.assert_array_equal(observed, expected)
+
+    def test_calculate_rows_identical_sequences_skip_matrix_path(self, mocker, args):
+        service = RelativeCompositionVariabilityTaxon(args)
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("acgtn-?*"), id="t1"),
+                SeqRecord(Seq("ACGTN-?*"), id="t2"),
+                SeqRecord(Seq("acgtn-?*"), id="t3"),
+            ]
+        )
+        mocker.patch(
+            "phykit.services.alignment.rcvt.np.frombuffer",
+            side_effect=AssertionError(
+                "identical sequences should not build a NumPy matrix"
+            ),
+        )
+
+        rows = service.calculate_rows(alignment, is_protein=False)
+
+        assert rows == [
+            {"taxon": "t1", "rcvt": 0.0},
+            {"taxon": "t2", "rcvt": 0.0},
+            {"taxon": "t3", "rcvt": 0.0},
+        ]
+
+    def test_identical_sequence_helper_does_not_slice_rows(self):
+        class NoSliceList(list):
+            def __getitem__(self, key):
+                if isinstance(key, slice):
+                    raise AssertionError("identical-sequence scan should not slice")
+                return super().__getitem__(key)
+
+        sequences = NoSliceList(["ACGT", "ACGT", "ACGT"])
+
+        assert rcvt_module._all_sequences_identical(sequences) is True
+
+    def test_calculate_rows_unicode_fallback(self, args):
+        class DummyAlignment(list):
+            def get_alignment_length(self):
+                return 2
+
+        service = RelativeCompositionVariabilityTaxon(args)
+        alignment = DummyAlignment(
+            [
+                SimpleNamespace(seq="A\u00d1", id="t1"),
+                SimpleNamespace(seq="A\u00d1", id="t2"),
+                SimpleNamespace(seq="T\u00d1", id="t3"),
+            ]
+        )
+
+        rows = service.calculate_rows(alignment, is_protein=False)
+
+        assert rows == [
+            {"taxon": "t1", "rcvt": 0.1111},
+            {"taxon": "t2", "rcvt": 0.1111},
+            {"taxon": "t3", "rcvt": 0.2222},
+        ]
+
     def test_plot_rcvt_creates_file(self, tmp_path):
         pytest.importorskip("matplotlib")
         out = tmp_path / "rcvt.png"
@@ -91,6 +528,38 @@ class TestRCVT:
         )
         service._plot_rcvt([{"taxon": "a", "rcvt": 0.1}, {"taxon": "b", "rcvt": 0.2}])
         assert out.exists()
+
+    def test_plot_rcvt_skips_redundant_tight_layout(self, tmp_path, monkeypatch):
+        pytest.importorskip("matplotlib")
+        from matplotlib.figure import Figure
+
+        out = tmp_path / "rcvt.png"
+        service = RelativeCompositionVariabilityTaxon(
+            Namespace(alignment="x.fa", plot=True, plot_output=str(out))
+        )
+
+        def fail_tight_layout(self, *args, **kwargs):
+            raise AssertionError("bbox_inches='tight' handles saved bounds")
+
+        monkeypatch.setattr(Figure, "tight_layout", fail_tight_layout)
+        service._plot_rcvt([{"taxon": "a", "rcvt": 0.1}, {"taxon": "b", "rcvt": 0.2}])
+
+        assert out.exists()
+
+    def test_prepare_rcvt_plot_series_preserves_stable_descending_order(self):
+        rows = [
+            {"taxon": "a", "rcvt": 0.1},
+            {"taxon": "b", "rcvt": 0.3},
+            {"taxon": "c", "rcvt": 0.3},
+            {"taxon": "d", "rcvt": 0.2},
+        ]
+
+        taxa, values = RelativeCompositionVariabilityTaxon._prepare_rcvt_plot_series(
+            rows
+        )
+
+        assert taxa == ["b", "c", "d", "a"]
+        np.testing.assert_allclose(values, np.array([0.3, 0.3, 0.2, 0.1]))
 
     def test_plot_rcvt_importerror(self, monkeypatch, capsys):
         original_import = builtins.__import__
@@ -125,7 +594,6 @@ class TestRCVT:
         mocked_plot = mocker.patch.object(RelativeCompositionVariabilityTaxon, "_plot_rcvt")
         service.run()
         out, _ = capsys.readouterr()
-        assert "a\t0.1" in out
-        assert "b\t0.2" in out
+        assert "a\t0.1\nb\t0.2" in out
         assert "Saved RCVT plot: rcvt_plot.png" in out
         mocked_plot.assert_called_once()

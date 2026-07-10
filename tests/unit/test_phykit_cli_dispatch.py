@@ -1,8 +1,27 @@
+import subprocess
+import sys
+
 import pytest
 
 import phykit.phykit as phykit_module
 from phykit.phykit import Phykit
 from phykit.errors import PhykitUserError
+
+
+def test_module_import_defers_boolean_parser_helper():
+    code = (
+        "import sys; "
+        "import phykit.phykit as module; "
+        "assert callable(module.str2bool); "
+        "assert module._STR2BOOL is None; "
+        "assert 'phykit.helpers.boolean_argument_parsing' not in sys.modules; "
+        "assert module.str2bool('true') is True; "
+        "assert module._STR2BOOL is not None; "
+        "assert module.str2bool('false') is False; "
+        "assert 'phykit.helpers.boolean_argument_parsing' in sys.modules"
+    )
+
+    subprocess.run([sys.executable, "-c", code], check=True)
 
 
 COMMAND_METHODS = [
@@ -118,6 +137,2466 @@ COMMAND_FACTORY_METHODS = [
 ]
 
 
+def test_module_import_does_not_import_typing():
+    code = """
+import sys
+import phykit.phykit
+assert "argparse" not in sys.modules
+assert "phykit.cli_registry" not in sys.modules
+assert "logging" not in sys.modules
+assert "textwrap" not in sys.modules
+assert "typing" not in sys.modules
+assert "phykit.helpers.plot_config" not in sys.modules
+"""
+    subprocess.run([sys.executable, "-c", code], check=True)
+
+
+def test_new_parser_setup_does_not_import_shutil():
+    code = """
+import sys
+import phykit.phykit as module
+parser = module._new_parser(description="description")
+parser.add_argument("input")
+assert "argparse" in sys.modules
+assert "shutil" not in sys.modules
+"""
+    subprocess.run([sys.executable, "-c", code], check=True)
+
+
+def test_canonical_command_dispatch_does_not_import_alias_registry():
+    code = """
+import sys
+import phykit.phykit as module
+class Runner:
+    def run(self):
+        pass
+module.AlignmentLength = lambda args: Runner()
+module.Phykit.alignment_length(["alignment.fa"])
+assert "phykit.cli_registry" not in sys.modules
+"""
+    subprocess.run([sys.executable, "-c", code], check=True)
+
+
+def test_plot_capable_command_parser_does_not_import_plot_config_without_plot():
+    code = """
+import sys
+import phykit.phykit as module
+class Runner:
+    def run(self):
+        pass
+module.AlignmentEntropy = lambda args: Runner()
+module.Phykit.alignment_entropy(["alignment.fa"])
+assert "phykit.helpers.plot_config" not in sys.modules
+"""
+    subprocess.run([sys.executable, "-c", code], check=True)
+
+
+def test_alignment_entropy_default_invocation_bypasses_parser(monkeypatch):
+    captured = {}
+
+    class Runner:
+        def __init__(self, args):
+            captured["args"] = args
+
+        def run(self):
+            captured["ran"] = True
+
+    def fail_new_parser(*_args, **_kwargs):
+        raise AssertionError("default alignment_entropy should not build parser")
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+    monkeypatch.setattr(phykit_module, "AlignmentEntropy", Runner)
+
+    phykit_module.Phykit.alignment_entropy(["alignment.fa"])
+
+    args = captured["args"]
+    assert captured["ran"] is True
+    assert args.alignment == "alignment.fa"
+    assert args.verbose is False
+    assert args.json is False
+    assert args.plot is False
+    assert args.plot_output == "alignment_entropy_plot.png"
+
+
+def test_alignment_entropy_option_invocation_keeps_parser(monkeypatch):
+    calls = {"parser": False, "ran": False}
+
+    class FakeParser:
+        def add_argument(self, *args, **kwargs):
+            return None
+
+        def add_argument_group(self, *args, **kwargs):
+            return self
+
+        def parse_args(self, argv):
+            calls["argv"] = argv
+            return object()
+
+    class Runner:
+        def __init__(self, args):
+            calls["args"] = args
+
+        def run(self):
+            calls["ran"] = True
+
+    def fake_new_parser(*_args, **_kwargs):
+        calls["parser"] = True
+        return FakeParser()
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fake_new_parser)
+    monkeypatch.setattr(phykit_module, "AlignmentEntropy", Runner)
+
+    phykit_module.Phykit.alignment_entropy(["alignment.fa", "--json"])
+
+    assert calls["parser"] is True
+    assert calls["argv"] == ["alignment.fa", "--json"]
+    assert calls["ran"] is True
+
+
+def test_alignment_length_default_invocation_bypasses_parser(monkeypatch):
+    captured = {}
+
+    class Runner:
+        def __init__(self, args):
+            captured["args"] = args
+
+        def run(self):
+            captured["ran"] = True
+
+    def fail_new_parser(*_args, **_kwargs):
+        raise AssertionError("default alignment_length should not build parser")
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+    monkeypatch.setattr(phykit_module, "AlignmentLength", Runner)
+
+    phykit_module.Phykit.alignment_length(["alignment.fa"])
+
+    args = captured["args"]
+    assert captured["ran"] is True
+    assert args.alignment == "alignment.fa"
+    assert args.json is False
+
+
+def test_alignment_length_option_invocation_keeps_parser(monkeypatch):
+    calls = {"parser": False, "ran": False}
+
+    class FakeParser:
+        def add_argument(self, *args, **kwargs):
+            return None
+
+        def parse_args(self, argv):
+            calls["argv"] = argv
+            return object()
+
+    class Runner:
+        def __init__(self, args):
+            calls["args"] = args
+
+        def run(self):
+            calls["ran"] = True
+
+    def fake_new_parser(*_args, **_kwargs):
+        calls["parser"] = True
+        return FakeParser()
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fake_new_parser)
+    monkeypatch.setattr(phykit_module, "AlignmentLength", Runner)
+
+    phykit_module.Phykit.alignment_length(["alignment.fa", "--json"])
+
+    assert calls["parser"] is True
+    assert calls["argv"] == ["alignment.fa", "--json"]
+    assert calls["ran"] is True
+
+
+def test_alignment_length_no_gaps_default_invocation_bypasses_parser(monkeypatch):
+    captured = {}
+
+    class Runner:
+        def __init__(self, args):
+            captured["args"] = args
+
+        def run(self):
+            captured["ran"] = True
+
+    def fail_new_parser(*_args, **_kwargs):
+        raise AssertionError("default alignment_length_no_gaps should not build parser")
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+    monkeypatch.setattr(phykit_module, "AlignmentLengthNoGaps", Runner)
+
+    phykit_module.Phykit.alignment_length_no_gaps(["alignment.fa"])
+
+    args = captured["args"]
+    assert captured["ran"] is True
+    assert args.alignment == "alignment.fa"
+    assert args.json is False
+
+
+def test_alignment_length_no_gaps_option_invocation_keeps_parser(monkeypatch):
+    calls = {"parser": False, "ran": False}
+
+    class FakeParser:
+        def add_argument(self, *args, **kwargs):
+            return None
+
+        def parse_args(self, argv):
+            calls["argv"] = argv
+            return object()
+
+    class Runner:
+        def __init__(self, args):
+            calls["args"] = args
+
+        def run(self):
+            calls["ran"] = True
+
+    def fake_new_parser(*_args, **_kwargs):
+        calls["parser"] = True
+        return FakeParser()
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fake_new_parser)
+    monkeypatch.setattr(phykit_module, "AlignmentLengthNoGaps", Runner)
+
+    phykit_module.Phykit.alignment_length_no_gaps(["alignment.fa", "--json"])
+
+    assert calls["parser"] is True
+    assert calls["argv"] == ["alignment.fa", "--json"]
+    assert calls["ran"] is True
+
+
+@pytest.mark.parametrize("reference_flag", ["-r", "--reference"])
+def test_column_score_default_reference_invocation_bypasses_parser(
+    monkeypatch, reference_flag
+):
+    captured = {}
+
+    class Runner:
+        def __init__(self, args):
+            captured["args"] = args
+
+        def run(self):
+            captured["ran"] = True
+
+    def fail_new_parser(*_args, **_kwargs):
+        raise AssertionError("default column_score should not build parser")
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+    monkeypatch.setattr(phykit_module, "ColumnScore", Runner)
+
+    phykit_module.Phykit.column_score(["query.fa", reference_flag, "ref.fa"])
+
+    args = captured["args"]
+    assert captured["ran"] is True
+    assert args.fasta == "query.fa"
+    assert args.reference == "ref.fa"
+    assert args.json is False
+
+
+def test_column_score_option_invocation_keeps_parser(monkeypatch):
+    calls = {"parser": False, "ran": False}
+
+    class FakeParser:
+        def add_argument(self, *args, **kwargs):
+            return None
+
+        def parse_args(self, argv):
+            calls["argv"] = argv
+            return object()
+
+    class Runner:
+        def __init__(self, args):
+            calls["args"] = args
+
+        def run(self):
+            calls["ran"] = True
+
+    def fake_new_parser(*_args, **_kwargs):
+        calls["parser"] = True
+        return FakeParser()
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fake_new_parser)
+    monkeypatch.setattr(phykit_module, "ColumnScore", Runner)
+
+    phykit_module.Phykit.column_score(
+        ["query.fa", "--reference", "ref.fa", "--json"]
+    )
+
+    assert calls["parser"] is True
+    assert calls["argv"] == ["query.fa", "--reference", "ref.fa", "--json"]
+    assert calls["ran"] is True
+
+
+def test_gc_content_default_invocation_bypasses_parser(monkeypatch):
+    captured = {}
+
+    class Runner:
+        def __init__(self, args):
+            captured["args"] = args
+
+        def run(self):
+            captured["ran"] = True
+
+    def fail_new_parser(*_args, **_kwargs):
+        raise AssertionError("default gc_content should not build parser")
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+    monkeypatch.setattr(phykit_module, "GCContent", Runner)
+
+    phykit_module.Phykit.gc_content(["alignment.fa"])
+
+    args = captured["args"]
+    assert captured["ran"] is True
+    assert args.fasta == "alignment.fa"
+    assert args.verbose is False
+    assert args.json is False
+
+
+@pytest.mark.parametrize("verbose_flag", ["-v", "--verbose"])
+def test_gc_content_verbose_invocation_bypasses_parser(monkeypatch, verbose_flag):
+    captured = {}
+
+    class Runner:
+        def __init__(self, args):
+            captured["args"] = args
+
+        def run(self):
+            captured["ran"] = True
+
+    def fail_new_parser(*_args, **_kwargs):
+        raise AssertionError("verbose gc_content should not build parser")
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+    monkeypatch.setattr(phykit_module, "GCContent", Runner)
+
+    phykit_module.Phykit.gc_content(["alignment.fa", verbose_flag])
+
+    args = captured["args"]
+    assert captured["ran"] is True
+    assert args.fasta == "alignment.fa"
+    assert args.verbose is True
+    assert args.json is False
+
+
+def test_gc_content_option_invocation_keeps_parser(monkeypatch):
+    calls = {"parser": False, "ran": False}
+
+    class FakeParser:
+        def add_argument(self, *args, **kwargs):
+            return None
+
+        def parse_args(self, argv):
+            calls["argv"] = argv
+            return object()
+
+    class Runner:
+        def __init__(self, args):
+            calls["args"] = args
+
+        def run(self):
+            calls["ran"] = True
+
+    def fake_new_parser(*_args, **_kwargs):
+        calls["parser"] = True
+        return FakeParser()
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fake_new_parser)
+    monkeypatch.setattr(phykit_module, "GCContent", Runner)
+
+    phykit_module.Phykit.gc_content(["alignment.fa", "--json"])
+
+    assert calls["parser"] is True
+    assert calls["argv"] == ["alignment.fa", "--json"]
+    assert calls["ran"] is True
+
+
+def test_compositional_bias_per_site_default_invocation_bypasses_parser(monkeypatch):
+    captured = {}
+
+    class Runner:
+        def __init__(self, args):
+            captured["args"] = args
+
+        def run(self):
+            captured["ran"] = True
+
+    def fail_new_parser(*_args, **_kwargs):
+        raise AssertionError(
+            "default compositional_bias_per_site should not build parser"
+        )
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+    monkeypatch.setattr(phykit_module, "CompositionalBiasPerSite", Runner)
+
+    phykit_module.Phykit.compositional_bias_per_site(["alignment.fa"])
+
+    args = captured["args"]
+    assert captured["ran"] is True
+    assert args.alignment == "alignment.fa"
+    assert args.json is False
+
+
+def test_compositional_bias_per_site_option_invocation_keeps_parser(monkeypatch):
+    calls = {"parser": False, "ran": False}
+
+    class FakeParser:
+        def add_argument(self, *args, **kwargs):
+            return None
+
+        def add_argument_group(self, *args, **kwargs):
+            return self
+
+        def parse_args(self, argv):
+            calls["argv"] = argv
+            return object()
+
+    class Runner:
+        def __init__(self, args):
+            calls["args"] = args
+
+        def run(self):
+            calls["ran"] = True
+
+    def fake_new_parser(*_args, **_kwargs):
+        calls["parser"] = True
+        return FakeParser()
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fake_new_parser)
+    monkeypatch.setattr(phykit_module, "CompositionalBiasPerSite", Runner)
+
+    phykit_module.Phykit.compositional_bias_per_site(["alignment.fa", "--json"])
+
+    assert calls["parser"] is True
+    assert calls["argv"] == ["alignment.fa", "--json"]
+    assert calls["ran"] is True
+
+
+def test_composition_per_taxon_default_invocation_bypasses_parser(monkeypatch):
+    captured = {}
+
+    class Runner:
+        def __init__(self, args):
+            captured["args"] = args
+
+        def run(self):
+            captured["ran"] = True
+
+    def fail_new_parser(*_args, **_kwargs):
+        raise AssertionError("default composition_per_taxon should not build parser")
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+    monkeypatch.setattr(phykit_module, "CompositionPerTaxon", Runner)
+
+    phykit_module.Phykit.composition_per_taxon(["alignment.fa"])
+
+    args = captured["args"]
+    assert captured["ran"] is True
+    assert args.alignment == "alignment.fa"
+    assert args.json is False
+
+
+def test_composition_per_taxon_option_invocation_keeps_parser(monkeypatch):
+    calls = {"parser": False, "ran": False}
+
+    class FakeParser:
+        def add_argument(self, *args, **kwargs):
+            return None
+
+        def parse_args(self, argv):
+            calls["argv"] = argv
+            return object()
+
+    class Runner:
+        def __init__(self, args):
+            calls["args"] = args
+
+        def run(self):
+            calls["ran"] = True
+
+    def fake_new_parser(*_args, **_kwargs):
+        calls["parser"] = True
+        return FakeParser()
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fake_new_parser)
+    monkeypatch.setattr(phykit_module, "CompositionPerTaxon", Runner)
+
+    phykit_module.Phykit.composition_per_taxon(["alignment.fa", "--json"])
+
+    assert calls["parser"] is True
+    assert calls["argv"] == ["alignment.fa", "--json"]
+    assert calls["ran"] is True
+
+
+def test_evolutionary_rate_per_site_default_invocation_bypasses_parser(monkeypatch):
+    captured = {}
+
+    class Runner:
+        def __init__(self, args):
+            captured["args"] = args
+
+        def run(self):
+            captured["ran"] = True
+
+    def fail_new_parser(*_args, **_kwargs):
+        raise AssertionError(
+            "default evolutionary_rate_per_site should not build parser"
+        )
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+    monkeypatch.setattr(phykit_module, "EvolutionaryRatePerSite", Runner)
+
+    phykit_module.Phykit.evolutionary_rate_per_site(["alignment.fa"])
+
+    args = captured["args"]
+    assert captured["ran"] is True
+    assert args.alignment == "alignment.fa"
+    assert args.json is False
+
+
+def test_evolutionary_rate_per_site_option_invocation_keeps_parser(monkeypatch):
+    calls = {"parser": False, "ran": False}
+
+    class FakeParser:
+        def add_argument(self, *args, **kwargs):
+            return None
+
+        def add_argument_group(self, *args, **kwargs):
+            return self
+
+        def parse_args(self, argv):
+            calls["argv"] = argv
+            return object()
+
+    class Runner:
+        def __init__(self, args):
+            calls["args"] = args
+
+        def run(self):
+            calls["ran"] = True
+
+    def fake_new_parser(*_args, **_kwargs):
+        calls["parser"] = True
+        return FakeParser()
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fake_new_parser)
+    monkeypatch.setattr(phykit_module, "EvolutionaryRatePerSite", Runner)
+
+    phykit_module.Phykit.evolutionary_rate_per_site(["alignment.fa", "--plot"])
+
+    assert calls["parser"] is True
+    assert calls["argv"] == ["alignment.fa", "--plot"]
+    assert calls["ran"] is True
+
+
+@pytest.mark.parametrize("entry_flag", ["-e", "--entry"])
+def test_faidx_default_invocation_bypasses_parser(monkeypatch, entry_flag):
+    captured = {}
+
+    class Runner:
+        def __init__(self, args):
+            captured["args"] = args
+
+        def run(self):
+            captured["ran"] = True
+
+    def fail_new_parser(*_args, **_kwargs):
+        raise AssertionError("default faidx should not build parser")
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+    monkeypatch.setattr(phykit_module, "Faidx", Runner)
+
+    phykit_module.Phykit.faidx(["alignment.fa", entry_flag, "seq_1"])
+
+    args = captured["args"]
+    assert captured["ran"] is True
+    assert args.fasta == "alignment.fa"
+    assert args.entry == "seq_1"
+    assert args.json is False
+
+
+def test_faidx_option_invocation_keeps_parser(monkeypatch):
+    calls = {"parser": False, "ran": False}
+
+    class FakeParser:
+        def add_argument(self, *args, **kwargs):
+            return None
+
+        def parse_args(self, argv):
+            calls["argv"] = argv
+            return object()
+
+    class Runner:
+        def __init__(self, args):
+            calls["args"] = args
+
+        def run(self):
+            calls["ran"] = True
+
+    def fake_new_parser(*_args, **_kwargs):
+        calls["parser"] = True
+        return FakeParser()
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fake_new_parser)
+    monkeypatch.setattr(phykit_module, "Faidx", Runner)
+
+    phykit_module.Phykit.faidx(["alignment.fa", "-e", "seq_1", "--json"])
+
+    assert calls["parser"] is True
+    assert calls["argv"] == ["alignment.fa", "-e", "seq_1", "--json"]
+    assert calls["ran"] is True
+
+
+def test_occupancy_per_taxon_default_invocation_bypasses_parser(monkeypatch):
+    captured = {}
+
+    class Runner:
+        def __init__(self, args):
+            captured["args"] = args
+
+        def run(self):
+            captured["ran"] = True
+
+    def fail_new_parser(*_args, **_kwargs):
+        raise AssertionError("default occupancy_per_taxon should not build parser")
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+    monkeypatch.setattr(phykit_module, "OccupancyPerTaxon", Runner)
+
+    phykit_module.Phykit.occupancy_per_taxon(["alignment.fa"])
+
+    args = captured["args"]
+    assert captured["ran"] is True
+    assert args.alignment == "alignment.fa"
+    assert args.json is False
+
+
+def test_occupancy_per_taxon_option_invocation_keeps_parser(monkeypatch):
+    calls = {"parser": False, "ran": False}
+
+    class FakeParser:
+        def add_argument(self, *args, **kwargs):
+            return None
+
+        def parse_args(self, argv):
+            calls["argv"] = argv
+            return object()
+
+    class Runner:
+        def __init__(self, args):
+            calls["args"] = args
+
+        def run(self):
+            calls["ran"] = True
+
+    def fake_new_parser(*_args, **_kwargs):
+        calls["parser"] = True
+        return FakeParser()
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fake_new_parser)
+    monkeypatch.setattr(phykit_module, "OccupancyPerTaxon", Runner)
+
+    phykit_module.Phykit.occupancy_per_taxon(["alignment.fa", "--json"])
+
+    assert calls["parser"] is True
+    assert calls["argv"] == ["alignment.fa", "--json"]
+    assert calls["ran"] is True
+
+
+def test_rcv_default_invocation_bypasses_parser(monkeypatch):
+    captured = {}
+
+    class Runner:
+        def __init__(self, args):
+            captured["args"] = args
+
+        def run(self):
+            captured["ran"] = True
+
+    def fail_new_parser(*_args, **_kwargs):
+        raise AssertionError("default rcv should not build parser")
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+    monkeypatch.setattr(phykit_module, "RelativeCompositionVariability", Runner)
+
+    phykit_module.Phykit.rcv(["alignment.fa"])
+
+    args = captured["args"]
+    assert captured["ran"] is True
+    assert args.alignment == "alignment.fa"
+    assert args.json is False
+
+
+def test_rcv_option_invocation_keeps_parser(monkeypatch):
+    calls = {"parser": False, "ran": False}
+
+    class FakeParser:
+        def add_argument(self, *args, **kwargs):
+            return None
+
+        def parse_args(self, argv):
+            calls["argv"] = argv
+            return object()
+
+    class Runner:
+        def __init__(self, args):
+            calls["args"] = args
+
+        def run(self):
+            calls["ran"] = True
+
+    def fake_new_parser(*_args, **_kwargs):
+        calls["parser"] = True
+        return FakeParser()
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fake_new_parser)
+    monkeypatch.setattr(phykit_module, "RelativeCompositionVariability", Runner)
+
+    phykit_module.Phykit.rcv(["alignment.fa", "--json"])
+
+    assert calls["parser"] is True
+    assert calls["argv"] == ["alignment.fa", "--json"]
+    assert calls["ran"] is True
+
+
+def test_rcvt_default_invocation_bypasses_parser(monkeypatch):
+    captured = {}
+
+    class Runner:
+        def __init__(self, args):
+            captured["args"] = args
+
+        def run(self):
+            captured["ran"] = True
+
+    def fail_new_parser(*_args, **_kwargs):
+        raise AssertionError("default rcvt should not build parser")
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+    monkeypatch.setattr(phykit_module, "RelativeCompositionVariabilityTaxon", Runner)
+
+    phykit_module.Phykit.rcvt(["alignment.fa"])
+
+    args = captured["args"]
+    assert captured["ran"] is True
+    assert args.alignment == "alignment.fa"
+    assert args.plot is False
+    assert args.plot_output == "rcvt_plot.png"
+    assert args.json is False
+
+
+def test_rcvt_option_invocation_keeps_parser(monkeypatch):
+    calls = {"parser": False, "ran": False}
+
+    class FakeParser:
+        def add_argument(self, *args, **kwargs):
+            return None
+
+        def add_argument_group(self, *args, **kwargs):
+            return self
+
+        def parse_args(self, argv):
+            calls["argv"] = argv
+            return object()
+
+    class Runner:
+        def __init__(self, args):
+            calls["args"] = args
+
+        def run(self):
+            calls["ran"] = True
+
+    def fake_new_parser(*_args, **_kwargs):
+        calls["parser"] = True
+        return FakeParser()
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fake_new_parser)
+    monkeypatch.setattr(phykit_module, "RelativeCompositionVariabilityTaxon", Runner)
+
+    phykit_module.Phykit.rcvt(["alignment.fa", "--plot"])
+
+    assert calls["parser"] is True
+    assert calls["argv"] == ["alignment.fa", "--plot"]
+    assert calls["ran"] is True
+
+
+@pytest.mark.parametrize("idmap_flag", ["-i", "--idmap"])
+def test_rename_fasta_entries_default_invocation_bypasses_parser(
+    monkeypatch, idmap_flag
+):
+    captured = {}
+
+    class Runner:
+        def __init__(self, args):
+            captured["args"] = args
+
+        def run(self):
+            captured["ran"] = True
+
+    def fail_new_parser(*_args, **_kwargs):
+        raise AssertionError("default rename_fasta_entries should not build parser")
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+    monkeypatch.setattr(phykit_module, "RenameFastaEntries", Runner)
+
+    phykit_module.Phykit.rename_fasta_entries(
+        ["alignment.fa", idmap_flag, "idmap.txt"]
+    )
+
+    args = captured["args"]
+    assert captured["ran"] is True
+    assert args.fasta == "alignment.fa"
+    assert args.idmap == "idmap.txt"
+    assert args.output is None
+    assert args.json is False
+
+
+def test_rename_fasta_entries_option_invocation_keeps_parser(monkeypatch):
+    calls = {"parser": False, "ran": False}
+
+    class FakeParser:
+        def add_argument(self, *args, **kwargs):
+            return None
+
+        def parse_args(self, argv):
+            calls["argv"] = argv
+            return object()
+
+    class Runner:
+        def __init__(self, args):
+            calls["args"] = args
+
+        def run(self):
+            calls["ran"] = True
+
+    def fake_new_parser(*_args, **_kwargs):
+        calls["parser"] = True
+        return FakeParser()
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fake_new_parser)
+    monkeypatch.setattr(phykit_module, "RenameFastaEntries", Runner)
+
+    argv = ["alignment.fa", "-i", "idmap.txt", "--json"]
+    phykit_module.Phykit.rename_fasta_entries(argv)
+
+    assert calls["parser"] is True
+    assert calls["argv"] == argv
+    assert calls["ran"] is True
+
+
+def test_monophyly_check_default_invocation_bypasses_parser(monkeypatch):
+    captured = {}
+
+    class Runner:
+        def __init__(self, args):
+            captured["args"] = args
+
+        def run(self):
+            captured["ran"] = True
+
+    def fail_new_parser(*_args, **_kwargs):
+        raise AssertionError("default monophyly_check should not build parser")
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+    monkeypatch.setattr(phykit_module, "MonophylyCheck", Runner)
+
+    phykit_module.Phykit.monophyly_check(["tree.tre", "taxa.txt"])
+
+    args = captured["args"]
+    assert captured["ran"] is True
+    assert args.tree == "tree.tre"
+    assert args.list_of_taxa == "taxa.txt"
+    assert args.json is False
+
+
+def test_monophyly_check_option_invocation_keeps_parser(monkeypatch):
+    calls = {"parser": False, "ran": False}
+
+    class FakeParser:
+        def add_argument(self, *args, **kwargs):
+            return None
+
+        def parse_args(self, argv):
+            calls["argv"] = argv
+            return object()
+
+    class Runner:
+        def __init__(self, args):
+            calls["args"] = args
+
+        def run(self):
+            calls["ran"] = True
+
+    def fake_new_parser(*_args, **_kwargs):
+        calls["parser"] = True
+        return FakeParser()
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fake_new_parser)
+    monkeypatch.setattr(phykit_module, "MonophylyCheck", Runner)
+
+    phykit_module.Phykit.monophyly_check(["tree.tre", "taxa.txt", "--json"])
+
+    assert calls["parser"] is True
+    assert calls["argv"] == ["tree.tre", "taxa.txt", "--json"]
+    assert calls["ran"] is True
+
+
+def test_bipartition_support_stats_default_invocation_bypasses_parser(monkeypatch):
+    captured = {}
+
+    class Runner:
+        def __init__(self, args):
+            captured["args"] = args
+
+        def run(self):
+            captured["ran"] = True
+
+    def fail_new_parser(*_args, **_kwargs):
+        raise AssertionError(
+            "default bipartition_support_stats should not build parser"
+        )
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+    monkeypatch.setattr(phykit_module, "BipartitionSupportStats", Runner)
+
+    phykit_module.Phykit.bipartition_support_stats(["tree.tre"])
+
+    args = captured["args"]
+    assert captured["ran"] is True
+    assert args.tree == "tree.tre"
+    assert args.verbose is False
+    assert args.thresholds is None
+    assert args.json is False
+
+
+def test_bipartition_support_stats_option_invocation_keeps_parser(monkeypatch):
+    calls = {"parser": False, "ran": False}
+
+    class FakeParser:
+        def add_argument(self, *args, **kwargs):
+            return None
+
+        def parse_args(self, argv):
+            calls["argv"] = argv
+            return object()
+
+    class Runner:
+        def __init__(self, args):
+            calls["args"] = args
+
+        def run(self):
+            calls["ran"] = True
+
+    def fake_new_parser(*_args, **_kwargs):
+        calls["parser"] = True
+        return FakeParser()
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fake_new_parser)
+    monkeypatch.setattr(phykit_module, "BipartitionSupportStats", Runner)
+
+    phykit_module.Phykit.bipartition_support_stats(
+        ["tree.tre", "--thresholds", "90"]
+    )
+
+    assert calls["parser"] is True
+    assert calls["argv"] == ["tree.tre", "--thresholds", "90"]
+    assert calls["ran"] is True
+
+
+@pytest.mark.parametrize("factor_flag", ["-f", "--factor"])
+def test_branch_length_multiplier_default_invocation_bypasses_parser(
+    monkeypatch,
+    factor_flag,
+):
+    captured = {}
+
+    class Runner:
+        def __init__(self, args):
+            captured["args"] = args
+
+        def run(self):
+            captured["ran"] = True
+
+    def fail_new_parser(*_args, **_kwargs):
+        raise AssertionError(
+            "default branch_length_multiplier should not build parser"
+        )
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+    monkeypatch.setattr(phykit_module, "BranchLengthMultiplier", Runner)
+
+    phykit_module.Phykit.branch_length_multiplier(["tree.tre", factor_flag, "2"])
+
+    args = captured["args"]
+    assert captured["ran"] is True
+    assert args.tree == "tree.tre"
+    assert args.factor == 2.0
+    assert args.output is None
+    assert args.json is False
+
+
+def test_branch_length_multiplier_option_invocation_keeps_parser(monkeypatch):
+    calls = {"parser": False, "ran": False}
+
+    class FakeParser:
+        def add_argument(self, *args, **kwargs):
+            return None
+
+        def parse_args(self, argv):
+            calls["argv"] = argv
+            return object()
+
+    class Runner:
+        def __init__(self, args):
+            calls["args"] = args
+
+        def run(self):
+            calls["ran"] = True
+
+    def fake_new_parser(*_args, **_kwargs):
+        calls["parser"] = True
+        return FakeParser()
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fake_new_parser)
+    monkeypatch.setattr(phykit_module, "BranchLengthMultiplier", Runner)
+
+    phykit_module.Phykit.branch_length_multiplier(
+        ["tree.tre", "-f", "2", "-o", "out.tre"]
+    )
+
+    assert calls["parser"] is True
+    assert calls["argv"] == ["tree.tre", "-f", "2", "-o", "out.tre"]
+    assert calls["ran"] is True
+
+
+@pytest.mark.parametrize("support_flag", ["-s", "--support"])
+def test_collapse_branches_default_invocation_bypasses_parser(
+    monkeypatch,
+    support_flag,
+):
+    captured = {}
+
+    class Runner:
+        def __init__(self, args):
+            captured["args"] = args
+
+        def run(self):
+            captured["ran"] = True
+
+    def fail_new_parser(*_args, **_kwargs):
+        raise AssertionError("default collapse_branches should not build parser")
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+    monkeypatch.setattr(phykit_module, "CollapseBranches", Runner)
+
+    phykit_module.Phykit.collapse_branches(["tree.tre", support_flag, "90"])
+
+    args = captured["args"]
+    assert captured["ran"] is True
+    assert args.tree == "tree.tre"
+    assert args.support == 90.0
+    assert args.output is None
+    assert args.json is False
+
+
+def test_collapse_branches_option_invocation_keeps_parser(monkeypatch):
+    calls = {"parser": False, "ran": False}
+
+    class FakeParser:
+        def add_argument(self, *args, **kwargs):
+            return None
+
+        def parse_args(self, argv):
+            calls["argv"] = argv
+            return object()
+
+    class Runner:
+        def __init__(self, args):
+            calls["args"] = args
+
+        def run(self):
+            calls["ran"] = True
+
+    def fake_new_parser(*_args, **_kwargs):
+        calls["parser"] = True
+        return FakeParser()
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fake_new_parser)
+    monkeypatch.setattr(phykit_module, "CollapseBranches", Runner)
+
+    phykit_module.Phykit.collapse_branches(
+        ["tree.tre", "-s", "90", "-o", "out.tre"]
+    )
+
+    assert calls["parser"] is True
+    assert calls["argv"] == ["tree.tre", "-s", "90", "-o", "out.tre"]
+    assert calls["ran"] is True
+
+
+@pytest.mark.parametrize("idmap_flag", ["-i", "--idmap"])
+def test_rename_tree_tips_default_invocation_bypasses_parser(
+    monkeypatch,
+    idmap_flag,
+):
+    captured = {}
+
+    class Runner:
+        def __init__(self, args):
+            captured["args"] = args
+
+        def run(self):
+            captured["ran"] = True
+
+    def fail_new_parser(*_args, **_kwargs):
+        raise AssertionError("default rename_tree_tips should not build parser")
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+    monkeypatch.setattr(phykit_module, "RenameTreeTips", Runner)
+
+    phykit_module.Phykit.rename_tree_tips(["tree.tre", idmap_flag, "idmap.txt"])
+
+    args = captured["args"]
+    assert captured["ran"] is True
+    assert args.tree == "tree.tre"
+    assert args.idmap == "idmap.txt"
+    assert args.output is None
+    assert args.json is False
+
+
+def test_rename_tree_tips_option_invocation_keeps_parser(monkeypatch):
+    calls = {"parser": False, "ran": False}
+
+    class FakeParser:
+        def add_argument(self, *args, **kwargs):
+            return None
+
+        def parse_args(self, argv):
+            calls["argv"] = argv
+            return object()
+
+    class Runner:
+        def __init__(self, args):
+            calls["args"] = args
+
+        def run(self):
+            calls["ran"] = True
+
+    def fake_new_parser(*_args, **_kwargs):
+        calls["parser"] = True
+        return FakeParser()
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fake_new_parser)
+    monkeypatch.setattr(phykit_module, "RenameTreeTips", Runner)
+
+    phykit_module.Phykit.rename_tree_tips(
+        ["tree.tre", "-i", "idmap.txt", "-o", "renamed.tre"]
+    )
+
+    assert calls["parser"] is True
+    assert calls["argv"] == ["tree.tre", "-i", "idmap.txt", "-o", "renamed.tre"]
+    assert calls["ran"] is True
+
+
+def test_prune_tree_default_invocation_bypasses_parser(monkeypatch):
+    captured = {}
+
+    class Runner:
+        def __init__(self, args):
+            captured["args"] = args
+
+        def run(self):
+            captured["ran"] = True
+
+    def fail_new_parser(*_args, **_kwargs):
+        raise AssertionError("default prune_tree should not build parser")
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+    monkeypatch.setattr(phykit_module, "PruneTree", Runner)
+
+    phykit_module.Phykit.prune_tree(["tree.tre", "taxa.txt"])
+
+    args = captured["args"]
+    assert captured["ran"] is True
+    assert args.tree == "tree.tre"
+    assert args.list_of_taxa == "taxa.txt"
+    assert args.output is None
+    assert args.keep is False
+    assert args.ignore_branch_labels is False
+    assert args.json is False
+
+
+def test_prune_tree_option_invocation_keeps_parser(monkeypatch):
+    calls = {"parser": False, "ran": False}
+
+    class FakeParser:
+        def add_argument(self, *args, **kwargs):
+            return None
+
+        def parse_args(self, argv):
+            calls["argv"] = argv
+            return object()
+
+    class Runner:
+        def __init__(self, args):
+            calls["args"] = args
+
+        def run(self):
+            calls["ran"] = True
+
+    def fake_new_parser(*_args, **_kwargs):
+        calls["parser"] = True
+        return FakeParser()
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fake_new_parser)
+    monkeypatch.setattr(phykit_module, "PruneTree", Runner)
+
+    phykit_module.Phykit.prune_tree(["tree.tre", "taxa.txt", "-k"])
+
+    assert calls["parser"] is True
+    assert calls["argv"] == ["tree.tre", "taxa.txt", "-k"]
+    assert calls["ran"] is True
+
+
+def test_internode_labeler_default_invocation_bypasses_parser(monkeypatch):
+    captured = {}
+
+    class Runner:
+        def __init__(self, args):
+            captured["args"] = args
+
+        def run(self):
+            captured["ran"] = True
+
+    def fail_new_parser(*_args, **_kwargs):
+        raise AssertionError("default internode_labeler should not build parser")
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+    monkeypatch.setattr(phykit_module, "InternodeLabeler", Runner)
+
+    phykit_module.Phykit.internode_labeler(["tree.tre"])
+
+    args = captured["args"]
+    assert captured["ran"] is True
+    assert args.tree == "tree.tre"
+    assert args.output is None
+    assert args.json is False
+
+
+def test_internode_labeler_option_invocation_keeps_parser(monkeypatch):
+    calls = {"parser": False, "ran": False}
+
+    class FakeParser:
+        def add_argument(self, *args, **kwargs):
+            return None
+
+        def parse_args(self, argv):
+            calls["argv"] = argv
+            return object()
+
+    class Runner:
+        def __init__(self, args):
+            calls["args"] = args
+
+        def run(self):
+            calls["ran"] = True
+
+    def fake_new_parser(*_args, **_kwargs):
+        calls["parser"] = True
+        return FakeParser()
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fake_new_parser)
+    monkeypatch.setattr(phykit_module, "InternodeLabeler", Runner)
+
+    phykit_module.Phykit.internode_labeler(["tree.tre", "-o", "out.tre"])
+
+    assert calls["parser"] is True
+    assert calls["argv"] == ["tree.tre", "-o", "out.tre"]
+    assert calls["ran"] is True
+
+
+def test_spurious_sequence_default_invocation_bypasses_parser(monkeypatch):
+    captured = {}
+
+    class Runner:
+        def __init__(self, args):
+            captured["args"] = args
+
+        def run(self):
+            captured["ran"] = True
+
+    def fail_new_parser(*_args, **_kwargs):
+        raise AssertionError("default spurious_sequence should not build parser")
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+    monkeypatch.setattr(phykit_module, "SpuriousSequence", Runner)
+
+    phykit_module.Phykit.spurious_sequence(["tree.tre"])
+
+    args = captured["args"]
+    assert captured["ran"] is True
+    assert args.tree == "tree.tre"
+    assert args.factor is None
+    assert args.json is False
+
+
+def test_spurious_sequence_option_invocation_keeps_parser(monkeypatch):
+    calls = {"parser": False, "ran": False}
+
+    class FakeParser:
+        def add_argument(self, *args, **kwargs):
+            return None
+
+        def parse_args(self, argv):
+            calls["argv"] = argv
+            return object()
+
+    class Runner:
+        def __init__(self, args):
+            calls["args"] = args
+
+        def run(self):
+            calls["ran"] = True
+
+    def fake_new_parser(*_args, **_kwargs):
+        calls["parser"] = True
+        return FakeParser()
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fake_new_parser)
+    monkeypatch.setattr(phykit_module, "SpuriousSequence", Runner)
+
+    phykit_module.Phykit.spurious_sequence(["tree.tre", "-f", "2"])
+
+    assert calls["parser"] is True
+    assert calls["argv"] == ["tree.tre", "-f", "2"]
+    assert calls["ran"] is True
+
+
+@pytest.mark.parametrize("trees_flag", ["-t", "--trees"])
+def test_consensus_tree_default_invocation_bypasses_parser(monkeypatch, trees_flag):
+    captured = {}
+
+    class Runner:
+        def __init__(self, args):
+            captured["args"] = args
+
+        def run(self):
+            captured["ran"] = True
+
+    def fail_new_parser(*_args, **_kwargs):
+        raise AssertionError("default consensus_tree should not build parser")
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+    monkeypatch.setattr(phykit_module, "ConsensusTree", Runner)
+
+    phykit_module.Phykit.consensus_tree([trees_flag, "trees.nwk"])
+
+    args = captured["args"]
+    assert captured["ran"] is True
+    assert args.trees == "trees.nwk"
+    assert args.method == "majority"
+    assert args.missing_taxa == "error"
+    assert args.json is False
+
+
+def test_consensus_tree_option_invocation_keeps_parser(monkeypatch):
+    calls = {"parser": False, "ran": False}
+
+    class FakeParser:
+        def add_argument(self, *args, **kwargs):
+            return None
+
+        def parse_args(self, argv):
+            calls["argv"] = argv
+            return object()
+
+    class Runner:
+        def __init__(self, args):
+            calls["args"] = args
+
+        def run(self):
+            calls["ran"] = True
+
+    def fake_new_parser(*_args, **_kwargs):
+        calls["parser"] = True
+        return FakeParser()
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fake_new_parser)
+    monkeypatch.setattr(phykit_module, "ConsensusTree", Runner)
+
+    phykit_module.Phykit.consensus_tree(["-t", "trees.nwk", "--json"])
+
+    assert calls["parser"] is True
+    assert calls["argv"] == ["-t", "trees.nwk", "--json"]
+    assert calls["ran"] is True
+
+
+@pytest.mark.parametrize("trees_flag", ["-t", "--trees"])
+def test_consensus_network_default_invocation_bypasses_parser(
+    monkeypatch,
+    trees_flag,
+):
+    captured = {}
+
+    class Runner:
+        def __init__(self, args):
+            captured["args"] = args
+
+        def run(self):
+            captured["ran"] = True
+
+    def fail_new_parser(*_args, **_kwargs):
+        raise AssertionError("default consensus_network should not build parser")
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+    monkeypatch.setattr(phykit_module, "ConsensusNetwork", Runner)
+
+    phykit_module.Phykit.consensus_network([trees_flag, "trees.nwk"])
+
+    args = captured["args"]
+    assert captured["ran"] is True
+    assert args.trees == "trees.nwk"
+    assert args.threshold == 0.1
+    assert args.missing_taxa == "allow"
+    assert args.max_splits == 30
+    assert args.histogram is None
+    assert args.plot_output is None
+    assert args.json is False
+
+
+def test_consensus_network_option_invocation_keeps_parser(monkeypatch):
+    calls = {"parser": False, "ran": False}
+
+    class FakeParser:
+        def add_argument_group(self, *_args, **_kwargs):
+            return self
+
+        def add_argument(self, *args, **kwargs):
+            return None
+
+        def parse_args(self, argv):
+            calls["argv"] = argv
+            return object()
+
+    class Runner:
+        def __init__(self, args):
+            calls["args"] = args
+
+        def run(self):
+            calls["ran"] = True
+
+    def fake_new_parser(*_args, **_kwargs):
+        calls["parser"] = True
+        return FakeParser()
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fake_new_parser)
+    monkeypatch.setattr(phykit_module, "ConsensusNetwork", Runner)
+
+    phykit_module.Phykit.consensus_network(["-t", "trees.nwk", "--threshold", "0.7"])
+
+    assert calls["parser"] is True
+    assert calls["argv"] == ["-t", "trees.nwk", "--threshold", "0.7"]
+    assert calls["ran"] is True
+
+
+@pytest.mark.parametrize("trees_flag", ["-t", "--trees"])
+def test_quartet_network_default_invocation_bypasses_parser(
+    monkeypatch,
+    trees_flag,
+):
+    captured = {}
+
+    class Runner:
+        def __init__(self, args):
+            captured["args"] = args
+
+        def run(self):
+            captured["ran"] = True
+
+    def fail_new_parser(*_args, **_kwargs):
+        raise AssertionError("default quartet_network should not build parser")
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+    monkeypatch.setattr(phykit_module, "QuartetNetwork", Runner)
+
+    phykit_module.Phykit.quartet_network([trees_flag, "trees.nwk"])
+
+    args = captured["args"]
+    assert captured["ran"] is True
+    assert args.trees == "trees.nwk"
+    assert args.alpha == 0.05
+    assert args.beta == 0.95
+    assert args.missing_taxa == "error"
+    assert args.plot_output is None
+    assert args.json is False
+
+
+def test_quartet_network_option_invocation_keeps_parser(monkeypatch):
+    calls = {"parser": False, "ran": False}
+
+    class FakeParser:
+        def add_argument_group(self, *_args, **_kwargs):
+            return self
+
+        def add_argument(self, *args, **kwargs):
+            return None
+
+        def parse_args(self, argv):
+            calls["argv"] = argv
+            return object()
+
+    class Runner:
+        def __init__(self, args):
+            calls["args"] = args
+
+        def run(self):
+            calls["ran"] = True
+
+    def fake_new_parser(*_args, **_kwargs):
+        calls["parser"] = True
+        return FakeParser()
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fake_new_parser)
+    monkeypatch.setattr(phykit_module, "QuartetNetwork", Runner)
+
+    phykit_module.Phykit.quartet_network(["-t", "trees.nwk", "--alpha", "0.01"])
+
+    assert calls["parser"] is True
+    assert calls["argv"] == ["-t", "trees.nwk", "--alpha", "0.01"]
+    assert calls["ran"] is True
+
+
+def test_evolutionary_rate_default_invocation_bypasses_parser(monkeypatch):
+    captured = {}
+
+    class Runner:
+        def __init__(self, args):
+            captured["args"] = args
+
+        def run(self):
+            captured["ran"] = True
+
+    def fail_new_parser(*_args, **_kwargs):
+        raise AssertionError("default evolutionary_rate should not build parser")
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+    monkeypatch.setattr(phykit_module, "EvolutionaryRate", Runner)
+
+    phykit_module.Phykit.evolutionary_rate(["tree.tre"])
+
+    args = captured["args"]
+    assert captured["ran"] is True
+    assert args.tree == "tree.tre"
+    assert args.json is False
+
+
+def test_evolutionary_rate_option_invocation_keeps_parser(monkeypatch):
+    calls = {"parser": False, "ran": False}
+
+    class FakeParser:
+        def add_argument(self, *args, **kwargs):
+            return None
+
+        def parse_args(self, argv):
+            calls["argv"] = argv
+            return object()
+
+    class Runner:
+        def __init__(self, args):
+            calls["args"] = args
+
+        def run(self):
+            calls["ran"] = True
+
+    def fake_new_parser(*_args, **_kwargs):
+        calls["parser"] = True
+        return FakeParser()
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fake_new_parser)
+    monkeypatch.setattr(phykit_module, "EvolutionaryRate", Runner)
+
+    phykit_module.Phykit.evolutionary_rate(["tree.tre", "--json"])
+
+    assert calls["parser"] is True
+    assert calls["argv"] == ["tree.tre", "--json"]
+    assert calls["ran"] is True
+
+
+def test_internal_branch_stats_default_invocation_bypasses_parser(monkeypatch):
+    captured = {}
+
+    class Runner:
+        def __init__(self, args):
+            captured["args"] = args
+
+        def run(self):
+            captured["ran"] = True
+
+    def fail_new_parser(*_args, **_kwargs):
+        raise AssertionError("default internal_branch_stats should not build parser")
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+    monkeypatch.setattr(phykit_module, "InternalBranchStats", Runner)
+
+    phykit_module.Phykit.internal_branch_stats(["tree.tre"])
+
+    args = captured["args"]
+    assert captured["ran"] is True
+    assert args.tree == "tree.tre"
+    assert args.verbose is False
+    assert args.json is False
+
+
+def test_internal_branch_stats_option_invocation_keeps_parser(monkeypatch):
+    calls = {"parser": False, "ran": False}
+
+    class FakeParser:
+        def add_argument(self, *args, **kwargs):
+            return None
+
+        def parse_args(self, argv):
+            calls["argv"] = argv
+            return object()
+
+    class Runner:
+        def __init__(self, args):
+            calls["args"] = args
+
+        def run(self):
+            calls["ran"] = True
+
+    def fake_new_parser(*_args, **_kwargs):
+        calls["parser"] = True
+        return FakeParser()
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fake_new_parser)
+    monkeypatch.setattr(phykit_module, "InternalBranchStats", Runner)
+
+    phykit_module.Phykit.internal_branch_stats(["tree.tre", "--json"])
+
+    assert calls["parser"] is True
+    assert calls["argv"] == ["tree.tre", "--json"]
+    assert calls["ran"] is True
+
+
+def test_terminal_branch_stats_default_invocation_bypasses_parser(monkeypatch):
+    captured = {}
+
+    class Runner:
+        def __init__(self, args):
+            captured["args"] = args
+
+        def run(self):
+            captured["ran"] = True
+
+    def fail_new_parser(*_args, **_kwargs):
+        raise AssertionError("default terminal_branch_stats should not build parser")
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+    monkeypatch.setattr(phykit_module, "TerminalBranchStats", Runner)
+
+    phykit_module.Phykit.terminal_branch_stats(["tree.tre"])
+
+    args = captured["args"]
+    assert captured["ran"] is True
+    assert args.tree == "tree.tre"
+    assert args.verbose is False
+    assert args.json is False
+
+
+def test_terminal_branch_stats_option_invocation_keeps_parser(monkeypatch):
+    calls = {"parser": False, "ran": False}
+
+    class FakeParser:
+        def add_argument(self, *args, **kwargs):
+            return None
+
+        def parse_args(self, argv):
+            calls["argv"] = argv
+            return object()
+
+    class Runner:
+        def __init__(self, args):
+            calls["args"] = args
+
+        def run(self):
+            calls["ran"] = True
+
+    def fake_new_parser(*_args, **_kwargs):
+        calls["parser"] = True
+        return FakeParser()
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fake_new_parser)
+    monkeypatch.setattr(phykit_module, "TerminalBranchStats", Runner)
+
+    phykit_module.Phykit.terminal_branch_stats(["tree.tre", "--json"])
+
+    assert calls["parser"] is True
+    assert calls["argv"] == ["tree.tre", "--json"]
+    assert calls["ran"] is True
+
+
+def test_patristic_distances_default_invocation_bypasses_parser(monkeypatch):
+    captured = {}
+
+    class Runner:
+        def __init__(self, args):
+            captured["args"] = args
+
+        def run(self):
+            captured["ran"] = True
+
+    def fail_new_parser(*_args, **_kwargs):
+        raise AssertionError("default patristic_distances should not build parser")
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+    monkeypatch.setattr(phykit_module, "PatristicDistances", Runner)
+
+    phykit_module.Phykit.patristic_distances(["tree.tre"])
+
+    args = captured["args"]
+    assert captured["ran"] is True
+    assert args.tree == "tree.tre"
+    assert args.verbose is False
+    assert args.json is False
+
+
+def test_patristic_distances_option_invocation_keeps_parser(monkeypatch):
+    calls = {"parser": False, "ran": False}
+
+    class FakeParser:
+        def add_argument(self, *args, **kwargs):
+            return None
+
+        def parse_args(self, argv):
+            calls["argv"] = argv
+            return object()
+
+    class Runner:
+        def __init__(self, args):
+            calls["args"] = args
+
+        def run(self):
+            calls["ran"] = True
+
+    def fake_new_parser(*_args, **_kwargs):
+        calls["parser"] = True
+        return FakeParser()
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fake_new_parser)
+    monkeypatch.setattr(phykit_module, "PatristicDistances", Runner)
+
+    phykit_module.Phykit.patristic_distances(["tree.tre", "--json"])
+
+    assert calls["parser"] is True
+    assert calls["argv"] == ["tree.tre", "--json"]
+    assert calls["ran"] is True
+
+
+def test_last_common_ancestor_subtree_default_invocation_bypasses_parser(
+    monkeypatch,
+):
+    captured = {}
+
+    class Runner:
+        def __init__(self, args):
+            captured["args"] = args
+
+        def run(self):
+            captured["ran"] = True
+
+    def fail_new_parser(*_args, **_kwargs):
+        raise AssertionError(
+            "default last_common_ancestor_subtree should not build parser"
+        )
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+    monkeypatch.setattr(phykit_module, "LastCommonAncestorSubtree", Runner)
+
+    phykit_module.Phykit.last_common_ancestor_subtree(["tree.tre", "taxa.txt"])
+
+    args = captured["args"]
+    assert captured["ran"] is True
+    assert args.tree == "tree.tre"
+    assert args.list_of_taxa == "taxa.txt"
+    assert args.output is None
+    assert args.json is False
+
+
+def test_last_common_ancestor_subtree_option_invocation_keeps_parser(monkeypatch):
+    calls = {"parser": False, "ran": False}
+
+    class FakeParser:
+        def add_argument(self, *args, **kwargs):
+            return None
+
+        def parse_args(self, argv):
+            calls["argv"] = argv
+            return object()
+
+    class Runner:
+        def __init__(self, args):
+            calls["args"] = args
+
+        def run(self):
+            calls["ran"] = True
+
+    def fake_new_parser(*_args, **_kwargs):
+        calls["parser"] = True
+        return FakeParser()
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fake_new_parser)
+    monkeypatch.setattr(phykit_module, "LastCommonAncestorSubtree", Runner)
+
+    phykit_module.Phykit.last_common_ancestor_subtree(
+        ["tree.tre", "taxa.txt", "-o", "out.tre"]
+    )
+
+    assert calls["parser"] is True
+    assert calls["argv"] == ["tree.tre", "taxa.txt", "-o", "out.tre"]
+    assert calls["ran"] is True
+
+
+def test_rf_distance_default_invocation_bypasses_parser(monkeypatch):
+    captured = {}
+
+    class Runner:
+        def __init__(self, args):
+            captured["args"] = args
+
+        def run(self):
+            captured["ran"] = True
+
+    def fail_new_parser(*_args, **_kwargs):
+        raise AssertionError("default rf_distance should not build parser")
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+    monkeypatch.setattr(phykit_module, "RobinsonFouldsDistance", Runner)
+
+    phykit_module.Phykit.rf_distance(["tree_a.tre", "tree_b.tre"])
+
+    args = captured["args"]
+    assert captured["ran"] is True
+    assert args.tree_zero == "tree_a.tre"
+    assert args.tree_one == "tree_b.tre"
+    assert args.json is False
+
+
+def test_rf_distance_option_invocation_keeps_parser(monkeypatch):
+    calls = {"parser": False, "ran": False}
+
+    class FakeParser:
+        def add_argument(self, *args, **kwargs):
+            return None
+
+        def parse_args(self, argv):
+            calls["argv"] = argv
+            return object()
+
+    class Runner:
+        def __init__(self, args):
+            calls["args"] = args
+
+        def run(self):
+            calls["ran"] = True
+
+    def fake_new_parser(*_args, **_kwargs):
+        calls["parser"] = True
+        return FakeParser()
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fake_new_parser)
+    monkeypatch.setattr(phykit_module, "RobinsonFouldsDistance", Runner)
+
+    phykit_module.Phykit.rf_distance(["tree_a.tre", "tree_b.tre", "--json"])
+
+    assert calls["parser"] is True
+    assert calls["argv"] == ["tree_a.tre", "tree_b.tre", "--json"]
+    assert calls["ran"] is True
+
+
+def test_kf_distance_default_invocation_bypasses_parser(monkeypatch):
+    captured = {}
+
+    class Runner:
+        def __init__(self, args):
+            captured["args"] = args
+
+        def run(self):
+            captured["ran"] = True
+
+    def fail_new_parser(*_args, **_kwargs):
+        raise AssertionError("default kf_distance should not build parser")
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+    monkeypatch.setattr(phykit_module, "KuhnerFelsensteinDistance", Runner)
+
+    phykit_module.Phykit.kf_distance(["tree_a.tre", "tree_b.tre"])
+
+    args = captured["args"]
+    assert captured["ran"] is True
+    assert args.tree_zero == "tree_a.tre"
+    assert args.tree_one == "tree_b.tre"
+    assert args.json is False
+
+
+def test_kf_distance_option_invocation_keeps_parser(monkeypatch):
+    calls = {"parser": False, "ran": False}
+
+    class FakeParser:
+        def add_argument(self, *args, **kwargs):
+            return None
+
+        def parse_args(self, argv):
+            calls["argv"] = argv
+            return object()
+
+    class Runner:
+        def __init__(self, args):
+            calls["args"] = args
+
+        def run(self):
+            calls["ran"] = True
+
+    def fake_new_parser(*_args, **_kwargs):
+        calls["parser"] = True
+        return FakeParser()
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fake_new_parser)
+    monkeypatch.setattr(phykit_module, "KuhnerFelsensteinDistance", Runner)
+
+    phykit_module.Phykit.kf_distance(["tree_a.tre", "tree_b.tre", "--json"])
+
+    assert calls["parser"] is True
+    assert calls["argv"] == ["tree_a.tre", "tree_b.tre", "--json"]
+    assert calls["ran"] is True
+
+
+def test_tip_to_tip_node_distance_default_invocation_bypasses_parser(monkeypatch):
+    captured = {}
+
+    class Runner:
+        def __init__(self, args):
+            captured["args"] = args
+
+        def run(self):
+            captured["ran"] = True
+
+    def fail_new_parser(*_args, **_kwargs):
+        raise AssertionError(
+            "default tip_to_tip_node_distance should not build parser"
+        )
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+    monkeypatch.setattr(phykit_module, "TipToTipNodeDistance", Runner)
+
+    phykit_module.Phykit.tip_to_tip_node_distance(["tree.tre", "tip_a", "tip_b"])
+
+    args = captured["args"]
+    assert captured["ran"] is True
+    assert args.tree_zero == "tree.tre"
+    assert args.tip_1 == "tip_a"
+    assert args.tip_2 == "tip_b"
+    assert args.json is False
+
+
+def test_tip_to_tip_node_distance_option_invocation_keeps_parser(monkeypatch):
+    calls = {"parser": False, "ran": False}
+
+    class FakeParser:
+        def add_argument(self, *args, **kwargs):
+            return None
+
+        def parse_args(self, argv):
+            calls["argv"] = argv
+            return object()
+
+    class Runner:
+        def __init__(self, args):
+            calls["args"] = args
+
+        def run(self):
+            calls["ran"] = True
+
+    def fake_new_parser(*_args, **_kwargs):
+        calls["parser"] = True
+        return FakeParser()
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fake_new_parser)
+    monkeypatch.setattr(phykit_module, "TipToTipNodeDistance", Runner)
+
+    phykit_module.Phykit.tip_to_tip_node_distance(
+        ["tree.tre", "tip_a", "tip_b", "--json"]
+    )
+
+    assert calls["parser"] is True
+    assert calls["argv"] == ["tree.tre", "tip_a", "tip_b", "--json"]
+    assert calls["ran"] is True
+
+
+def test_lb_score_default_invocation_bypasses_parser(monkeypatch):
+    captured = {}
+
+    class Runner:
+        def __init__(self, args):
+            captured["args"] = args
+
+        def run(self):
+            captured["ran"] = True
+
+    def fail_new_parser(*_args, **_kwargs):
+        raise AssertionError("default lb_score should not build parser")
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+    monkeypatch.setattr(phykit_module, "LBScore", Runner)
+
+    phykit_module.Phykit.lb_score(["tree.tre"])
+
+    args = captured["args"]
+    assert captured["ran"] is True
+    assert args.tree == "tree.tre"
+    assert args.verbose is False
+    assert args.json is False
+
+
+@pytest.mark.parametrize("verbose_flag", ["-v", "--verbose"])
+def test_lb_score_verbose_invocation_bypasses_parser(monkeypatch, verbose_flag):
+    captured = {}
+
+    class Runner:
+        def __init__(self, args):
+            captured["args"] = args
+
+        def run(self):
+            captured["ran"] = True
+
+    def fail_new_parser(*_args, **_kwargs):
+        raise AssertionError("verbose lb_score should not build parser")
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+    monkeypatch.setattr(phykit_module, "LBScore", Runner)
+
+    phykit_module.Phykit.lb_score(["tree.tre", verbose_flag])
+
+    args = captured["args"]
+    assert captured["ran"] is True
+    assert args.tree == "tree.tre"
+    assert args.verbose is True
+    assert args.json is False
+
+
+def test_lb_score_option_invocation_keeps_parser(monkeypatch):
+    calls = {"parser": False, "ran": False}
+
+    class FakeParser:
+        def add_argument(self, *args, **kwargs):
+            return None
+
+        def parse_args(self, argv):
+            calls["argv"] = argv
+            return object()
+
+    class Runner:
+        def __init__(self, args):
+            calls["args"] = args
+
+        def run(self):
+            calls["ran"] = True
+
+    def fake_new_parser(*_args, **_kwargs):
+        calls["parser"] = True
+        return FakeParser()
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fake_new_parser)
+    monkeypatch.setattr(phykit_module, "LBScore", Runner)
+
+    phykit_module.Phykit.lb_score(["tree.tre", "--json"])
+
+    assert calls["parser"] is True
+    assert calls["argv"] == ["tree.tre", "--json"]
+    assert calls["ran"] is True
+
+
+def test_total_tree_length_default_invocation_bypasses_parser(monkeypatch):
+    captured = {}
+
+    class Runner:
+        def __init__(self, args):
+            captured["args"] = args
+
+        def run(self):
+            captured["ran"] = True
+
+    def fail_new_parser(*_args, **_kwargs):
+        raise AssertionError("default total_tree_length should not build parser")
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+    monkeypatch.setattr(phykit_module, "TotalTreeLength", Runner)
+
+    phykit_module.Phykit.total_tree_length(["tree.tre"])
+
+    args = captured["args"]
+    assert captured["ran"] is True
+    assert args.tree == "tree.tre"
+    assert args.json is False
+
+
+def test_total_tree_length_option_invocation_keeps_parser(monkeypatch):
+    calls = {"parser": False, "ran": False}
+
+    class FakeParser:
+        def add_argument(self, *args, **kwargs):
+            return None
+
+        def parse_args(self, argv):
+            calls["argv"] = argv
+            return object()
+
+    class Runner:
+        def __init__(self, args):
+            calls["args"] = args
+
+        def run(self):
+            calls["ran"] = True
+
+    def fake_new_parser(*_args, **_kwargs):
+        calls["parser"] = True
+        return FakeParser()
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fake_new_parser)
+    monkeypatch.setattr(phykit_module, "TotalTreeLength", Runner)
+
+    phykit_module.Phykit.total_tree_length(["tree.tre", "--json"])
+
+    assert calls["parser"] is True
+    assert calls["argv"] == ["tree.tre", "--json"]
+    assert calls["ran"] is True
+
+
+def test_treeness_default_invocation_bypasses_parser(monkeypatch):
+    captured = {}
+
+    class Runner:
+        def __init__(self, args):
+            captured["args"] = args
+
+        def run(self):
+            captured["ran"] = True
+
+    def fail_new_parser(*_args, **_kwargs):
+        raise AssertionError("default treeness should not build parser")
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+    monkeypatch.setattr(phykit_module, "Treeness", Runner)
+
+    phykit_module.Phykit.treeness(["tree.tre"])
+
+    args = captured["args"]
+    assert captured["ran"] is True
+    assert args.tree == "tree.tre"
+    assert args.json is False
+
+
+def test_treeness_option_invocation_keeps_parser(monkeypatch):
+    calls = {"parser": False, "ran": False}
+
+    class FakeParser:
+        def add_argument(self, *args, **kwargs):
+            return None
+
+        def parse_args(self, argv):
+            calls["argv"] = argv
+            return object()
+
+    class Runner:
+        def __init__(self, args):
+            calls["args"] = args
+
+        def run(self):
+            calls["ran"] = True
+
+    def fake_new_parser(*_args, **_kwargs):
+        calls["parser"] = True
+        return FakeParser()
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fake_new_parser)
+    monkeypatch.setattr(phykit_module, "Treeness", Runner)
+
+    phykit_module.Phykit.treeness(["tree.tre", "--json"])
+
+    assert calls["parser"] is True
+    assert calls["argv"] == ["tree.tre", "--json"]
+    assert calls["ran"] is True
+
+
+def test_pairwise_identity_default_invocation_bypasses_parser(monkeypatch):
+    captured = {}
+
+    class Runner:
+        def __init__(self, args):
+            captured["args"] = args
+
+        def run(self):
+            captured["ran"] = True
+
+    def fail_new_parser(*_args, **_kwargs):
+        raise AssertionError("default pairwise_identity should not build parser")
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+    monkeypatch.setattr(phykit_module, "PairwiseIdentity", Runner)
+
+    phykit_module.Phykit.pairwise_identity(["alignment.fa"])
+
+    args = captured["args"]
+    assert captured["ran"] is True
+    assert args.alignment == "alignment.fa"
+    assert args.verbose is False
+    assert args.exclude_gaps is False
+    assert args.plot is False
+    assert args.plot_output == "pairwise_identity_heatmap.png"
+    assert args.json is False
+
+
+@pytest.mark.parametrize("verbose_flag", ["-v", "--verbose"])
+def test_pairwise_identity_verbose_invocation_bypasses_parser(
+    monkeypatch, verbose_flag
+):
+    captured = {}
+
+    class Runner:
+        def __init__(self, args):
+            captured["args"] = args
+
+        def run(self):
+            captured["ran"] = True
+
+    def fail_new_parser(*_args, **_kwargs):
+        raise AssertionError("verbose pairwise_identity should not build parser")
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+    monkeypatch.setattr(phykit_module, "PairwiseIdentity", Runner)
+
+    phykit_module.Phykit.pairwise_identity(["alignment.fa", verbose_flag])
+
+    args = captured["args"]
+    assert captured["ran"] is True
+    assert args.alignment == "alignment.fa"
+    assert args.verbose is True
+    assert args.exclude_gaps is False
+    assert args.plot is False
+    assert args.plot_output == "pairwise_identity_heatmap.png"
+    assert args.json is False
+
+
+def test_pairwise_identity_option_invocation_keeps_parser(monkeypatch):
+    calls = {"parser": False, "ran": False}
+
+    class FakeParser:
+        def add_argument(self, *args, **kwargs):
+            return None
+
+        def add_argument_group(self, *args, **kwargs):
+            return self
+
+        def parse_args(self, argv):
+            calls["argv"] = argv
+            return object()
+
+    class Runner:
+        def __init__(self, args):
+            calls["args"] = args
+
+        def run(self):
+            calls["ran"] = True
+
+    def fake_new_parser(*_args, **_kwargs):
+        calls["parser"] = True
+        return FakeParser()
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fake_new_parser)
+    monkeypatch.setattr(phykit_module, "PairwiseIdentity", Runner)
+
+    phykit_module.Phykit.pairwise_identity(["alignment.fa", "--json"])
+
+    assert calls["parser"] is True
+    assert calls["argv"] == ["alignment.fa", "--json"]
+    assert calls["ran"] is True
+
+
+def test_parsimony_informative_sites_default_invocation_bypasses_parser(monkeypatch):
+    captured = {}
+
+    class Runner:
+        def __init__(self, args):
+            captured["args"] = args
+
+        def run(self):
+            captured["ran"] = True
+
+    def fail_new_parser(*_args, **_kwargs):
+        raise AssertionError(
+            "default parsimony_informative_sites should not build parser"
+        )
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+    monkeypatch.setattr(phykit_module, "ParsimonyInformative", Runner)
+
+    phykit_module.Phykit.parsimony_informative_sites(["alignment.fa"])
+
+    args = captured["args"]
+    assert captured["ran"] is True
+    assert args.alignment == "alignment.fa"
+    assert args.json is False
+
+
+def test_parsimony_informative_sites_option_invocation_keeps_parser(monkeypatch):
+    calls = {"parser": False, "ran": False}
+
+    class FakeParser:
+        def add_argument(self, *args, **kwargs):
+            return None
+
+        def parse_args(self, argv):
+            calls["argv"] = argv
+            return object()
+
+    class Runner:
+        def __init__(self, args):
+            calls["args"] = args
+
+        def run(self):
+            calls["ran"] = True
+
+    def fake_new_parser(*_args, **_kwargs):
+        calls["parser"] = True
+        return FakeParser()
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fake_new_parser)
+    monkeypatch.setattr(phykit_module, "ParsimonyInformative", Runner)
+
+    phykit_module.Phykit.parsimony_informative_sites(["alignment.fa", "--json"])
+
+    assert calls["parser"] is True
+    assert calls["argv"] == ["alignment.fa", "--json"]
+    assert calls["ran"] is True
+
+
+def test_variable_sites_default_invocation_bypasses_parser(monkeypatch):
+    captured = {}
+
+    class Runner:
+        def __init__(self, args):
+            captured["args"] = args
+
+        def run(self):
+            captured["ran"] = True
+
+    def fail_new_parser(*_args, **_kwargs):
+        raise AssertionError("default variable_sites should not build parser")
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+    monkeypatch.setattr(phykit_module, "VariableSites", Runner)
+
+    phykit_module.Phykit.variable_sites(["alignment.fa"])
+
+    args = captured["args"]
+    assert captured["ran"] is True
+    assert args.alignment == "alignment.fa"
+    assert args.json is False
+
+
+def test_variable_sites_option_invocation_keeps_parser(monkeypatch):
+    calls = {"parser": False, "ran": False}
+
+    class FakeParser:
+        def add_argument(self, *args, **kwargs):
+            return None
+
+        def parse_args(self, argv):
+            calls["argv"] = argv
+            return object()
+
+    class Runner:
+        def __init__(self, args):
+            calls["args"] = args
+
+        def run(self):
+            calls["ran"] = True
+
+    def fake_new_parser(*_args, **_kwargs):
+        calls["parser"] = True
+        return FakeParser()
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fake_new_parser)
+    monkeypatch.setattr(phykit_module, "VariableSites", Runner)
+
+    phykit_module.Phykit.variable_sites(["alignment.fa", "--json"])
+
+    assert calls["parser"] is True
+    assert calls["argv"] == ["alignment.fa", "--json"]
+    assert calls["ran"] is True
+
+
+@pytest.mark.parametrize("reference_flag", ["-r", "--reference"])
+def test_sum_of_pairs_score_default_reference_invocation_bypasses_parser(
+    monkeypatch,
+    reference_flag,
+):
+    captured = {}
+
+    class Runner:
+        def __init__(self, args):
+            captured["args"] = args
+
+        def run(self):
+            captured["ran"] = True
+
+    def fail_new_parser(*_args, **_kwargs):
+        raise AssertionError("default sum_of_pairs_score should not build parser")
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+    monkeypatch.setattr(phykit_module, "SumOfPairsScore", Runner)
+
+    phykit_module.Phykit.sum_of_pairs_score(["query.fa", reference_flag, "ref.fa"])
+
+    args = captured["args"]
+    assert captured["ran"] is True
+    assert args.fasta == "query.fa"
+    assert args.reference == "ref.fa"
+    assert args.json is False
+
+
+def test_sum_of_pairs_score_option_invocation_keeps_parser(monkeypatch):
+    calls = {"parser": False, "ran": False}
+
+    class FakeParser:
+        def add_argument(self, *args, **kwargs):
+            return None
+
+        def parse_args(self, argv):
+            calls["argv"] = argv
+            return object()
+
+    class Runner:
+        def __init__(self, args):
+            calls["args"] = args
+
+        def run(self):
+            calls["ran"] = True
+
+    def fake_new_parser(*_args, **_kwargs):
+        calls["parser"] = True
+        return FakeParser()
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fake_new_parser)
+    monkeypatch.setattr(phykit_module, "SumOfPairsScore", Runner)
+
+    phykit_module.Phykit.sum_of_pairs_score(
+        ["query.fa", "--reference", "ref.fa", "--json"]
+    )
+
+    assert calls["parser"] is True
+    assert calls["argv"] == ["query.fa", "--reference", "ref.fa", "--json"]
+    assert calls["ran"] is True
+
+
 class TestPhykitCliDispatch:
     @pytest.mark.parametrize("method_name", COMMAND_METHODS)
     def test_command_parser_help_exits_cleanly(self, method_name):
@@ -134,12 +2613,49 @@ class TestPhykitCliDispatch:
         out, _ = capsys.readouterr()
         assert "Invalid command option" in out
 
+    def test_run_alias_invalid_command_reuses_cached_banner(self, monkeypatch):
+        instance = object.__new__(Phykit)
+        phykit_module._clear_banner_cache()
+        with pytest.raises(SystemExit):
+            instance.run_alias("not_a_real_cmd", [])
+
+        monkeypatch.setattr(
+            phykit_module,
+            "_dedent",
+            lambda _text: (_ for _ in ()).throw(
+                AssertionError("banner should already be cached")
+            ),
+        )
+
+        with pytest.raises(SystemExit):
+            instance.run_alias("not_a_real_cmd", [])
+        phykit_module._clear_banner_cache()
+
     def test_run_alias_version(self, capsys):
         instance = object.__new__(Phykit)
         instance.help_header = Phykit.help_header
         instance.run_alias("v", [])
         out, _ = capsys.readouterr()
         assert "Version:" in out
+
+    def test_version_reuses_cached_default_banner(self, monkeypatch, mocker):
+        instance = object.__new__(Phykit)
+        instance.help_header = Phykit.help_header
+        phykit_module._clear_banner_cache()
+        mocked_print = mocker.patch("builtins.print")
+
+        instance.version()
+        monkeypatch.setattr(
+            phykit_module,
+            "_dedent",
+            lambda _text: (_ for _ in ()).throw(
+                AssertionError("version banner should already be cached")
+            ),
+        )
+        instance.version()
+
+        assert mocked_print.call_count == 2
+        phykit_module._clear_banner_cache()
 
     def test_init_dispatches_named_command(self, monkeypatch):
         calls = {}
@@ -150,6 +2666,48 @@ class TestPhykitCliDispatch:
         monkeypatch.setattr(Phykit, "alignment_length", fake_alignment_length)
         monkeypatch.setattr("sys.argv", ["phykit", "alignment_length", "x.fa"])
         Phykit()
+        assert calls["argv"] == ["x.fa"]
+
+    def test_init_dispatches_named_command_without_top_level_parser(self, monkeypatch):
+        calls = {}
+
+        def fake_alignment_length(self, argv):
+            calls["argv"] = argv
+
+        def fail_new_parser(*_args, **_kwargs):
+            raise AssertionError("normal commands should bypass top-level help parser")
+
+        monkeypatch.setattr(Phykit, "alignment_length", fake_alignment_length)
+        monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+        monkeypatch.setattr("sys.argv", ["phykit", "alignment_length", "x.fa"])
+
+        Phykit()
+
+        assert calls["argv"] == ["x.fa"]
+
+    def test_dispatch_resolves_named_command_once(self):
+        calls = {}
+
+        class CountingCommand:
+            lookups = 0
+
+            def __get__(self, instance, owner):
+                self.lookups += 1
+
+                def handler(argv):
+                    calls["argv"] = argv
+
+                return handler
+
+        command = CountingCommand()
+
+        class DispatchProbe(Phykit):
+            probe_command = command
+
+        instance = object.__new__(DispatchProbe)
+        instance._dispatch_command("probe_command", ["x.fa"])
+
+        assert command.lookups == 1
         assert calls["argv"] == ["x.fa"]
 
     def test_init_dispatches_alias(self, monkeypatch):
@@ -163,6 +2721,17 @@ class TestPhykitCliDispatch:
         monkeypatch.setattr("sys.argv", ["phykit", "al", "x.fa"])
         Phykit()
         assert calls == {"command": "al", "argv": ["x.fa"]}
+
+    def test_init_top_level_help_still_uses_full_parser(self, monkeypatch, capsys):
+        monkeypatch.setattr("sys.argv", ["phykit", "-h"])
+
+        with pytest.raises(SystemExit) as exc:
+            Phykit()
+
+        assert exc.value.code == 0
+        out, _ = capsys.readouterr()
+        assert "Alignment-based commands" in out
+        assert "Tree-based commands" in out
 
     def test_init_nameerror_exits_2(self, monkeypatch):
         def fake_run_alias(self, command, argv):

@@ -1,4 +1,7 @@
+import builtins
+import importlib
 import os
+import subprocess
 import sys
 import tempfile
 
@@ -8,9 +11,119 @@ from mock import patch
 from argparse import Namespace
 
 from phykit.errors import PhykitUserError
+import phykit.services.tree.evo_tempo_map as evo_tempo_map_module
 
 TREE_SIMPLE = "tests/sample_files/tree_simple.tre"
 GENE_TREES = "tests/sample_files/gene_trees_simple.nwk"
+
+
+def test_module_import_does_not_import_numpy_biophylo_or_scipy():
+    code = """
+import builtins
+import sys
+module_name = "phykit.services.tree.evo_tempo_map"
+sys.modules.pop(module_name, None)
+sys.modules.pop("pathlib", None)
+original_import = builtins.__import__
+def guarded_import(name, globals=None, locals=None, fromlist=(), level=0):
+    if name == "pathlib" or name.startswith("pathlib."):
+        raise AssertionError("evo_tempo_map import should not import pathlib")
+    return original_import(name, globals, locals, fromlist, level)
+builtins.__import__ = guarded_import
+try:
+    import phykit.services.tree.evo_tempo_map as module
+finally:
+    builtins.__import__ = original_import
+assert callable(module.print_json)
+assert callable(module.Path)
+assert hasattr(module.np, "__getattr__")
+assert hasattr(module.Phylo, "read")
+assert "typing" not in sys.modules
+assert "json" not in sys.modules
+assert "phykit.helpers.json_output" not in sys.modules
+assert "phykit.helpers.plot_config" not in sys.modules
+assert "pathlib" not in sys.modules
+assert "numpy" not in sys.modules
+assert "Bio.Phylo" not in sys.modules
+assert "scipy.stats" not in sys.modules
+"""
+    subprocess.run([sys.executable, "-c", code], check=True)
+
+
+def test_module_import_does_not_import_scipy_stats(monkeypatch):
+    module_name = "phykit.services.tree.evo_tempo_map"
+    previous = sys.modules.pop(module_name, None)
+    original_import = builtins.__import__
+
+    def guarded_import(name, globals=None, locals=None, fromlist=(), level=0):
+        if name == "scipy.stats" or name.startswith("scipy.stats."):
+            raise AssertionError(
+                "evo_tempo_map module import should not import scipy.stats"
+            )
+        return original_import(name, globals, locals, fromlist, level)
+
+    monkeypatch.setattr(builtins, "__import__", guarded_import)
+    try:
+        importlib.import_module(module_name)
+    finally:
+        imported = sys.modules.pop(module_name, None)
+        if previous is not None:
+            sys.modules[module_name] = previous
+        parent_name, _, child_name = module_name.rpartition(".")
+        parent = sys.modules.get(parent_name)
+        if parent is not None:
+            if previous is not None:
+                setattr(parent, child_name, previous)
+            elif getattr(parent, child_name, None) is imported:
+                delattr(parent, child_name)
+
+
+def test_lazy_numpy_caches_resolved_attributes():
+    lazy_np = evo_tempo_map_module._LazyNumpy()
+
+    first_median = lazy_np.median
+    second_median = lazy_np.median
+
+    assert first_median is second_median
+    assert lazy_np.__dict__["median"] is first_median
+    assert lazy_np._module is not None
+
+
+def test_lazy_phylo_caches_resolved_read(monkeypatch):
+    from Bio import Phylo
+
+    calls = []
+
+    def cached_read(*args, **kwargs):
+        calls.append((args, kwargs))
+        return "cached"
+
+    def uncached_read(*_args, **_kwargs):
+        return "uncached"
+
+    lazy_phylo = evo_tempo_map_module._LazyPhylo()
+    monkeypatch.setattr(Phylo, "read", cached_read)
+
+    assert lazy_phylo.read("tree", "newick") == "cached"
+
+    monkeypatch.setattr(Phylo, "read", uncached_read)
+
+    assert lazy_phylo.read("tree2", "newick") == "cached"
+    assert lazy_phylo.__dict__["read"] is cached_read
+    assert calls == [(("tree", "newick"), {}), (("tree2", "newick"), {})]
+
+
+def test_sample_std_uses_explicit_variance_loop(monkeypatch):
+    values = [1.0, 2.0, 4.0, 8.0]
+    mean = sum(values) / len(values)
+    expected = float(np.std(values, ddof=1))
+
+    def fail_sum(*_args, **_kwargs):
+        raise AssertionError("sample standard deviation should avoid generator sum")
+
+    monkeypatch.setattr(builtins, "sum", fail_sum)
+
+    assert evo_tempo_map_module._sample_std(values, mean) == pytest.approx(expected)
 
 
 class TestProcessArgs:
@@ -70,6 +183,27 @@ class TestProcessArgs:
         assert svc.plot_output == "/tmp/test.png"
 
 
+class TestCanonicalSplit:
+    def test_equal_size_returns_lexicographically_smaller_side(self):
+        from phykit.services.tree.evo_tempo_map import EvoTempoMap
+
+        all_taxa = frozenset({"A", "B", "C", "D"})
+
+        assert (
+            EvoTempoMap._canonical_split(frozenset({"C", "D"}), all_taxa)
+            == frozenset({"A", "B"})
+        )
+        assert (
+            EvoTempoMap._canonical_split(frozenset({"A", "B"}), all_taxa)
+            == frozenset({"A", "B"})
+        )
+
+    def test_empty_split_still_canonicalizes_to_empty_set(self):
+        from phykit.services.tree.evo_tempo_map import EvoTempoMap
+
+        assert EvoTempoMap._canonical_split(frozenset(), frozenset()) == frozenset()
+
+
 class TestParseGeneTrees:
     def test_parses_multi_newick(self):
         from phykit.services.tree.evo_tempo_map import EvoTempoMap
@@ -84,6 +218,74 @@ class TestParseGeneTrees:
         for gt in trees:
             tips = [t.name for t in gt.get_terminals()]
             assert len(tips) == 8
+
+    def test_parse_gene_trees_skips_comments_blanks_and_whitespace(self, tmp_path):
+        from phykit.services.tree.evo_tempo_map import EvoTempoMap
+
+        gene_trees = tmp_path / "gene_trees.nwk"
+        gene_trees.write_text(
+            "   # ignored\n\n  (A:1.0,B:2.0,C:3.0);  \n\t# also ignored\n"
+        )
+        args = Namespace(
+            tree=TREE_SIMPLE, gene_trees=str(gene_trees),
+            verbose=False, json=False, plot_output=None,
+        )
+        svc = EvoTempoMap(args)
+
+        trees = svc._parse_gene_trees(str(gene_trees))
+
+        assert len(trees) == 1
+
+    def test_parse_gene_tree_path_list_avoids_per_row_path_objects(
+        self, tmp_path, monkeypatch
+    ):
+        import phykit.services.tree.evo_tempo_map as module
+        from pathlib import Path
+        from phykit.services.tree.evo_tempo_map import EvoTempoMap
+
+        (tmp_path / "one.nwk").write_text("(A:1,B:1);\n")
+        (tmp_path / "two.nwk").write_text("(A:1,C:1);\n")
+        gene_trees = tmp_path / "gene_tree_paths.txt"
+        gene_trees.write_text("one.nwk\ntwo.nwk\n")
+        parent_joins = 0
+
+        class CountingParent:
+            def __init__(self, path):
+                self._path = path
+
+            def __str__(self):
+                return str(self._path)
+
+            def __truediv__(self, other):
+                nonlocal parent_joins
+                parent_joins += 1
+                return self._path / other
+
+        class CountingPath:
+            def __init__(self, path):
+                self._path = Path(path)
+
+            @property
+            def parent(self):
+                return CountingParent(self._path.parent)
+
+            def open(self, *args, **kwargs):
+                return self._path.open(*args, **kwargs)
+
+        monkeypatch.setattr(module, "Path", CountingPath)
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            gene_trees=str(gene_trees),
+            verbose=False,
+            json=False,
+            plot_output=None,
+        )
+        svc = EvoTempoMap(args)
+
+        trees = svc._parse_gene_trees(str(gene_trees))
+
+        assert len(trees) == 2
+        assert parent_joins == 0
 
     def test_file_not_found_error(self):
         from phykit.services.tree.evo_tempo_map import EvoTempoMap
@@ -116,6 +318,35 @@ class TestParseGeneTrees:
             assert "branch lengths" in excinfo.value.messages[1]
         finally:
             os.unlink(tmp_path)
+
+    def test_validates_branch_lengths_with_direct_preorder(self, monkeypatch):
+        from Bio import Phylo
+        from Bio.Phylo.BaseTree import TreeMixin
+        from io import StringIO
+        from phykit.services.tree.evo_tempo_map import EvoTempoMap
+
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            gene_trees="unused.nwk",
+            verbose=False,
+            json=False,
+            plot_output=None,
+        )
+        svc = EvoTempoMap(args)
+        trees = [
+            Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick"),
+            Phylo.read(StringIO("((A:2,C:2):2,(B:2,D:2):2);"), "newick"),
+        ]
+
+        def fail_find_clades(*_args, **_kwargs):
+            raise AssertionError(
+                "standard gene-tree validation should use direct preorder"
+            )
+
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_find_clades)
+        monkeypatch.setattr(svc, "_parse_gene_trees", lambda _path: trees)
+
+        assert svc._parse_and_validate_gene_trees() == trees
 
     def test_requires_at_least_2_gene_trees(self):
         from phykit.services.tree.evo_tempo_map import EvoTempoMap
@@ -187,6 +418,218 @@ class TestClassifyGeneTrees:
                 assert bl > 0
             for bl in data["discordant_lengths"]:
                 assert bl > 0
+
+    def test_cached_clade_taxa_paths_do_not_call_get_terminals(self, svc, monkeypatch):
+        from Bio import Phylo
+        from Bio.Phylo.BaseTree import TreeMixin
+        from io import StringIO
+
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        all_taxa = frozenset({"A", "B", "C", "D"})
+        parent_map = svc._build_parent_map(tree)
+        clade_taxa = svc._collect_clade_taxa(tree)
+        node = tree.root.clades[0]
+
+        def fail_get_terminals(*args, **kwargs):
+            raise AssertionError("cached clade taxa should be used")
+
+        monkeypatch.setattr(TreeMixin, "get_terminals", fail_get_terminals)
+
+        groups = svc._get_four_groups(tree, node, parent_map, all_taxa, clade_taxa)
+        assert groups == (
+            frozenset({"A"}),
+            frozenset({"B"}),
+            frozenset({"C", "D"}),
+            frozenset(),
+        )
+
+        splits = svc._extract_bipartitions_with_lengths(tree, all_taxa, clade_taxa)
+        assert frozenset({"A", "B"}) in splits
+
+    def test_collect_clade_taxa_binary_nodes_avoid_temp_set(self, svc, monkeypatch):
+        from Bio import Phylo
+        from io import StringIO
+
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+
+        def fail_set(*_args, **_kwargs):
+            raise AssertionError("binary clade taxa should use direct unions")
+
+        monkeypatch.setattr(builtins, "set", fail_set)
+
+        clade_taxa = svc._collect_clade_taxa(tree)
+
+        assert clade_taxa[id(tree.root)] == frozenset(("A", "B", "C", "D"))
+        assert clade_taxa[id(tree.root.clades[0])] == frozenset(("A", "B"))
+        assert clade_taxa[id(tree.root.clades[1])] == frozenset(("C", "D"))
+
+    def test_get_four_groups_merges_multifurcation_extras(self, svc, monkeypatch):
+        from Bio import Phylo
+        from Bio.Phylo.BaseTree import TreeMixin
+        from io import StringIO
+
+        tree = Phylo.read(
+            StringIO("((A:1,B:1,C:1,D:1):1,(E:1,F:1,G:1,H:1):1);"),
+            "newick",
+        )
+        all_taxa = frozenset({"A", "B", "C", "D", "E", "F", "G", "H"})
+        parent_map = svc._build_parent_map(tree)
+        clade_taxa = svc._collect_clade_taxa(tree)
+        node = tree.root.clades[0]
+
+        def fail_get_terminals(*args, **kwargs):
+            raise AssertionError("cached clade taxa should be used")
+
+        monkeypatch.setattr(TreeMixin, "get_terminals", fail_get_terminals)
+
+        groups = svc._get_four_groups(tree, node, parent_map, all_taxa, clade_taxa)
+        assert groups == (
+            frozenset({"A"}),
+            frozenset({"B", "C", "D"}),
+            frozenset({"E", "F", "G", "H"}),
+            frozenset(),
+        )
+
+    def test_build_parent_map_handles_mixed_child_counts(self, svc, monkeypatch):
+        from Bio import Phylo
+        from Bio.Phylo.BaseTree import TreeMixin
+        from io import StringIO
+
+        tree = Phylo.read(
+            StringIO("(A:1,(B:1,C:1):1,(D:1,E:1,F:1):1);"),
+            "newick",
+        )
+
+        def fail_iter_preorder(*args, **kwargs):
+            raise AssertionError("parent map should build directly")
+
+        def fail_find_clades(*args, **kwargs):
+            raise AssertionError("standard parent map should not use find_clades")
+
+        monkeypatch.setattr(
+            type(svc), "_iter_preorder_clades", staticmethod(fail_iter_preorder)
+        )
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_find_clades)
+
+        parent_map = svc._build_parent_map(tree)
+
+        terminal, binary, trifurcating = tree.root.clades
+        assert id(tree.root) not in parent_map
+        assert parent_map[id(terminal)] is tree.root
+        assert parent_map[id(binary)] is tree.root
+        assert parent_map[id(trifurcating)] is tree.root
+        assert all(parent_map[id(child)] is binary for child in binary.clades)
+        assert all(
+            parent_map[id(child)] is trifurcating for child in trifurcating.clades
+        )
+
+    def test_iter_postorder_clades_matches_biopython_order(self, svc):
+        from Bio import Phylo
+        from io import StringIO
+
+        tree = Phylo.read(
+            StringIO("((A:1,B:2,C:3):4,(D:5,E:6):7,F:8):0;"),
+            "newick",
+        )
+
+        direct = svc._iter_postorder_clades(tree)
+        reference = list(tree.find_clades(order="postorder"))
+
+        assert [id(clade) for clade in direct] == [
+            id(clade) for clade in reference
+        ]
+
+    def test_iter_preorder_clades_preserves_order_without_reversed(self, svc):
+        from Bio.Phylo.BaseTree import Clade, Tree
+
+        class NoReversedList(list):
+            def __reversed__(self):
+                raise AssertionError("preorder helper should not call reversed()")
+
+        left = Clade(name="left")
+        left.clades = NoReversedList([Clade(name="left_a"), Clade(name="left_b")])
+        middle = Clade(name="middle")
+        middle.clades = NoReversedList([Clade(name="middle_a")])
+        right = Clade(name="right")
+        right.clades = NoReversedList()
+        root = Clade(name="root")
+        root.clades = NoReversedList([left, middle, right])
+
+        direct = svc._iter_preorder_clades(Tree(root=root))
+
+        assert [clade.name for clade in direct] == [
+            "root",
+            "left",
+            "left_a",
+            "left_b",
+            "middle",
+            "middle_a",
+            "right",
+        ]
+
+    def test_extract_bipartitions_without_cache_uses_direct_postorder_pass(
+        self, svc, monkeypatch
+    ):
+        from Bio import Phylo
+        from io import StringIO
+
+        tree = Phylo.read(StringIO("((A:1,B:1):2,(C:1,D:1):3);"), "newick")
+        all_taxa = frozenset({"A", "B", "C", "D"})
+
+        def fail_find_clades(*args, **kwargs):
+            raise AssertionError("standard trees should use direct traversal")
+
+        def fail_get_nonterminals(*args, **kwargs):
+            raise AssertionError("no-cache path should not do a second traversal")
+
+        monkeypatch.setattr(tree, "find_clades", fail_find_clades)
+        monkeypatch.setattr(tree, "get_nonterminals", fail_get_nonterminals)
+
+        splits = svc._extract_bipartitions_with_lengths(tree, all_taxa)
+
+        assert splits[frozenset({"A", "B"})] == 3
+
+    def test_extract_bipartitions_without_cache_binary_nodes_avoid_temp_set(
+        self, svc, monkeypatch
+    ):
+        from Bio import Phylo
+        from io import StringIO
+
+        tree = Phylo.read(StringIO("((A:1,B:1):2,(C:1,D:1):3);"), "newick")
+        all_taxa = frozenset(("A", "B", "C", "D"))
+
+        def fail_set(*_args, **_kwargs):
+            raise AssertionError("binary split extraction should use direct unions")
+
+        monkeypatch.setattr(builtins, "set", fail_set)
+
+        splits = svc._extract_bipartitions_with_lengths(tree, all_taxa)
+
+        assert splits[frozenset(("A", "B"))] == 3
+
+    def test_classify_shared_taxa_setup_uses_fast_tip_names(
+        self, svc, monkeypatch
+    ):
+        from Bio import Phylo
+        from Bio.Phylo.BaseTree import TreeMixin
+        from io import StringIO
+
+        species_tree = Phylo.read(
+            StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick"
+        )
+        gene_trees = [
+            Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick"),
+            Phylo.read(StringIO("((A:1,C:1):1,(B:1,D:1):1);"), "newick"),
+        ]
+
+        def fail_get_terminals(*args, **kwargs):
+            raise AssertionError("no-prune setup should use fast terminal names")
+
+        monkeypatch.setattr(TreeMixin, "get_terminals", fail_get_terminals)
+
+        result = svc._classify_gene_trees(species_tree, gene_trees)
+
+        assert result
 
     def test_cross_check_with_concordance_asr_gcf(self, svc):
         """The gCF (fraction concordant) at each branch should match
@@ -269,6 +712,93 @@ class TestStatisticalTests:
         assert "permutation_p" in result
         assert result["mann_whitney_p"] < 0.05
 
+    def test_small_no_tie_mann_whitney_uses_exact_distribution(self, svc):
+        conc = [10.0, 12.0, 11.0, 13.0, 10.5]
+        disc = [5.0, 6.0, 4.5, 5.5]
+        result = svc._test_branch(conc, disc)
+        assert result["mann_whitney_U"] == 20.0
+        assert result["mann_whitney_p"] == pytest.approx(0.015873015873015872)
+
+    def test_exact_mann_whitney_reuses_cumulative_distribution(self, monkeypatch):
+        evo_tempo_map_module._MANN_WHITNEY_EXACT_CUMULATIVE.clear()
+        expected = evo_tempo_map_module._mannwhitneyu_no_ties(
+            [10.0, 12.0, 11.0, 13.0, 10.5],
+            [5.0, 6.0, 4.5, 5.5],
+        )
+
+        def fail_counts(*_args, **_kwargs):
+            raise AssertionError("repeated exact Mann-Whitney tests should use cache")
+
+        monkeypatch.setattr(
+            evo_tempo_map_module,
+            "_mann_whitney_exact_counts",
+            fail_counts,
+        )
+
+        assert evo_tempo_map_module._mannwhitneyu_no_ties(
+            [10.0, 12.0, 11.0, 13.0, 10.5],
+            [5.0, 6.0, 4.5, 5.5],
+        ) == expected
+
+    def test_small_exact_mann_whitney_uses_in_place_rank_scan(self, monkeypatch):
+        def fail_sorted(*_args, **_kwargs):
+            raise AssertionError(
+                "small exact Mann-Whitney should use the single rank scan"
+            )
+
+        monkeypatch.setattr(builtins, "sorted", fail_sorted)
+
+        result = evo_tempo_map_module._mannwhitneyu_no_ties(
+            [10.0, 12.0, 11.0, 13.0, 10.5],
+            [5.0, 6.0, 4.5, 5.5],
+        )
+        assert result is not None
+        assert result[0] == 20.0
+        assert result[1] == pytest.approx(0.015873015873015872)
+        assert (
+            evo_tempo_map_module._mannwhitneyu_no_ties([1.0, 1.0], [2.0, 3.0])
+            is None
+        )
+
+    def test_small_no_tie_mann_whitney_does_not_import_scipy_stats(self):
+        code = """
+import sys
+from phykit.services.tree.evo_tempo_map import EvoTempoMap
+
+svc = EvoTempoMap.__new__(EvoTempoMap)
+result = svc._test_branch(
+    [10.0, 12.0, 11.0, 13.0, 10.5],
+    [5.0, 6.0, 4.5, 5.5],
+)
+assert result["mann_whitney_U"] == 20.0
+assert round(result["mann_whitney_p"], 12) == round(0.015873015873015872, 12)
+assert "scipy.stats" not in sys.modules
+"""
+        subprocess.run([sys.executable, "-c", code], check=True)
+
+    def test_larger_no_tie_mann_whitney_uses_asymptotic_distribution(self, svc):
+        conc = [1.0, 3.0, 5.0, 7.0, 9.0, 11.0, 13.0, 15.0, 17.0, 19.0]
+        disc = [2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0]
+        result = svc._test_branch(conc, disc)
+        assert result["mann_whitney_U"] == 45.0
+        assert result["mann_whitney_p"] == pytest.approx(0.7337299956962472)
+
+    def test_larger_no_tie_mann_whitney_does_not_import_scipy_stats(self):
+        code = """
+import sys
+from phykit.services.tree.evo_tempo_map import EvoTempoMap
+
+svc = EvoTempoMap.__new__(EvoTempoMap)
+result = svc._test_branch(
+    [1.0, 3.0, 5.0, 7.0, 9.0, 11.0, 13.0, 15.0, 17.0, 19.0],
+    [2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0],
+)
+assert result["mann_whitney_U"] == 45.0
+assert round(result["mann_whitney_p"], 12) == round(0.7337299956962472, 12)
+assert "scipy.stats" not in sys.modules
+"""
+        subprocess.run([sys.executable, "-c", code], check=True)
+
     def test_permutation_p_between_0_and_1(self, svc):
         conc = [10.0, 12.0, 11.0, 13.0, 10.5]
         disc = [5.0, 6.0, 4.5, 5.5]
@@ -296,6 +826,22 @@ class TestStatisticalTests:
         result = svc._test_branch(conc, disc)
         assert result["mann_whitney_p"] is None
         assert result["permutation_p"] is None
+
+    def test_insufficient_data_does_not_import_numpy_or_scipy(self):
+        code = """
+import sys
+from phykit.services.tree.evo_tempo_map import EvoTempoMap
+
+svc = EvoTempoMap.__new__(EvoTempoMap)
+result = svc._test_branch([10.0], [5.0])
+assert result["concordant_mean"] == 10.0
+assert result["discordant_mean"] == 5.0
+assert result["mann_whitney_p"] is None
+assert result["permutation_p"] is None
+assert "numpy" not in sys.modules
+assert "scipy" not in sys.modules
+"""
+        subprocess.run([sys.executable, "-c", code], check=True)
 
     def test_summary_stats_correct(self, svc):
         conc = [10.0, 20.0, 30.0]
@@ -325,6 +871,67 @@ class TestFDRCorrection:
     def test_fdr_single_value(self):
         from phykit.services.tree.evo_tempo_map import EvoTempoMap
         assert EvoTempoMap._fdr([0.05]) == [0.05]
+
+    def test_fdr_matches_scalar_reference_with_ties(self):
+        from phykit.services.tree.evo_tempo_map import EvoTempoMap
+        p_values = [0.20, 0.01, 0.01, 0.50, 0.03, 0.80, 0.03]
+        indexed = sorted(enumerate(p_values), key=lambda x: x[1])
+        expected = [0.0] * len(p_values)
+        previous = 1.0
+        for rank_minus_1 in range(len(p_values) - 1, -1, -1):
+            original_idx, p_value = indexed[rank_minus_1]
+            rank = rank_minus_1 + 1
+            adjusted = min(p_value * len(p_values) / rank, previous)
+            adjusted = min(adjusted, 1.0)
+            expected[original_idx] = adjusted
+            previous = adjusted
+
+        assert EvoTempoMap._fdr(p_values) == pytest.approx(expected)
+
+    def test_medium_fdr_matches_scalar_reference(self):
+        from phykit.services.tree.evo_tempo_map import EvoTempoMap
+
+        p_values = [((idx * 37) % 101) / 1000 for idx in range(32)]
+        indexed = sorted(enumerate(p_values), key=lambda x: x[1])
+        expected = [0.0] * len(p_values)
+        previous = 1.0
+        for rank_minus_1 in range(len(p_values) - 1, -1, -1):
+            original_idx, p_value = indexed[rank_minus_1]
+            rank = rank_minus_1 + 1
+            adjusted = min(p_value * len(p_values) / rank, previous)
+            adjusted = min(adjusted, 1.0)
+            expected[original_idx] = adjusted
+            previous = adjusted
+
+        assert EvoTempoMap._fdr(p_values) == pytest.approx(expected)
+
+    def test_vector_fdr_caps_adjusted_values(self):
+        from phykit.services.tree.evo_tempo_map import EvoTempoMap
+
+        p_values = [1.0 if idx % 5 else 0.001 * (idx + 1) for idx in range(64)]
+        indexed = sorted(enumerate(p_values), key=lambda x: x[1])
+        expected = [0.0] * len(p_values)
+        previous = 1.0
+        for rank_minus_1 in range(len(p_values) - 1, -1, -1):
+            original_idx, p_value = indexed[rank_minus_1]
+            rank = rank_minus_1 + 1
+            adjusted = min(p_value * len(p_values) / rank, previous)
+            adjusted = min(adjusted, 1.0)
+            expected[original_idx] = adjusted
+            previous = adjusted
+
+        assert EvoTempoMap._fdr(p_values) == pytest.approx(expected)
+        assert max(expected) == 1.0
+
+    def test_small_fdr_does_not_import_numpy(self):
+        code = """
+import sys
+from phykit.services.tree.evo_tempo_map import EvoTempoMap
+corrected = EvoTempoMap._fdr([0.20, 0.01, 0.01, 0.50, 0.03, 0.80, 0.03])
+assert [round(value, 10) for value in corrected] == [0.28, 0.035, 0.035, 0.5833333333, 0.0525, 0.8, 0.0525]
+assert "numpy" not in sys.modules
+"""
+        subprocess.run([sys.executable, "-c", code], check=True)
 
     def test_fdr_matches_relative_rate_test(self):
         """Cross-check: our FDR should match relative_rate_test._fdr."""
@@ -358,6 +965,21 @@ class TestGlobalTreeness:
                 f"Treeness mismatch: expected {expected}, got {actual}"
             )
 
+    def test_treeness_zero_length_returns_zero(self, svc):
+        from Bio.Phylo.Newick import Clade, Tree
+
+        tree = Tree(
+            root=Clade(
+                branch_length=0.0,
+                clades=[
+                    Clade(branch_length=0.0, name="a"),
+                    Clade(branch_length=0.0, name="b"),
+                ],
+            )
+        )
+
+        assert svc._compute_treeness(tree) == 0.0
+
     def test_global_treeness_returns_structure(self, svc):
         species_tree = svc.read_tree_file()
         gene_trees = svc._parse_gene_trees(GENE_TREES)
@@ -375,6 +997,61 @@ class TestGlobalTreeness:
         assert result["treeness_concordant"]["n"] == 3
         assert result["treeness_discordant"]["n"] == 0
         assert result["treeness_U_p"] is None  # Can't test with 0 discordant
+
+    def test_all_concordant_treeness_avoids_numpy_and_mann_whitney(
+        self, svc, monkeypatch
+    ):
+        import phykit.services.tree.evo_tempo_map as etm_module
+
+        class FailingNumpy:
+            def __getattr__(self, name):
+                raise AssertionError("treeness summaries should not use NumPy")
+
+        def fail_mann_whitney(*args, **kwargs):
+            raise AssertionError("single-group treeness should not run Mann-Whitney")
+
+        monkeypatch.setattr(etm_module, "np", FailingNumpy())
+        monkeypatch.setattr(etm_module, "_mannwhitneyu", fail_mann_whitney)
+
+        species_tree = svc.read_tree_file()
+        identical_trees = [svc.read_tree_file() for _ in range(3)]
+        result = svc._compute_global_treeness(species_tree, identical_trees)
+
+        assert result["treeness_concordant"]["n"] == 3
+        assert result["treeness_discordant"]["n"] == 0
+        assert result["treeness_U_p"] is None
+
+    def test_global_treeness_uses_cached_clade_taxa(self, svc, monkeypatch):
+        from io import StringIO
+
+        from Bio import Phylo
+        from Bio.Phylo.BaseTree import TreeMixin
+
+        species_tree = Phylo.read(
+            StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick"
+        )
+        gene_trees = [
+            Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick"),
+            Phylo.read(StringIO("((A:1,C:1):1,(B:1,D:1):1);"), "newick"),
+        ]
+
+        def fail_get_terminals(*args, **kwargs):
+            raise AssertionError("cached clade taxa should be used")
+
+        def fail_find_clades(*args, **kwargs):
+            raise AssertionError("standard trees should use direct traversal")
+
+        def fail_get_nonterminals(*args, **kwargs):
+            raise AssertionError("cached split sets should use direct traversal")
+
+        monkeypatch.setattr(TreeMixin, "get_terminals", fail_get_terminals)
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_find_clades)
+        monkeypatch.setattr(TreeMixin, "get_nonterminals", fail_get_nonterminals)
+
+        result = svc._compute_global_treeness(species_tree, gene_trees)
+
+        assert result["treeness_concordant"]["n"] == 1
+        assert result["treeness_discordant"]["n"] == 1
 
     def test_concordant_plus_discordant_equals_total(self, svc):
         species_tree = svc.read_tree_file()
@@ -415,6 +1092,103 @@ class TestPlot:
             if os.path.exists(tmp_path):
                 os.unlink(tmp_path)
 
+    def test_plot_batches_strip_points(self, monkeypatch, tmp_path):
+        pytest.importorskip("matplotlib")
+        import matplotlib.axes
+
+        from phykit.services.tree.evo_tempo_map import EvoTempoMap
+
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            gene_trees=GENE_TREES,
+            verbose=False,
+            json=False,
+            plot_output=str(tmp_path / "tempo.png"),
+            no_title=True,
+        )
+        svc = EvoTempoMap(args)
+        branch_results = [
+            {
+                "split": [f"T{i}", f"U{i}"],
+                "_concordant_lengths": [1.0 + i, 1.1 + i],
+                "_discordant_lengths": [1.3 + i],
+                "fdr_p": 0.01 if i == 0 else 0.5,
+            }
+            for i in range(4)
+        ]
+
+        original_text = matplotlib.axes.Axes.text
+        original_scatter = matplotlib.axes.Axes.scatter
+        scatter_calls = []
+
+        def fail_star_text(self, *args, **kwargs):
+            if len(args) >= 3 and args[2] == "*":
+                raise AssertionError("significance stars should be batched")
+            return original_text(self, *args, **kwargs)
+
+        def capture_scatter(self, x, y, *args, **kwargs):
+            scatter_calls.append((x, y, kwargs))
+            return original_scatter(self, x, y, *args, **kwargs)
+
+        monkeypatch.setattr(matplotlib.axes.Axes, "text", fail_star_text)
+        monkeypatch.setattr(matplotlib.axes.Axes, "scatter", capture_scatter)
+
+        svc._plot(branch_results, str(tmp_path / "tempo.png"))
+
+        strip_calls = [
+            call for call in scatter_calls
+            if call[2].get("color") in {"#4C72B0", "#DD8452"}
+        ]
+        star_calls = [
+            call for call in scatter_calls
+            if call[2].get("marker") == "$*$"
+        ]
+        assert len(strip_calls) == 2
+        conc_call, disc_call = strip_calls
+        assert len(conc_call[0]) == len(conc_call[1]) == 8
+        assert len(disc_call[0]) == len(disc_call[1]) == 4
+        assert conc_call[2]["color"] == "#4C72B0"
+        assert disc_call[2]["color"] == "#DD8452"
+        assert len(star_calls) == 1
+        assert len(star_calls[0][0]) == len(star_calls[0][1]) == 1
+        assert (tmp_path / "tempo.png").exists()
+
+    def test_plot_skips_redundant_tight_layout(self, monkeypatch, tmp_path):
+        pytest.importorskip("matplotlib")
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot  # noqa: F401
+        from matplotlib.figure import Figure
+
+        from phykit.services.tree.evo_tempo_map import EvoTempoMap
+
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            gene_trees=GENE_TREES,
+            verbose=False,
+            json=False,
+            plot_output=str(tmp_path / "tempo.png"),
+        )
+        svc = EvoTempoMap(args)
+        branch_results = [
+            {
+                "split": [f"T{i}", f"U{i}"],
+                "_concordant_lengths": [1.0 + i, 1.1 + i],
+                "_discordant_lengths": [1.3 + i],
+                "fdr_p": 0.01 if i == 0 else 0.5,
+            }
+            for i in range(4)
+        ]
+
+        def fail_tight_layout(self, *args, **kwargs):
+            raise AssertionError("savefig bbox should handle tight cropping")
+
+        monkeypatch.setattr(Figure, "tight_layout", fail_tight_layout)
+
+        svc._plot(branch_results, str(tmp_path / "tempo.png"))
+
+        assert (tmp_path / "tempo.png").exists()
+
     def test_plot_not_created_without_flag(self):
         from phykit.services.tree.evo_tempo_map import EvoTempoMap
 
@@ -427,6 +1201,65 @@ class TestPlot:
 
 
 class TestRun:
+    def test_run_reuses_unmodified_species_tree(self):
+        from phykit.services.tree.evo_tempo_map import EvoTempoMap
+
+        args = Namespace(
+            tree=TREE_SIMPLE, gene_trees=GENE_TREES,
+            verbose=False, json=False, plot_output=None,
+        )
+        svc = EvoTempoMap(args)
+        species_tree = object()
+        gene_trees = [object()] * 5
+        classification = {
+            "A,B": {
+                "split": ["A", "B"],
+                "n_concordant": 3,
+                "n_discordant": 2,
+                "concordant_lengths": [1.0, 1.1],
+                "discordant_lengths": [1.3, 1.4],
+            }
+        }
+        global_stats = {
+            "treeness_concordant": {"n": 3, "mean": 0.5, "median": 0.5},
+            "treeness_discordant": {"n": 2, "mean": 0.4, "median": 0.4},
+            "mann_whitney_p": None,
+        }
+        branch_stats = {
+            "concordant_mean": None,
+            "concordant_median": None,
+            "concordant_std": None,
+            "discordant_mean": None,
+            "discordant_median": None,
+            "discordant_std": None,
+            "mann_whitney_U": None,
+            "mann_whitney_p": None,
+            "permutation_p": None,
+        }
+
+        with patch.object(
+            svc,
+            "read_tree_file",
+            side_effect=AssertionError("run should not copy the cached species tree"),
+        ), patch.object(
+            svc, "read_tree_file_unmodified", return_value=species_tree
+        ) as read_unmodified, patch.object(
+            svc, "_parse_and_validate_gene_trees", return_value=gene_trees
+        ), patch.object(
+            svc, "_classify_gene_trees", return_value=classification
+        ) as classify, patch.object(
+            svc, "_compute_global_treeness", return_value=global_stats
+        ) as global_treeness, patch.object(
+            svc, "_test_branch", return_value=branch_stats
+        ), patch.object(
+            svc, "_output_text"
+        ):
+            svc.run()
+
+        read_unmodified.assert_called_once_with()
+        classify.assert_called_once_with(species_tree, gene_trees)
+        global_treeness.assert_called_once_with(species_tree, gene_trees)
+
     def test_run_text_output(self, capsys):
         from phykit.services.tree.evo_tempo_map import EvoTempoMap
         args = Namespace(
@@ -472,6 +1305,72 @@ class TestRun:
         captured = capsys.readouterr()
         # Verbose should print per-branch raw lengths
         assert "Concordant lengths" in captured.out or "concordant" in captured.out.lower()
+
+    def test_output_text_batches_branch_rows(self):
+        from phykit.services.tree.evo_tempo_map import EvoTempoMap
+        args = Namespace(
+            tree=TREE_SIMPLE, gene_trees=GENE_TREES,
+            verbose=True, json=False, plot_output=None,
+        )
+        svc = EvoTempoMap(args)
+        branch_results = [
+            {
+                "split": ["bear", "raccoon"],
+                "n_concordant": 3,
+                "n_discordant": 2,
+                "concordant_median": 0.4,
+                "discordant_median": 0.7,
+                "mann_whitney_p": 0.125,
+                "permutation_p": 0.25,
+                "fdr_p": 0.5,
+                "_concordant_lengths": [1.0, 2.0],
+                "_discordant_lengths": [3.0],
+            }
+        ]
+        global_stats = {
+            "treeness_concordant": {"median": 0.4, "n": 2},
+            "treeness_discordant": {"median": 0.7, "n": 1},
+            "n_branches_tested": 1,
+            "n_significant_fdr05": 0,
+        }
+
+        with patch("builtins.print") as mocked_print:
+            svc._output_text(branch_results, global_stats)
+
+        mocked_print.assert_called_once()
+        output = mocked_print.call_args.args[0]
+        header = (
+            f"{'branch':<30}"
+            f"{'n_conc':>8}"
+            f"{'n_disc':>8}"
+            f"{'med_conc':>12}"
+            f"{'med_disc':>12}"
+            f"{'U_pval':>12}"
+            f"{'perm_pval':>12}"
+            f"{'fdr_p':>12}"
+        )
+        expected = "\n".join([
+            header,
+            "-" * len(header),
+            (
+                f"{'bear,raccoon':<30}"
+                f"{3:>8}"
+                f"{2:>8}"
+                f"{'0.400000':>12}"
+                f"{'0.700000':>12}"
+                f"{'0.125000':>12}"
+                f"{'0.250000':>12}"
+                f"{'0.500000':>12}"
+            ),
+            "---",
+            "Global treeness: concordant=0.400000 (n=2), discordant=0.700000 (n=1)",
+            "Branches tested: 1, significant (FDR<0.05): 0",
+            "",
+            "Branch: bear,raccoon",
+            "  Concordant lengths: [1.0, 2.0]",
+            "  Discordant lengths: [3.0]",
+        ])
+        assert output == expected
 
 
 class TestCLIIntegration:

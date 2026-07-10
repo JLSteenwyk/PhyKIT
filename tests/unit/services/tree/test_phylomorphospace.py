@@ -1,12 +1,22 @@
 import os
+import subprocess
+import sys
 
 import pytest
 import json
 import numpy as np
 from argparse import Namespace
+from io import StringIO
 from pathlib import Path
 
-from phykit.services.tree.phylomorphospace import Phylomorphospace
+from Bio import Phylo
+from Bio.Phylo.BaseTree import TreeMixin
+
+import phykit.services.tree.phylomorphospace as phylomorphospace_module
+from phykit.services.tree.phylomorphospace import (
+    Phylomorphospace,
+    _root_distance_max,
+)
 from phykit.helpers.trait_parsing import parse_multi_trait_file
 from phykit.errors import PhykitUserError
 
@@ -15,6 +25,37 @@ here = Path(__file__)
 SAMPLE_FILES = here.parent.parent.parent.parent / "sample_files"
 TREE_SIMPLE = str(SAMPLE_FILES / "tree_simple.tre")
 MULTI_TRAITS_FILE = str(SAMPLE_FILES / "tree_simple_multi_traits.tsv")
+
+
+def test_module_import_does_not_import_numpy_or_matplotlib():
+    code = """
+import sys
+import phykit.services.tree.phylomorphospace as module
+
+assert hasattr(module.np, "__getattr__")
+assert callable(module.print_json)
+assert callable(module.parse_multi_trait_file)
+assert callable(module.trait_matrix_from_rows)
+assert "pickle" not in sys.modules
+assert "json" not in sys.modules
+assert "typing" not in sys.modules
+assert "phykit.helpers.json_output" not in sys.modules
+assert "phykit.helpers.plot_config" not in sys.modules
+assert "phykit.helpers.trait_parsing" not in sys.modules
+assert "numpy" not in sys.modules
+assert "matplotlib" not in sys.modules
+assert "matplotlib.pyplot" not in sys.modules
+"""
+    subprocess.run([sys.executable, "-c", code], check=True)
+
+
+def test_lazy_numpy_caches_module_and_attributes():
+    proxy = phylomorphospace_module._LazyNumpy()
+
+    array = proxy.array
+    assert proxy.array is array
+    assert "array" in proxy.__dict__
+    assert proxy._module is not None
 
 
 @pytest.fixture
@@ -94,6 +135,84 @@ class TestProcessArgs:
 
 
 class TestRun:
+    def test_run_uses_unmodified_tree_read(self, mocker):
+        args = Namespace(
+            tree="/some/path/to/file.tre",
+            trait_data="/some/path/to/traits.tsv",
+            trait_x="x",
+            trait_y="y",
+            color_by=None,
+            plot_output="plot.png",
+            json=False,
+        )
+        svc = Phylomorphospace(args)
+        tree = object()
+        mocked_read = mocker.patch.object(
+            Phylomorphospace,
+            "read_tree_file_unmodified",
+            return_value=tree,
+        )
+        mocker.patch.object(
+            Phylomorphospace,
+            "read_tree_file",
+            side_effect=AssertionError("run should not copy cached trees"),
+        )
+        mocked_validate = mocker.patch.object(
+            Phylomorphospace, "validate_tree"
+        )
+        mocker.patch.object(
+            Phylomorphospace,
+            "get_tip_names_from_tree",
+            return_value=["a", "b", "c"],
+        )
+        mocker.patch(
+            "phykit.services.tree.phylomorphospace.parse_multi_trait_file",
+            return_value=(
+                ["x", "y"],
+                {
+                    "a": [1.0, 2.0],
+                    "b": [2.0, 3.0],
+                    "c": [3.0, 4.0],
+                },
+            ),
+        )
+        tree_pruned = object()
+        mocked_reconstruct = mocker.patch.object(
+            Phylomorphospace,
+            "_reconstruct_ancestral_scores",
+            return_value=({}, {}, tree_pruned),
+        )
+        mocked_plot = mocker.patch.object(
+            Phylomorphospace, "_plot_phylomorphospace"
+        )
+        mocker.patch("builtins.print")
+
+        svc.run()
+
+        mocked_read.assert_called_once_with()
+        mocked_validate.assert_called_once_with(
+            tree,
+            min_tips=3,
+            require_branch_lengths=True,
+            context="phylomorphospace",
+        )
+        assert mocked_reconstruct.call_args.args[0] is tree
+        assert mocked_reconstruct.call_args.args[1].tolist() == [
+            [1.0, 2.0],
+            [2.0, 3.0],
+            [3.0, 4.0],
+        ]
+        assert mocked_plot.call_args.args[1].tolist() == [
+            [1.0, 2.0],
+            [2.0, 3.0],
+            [3.0, 4.0],
+        ]
+        assert mocked_plot.call_args.args[8].tolist() == [
+            [1.0, 2.0],
+            [2.0, 3.0],
+            [3.0, 4.0],
+        ]
+
     def test_basic_text_output(self, default_args, tmp_path, capsys):
         default_args.plot_output = str(tmp_path / "test.png")
         svc = Phylomorphospace(default_args)
@@ -152,6 +271,44 @@ class TestRun:
 
 
 class TestPlot:
+    def test_parse_numeric_color_file_uses_fromiter(self, tmp_path, monkeypatch):
+        color_file = tmp_path / "colors.tsv"
+        ordered_names = ["a", "b", "c"]
+        color_file.write_text(
+            "   # ignored\n"
+            "ignored_without_tab\n"
+            "a\t1.5\textra\n"
+            "b\t2.25\textra\n"
+            "c\t3.75\textra\n"
+        )
+        svc = Phylomorphospace(
+            Namespace(
+                tree="unused",
+                trait_data="unused",
+                trait_x="x",
+                trait_y="y",
+                color_by=str(color_file),
+                plot_output=str(tmp_path / "plot.png"),
+                json=False,
+            )
+        )
+
+        def fail_array(*_args, **_kwargs):
+            raise AssertionError("numeric color files should use np.fromiter")
+
+        monkeypatch.setattr(phylomorphospace_module.np, "array", fail_array)
+
+        values, categories, kind = svc._parse_color_by(
+            str(color_file),
+            [],
+            np.empty((3, 0)),
+            ordered_names,
+        )
+
+        assert kind == "continuous"
+        assert categories == []
+        np.testing.assert_allclose(values, [1.5, 2.25, 3.75])
+
     def test_with_color_by_column(self, tmp_path):
         plot_path = str(tmp_path / "color_col.png")
         args = Namespace(
@@ -212,6 +369,49 @@ class TestReconstructAncestralScores:
             "weasel\t-0.30\t0.85\n"
             "dog\t1.18\t1.87\n"
         )
+
+    def test_prune_setup_uses_fast_tip_names_and_shared_prune_helper(self, mocker):
+        class ContainsFailList(list):
+            def __contains__(self, item):
+                raise AssertionError("ordered_names should be converted to a set")
+
+        svc = self._make_svc()
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        tree_copy = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        ordered_names = ContainsFailList(["A", "C", "D"])
+        data = np.array([[0.0, 0.0], [2.0, 2.0], [4.0, 4.0]])
+        spy = mocker.spy(svc, "get_tip_names_from_tree")
+        prune_helper = mocker.spy(svc, "_tips_to_prune_for_ordered_names")
+        fast_copy = mocker.patch.object(svc, "_fast_copy", return_value=tree_copy)
+        prune = mocker.spy(svc, "prune_tree_using_taxa_list")
+
+        _, _, tree_pruned = svc._reconstruct_ancestral_scores(
+            tree, data, ordered_names
+        )
+
+        assert spy.call_count == 1
+        prune_helper.assert_called_once_with(["A", "B", "C", "D"], ordered_names)
+        fast_copy.assert_called_once_with(tree)
+        prune.assert_called_once_with(tree_copy, ["B"])
+        assert {tip.name for tip in tree_pruned.get_terminals()} == {"A", "C", "D"}
+
+    def test_reconstruct_skips_copy_when_all_tips_are_shared(self, mocker):
+        svc = self._make_svc()
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        ordered_names = ["A", "B", "C", "D"]
+        data = np.array([[0.0, 0.0], [1.0, 1.0], [2.0, 2.0], [3.0, 3.0]])
+        fast_copy = mocker.patch.object(
+            svc,
+            "_fast_copy",
+            side_effect=AssertionError("all-shared reconstruction should not copy tree"),
+        )
+
+        _, _, tree_pruned = svc._reconstruct_ancestral_scores(
+            tree, data, ordered_names
+        )
+
+        fast_copy.assert_not_called()
+        assert tree_pruned is tree
 
     def _make_svc(self):
         args = Namespace(
@@ -277,3 +477,193 @@ class TestReconstructAncestralScores:
         for dim in range(2):
             assert root_est[dim] >= data[:, dim].min() - 1.0
             assert root_est[dim] <= data[:, dim].max() + 1.0
+
+    def test_node_distances_fast_path_does_not_call_distance(self, monkeypatch):
+        svc = self._make_svc()
+        tree = Phylo.read(StringIO("((A:1,B:1):1,C:3):0.5;"), "newick")
+        ordered_names = ["A", "B", "C"]
+        data = np.array([[0.0, 0.0], [2.0, 2.0], [4.0, 4.0]])
+
+        def fail_distance(self, *args, **kwargs):
+            raise AssertionError("distance fallback should not be called")
+
+        monkeypatch.setattr(type(tree), "distance", fail_distance)
+        _, node_distances, tree_pruned = svc._reconstruct_ancestral_scores(
+            tree, data, ordered_names
+        )
+
+        assert node_distances[id(tree_pruned.root)] == pytest.approx(0.0)
+        tip_distances = {
+            tip.name: node_distances[id(tip)]
+            for tip in tree_pruned.get_terminals()
+        }
+        assert tip_distances == pytest.approx({"A": 2.0, "B": 2.0, "C": 3.0})
+
+    def test_root_distance_max_scans_values_once(self):
+        class SinglePassValues:
+            def __init__(self, values):
+                self.values = values
+                self.iterations = 0
+
+            def __iter__(self):
+                self.iterations += 1
+                if self.iterations > 1:
+                    raise AssertionError("distances should be scanned once")
+                return iter(self.values)
+
+        values = SinglePassValues([0.0, 2.0, 1.5, 3.0])
+
+        assert _root_distance_max(values) == 3.0
+        assert values.iterations == 1
+        assert _root_distance_max([]) == 1.0
+
+    def test_reconstruct_ancestral_scores_uses_direct_traversal(self, monkeypatch):
+        svc = self._make_svc()
+        tree = Phylo.read(StringIO("((A:1,B:1):1,C:3):0.5;"), "newick")
+        ordered_names = ["A", "B", "C"]
+        data = np.array([[0.0, 0.0], [2.0, 0.0], [4.0, 0.0]])
+
+        def fail_generic_traversal(*_args, **_kwargs):
+            raise AssertionError("generic tree traversal should not be used")
+
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_generic_traversal)
+        monkeypatch.setattr(TreeMixin, "get_terminals", fail_generic_traversal)
+        monkeypatch.setattr(TreeMixin, "depths", fail_generic_traversal)
+        monkeypatch.setattr(type(tree), "distance", fail_generic_traversal)
+
+        node_estimates, node_distances, tree_pruned = (
+            svc._reconstruct_ancestral_scores(tree, data, ordered_names)
+        )
+
+        root = tree_pruned.root
+        left_internal = root.clades[0]
+        tips = {
+            root.clades[0].clades[0].name: root.clades[0].clades[0],
+            root.clades[0].clades[1].name: root.clades[0].clades[1],
+            root.clades[1].name: root.clades[1],
+        }
+
+        np.testing.assert_allclose(node_estimates[id(left_internal)], [1.0, 0.0])
+        np.testing.assert_allclose(node_estimates[id(root)], [2.0, 0.0])
+        assert node_distances[id(root)] == pytest.approx(0.0)
+        assert node_distances[id(tips["A"])] == pytest.approx(2.0)
+        assert node_distances[id(tips["C"])] == pytest.approx(3.0)
+
+    def test_preorder_clades_direct_preserves_order_with_mixed_child_counts(self):
+        class NoReversedList(list):
+            def __reversed__(self):
+                raise AssertionError("direct preorder should push children explicitly")
+
+        class Clade:
+            def __init__(self, name, clades=None):
+                self.name = name
+                self.clades = NoReversedList(clades or [])
+
+        tree = type(
+            "Tree",
+            (),
+            {
+                "root": Clade(
+                    "root",
+                    [
+                        Clade("A"),
+                        Clade("inner", [Clade("B")]),
+                        Clade("poly", [Clade("C"), Clade("D"), Clade("E")]),
+                    ],
+                )
+            },
+        )()
+
+        clades = Phylomorphospace._preorder_clades_direct(tree)
+
+        assert [clade.name for clade in clades] == [
+            "root",
+            "A",
+            "inner",
+            "B",
+            "poly",
+            "C",
+            "D",
+            "E",
+        ]
+
+    def test_plot_phylomorphospace_uses_direct_preorder(self, monkeypatch, tmp_path):
+        pytest.importorskip("matplotlib")
+        svc = self._make_svc()
+        svc.plot_output = str(tmp_path / "phylomorphospace.png")
+        tree = Phylo.read(StringIO("((A:1,B:1):1,C:3):0.5;"), "newick")
+        ordered_names = ["A", "B", "C"]
+        data = np.array([[0.0, 0.0], [2.0, 0.0], [4.0, 0.0]])
+        node_estimates = {}
+        node_distances = {}
+        stack = [(tree.root, 0.0)]
+        while stack:
+            clade, distance = stack.pop()
+            node_estimates[id(clade)] = np.array([distance, distance * 0.5])
+            node_distances[id(clade)] = distance
+            for child in clade.clades:
+                stack.append((child, distance + (child.branch_length or 0.0)))
+
+        def fail_find_clades(*_args, **_kwargs):
+            raise AssertionError("plot branch setup should use direct preorder")
+
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_find_clades)
+
+        svc._plot_phylomorphospace(
+            tree,
+            data,
+            ordered_names,
+            node_estimates,
+            node_distances,
+            "body_mass",
+            "brain_size",
+            ["body_mass", "brain_size"],
+            data,
+        )
+
+        assert Path(svc.plot_output).exists()
+
+    def test_plot_phylomorphospace_skips_redundant_tight_layout(
+        self, monkeypatch, tmp_path
+    ):
+        pytest.importorskip("matplotlib")
+        import matplotlib
+        import matplotlib.figure
+
+        svc = self._make_svc()
+        svc.plot_output = str(tmp_path / "phylomorphospace_no_tight_layout.png")
+        tree = Phylo.read(StringIO("((A:1,B:1):1,C:3):0.5;"), "newick")
+        ordered_names = ["A", "B", "C"]
+        data = np.array([[0.0, 0.0], [2.0, 0.0], [4.0, 0.0]])
+        node_estimates = {}
+        node_distances = {}
+        stack = [(tree.root, 0.0)]
+        while stack:
+            clade, distance = stack.pop()
+            node_estimates[id(clade)] = np.array([distance, distance * 0.5])
+            node_distances[id(clade)] = distance
+            for child in clade.clades:
+                stack.append((child, distance + (child.branch_length or 0.0)))
+
+        def fail_tight_layout(self, *args, **kwargs):
+            raise AssertionError("phylomorphospace should rely on tight savefig")
+
+        monkeypatch.setattr(
+            matplotlib.figure.Figure,
+            "tight_layout",
+            fail_tight_layout,
+        )
+
+        svc._plot_phylomorphospace(
+            tree,
+            data,
+            ordered_names,
+            node_estimates,
+            node_distances,
+            "body_mass",
+            "brain_size",
+            ["body_mass", "brain_size"],
+            data,
+        )
+
+        assert Path(svc.plot_output).exists()

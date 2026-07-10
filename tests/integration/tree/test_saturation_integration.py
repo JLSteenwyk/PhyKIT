@@ -43,18 +43,34 @@ class TestSaturation(object):
 
     @patch("builtins.print")
     def test_saturation_incorrect_tree_path(self, mocked_print):
-
-        with pytest.raises(SystemExit) as pytest_wrapped_e:
-            Phykit()
+        testargs = [
+            "phykit",
+            "saturation",
+            "-t",
+            f"{here.parent.parent.parent}/sample_files/12_YPR191W_Anc_7.548_codon_aln.fasta.clipkit.treefil",
+            "-a",
+            f"{here.parent.parent.parent}/sample_files/12_YPR191W_Anc_7.548_codon_aln.fasta.clipkit",
+        ]
+        with patch.object(sys, "argv", testargs):
+            with pytest.raises(SystemExit) as pytest_wrapped_e:
+                Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2
 
     @patch("builtins.print")
     def test_saturation_incorrect_alignment_path(self, mocked_print):
-
-        with pytest.raises(SystemExit) as pytest_wrapped_e:
-            Phykit()
+        testargs = [
+            "phykit",
+            "saturation",
+            "-t",
+            f"{here.parent.parent.parent}/sample_files/12_YPR191W_Anc_7.548_codon_aln.fasta.clipkit.treefile",
+            "-a",
+            f"{here.parent.parent.parent}/sample_files/12_YPR191W_Anc_7.548_codon_aln.fasta.clipki",
+        ]
+        with patch.object(sys, "argv", testargs):
+            with pytest.raises(SystemExit) as pytest_wrapped_e:
+                Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2
@@ -72,7 +88,7 @@ class TestSaturation(object):
         ]
         with patch.object(sys, "argv", testargs):
             Phykit()
-        assert mocked_print.mock_calls == [
+        expected_calls = [
             call("Kpol\tKpha\t0.3864\t0.6176"),
             call("Kpol\tSnag\t0.4346\t0.7482"),
             call("Kpol\tSuva\t0.4052\t0.6945"),
@@ -139,6 +155,9 @@ class TestSaturation(object):
             call("Sdai\tScas\t0.3644\t0.5357"),
             call("Sdai\tCgla\t0.4325\t0.7045"),
             call("Scas\tCgla\t0.4482\t0.7706"),
+        ]
+        assert mocked_print.mock_calls == [
+            call("\n".join(c.args[0] for c in expected_calls))
         ]
 
     @patch("builtins.print")

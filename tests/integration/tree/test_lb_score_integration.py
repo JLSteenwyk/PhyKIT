@@ -33,11 +33,12 @@ class TestLBScore(object):
             dict(label="variance", value=1243.7527),
         ]
 
-        for print_call, expected_call in zip(mocked_print.call_args_list, expected):
-            print_call_args, _ = print_call
-            [print_label, print_value] = print_call_args[0].split(': ')
+        assert len(mocked_print.call_args_list) == 1
+        summary_lines = mocked_print.call_args.args[0].splitlines()
+        for summary_line, expected_call in zip(summary_lines, expected):
+            [print_label, print_value] = summary_line.split(": ")
             assert print_label == expected_call["label"]
-            assert isclose(float(print_value), expected_call["value"], rel_tol = 0.0001)
+            assert isclose(float(print_value), expected_call["value"], rel_tol=0.0001)
 
     @patch("builtins.print")
     def test_lb_score1(self, mocked_print):
@@ -49,16 +50,19 @@ class TestLBScore(object):
         with patch.object(sys, "argv", testargs):
             Phykit()
 
-        assert mocked_print.mock_calls == [
-            call("mean: -10.0"),
-            call("median: -12.7812"),
-            call("25th percentile: -21.7398"),
-            call("75th percentile: 1.082"),
-            call("minimum: -22.4599"),
-            call("maximum: 6.964"),
-            call("standard deviation: 12.7705"),
-            call("variance: 163.086")
-        ]
+        expected = "\n".join(
+            [
+                "mean: -10.0",
+                "median: -12.7812",
+                "25th percentile: -21.7398",
+                "75th percentile: 1.082",
+                "minimum: -22.4599",
+                "maximum: 6.964",
+                "standard deviation: 12.7705",
+                "variance: 163.086",
+            ]
+        )
+        assert mocked_print.mock_calls == [call(expected)]
 
     @patch("builtins.print")
     def test_lb_score_alias0(self, mocked_print):
@@ -70,16 +74,19 @@ class TestLBScore(object):
         with patch.object(sys, "argv", testargs):
             Phykit()
 
-        assert mocked_print.mock_calls == [
-            call("mean: -10.0"),
-            call("median: -12.7812"),
-            call("25th percentile: -21.7398"),
-            call("75th percentile: 1.082"),
-            call("minimum: -22.4599"),
-            call("maximum: 6.964"),
-            call("standard deviation: 12.7705"),
-            call("variance: 163.086")
-        ]
+        expected = "\n".join(
+            [
+                "mean: -10.0",
+                "median: -12.7812",
+                "25th percentile: -21.7398",
+                "75th percentile: 1.082",
+                "minimum: -22.4599",
+                "maximum: 6.964",
+                "standard deviation: 12.7705",
+                "variance: 163.086",
+            ]
+        )
+        assert mocked_print.mock_calls == [call(expected)]
 
     @patch("builtins.print")
     def test_lb_score_alias1(self, mocked_print):
@@ -91,16 +98,19 @@ class TestLBScore(object):
         with patch.object(sys, "argv", testargs):
             Phykit()
 
-        assert mocked_print.mock_calls == [
-            call("mean: -10.0"),
-            call("median: -12.7812"),
-            call("25th percentile: -21.7398"),
-            call("75th percentile: 1.082"),
-            call("minimum: -22.4599"),
-            call("maximum: 6.964"),
-            call("standard deviation: 12.7705"),
-            call("variance: 163.086")
-        ]
+        expected = "\n".join(
+            [
+                "mean: -10.0",
+                "median: -12.7812",
+                "25th percentile: -21.7398",
+                "75th percentile: 1.082",
+                "minimum: -22.4599",
+                "maximum: 6.964",
+                "standard deviation: 12.7705",
+                "variance: 163.086",
+            ]
+        )
+        assert mocked_print.mock_calls == [call(expected)]
 
     @patch("builtins.print")
     def test_lb_score_verbose(self, mocked_print):
@@ -125,17 +135,17 @@ class TestLBScore(object):
         with patch.object(sys, "argv", testargs):
             Phykit()
 
-        assert mocked_print.mock_calls == [
-            call(expected_result0),
-            call(expected_result1),
-            call(expected_result2),
-            call(expected_result3),
-            call(expected_result4),
-            call(expected_result5),
-            call(expected_result6),
-            call(expected_result7),
-            call(expected_result8),
-            call(expected_result9),
+        assert mocked_print.call_args.args[0].splitlines() == [
+            expected_result0,
+            expected_result1,
+            expected_result2,
+            expected_result3,
+            expected_result4,
+            expected_result5,
+            expected_result6,
+            expected_result7,
+            expected_result8,
+            expected_result9,
         ]
 
     @patch("builtins.print")

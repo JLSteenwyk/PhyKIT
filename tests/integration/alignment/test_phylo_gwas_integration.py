@@ -191,6 +191,65 @@ class TestPhyloGwasIntegration:
         assert payload["n_taxa"] == 8
         assert payload["phenotype_type"] == "categorical"
 
+    def test_multigroup_categorical_avoids_scipy_special(
+        self, tmp_path, monkeypatch
+    ):
+        seqs = {
+            "sample_1": "AAAA",
+            "sample_2": "AAAA",
+            "sample_3": "AATT",
+            "sample_4": "AATT",
+            "sample_5": "TTTT",
+            "sample_6": "TTTT",
+        }
+        phenotypes = {
+            "sample_1": "group_a",
+            "sample_2": "group_a",
+            "sample_3": "group_b",
+            "sample_4": "group_b",
+            "sample_5": "group_c",
+            "sample_6": "group_c",
+        }
+        aln_path = str(tmp_path / "test.fa")
+        pheno_path = str(tmp_path / "pheno.tsv")
+        output_path = str(tmp_path / "manhattan.png")
+        _write_alignment(aln_path, seqs)
+        _write_phenotype(pheno_path, phenotypes)
+
+        original_import = __import__
+
+        def guarded_import(name, globals=None, locals=None, fromlist=(), level=0):
+            if name == "scipy.special" or name.startswith("scipy.special."):
+                raise AssertionError(
+                    "ordinary multi-group GWAS should not import scipy.special"
+                )
+            return original_import(name, globals, locals, fromlist, level)
+
+        monkeypatch.setattr("builtins.__import__", guarded_import)
+        testargs = [
+            "phykit",
+            "phylo_gwas",
+            "-a",
+            aln_path,
+            "-d",
+            pheno_path,
+            "-o",
+            output_path,
+            "--json",
+        ]
+        with patch("builtins.print") as mocked_print:
+            with patch.object(sys, "argv", testargs):
+                Phykit()
+
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload["groups"] == {"group_a": 2, "group_b": 2, "group_c": 2}
+        assert len(payload["results"]) == 4
+        assert all(
+            row["p_value"] == pytest.approx(0.049787068367863944)
+            for row in payload["results"]
+        )
+        assert os.path.exists(output_path)
+
     def test_csv_output(self, tmp_path):
         aln_path = str(tmp_path / "test.fa")
         pheno_path = str(tmp_path / "pheno.tsv")

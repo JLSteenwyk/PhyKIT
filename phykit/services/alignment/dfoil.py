@@ -4,13 +4,38 @@ in a 5-taxon symmetric phylogeny.
 Topology: ((P1, P2), (P3, P4), Outgroup)
 """
 
-from typing import Dict
+from __future__ import annotations
 
-from Bio import SeqIO
+import math
 
+from ._fasta import read_fasta_first_token_upper
 from .base import Alignment
-from ...helpers.json_output import print_json
 from ...errors import PhykitUserError
+
+
+class _LazyNumpy:
+    _module = None
+
+    def __getattr__(self, name):
+        module = self._module
+        if module is None:
+            import numpy as _np
+
+            module = _np
+            self._module = module
+
+        attr = getattr(module, name)
+        setattr(self, name, attr)
+        return attr
+
+
+np = _LazyNumpy()
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
 
 
 # All 16 binary site patterns for 5 taxa (P1, P2, P3, P4, Outgroup).
@@ -21,9 +46,58 @@ PATTERNS = [
     'BAAAA', 'BAABA', 'BABAA', 'BABBA',
     'BBAAA', 'BBABA', 'BBBAA', 'BBBBA',
 ]
+_ZERO_PATTERN_COUNTS = dict.fromkeys(PATTERNS, 0)
 
 # Invariant / uninformative patterns (all ancestral or all derived).
 _UNINFORMATIVE = {'AAAAA', 'BBBBA'}
+_INFORMATIVE_PATTERNS = tuple(
+    pattern for pattern in PATTERNS if pattern not in _UNINFORMATIVE
+)
+_INFORMATIVE_PATTERN_GROUPS = tuple(
+    _INFORMATIVE_PATTERNS[i:i + 4]
+    for i in range(0, len(_INFORMATIVE_PATTERNS), 4)
+)
+_SKIP_CODES = (ord("-"), ord("N"), ord("?"), ord("X"), ord("n"), ord("x"))
+_SKIP_BYTES = b"-N?Xnx"
+_SCALAR_SKIP_CHARS = "-N?Xnx"
+_SKIP_SCAN_BYTES = 4096
+_SKIP_LOOKUP_SMALL_ALIGNMENT_MAX = 8192
+_SKIP_LOOKUP = None
+
+
+def _count_informative_sites(counts):
+    return sum(counts.values()) - counts["AAAAA"] - counts["BBBBA"]
+
+
+def _informative_pattern_counts(counts):
+    return {pattern: counts[pattern] for pattern in _INFORMATIVE_PATTERNS}
+
+
+def _dfoil_component_counts(counts):
+    aaaba = counts['AAABA']
+    aabaa = counts['AABAA']
+    abaaa = counts['ABAAA']
+    ababa = counts['ABABA']
+    abbaa = counts['ABBAA']
+    abbba = counts['ABBBA']
+    baaaa = counts['BAAAA']
+    baaba = counts['BAABA']
+    babaa = counts['BABAA']
+    babba = counts['BABBA']
+    bbaba = counts['BBABA']
+    bbbaa = counts['BBBAA']
+
+    return (
+        aaaba + ababa + babaa + bbbaa,
+        aabaa + abbaa + baaba + bbaba,
+        aaaba + abbaa + baaba + bbbaa,
+        aabaa + ababa + babaa + bbaba,
+        abaaa + ababa + babaa + babba,
+        baaaa + abbaa + baaba + abbba,
+        abaaa + abbaa + baaba + babba,
+        baaaa + ababa + babaa + abbba,
+    )
+
 
 # Sign-pattern interpretation table (DFO, DIL, DFI, DOL).
 INTERPRETATIONS = {
@@ -41,6 +115,29 @@ INTERPRETATIONS = {
 }
 
 
+def _chi2_sf_df1(chi2_stat: float) -> float:
+    return math.erfc(math.sqrt(chi2_stat / 2.0))
+
+
+def _stars(p):
+    if p < 0.001:
+        return ' ***'
+    elif p < 0.01:
+        return ' **'
+    elif p < 0.05:
+        return ' *'
+    return ''
+
+
+def _get_skip_lookup():
+    global _SKIP_LOOKUP
+    if _SKIP_LOOKUP is None:
+        lookup = np.zeros(256, dtype=np.bool_)
+        lookup[np.frombuffer(_SKIP_BYTES, dtype=np.uint8)] = True
+        _SKIP_LOOKUP = lookup
+    return _SKIP_LOOKUP
+
+
 class Dfoil(Alignment):
     def __init__(self, args) -> None:
         parsed = self.process_args(args)
@@ -52,7 +149,7 @@ class Dfoil(Alignment):
         self.outgroup = parsed["outgroup"]
         self.json_output = parsed["json_output"]
 
-    def process_args(self, args) -> Dict[str, object]:
+    def process_args(self, args) -> dict[str, object]:
         return dict(
             alignment_path=args.alignment,
             p1=args.p1,
@@ -63,11 +160,216 @@ class Dfoil(Alignment):
             json_output=getattr(args, "json", False),
         )
 
+    @staticmethod
+    def _read_fasta(path: str) -> dict[str, str]:
+        return read_fasta_first_token_upper(path)
+
+    @staticmethod
+    def _count_site_patterns(seq_p1, seq_p2, seq_p3, seq_p4, seq_outgroup):
+        """Count DFOIL binary site patterns."""
+        if (
+            seq_p1 == seq_outgroup
+            and seq_p2 == seq_outgroup
+            and seq_p3 == seq_outgroup
+            and seq_p4 == seq_outgroup
+        ):
+            return _ZERO_PATTERN_COUNTS.copy()
+
+        try:
+            p1_bytes = seq_p1.encode("ascii")
+            p2_bytes = seq_p2.encode("ascii")
+            p3_bytes = seq_p3.encode("ascii")
+            p4_bytes = seq_p4.encode("ascii")
+            out_bytes = seq_outgroup.encode("ascii")
+            p1 = np.frombuffer(p1_bytes, dtype=np.uint8)
+            p2 = np.frombuffer(p2_bytes, dtype=np.uint8)
+            p3 = np.frombuffer(p3_bytes, dtype=np.uint8)
+            p4 = np.frombuffer(p4_bytes, dtype=np.uint8)
+            out = np.frombuffer(out_bytes, dtype=np.uint8)
+        except UnicodeEncodeError:
+            return Dfoil._count_site_patterns_scalar(
+                seq_p1,
+                seq_p2,
+                seq_p3,
+                seq_p4,
+                seq_outgroup,
+            )
+
+        has_skip_code = any(
+            code in p1_bytes[:_SKIP_SCAN_BYTES]
+            or code in p2_bytes[:_SKIP_SCAN_BYTES]
+            or code in p3_bytes[:_SKIP_SCAN_BYTES]
+            or code in p4_bytes[:_SKIP_SCAN_BYTES]
+            or code in out_bytes[:_SKIP_SCAN_BYTES]
+            or code in p1_bytes[-_SKIP_SCAN_BYTES:]
+            or code in p2_bytes[-_SKIP_SCAN_BYTES:]
+            or code in p3_bytes[-_SKIP_SCAN_BYTES:]
+            or code in p4_bytes[-_SKIP_SCAN_BYTES:]
+            or code in out_bytes[-_SKIP_SCAN_BYTES:]
+            for code in _SKIP_BYTES
+        )
+        if not has_skip_code:
+            has_skip_code = any(
+                code in p1_bytes
+                or code in p2_bytes
+                or code in p3_bytes
+                or code in p4_bytes
+                or code in out_bytes
+                for code in _SKIP_BYTES
+            )
+
+        diff1 = p1 != out
+        diff2 = p2 != out
+        diff3 = p3 != out
+        diff4 = p4 != out
+        any_derived = diff1 | diff2 | diff3 | diff4
+        same_derived = (
+            ((~diff1) | (~diff2) | (p1 == p2))
+            & ((~diff1) | (~diff3) | (p1 == p3))
+            & ((~diff1) | (~diff4) | (p1 == p4))
+            & ((~diff2) | (~diff3) | (p2 == p3))
+            & ((~diff2) | (~diff4) | (p2 == p4))
+            & ((~diff3) | (~diff4) | (p3 == p4))
+        )
+
+        if has_skip_code:
+            if len(p1) < _SKIP_LOOKUP_SMALL_ALIGNMENT_MAX:
+                skip_lookup = _get_skip_lookup()
+                valid = ~(
+                    skip_lookup[p1]
+                    | skip_lookup[p2]
+                    | skip_lookup[p3]
+                    | skip_lookup[p4]
+                    | skip_lookup[out]
+                )
+            else:
+                valid = np.ones(len(p1), dtype=bool)
+                for code in _SKIP_CODES:
+                    valid &= (
+                        (p1 != code)
+                        & (p2 != code)
+                        & (p3 != code)
+                        & (p4 != code)
+                        & (out != code)
+                    )
+            biallelic = valid & any_derived & same_derived
+        else:
+            biallelic = any_derived & same_derived
+
+        pattern_codes = (
+            (diff1.astype(np.uint8) << 3)
+            | (diff2.astype(np.uint8) << 2)
+            | (diff3.astype(np.uint8) << 1)
+            | diff4.astype(np.uint8)
+        )
+        bincounts = np.bincount(pattern_codes[biallelic], minlength=len(PATTERNS))
+        if not has_skip_code:
+            return dict(zip(PATTERNS, map(int, bincounts)))
+        return dict(zip(PATTERNS, map(int, bincounts)))
+
+    @staticmethod
+    def _count_site_patterns_scalar(seq_p1, seq_p2, seq_p3, seq_p4, seq_outgroup):
+        counts: dict[str, int] = {p: 0 for p in PATTERNS}
+        patterns = PATTERNS
+        skip_chars = _SCALAR_SKIP_CHARS
+
+        for p1, p2, p3, p4, o in zip(
+            seq_p1, seq_p2, seq_p3, seq_p4, seq_outgroup
+        ):
+            if (
+                p1 in skip_chars
+                or p2 in skip_chars
+                or p3 in skip_chars
+                or p4 in skip_chars
+                or o in skip_chars
+            ):
+                continue
+
+            diff1 = p1 != o
+            diff2 = p2 != o
+            diff3 = p3 != o
+            diff4 = p4 != o
+            if not (diff1 or diff2 or diff3 or diff4):
+                continue
+
+            if diff1:
+                derived = p1
+            elif diff2:
+                derived = p2
+            elif diff3:
+                derived = p3
+            else:
+                derived = p4
+
+            if (
+                (diff1 and p1 != derived)
+                or (diff2 and p2 != derived)
+                or (diff3 and p3 != derived)
+                or (diff4 and p4 != derived)
+            ):
+                continue
+
+            pattern_code = (
+                (8 if diff1 else 0)
+                | (4 if diff2 else 0)
+                | (2 if diff3 else 0)
+                | (1 if diff4 else 0)
+            )
+            counts[patterns[pattern_code]] += 1
+
+        return counts
+
+    def _print_text_output(
+        self,
+        aln_length,
+        informative_sites,
+        counts,
+        DFO,
+        DIL,
+        DFI,
+        DOL,
+        dfo_p,
+        dil_p,
+        dfi_p,
+        dol_p,
+        sign_pattern,
+        interpretation,
+    ):
+        pattern_lines = "\n".join(
+            "  " + "  ".join(f"{pattern}: {counts[pattern]}" for pattern in group)
+            for group in _INFORMATIVE_PATTERN_GROUPS
+        )
+
+        try:
+            print(
+                f"DFOIL Test (Pease & Hahn 2015)\n"
+                f"================================\n"
+                f"Topology: (({self.p1}, {self.p2}), "
+                f"({self.p3}, {self.p4}), {self.outgroup})\n"
+                f"P1: {self.p1}, P2: {self.p2}, P3: {self.p3}, "
+                f"P4: {self.p4}, Outgroup: {self.outgroup}\n"
+                f"\n"
+                f"Alignment length: {aln_length}\n"
+                f"Informative sites: {informative_sites}\n"
+                f"\n"
+                f"Site pattern counts:\n"
+                f"{pattern_lines}\n"
+                f"\n"
+                f"D-statistics:\n"
+                f"  DFO:  {DFO:.4f}  (p = {dfo_p:.6f}{_stars(dfo_p)})\n"
+                f"  DIL:  {DIL:.4f}  (p = {dil_p:.6f}{_stars(dil_p)})\n"
+                f"  DFI:  {DFI:.4f}  (p = {dfi_p:.6f}{_stars(dfi_p)})\n"
+                f"  DOL:  {DOL:.4f}  (p = {dol_p:.6f}{_stars(dol_p)})\n"
+                f"\n"
+                f"Sign pattern: {sign_pattern}\n"
+                f"Interpretation: {interpretation}"
+            )
+        except BrokenPipeError:
+            pass
+
     def run(self):
         # Read alignment sequences
-        sequences = {}
-        for record in SeqIO.parse(self.alignment_file_path, "fasta"):
-            sequences[record.id] = str(record.seq).upper()
+        sequences = self._read_fasta(self.alignment_file_path)
 
         # Validate taxa are present
         required = {
@@ -100,66 +402,34 @@ class Dfoil(Alignment):
             )
 
         aln_length = len(seq_p1)
-        skip_chars = {"-", "N", "?", "X", "n", "x"}
-
-        # Initialize pattern counts
-        counts: Dict[str, int] = {p: 0 for p in PATTERNS}
-
-        for site in range(aln_length):
-            p1 = seq_p1[site]
-            p2 = seq_p2[site]
-            p3 = seq_p3[site]
-            p4 = seq_p4[site]
-            o = seq_o[site]
-
-            # Skip sites with gaps or ambiguous characters
-            if any(c in skip_chars for c in [p1, p2, p3, p4, o]):
-                continue
-
-            # Skip sites that are not biallelic
-            alleles = {p1, p2, p3, p4, o}
-            if len(alleles) != 2:
-                continue
-
-            # Encode pattern: A if matches outgroup, B if differs
-            pattern = ''.join(
-                'A' if c == o else 'B'
-                for c in [p1, p2, p3, p4, o]
-            )
-            counts[pattern] += 1
+        counts = self._count_site_patterns(seq_p1, seq_p2, seq_p3, seq_p4, seq_o)
 
         # Count informative sites (exclude AAAAA and BBBBA)
-        informative_sites = sum(
-            v for k, v in counts.items() if k not in _UNINFORMATIVE
-        )
+        informative_sites = _count_informative_sites(counts)
 
         # Compute the four D-statistics
-        dfo_left = counts['AAABA'] + counts['ABABA'] + counts['BABAA'] + counts['BBBAA']
-        dfo_right = counts['AABAA'] + counts['ABBAA'] + counts['BAABA'] + counts['BBABA']
-
-        dil_left = counts['AAABA'] + counts['ABBAA'] + counts['BAABA'] + counts['BBBAA']
-        dil_right = counts['AABAA'] + counts['ABABA'] + counts['BABAA'] + counts['BBABA']
-
-        dfi_left = counts['ABAAA'] + counts['ABABA'] + counts['BABAA'] + counts['BABBA']
-        dfi_right = counts['BAAAA'] + counts['ABBAA'] + counts['BAABA'] + counts['ABBBA']
-
-        dol_left = counts['ABAAA'] + counts['ABBAA'] + counts['BAABA'] + counts['BABBA']
-        dol_right = counts['BAAAA'] + counts['ABABA'] + counts['BABAA'] + counts['ABBBA']
+        (
+            dfo_left,
+            dfo_right,
+            dil_left,
+            dil_right,
+            dfi_left,
+            dfi_right,
+            dol_left,
+            dol_right,
+        ) = _dfoil_component_counts(counts)
 
         DFO = (dfo_left - dfo_right) / (dfo_left + dfo_right) if (dfo_left + dfo_right) > 0 else 0.0
         DIL = (dil_left - dil_right) / (dil_left + dil_right) if (dil_left + dil_right) > 0 else 0.0
         DFI = (dfi_left - dfi_right) / (dfi_left + dfi_right) if (dfi_left + dfi_right) > 0 else 0.0
         DOL = (dol_left - dol_right) / (dol_left + dol_right) if (dol_left + dol_right) > 0 else 0.0
 
-        # Chi-squared significance tests (1 df)
-        from scipy.stats import chi2
-
         def _chi2_test(left, right):
             total = left + right
             if total == 0:
                 return 0.0, 1.0
             chi2_stat = (left - right) ** 2 / total
-            p_value = float(chi2.sf(chi2_stat, df=1))
+            p_value = _chi2_sf_df1(chi2_stat)
             return float(chi2_stat), p_value
 
         dfo_chi2, dfo_p = _chi2_test(dfo_left, dfo_right)
@@ -184,20 +454,10 @@ class Dfoil(Alignment):
             sign_pattern, 'Ambiguous or complex introgression pattern'
         )
 
-        # Significance stars helper
-        def _stars(p):
-            if p < 0.001:
-                return ' ***'
-            elif p < 0.01:
-                return ' **'
-            elif p < 0.05:
-                return ' *'
-            return ''
-
         # Output
         if self.json_output:
             # Pattern counts excluding AAAAA (always 'AAAAA' key exists)
-            pattern_counts = {k: v for k, v in counts.items() if k not in _UNINFORMATIVE}
+            pattern_counts = _informative_pattern_counts(counts)
 
             payload = {
                 "p1": self.p1,
@@ -242,30 +502,18 @@ class Dfoil(Alignment):
             print_json(payload, sort_keys=False)
             return
 
-        try:
-            print("DFOIL Test (Pease & Hahn 2015)")
-            print("================================")
-            print(f"Topology: (({self.p1}, {self.p2}), ({self.p3}, {self.p4}), {self.outgroup})")
-            print(f"P1: {self.p1}, P2: {self.p2}, P3: {self.p3}, P4: {self.p4}, Outgroup: {self.outgroup}")
-            print()
-            print(f"Alignment length: {aln_length}")
-            print(f"Informative sites: {informative_sites}")
-            print()
-            print("Site pattern counts:")
-            # Print informative patterns in a compact layout
-            informative_patterns = [p for p in PATTERNS if p not in _UNINFORMATIVE]
-            for i in range(0, len(informative_patterns), 4):
-                chunk = informative_patterns[i:i + 4]
-                parts = [f"{p}: {counts[p]}" for p in chunk]
-                print("  " + "  ".join(parts))
-            print()
-            print("D-statistics:")
-            print(f"  DFO:  {DFO:.4f}  (p = {dfo_p:.6f}{_stars(dfo_p)})")
-            print(f"  DIL:  {DIL:.4f}  (p = {dil_p:.6f}{_stars(dil_p)})")
-            print(f"  DFI:  {DFI:.4f}  (p = {dfi_p:.6f}{_stars(dfi_p)})")
-            print(f"  DOL:  {DOL:.4f}  (p = {dol_p:.6f}{_stars(dol_p)})")
-            print()
-            print(f"Sign pattern: {sign_pattern}")
-            print(f"Interpretation: {interpretation}")
-        except BrokenPipeError:
-            pass
+        self._print_text_output(
+            aln_length,
+            informative_sites,
+            counts,
+            DFO,
+            DIL,
+            DFI,
+            DOL,
+            dfo_p,
+            dil_p,
+            dfi_p,
+            dol_p,
+            sign_pattern,
+            interpretation,
+        )

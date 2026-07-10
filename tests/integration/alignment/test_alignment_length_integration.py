@@ -14,8 +14,10 @@ class TestAlignmentLength(object):
     @patch("builtins.print")
     def test_alignment_length_invalid_command(self, mocked_print):
 
-        with pytest.raises(SystemExit) as pytest_wrapped_e:
-            Phykit()
+        testargs = ["phykit", "alignment_length"]
+        with patch.object(sys, "argv", testargs):
+            with pytest.raises(SystemExit) as pytest_wrapped_e:
+                Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2
@@ -71,8 +73,10 @@ class TestAlignmentLength(object):
     @patch("builtins.print")
     def test_alignment_length_incorrect_input_file(self, mocked_print):
 
-        with pytest.raises(SystemExit) as pytest_wrapped_e:
-            Phykit()
+        testargs = ["phykit", "alignment_length", "not-a-real-file.fa"]
+        with patch.object(sys, "argv", testargs):
+            with pytest.raises(SystemExit) as pytest_wrapped_e:
+                Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2

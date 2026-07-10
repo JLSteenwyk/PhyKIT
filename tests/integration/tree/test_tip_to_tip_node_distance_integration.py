@@ -69,16 +69,32 @@ class TestTipToTipNodeDistance(object):
 
     @patch("builtins.print")
     def test_tip_to_tip_node_distance_tip_not_in_tree(self, mocked_print):
-        with pytest.raises(SystemExit) as pytest_wrapped_e:
-            Phykit()
+        testargs = [
+            "phykit",
+            "tip_to_tip_node_distance",
+            f"{here.parent.parent.parent}/sample_files/small_Aspergillus_tre_rooted.tree",
+            "Aspergillus_fumigatus_HMR_AF_270",
+            "not_on_tree",
+        ]
+        with patch.object(sys, "argv", testargs):
+            with pytest.raises(SystemExit) as pytest_wrapped_e:
+                Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2
 
     @patch("builtins.print")
     def test_tip_to_tip_node_distance_bad_file_path(self, mocked_print):
-        with pytest.raises(SystemExit) as pytest_wrapped_e:
-            Phykit()
+        testargs = [
+            "phykit",
+            "tip_to_tip_node_distance",
+            "does_not_exist.tree",
+            "Aspergillus_fumigatus_HMR_AF_270",
+            "Aspergillus_fischeri_NRRL181.GCF_000149645.1_ASM14964v1",
+        ]
+        with patch.object(sys, "argv", testargs):
+            with pytest.raises(SystemExit) as pytest_wrapped_e:
+                Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2

@@ -73,19 +73,27 @@ class TestGCContent(object):
 
     @patch("builtins.print")
     def test_gc_content_incorrect_input_file(self, mocked_print):
+        testargs = [
+            "phykit",
+            "gc_content",
+            f"{here.parent.parent.parent}/sample_files/does_not_exist.fa",
+        ]
 
         with pytest.raises(SystemExit) as pytest_wrapped_e:
-            Phykit()
+            with patch.object(sys, "argv", testargs):
+                Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2
 
     @patch("builtins.print")
     def test_gc_content_verbose(self, mocked_print):
-        expected_result0 = "1\t0.5"
-        expected_result1 = "2\t0.3333"
-        expected_result2 = "3\t0.3333"
-        expected_result3 = "4\t0.0"
+        expected_result = (
+            "1\t0.5\n"
+            "2\t0.3333\n"
+            "3\t0.3333\n"
+            "4\t0.0"
+        )
         testargs = [
             "phykit",
             "gc_content",
@@ -95,12 +103,7 @@ class TestGCContent(object):
 
         with patch.object(sys, "argv", testargs):
             Phykit()
-        assert mocked_print.mock_calls == [
-            call(expected_result0),
-            call(expected_result1),
-            call(expected_result2),
-            call(expected_result3),
-        ]
+        assert mocked_print.mock_calls == [call(expected_result)]
 
     @patch("builtins.print")
     def test_gc_content_zero_division(self, mocked_print):

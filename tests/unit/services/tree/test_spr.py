@@ -1,10 +1,15 @@
 from argparse import Namespace
 from io import StringIO
 import json
+import pickle as stdlib_pickle
+import subprocess
+import sys
 
 import pytest
 from Bio import Phylo
+from Bio.Phylo.BaseTree import Clade, TreeMixin
 
+import phykit.services.tree.spr as spr_module
 from phykit.services.tree.spr import Spr
 
 
@@ -24,6 +29,89 @@ def args_single(tree_file):
 @pytest.fixture
 def args_clade(tree_file):
     return Namespace(tree=tree_file, subtree="D,E", output=None, json=False)
+
+
+def test_module_import_does_not_import_biophylo_or_numpy():
+    code = """
+import sys
+import phykit.services.tree.spr as module
+
+assert callable(module.print_json)
+assert hasattr(module.Phylo, "write")
+assert callable(module.Clade)
+assert hasattr(module.pickle, "dumps")
+assert "json" not in sys.modules
+assert "phykit.helpers.json_output" not in sys.modules
+assert "pickle" not in sys.modules
+assert "typing" not in sys.modules
+assert "Bio.Phylo" not in sys.modules
+assert "numpy" not in sys.modules
+"""
+    subprocess.run([sys.executable, "-c", code], check=True)
+
+
+def test_lazy_phylo_caches_resolved_write(monkeypatch):
+    calls = []
+
+    def cached_write(*args, **kwargs):
+        calls.append((args, kwargs))
+        return 1
+
+    def uncached_write(*_args, **_kwargs):
+        return 2
+
+    lazy_phylo = spr_module._LazyPhylo()
+    monkeypatch.setattr(Phylo, "write", cached_write)
+
+    assert lazy_phylo.write([], "trees.nwk", "newick") == 1
+
+    monkeypatch.setattr(Phylo, "write", uncached_write)
+
+    assert lazy_phylo.write(["tree"], "more.nwk", "newick") == 1
+    assert lazy_phylo.__dict__["write"] is cached_write
+    assert calls == [
+        (([], "trees.nwk", "newick"), {}),
+        ((["tree"], "more.nwk", "newick"), {}),
+    ]
+
+
+def test_lazy_pickle_caches_resolved_copy_helpers(monkeypatch):
+    calls = []
+
+    def cached_dumps(*args, **kwargs):
+        calls.append(("dumps", args, kwargs))
+        return args[0]
+
+    def cached_loads(*args, **kwargs):
+        calls.append(("loads", args, kwargs))
+        return args[0]
+
+    def uncached_dumps(*_args, **_kwargs):
+        return "uncached-dumps"
+
+    def uncached_loads(*_args, **_kwargs):
+        return "uncached-loads"
+
+    lazy_pickle = spr_module._LazyPickle()
+    monkeypatch.setattr(stdlib_pickle, "dumps", cached_dumps)
+    monkeypatch.setattr(stdlib_pickle, "loads", cached_loads)
+
+    protocol = lazy_pickle.HIGHEST_PROTOCOL
+    assert lazy_pickle.loads(lazy_pickle.dumps("tree", protocol=protocol)) == "tree"
+
+    monkeypatch.setattr(stdlib_pickle, "dumps", uncached_dumps)
+    monkeypatch.setattr(stdlib_pickle, "loads", uncached_loads)
+
+    assert lazy_pickle.loads(lazy_pickle.dumps("tree2", protocol=protocol)) == "tree2"
+    assert lazy_pickle.__dict__["dumps"] is cached_dumps
+    assert lazy_pickle.__dict__["loads"] is cached_loads
+    assert lazy_pickle.__dict__["HIGHEST_PROTOCOL"] == stdlib_pickle.HIGHEST_PROTOCOL
+    assert calls == [
+        ("dumps", ("tree",), {"protocol": protocol}),
+        ("loads", ("tree",), {}),
+        ("dumps", ("tree2",), {"protocol": protocol}),
+        ("loads", ("tree2",), {}),
+    ]
 
 
 class TestSpr:
@@ -59,6 +147,95 @@ class TestSpr:
         for line in lines:
             tree = Phylo.read(StringIO(line), "newick")
             assert tree is not None
+
+    def test_single_taxon_run_uses_direct_terminal_lookup(
+        self, args_single, monkeypatch, capsys
+    ):
+        def fail_get_terminals(*args, **kwargs):
+            raise AssertionError("standard tree setup should use direct lookup")
+
+        monkeypatch.setattr(TreeMixin, "get_terminals", fail_get_terminals)
+
+        service = Spr(args_single)
+        service.run()
+        captured = capsys.readouterr()
+        lines = [line for line in captured.out.splitlines() if line.strip()]
+
+        assert len(lines) >= 3
+
+    def test_clades_and_parent_map_preserves_preorder_with_mixed_children(self):
+        tree = Phylo.read(
+            StringIO("(A:1,(B:1,C:1):1,(D:1,E:1,F:1):1);"),
+            "newick",
+        )
+
+        clades, parent_map = Spr._clades_and_parent_map(tree.root)
+        reference = list(tree.find_clades(order="preorder"))
+
+        assert [id(clade) for clade in clades] == [id(clade) for clade in reference]
+
+        terminal, binary, trifurcating = tree.root.clades
+        assert id(tree.root) not in parent_map
+        assert parent_map[id(terminal)] is tree.root
+        assert parent_map[id(binary)] is tree.root
+        assert parent_map[id(trifurcating)] is tree.root
+        assert all(parent_map[id(child)] is binary for child in binary.clades)
+        assert all(
+            parent_map[id(child)] is trifurcating for child in trifurcating.clades
+        )
+
+    def test_iter_postorder_matches_biopython_order_with_multifurcations(self):
+        tree = Phylo.read(
+            StringIO("(A:1,(B:1,C:1):1,(D:1,E:1,F:1):1,G:1);"),
+            "newick",
+        )
+
+        direct = list(Spr._iter_postorder(tree.root))
+        reference = list(tree.find_clades(order="postorder"))
+
+        assert [id(clade) for clade in direct] == [
+            id(clade) for clade in reference
+        ]
+
+    def test_iter_preorder_preserves_order_without_reversed(self):
+        class NoReversedList(list):
+            def __reversed__(self):
+                raise AssertionError("preorder helper should not call reversed()")
+
+        left = Clade(name="left")
+        left.clades = NoReversedList([Clade(name="left_a"), Clade(name="left_b")])
+        middle = Clade(name="middle")
+        middle.clades = NoReversedList([Clade(name="middle_a")])
+        right = Clade(name="right")
+        right.clades = NoReversedList()
+        root = Clade(name="root")
+        root.clades = NoReversedList([left, middle, right])
+
+        direct = list(Spr._iter_preorder(root))
+
+        assert [clade.name for clade in direct] == [
+            "root",
+            "left",
+            "left_a",
+            "left_b",
+            "middle",
+            "middle_a",
+            "right",
+        ]
+
+    def test_collect_clade_taxa_handles_mixed_child_counts(self):
+        tree = Phylo.read(
+            StringIO("(A:1,(B:1,C:1):1,(D:1,E:1,F:1):1,G:1);"),
+            "newick",
+        )
+
+        clade_taxa = Spr._collect_clade_taxa(tree)
+
+        assert clade_taxa[id(tree.root)] == frozenset(
+            {"A", "B", "C", "D", "E", "F", "G"}
+        )
+        assert clade_taxa[id(tree.root.clades[1])] == frozenset({"B", "C"})
+        assert clade_taxa[id(tree.root.clades[2])] == frozenset({"D", "E", "F"})
 
     def test_clade_spr(self, args_clade, capsys):
         """Prune a clade (D,E) and verify correct number of SPR trees."""
@@ -105,6 +282,40 @@ class TestSpr:
             content = f.read()
         lines = [l for l in content.strip().split("\n") if l.strip()]
         assert len(lines) >= 1
+
+    def test_print_output_summary_batches_output(self, tree_file, tmp_path, mocker):
+        out_path = str(tmp_path / "spr_output.nwk")
+        args = Namespace(tree=tree_file, subtree="D,E", output=out_path, json=False)
+        service = Spr(args)
+        printed = mocker.patch("builtins.print")
+
+        service._print_output_summary(4)
+
+        printed.assert_called_once_with(
+            "Generated 4 SPR trees\n"
+            "Subtree: (D, E)\n"
+            "Regraft positions: 4\n"
+            f"Output: {out_path}"
+        )
+
+    def test_print_spr_trees_batches_stdout(self, mocker):
+        printed = mocker.patch("builtins.print")
+
+        def fake_write(tree, handle, fmt):
+            handle.write(f"{tree}\n")
+
+        mocker.patch("phykit.services.tree.spr.Phylo.write", side_effect=fake_write)
+
+        Spr._print_spr_trees(
+            [
+                ("first", "((A:1,B:1):1,C:1);"),
+                ("second", "((A:1,C:1):1,B:1);"),
+            ]
+        )
+
+        printed.assert_called_once_with(
+            "((A:1,B:1):1,C:1);\n((A:1,C:1):1,B:1);"
+        )
 
     def test_json_output(self, tree_file, capsys):
         """JSON has correct structure."""
@@ -157,6 +368,28 @@ class TestSpr:
         for desc, t in results:
             assert isinstance(desc, str)
             assert hasattr(t, "root")
+
+    def test_generate_spr_trees_uses_indexed_clade_lookup(
+        self, tree_file, monkeypatch
+    ):
+        from Bio.Phylo.BaseTree import TreeMixin
+
+        tree = Phylo.read(tree_file, "newick")
+        subtree = tree.common_ancestor(["D", "E"])
+
+        def fail_get_terminals(*args, **kwargs):
+            raise AssertionError("precomputed clade lookups should be used")
+
+        def fail_find_clades(*args, **kwargs):
+            raise AssertionError("direct traversal should be used")
+
+        monkeypatch.setattr(TreeMixin, "get_terminals", fail_get_terminals)
+        monkeypatch.setattr(TreeMixin, "find_clades", fail_find_clades)
+
+        results = Spr._generate_spr_trees(tree, subtree)
+
+        assert len(results) == 4
+        assert all(desc.startswith("regraft onto branch") for desc, _ in results)
 
     def test_subtree_from_file(self, tree_file, tmp_path, capsys):
         """--subtree can be a single-column file with one taxon per line."""

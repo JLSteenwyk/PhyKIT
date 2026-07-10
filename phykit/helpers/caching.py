@@ -2,13 +2,62 @@
 Caching utilities for expensive computations
 """
 
-import hashlib
-import pickle
 import os
-import tempfile
 from functools import wraps, lru_cache
-from typing import Any, Callable
-import json
+
+
+class _LazyPickle:
+    _module = None
+
+    def _load(self):
+        module = self._module
+        if module is None:
+            import pickle as module
+
+            self._module = module
+
+        return module
+
+    def _resolve(self, name):
+        value = getattr(self._load(), name)
+        setattr(self, name, value)
+        return value
+
+    def dump(self, *args, **kwargs):
+        return self._resolve("dump")(*args, **kwargs)
+
+    def dumps(self, *args, **kwargs):
+        return self._resolve("dumps")(*args, **kwargs)
+
+    def load(self, *args, **kwargs):
+        return self._resolve("load")(*args, **kwargs)
+
+    def loads(self, *args, **kwargs):
+        return self._resolve("loads")(*args, **kwargs)
+
+    def __getattr__(self, name):
+        return self._resolve(name)
+
+
+pickle = _LazyPickle()
+_MD5 = None
+
+
+def _json_dumps(*args, **kwargs):
+    import json
+
+    return json.dumps(*args, **kwargs)
+
+
+def _md5(*args, **kwargs):
+    global _MD5
+
+    if _MD5 is None:
+        from hashlib import md5 as _hashlib_md5
+
+        _MD5 = _hashlib_md5
+
+    return _MD5(*args, **kwargs)
 
 
 class ResultCache:
@@ -24,6 +73,8 @@ class ResultCache:
             cache_dir: Directory for cache files (uses temp dir if None)
         """
         if cache_dir is None:
+            import tempfile
+
             cache_dir = os.path.join(tempfile.gettempdir(), 'phykit_cache')
 
         self.cache_dir = cache_dir
@@ -31,6 +82,14 @@ class ResultCache:
 
     def _get_cache_key(self, *args, **kwargs) -> str:
         """Generate a unique cache key from function arguments."""
+        if not kwargs:
+            if len(args) == 0:
+                return _md5(b"").hexdigest()
+            if len(args) == 1:
+                arg = args[0]
+                if isinstance(arg, (str, int, float, bool)):
+                    return _md5(str(arg).encode()).hexdigest()
+
         # Create a string representation of arguments
         key_parts = []
 
@@ -39,7 +98,7 @@ class ResultCache:
                 key_parts.append(str(arg))
             elif hasattr(arg, '__dict__'):
                 # For objects, use their attributes
-                key_parts.append(json.dumps(vars(arg), sort_keys=True, default=str))
+                key_parts.append(_json_dumps(vars(arg), sort_keys=True, default=str))
             else:
                 key_parts.append(str(arg))
 
@@ -47,9 +106,9 @@ class ResultCache:
             key_parts.append(f"{k}={v}")
 
         key_string = "_".join(key_parts)
-        return hashlib.md5(key_string.encode()).hexdigest()
+        return _md5(key_string.encode()).hexdigest()
 
-    def get(self, cache_key: str) -> Any:
+    def get(self, cache_key: str) -> object:
         """Retrieve cached result."""
         cache_file = os.path.join(self.cache_dir, f"{cache_key}.pkl")
 
@@ -63,7 +122,7 @@ class ResultCache:
 
         return None
 
-    def set(self, cache_key: str, value: Any) -> None:
+    def set(self, cache_key: str, value: object) -> None:
         """Store result in cache."""
         cache_file = os.path.join(self.cache_dir, f"{cache_key}.pkl")
 
@@ -76,9 +135,10 @@ class ResultCache:
 
     def clear(self) -> None:
         """Clear all cached results."""
-        for file in os.listdir(self.cache_dir):
-            if file.endswith('.pkl'):
-                os.remove(os.path.join(self.cache_dir, file))
+        with os.scandir(self.cache_dir) as entries:
+            for entry in entries:
+                if entry.name.endswith('.pkl'):
+                    os.remove(entry.path)
 
 
 def cached_computation(cache_instance: ResultCache = None):
@@ -94,7 +154,7 @@ def cached_computation(cache_instance: ResultCache = None):
     if cache_instance is None:
         cache_instance = ResultCache()
 
-    def decorator(func: Callable) -> Callable:
+    def decorator(func: object) -> object:
         @wraps(func)
         def wrapper(*args, **kwargs):
             # Generate cache key
@@ -135,7 +195,6 @@ def cached_tree_distance(tree_pickle: bytes, tip1: str, tip2: str) -> float:
     Returns:
         Distance between tips
     """
-    import pickle
     tree = pickle.loads(tree_pickle)
     return tree.distance(tip1, tip2)
 
@@ -166,13 +225,13 @@ class AlignmentCache:
         self.get_column.cache_clear()
 
     @lru_cache(maxsize=128)
-    def get_stats(self, alignment_hash: str, stat_type: str) -> Any:
+    def get_stats(self, alignment_hash: str, stat_type: str) -> object:
         """
         Get cached alignment statistics.
         """
         return self._stats_cache.get(f"{alignment_hash}_{stat_type}")
 
-    def set_stats(self, alignment_hash: str, stat_type: str, stats: Any) -> None:
+    def set_stats(self, alignment_hash: str, stat_type: str, stats: object) -> None:
         """
         Cache alignment statistics.
         """
@@ -190,16 +249,21 @@ class AlignmentCache:
         self.get_stats.cache_clear()
 
 
-# Global cache instances
-_result_cache = ResultCache()
-_alignment_cache = AlignmentCache()
+_result_cache = None
+_alignment_cache = None
 
 
 def get_result_cache() -> ResultCache:
     """Get global result cache instance."""
+    global _result_cache
+    if _result_cache is None:
+        _result_cache = ResultCache()
     return _result_cache
 
 
 def get_alignment_cache() -> AlignmentCache:
     """Get global alignment cache instance."""
+    global _alignment_cache
+    if _alignment_cache is None:
+        _alignment_cache = AlignmentCache()
     return _alignment_cache

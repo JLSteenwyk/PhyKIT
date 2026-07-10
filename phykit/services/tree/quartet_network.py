@@ -2,26 +2,85 @@ import itertools
 import math
 from collections import Counter
 from io import StringIO
+import os
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple
-
-from Bio import Phylo
 
 from .base import Tree
 from ...errors import PhykitUserError
-from ...helpers.json_output import print_json
-from ...helpers.plot_config import PlotConfig
 
 
-def _chi2_cdf(x, df):
-    """Compute chi-squared CDF using scipy (lazy import)."""
+_path_exists = os.path.exists
+_path_isabs = os.path.isabs
+
+
+class _LazyPhylo:
+    def read(self, *args, **kwargs):
+        from Bio import Phylo as _Phylo
+
+        self.read = _Phylo.read
+        return self.read(*args, **kwargs)
+
+
+Phylo = _LazyPhylo()
+
+
+def print_json(*args, **kwargs):
+    from ...helpers.json_output import print_json as _print_json
+
+    return _print_json(*args, **kwargs)
+
+
+def _position_extent(positions):
+    iterator = iter(positions)
+    try:
+        min_x, min_y = next(iterator)
+    except StopIteration:
+        return 0
+    max_x = min_x
+    max_y = min_y
+    for x, y in iterator:
+        if x < min_x:
+            min_x = x
+        elif x > max_x:
+            max_x = x
+        if y < min_y:
+            min_y = y
+        elif y > max_y:
+            max_y = y
+    x_extent = max_x - min_x
+    y_extent = max_y - min_y
+    return x_extent if x_extent >= y_extent else y_extent
+
+
+def _all_tip_sets_identical(tip_sets) -> bool:
+    iterator = iter(tip_sets)
+    first_tip_set = next(iterator, None)
+    if first_tip_set is None:
+        return True
+    for tip_set in iterator:
+        if tip_set != first_tip_set:
+            return False
+    return True
+
+
+def _shared_tip_set(tip_sets) -> set[str]:
+    iterator = iter(tip_sets)
+    shared = set(next(iterator, ()))
+    for tip_set in iterator:
+        shared.intersection_update(tip_set)
+        if not shared:
+            break
+    return shared
+
+
+def _chi2_sf(x, df):
+    if df == 1:
+        return math.erfc(math.sqrt(x / 2.0))
+    if df == 2:
+        return math.exp(-x / 2.0)
+
     from scipy.stats import chi2
-    return chi2.cdf(x, df)
-
-
-def chisquare(*args, **kwargs):
-    from scipy.stats import chisquare as _chisquare
-    return _chisquare(*args, **kwargs)
+    return float(chi2.sf(x, df))
 
 
 class QuartetNetwork(Tree):
@@ -35,7 +94,9 @@ class QuartetNetwork(Tree):
         self.json_output = parsed["json_output"]
         self.plot_config = parsed["plot_config"]
 
-    def process_args(self, args) -> Dict[str, str]:
+    def process_args(self, args) -> dict[str, str]:
+        from ...helpers.plot_config import PlotConfig
+
         return dict(
             trees=args.trees,
             alpha=args.alpha,
@@ -53,7 +114,13 @@ class QuartetNetwork(Tree):
     def _parse_trees_from_source(self, trees_path: str):
         source = Path(trees_path)
         try:
-            lines = source.read_text().splitlines()
+            with source.open() as handle:
+                cleaned = [
+                    stripped
+                    for line in handle
+                    if (stripped := line.strip())
+                    and stripped[0] != "#"
+                ]
         except FileNotFoundError:
             raise PhykitUserError(
                 [
@@ -63,7 +130,6 @@ class QuartetNetwork(Tree):
                 code=2,
             )
 
-        cleaned = [line.strip() for line in lines if line.strip() and not line.strip().startswith("#")]
         if not cleaned:
             raise PhykitUserError(["No trees found in input."], code=2)
 
@@ -77,11 +143,11 @@ class QuartetNetwork(Tree):
             return trees
 
         trees = []
+        parent_str = str(source.parent)
+        parent_prefix = "" if parent_str == "." else parent_str + os.sep
         for line in cleaned:
-            tree_path = Path(line)
-            if not tree_path.is_absolute():
-                tree_path = source.parent / tree_path
-            if not tree_path.exists():
+            tree_path = line if _path_isabs(line) else parent_prefix + line
+            if not _path_exists(tree_path):
                 raise PhykitUserError(
                     [
                         f"{tree_path} corresponds to no such file or directory.",
@@ -89,28 +155,36 @@ class QuartetNetwork(Tree):
                     ],
                     code=2,
                 )
-            trees.append(Phylo.read(str(tree_path), "newick"))
+            trees.append(Phylo.read(tree_path, "newick"))
 
         return trees
 
     @staticmethod
-    def _tips(tree) -> Set[str]:
+    def _tips(tree) -> set[str]:
+        names = Tree.calculate_terminal_names_fast(tree)
+        if names is not None:
+            return set(names)
         return {tip.name for tip in tree.get_terminals()}
 
     @staticmethod
-    def _prune_to_taxa(tree, taxa: Set[str]):
-        remove = [tip.name for tip in tree.get_terminals() if tip.name not in taxa]
+    def _prune_to_taxa(tree, taxa: set[str]):
+        terminals = Tree.calculate_terminal_clades_fast(tree)
+        if terminals is None:
+            terminals = tree.get_terminals()
+        remove = [tip for tip in terminals if tip.name not in taxa]
+        if len(remove) < len(terminals):
+            target_ids = {id(tip) for tip in remove}
+            if Tree._prune_terminal_objects_batch_standard_tree(tree, target_ids):
+                return tree
         for tip in remove:
             tree.prune(tip)
         return tree
 
-    def _normalize_taxa(self, trees: List):
+    def _normalize_taxa(self, trees: list):
         tip_sets = [self._tips(tree) for tree in trees]
-        shared_taxa = set.intersection(*tip_sets)
-
-        identical = all(tip_set == tip_sets[0] for tip_set in tip_sets[1:])
-        if identical:
-            return trees, False, tip_sets[0]
+        first_tip_set = tip_sets[0]
+        if _all_tip_sets_identical(tip_sets):
+            return trees, False, first_tip_set
 
         if self.missing_taxa == "error":
             raise PhykitUserError(
@@ -121,6 +195,7 @@ class QuartetNetwork(Tree):
                 code=2,
             )
 
+        shared_taxa = _shared_tip_set(tip_sets)
         if len(shared_taxa) < 4:
             raise PhykitUserError(
                 [
@@ -138,8 +213,23 @@ class QuartetNetwork(Tree):
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _extract_bipartitions(tree, all_taxa: frozenset) -> List[Tuple[frozenset, frozenset]]:
+    def _extract_bipartitions(tree, all_taxa: frozenset) -> list[tuple[frozenset, frozenset]]:
+        direct_result = QuartetNetwork._extract_bipartitions_direct(tree, all_taxa)
+        if direct_result is not None:
+            return direct_result
+
         bipartitions = []
+        clade_taxa = {}
+
+        for clade in tree.find_clades(order="postorder"):
+            if clade.is_terminal():
+                clade_taxa[id(clade)] = frozenset({clade.name})
+            else:
+                taxa = frozenset()
+                for child in clade.clades:
+                    taxa = taxa | clade_taxa.get(id(child), frozenset())
+                clade_taxa[id(clade)] = taxa
+
         for clade in tree.get_nonterminals():
             # Skip polytomous nodes (>2 children = unresolved branching),
             # but allow trifurcating roots (standard unrooted Newick).
@@ -148,7 +238,7 @@ class QuartetNetwork(Tree):
                 is_root = (clade == tree.root)
                 if not (is_root and n_children == 3):
                     continue
-            tips = frozenset(tip.name for tip in clade.get_terminals())
+            tips = clade_taxa.get(id(clade), frozenset())
             if len(tips) <= 1 or len(tips) >= len(all_taxa) - 1:
                 continue
             if tips == all_taxa:
@@ -157,15 +247,84 @@ class QuartetNetwork(Tree):
             bipartitions.append((tips, complement))
         return bipartitions
 
+    @staticmethod
+    def _extract_bipartitions_direct(
+        tree,
+        all_taxa: frozenset,
+    ) -> list[tuple[frozenset, frozenset]] | None:
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            return None
+
+        preorder = []
+        stack = [root]
+        pop = stack.pop
+        append = preorder.append
+        extend = stack.extend
+        try:
+            while stack:
+                clade = pop()
+                append(clade)
+                children = clade.clades
+                if children:
+                    extend(reversed(children))
+        except AttributeError:
+            return None
+
+        empty = frozenset()
+        clade_taxa = {}
+        try:
+            for clade in reversed(preorder):
+                children = clade.clades
+                if not children:
+                    clade_taxa[id(clade)] = frozenset({clade.name})
+                elif len(children) == 1:
+                    clade_taxa[id(clade)] = clade_taxa.get(id(children[0]), empty)
+                elif len(children) == 2:
+                    clade_taxa[id(clade)] = (
+                        clade_taxa.get(id(children[0]), empty)
+                        | clade_taxa.get(id(children[1]), empty)
+                    )
+                else:
+                    clade_taxa[id(clade)] = empty.union(
+                        *(clade_taxa.get(id(child), empty) for child in children)
+                    )
+
+            n_taxa = len(all_taxa)
+            bipartitions = []
+            for clade in preorder:
+                children = clade.clades
+                if not children:
+                    continue
+
+                n_children = len(children)
+                if n_children > 2:
+                    is_root = clade is root
+                    if not (is_root and n_children == 3):
+                        continue
+
+                tips = clade_taxa.get(id(clade), empty)
+                if len(tips) <= 1 or len(tips) >= n_taxa - 1:
+                    continue
+                if tips == all_taxa:
+                    continue
+                bipartitions.append((tips, all_taxa - tips))
+        except AttributeError:
+            return None
+
+        return bipartitions
+
     # ------------------------------------------------------------------
     # Quartet topology determination
     # ------------------------------------------------------------------
 
     @staticmethod
     def _determine_quartet_topology(
-        quartet: Tuple[str, str, str, str],
-        bipartitions: List[Tuple[frozenset, frozenset]],
-    ) -> Optional[int]:
+        quartet: tuple[str, str, str, str],
+        bipartitions: list[tuple[frozenset, frozenset]],
+    ) -> int | None:
         """Determine which of the 3 unrooted topologies a gene tree displays
         for the given quartet.
 
@@ -187,26 +346,168 @@ class QuartetNetwork(Tree):
                     return 2  # ad|bc
         return None
 
+    @staticmethod
+    def _postorder_clades_direct(tree):
+        try:
+            root = tree.root
+            root.clades
+        except AttributeError:
+            return None
+
+        clades = []
+        stack = [root]
+        append = clades.append
+        pop = stack.pop
+        extend = stack.extend
+        try:
+            while stack:
+                clade = pop()
+                append(clade)
+                children = clade.clades
+                if children:
+                    extend(children)
+        except AttributeError:
+            return None
+        clades.reverse()
+        return clades
+
+    @staticmethod
+    def _extract_bipartition_masks(tree, all_taxa: frozenset, taxa_index: dict[str, int]) -> list[int]:
+        split_masks = []
+        clade_masks = {}
+        n_taxa = len(all_taxa)
+        root = tree.root
+        postorder = QuartetNetwork._postorder_clades_direct(tree)
+        if postorder is None:
+            postorder = tree.find_clades(order="postorder")
+
+        for clade in postorder:
+            children = clade.clades
+            if not children:
+                idx = taxa_index.get(clade.name)
+                clade_masks[id(clade)] = 0 if idx is None else 1 << idx
+                continue
+
+            n_children = len(children)
+            if n_children == 2:
+                mask = (
+                    clade_masks.get(id(children[0]), 0)
+                    | clade_masks.get(id(children[1]), 0)
+                )
+            elif n_children == 1:
+                mask = clade_masks.get(id(children[0]), 0)
+            else:
+                mask = 0
+                for child in children:
+                    mask |= clade_masks.get(id(child), 0)
+            clade_masks[id(clade)] = mask
+
+            if n_children > 2:
+                is_root = (clade is root)
+                if not (is_root and n_children == 3):
+                    continue
+
+            n_tips = mask.bit_count()
+            if n_tips <= 1 or n_tips >= n_taxa - 1:
+                continue
+            split_masks.append(mask)
+
+        return split_masks
+
+    @staticmethod
+    def _determine_quartet_topology_from_masks(
+        quartet_bits: tuple[int, int, int, int],
+        split_masks: list[int],
+    ) -> int | None:
+        bit_a, bit_b, bit_c, bit_d = quartet_bits
+        quartet_mask = bit_a | bit_b | bit_c | bit_d
+        ab = bit_a | bit_b
+        ac = bit_a | bit_c
+        ad = bit_a | bit_d
+        cd = bit_c | bit_d
+        bd = bit_b | bit_d
+        bc = bit_b | bit_c
+
+        for split_mask in split_masks:
+            pair = quartet_mask & split_mask
+            if pair.bit_count() != 2:
+                continue
+            if pair == ab or pair == cd:
+                return 0
+            if pair == ac or pair == bd:
+                return 1
+            if pair == ad or pair == bc:
+                return 2
+        return None
+
+    @staticmethod
+    def _determine_quartet_topology_from_precomputed_masks(
+        quartet_data: tuple[int, int, int, int, int, int, int],
+        split_masks: list[int],
+    ) -> int | None:
+        quartet_mask, ab, ac, ad, cd, bd, bc = quartet_data
+        for split_mask in split_masks:
+            pair = quartet_mask & split_mask
+            if pair.bit_count() != 2:
+                continue
+            if pair == ab or pair == cd:
+                return 0
+            if pair == ac or pair == bd:
+                return 1
+            if pair == ad or pair == bc:
+                return 2
+        return None
+
     # ------------------------------------------------------------------
     # Compute quartet concordance factors
     # ------------------------------------------------------------------
 
     @staticmethod
     def _compute_quartet_cfs(
-        trees: List,
+        trees: list,
         all_taxa: frozenset,
-    ) -> Dict[Tuple[str, str, str, str], List[int]]:
+    ) -> dict[tuple[str, str, str, str], list[int]]:
         taxa_sorted = sorted(all_taxa)
-        all_bipartitions = []
+        taxa_index = {taxon: idx for idx, taxon in enumerate(taxa_sorted)}
+        all_split_masks = []
         for tree in trees:
-            bips = QuartetNetwork._extract_bipartitions(tree, all_taxa)
-            all_bipartitions.append(bips)
+            split_masks = QuartetNetwork._extract_bipartition_masks(
+                tree,
+                all_taxa,
+                taxa_index,
+            )
+            all_split_masks.append(split_masks)
+
+        quartet_data = []
+        for quartet_indices in itertools.combinations(range(len(taxa_sorted)), 4):
+            bit_a, bit_b, bit_c, bit_d = (1 << i for i in quartet_indices)
+            quartet = tuple(taxa_sorted[i] for i in quartet_indices)
+            quartet_data.append(
+                (
+                    quartet,
+                    (
+                        bit_a | bit_b | bit_c | bit_d,
+                        bit_a | bit_b,
+                        bit_a | bit_c,
+                        bit_a | bit_d,
+                        bit_c | bit_d,
+                        bit_b | bit_d,
+                        bit_b | bit_c,
+                    ),
+                )
+            )
 
         results = {}
-        for quartet in itertools.combinations(taxa_sorted, 4):
+        topology_from_masks = (
+            QuartetNetwork._determine_quartet_topology_from_precomputed_masks
+        )
+        for quartet, precomputed_masks in quartet_data:
             counts = [0, 0, 0]
-            for bips in all_bipartitions:
-                topo = QuartetNetwork._determine_quartet_topology(quartet, bips)
+            for split_masks in all_split_masks:
+                topo = topology_from_masks(
+                    precomputed_masks,
+                    split_masks,
+                )
                 if topo is not None:
                     counts[topo] += 1
             results[quartet] = counts
@@ -217,21 +518,25 @@ class QuartetNetwork(Tree):
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _star_test(counts: List[int]) -> float:
+    def _star_test(counts: list[int]) -> float:
         """Star tree test (Pearson chi-squared, H0: all three topologies
         equally likely). Matches MSCquartets quartetStarTest.
 
         Returns p-value.
         """
-        total = sum(counts)
+        c0, c1, c2 = counts
+        total = c0 + c1 + c2
         if total == 0:
             return 1.0
-        expected = [total / 3.0] * 3
-        stat, p = chisquare(counts, f_exp=expected)
-        return float(p)
+        expected = total / 3.0
+        d0 = c0 - expected
+        d1 = c1 - expected
+        d2 = c2 - expected
+        stat = (d0 * d0 + d1 * d1 + d2 * d2) / expected
+        return _chi2_sf(stat, df=2)
 
     @staticmethod
-    def _tree_test(counts: List[int]) -> float:
+    def _tree_test(counts: list[int]) -> float:
         """T3 tree model test (G-test / likelihood ratio).
 
         Under H0 (any resolved quartet tree under MSC), the dominant
@@ -242,34 +547,42 @@ class QuartetNetwork(Tree):
 
         Returns p-value.
         """
-        total = sum(counts)
+        c0, c1, c2 = counts
+        total = c0 + c1 + c2
         if total == 0:
             return 1.0
 
-        sorted_counts = sorted(counts, reverse=True)
-        major = sorted_counts[0]
+        if c0 >= c1:
+            if c0 >= c2:
+                major, minor1, minor2 = c0, c1, c2
+            else:
+                major, minor1, minor2 = c2, c0, c1
+        elif c1 >= c2:
+            major, minor1, minor2 = c1, c0, c2
+        else:
+            major, minor1, minor2 = c2, c0, c1
         remainder = total - major
 
         if remainder == 0:
             # All counts in one topology — perfect tree, p=1
             return 1.0
 
-        expected = [major, remainder / 2.0, remainder / 2.0]
+        expected_minor = remainder / 2.0
 
         # G-statistic (power divergence with lambda=0)
         g_stat = 0.0
-        for obs, exp in zip(sorted_counts, expected):
-            if obs > 0 and exp > 0:
-                g_stat += 2.0 * obs * math.log(obs / exp)
+        if minor1 > 0:
+            g_stat += 2.0 * minor1 * math.log(minor1 / expected_minor)
+        if minor2 > 0:
+            g_stat += 2.0 * minor2 * math.log(minor2 / expected_minor)
 
         # Conservative p-value: chi-squared with df=1
-        p = 1.0 - _chi2_cdf(g_stat, df=1)
-        return float(p)
+        return _chi2_sf(g_stat, df=1)
 
     @staticmethod
     def _classify_quartet(
-        counts: List[int], alpha: float, beta: float
-    ) -> Dict[str, object]:
+        counts: list[int], alpha: float, beta: float
+    ) -> dict[str, object]:
         """Classify a quartet following the NANUQ algorithm.
 
         1. Star test: if p_star > beta, classify as 'unresolved' (star tree).
@@ -317,6 +630,42 @@ class QuartetNetwork(Tree):
             return [(ia, ib), (ia, ic), (id_, ib), (id_, ic)]
 
     @staticmethod
+    def _dominant_topology_index(counts):
+        """Return the first index of the largest of three topology counts."""
+        c0, c1, c2 = counts
+        if c1 > c0:
+            if c2 > c1:
+                return 2
+            return 1
+        if c2 > c0:
+            return 2
+        return 0
+
+    @staticmethod
+    def _top_two_topology_indices(counts):
+        """Return the first two topology indices by descending count."""
+        c0, c1, c2 = counts
+        if c0 >= c1:
+            if c1 >= c2:
+                return 0, 1
+            if c0 >= c2:
+                return 0, 2
+            return 2, 0
+        if c0 >= c2:
+            return 1, 0
+        if c1 >= c2:
+            return 1, 2
+        return 2, 1
+
+    @staticmethod
+    def _quartet_cfs_from_counts(counts):
+        c0, c1, c2 = counts
+        total = c0 + c1 + c2
+        if total > 0:
+            return [c0 / total, c1 / total, c2 / total]
+        return [0.0, 0.0, 0.0]
+
+    @staticmethod
     def _compute_nanuq_distance(all_taxa, quartet_results):
         """Compute NANUQ distance matrix from quartet classifications.
 
@@ -337,20 +686,76 @@ class QuartetNetwork(Tree):
             counts = result["counts"]
 
             if classification == "unresolved":
-                for x, y in [(ia, ib), (ia, ic), (ia, id_), (ib, ic), (ib, id_), (ic, id_)]:
-                    dist[x][y] += 1
-                    dist[y][x] += 1
+                dist[ia][ib] += 1
+                dist[ib][ia] += 1
+                dist[ia][ic] += 1
+                dist[ic][ia] += 1
+                dist[ia][id_] += 1
+                dist[id_][ia] += 1
+                dist[ib][ic] += 1
+                dist[ic][ib] += 1
+                dist[ib][id_] += 1
+                dist[id_][ib] += 1
+                dist[ic][id_] += 1
+                dist[id_][ic] += 1
             elif classification == "tree":
-                dominant_idx = counts.index(max(counts))
-                for x, y in QuartetNetwork._cross_pairs(dominant_idx, ia, ib, ic, id_):
-                    dist[x][y] += 1
-                    dist[y][x] += 1
+                dominant_idx = QuartetNetwork._dominant_topology_index(counts)
+                if dominant_idx == 0:
+                    dist[ia][ic] += 1
+                    dist[ic][ia] += 1
+                    dist[ia][id_] += 1
+                    dist[id_][ia] += 1
+                    dist[ib][ic] += 1
+                    dist[ic][ib] += 1
+                    dist[ib][id_] += 1
+                    dist[id_][ib] += 1
+                elif dominant_idx == 1:
+                    dist[ia][ib] += 1
+                    dist[ib][ia] += 1
+                    dist[ia][id_] += 1
+                    dist[id_][ia] += 1
+                    dist[ic][ib] += 1
+                    dist[ib][ic] += 1
+                    dist[ic][id_] += 1
+                    dist[id_][ic] += 1
+                else:
+                    dist[ia][ib] += 1
+                    dist[ib][ia] += 1
+                    dist[ia][ic] += 1
+                    dist[ic][ia] += 1
+                    dist[id_][ib] += 1
+                    dist[ib][id_] += 1
+                    dist[id_][ic] += 1
+                    dist[ic][id_] += 1
             else:  # hybrid
-                sorted_with_idx = sorted(enumerate(counts), key=lambda p: -p[1])
-                for topo_idx, _ in sorted_with_idx[:2]:
-                    for x, y in QuartetNetwork._cross_pairs(topo_idx, ia, ib, ic, id_):
-                        dist[x][y] += 0.5
-                        dist[y][x] += 0.5
+                for topo_idx in QuartetNetwork._top_two_topology_indices(counts):
+                    if topo_idx == 0:
+                        dist[ia][ic] += 0.5
+                        dist[ic][ia] += 0.5
+                        dist[ia][id_] += 0.5
+                        dist[id_][ia] += 0.5
+                        dist[ib][ic] += 0.5
+                        dist[ic][ib] += 0.5
+                        dist[ib][id_] += 0.5
+                        dist[id_][ib] += 0.5
+                    elif topo_idx == 1:
+                        dist[ia][ib] += 0.5
+                        dist[ib][ia] += 0.5
+                        dist[ia][id_] += 0.5
+                        dist[id_][ia] += 0.5
+                        dist[ic][ib] += 0.5
+                        dist[ib][ic] += 0.5
+                        dist[ic][id_] += 0.5
+                        dist[id_][ic] += 0.5
+                    else:
+                        dist[ia][ib] += 0.5
+                        dist[ib][ia] += 0.5
+                        dist[ia][ic] += 0.5
+                        dist[ic][ia] += 0.5
+                        dist[id_][ib] += 0.5
+                        dist[ib][id_] += 0.5
+                        dist[id_][ic] += 0.5
+                        dist[ic][id_] += 0.5
 
         return taxa_list, dist, taxa_idx
 
@@ -380,8 +785,13 @@ class QuartetNetwork(Tree):
         while len(active) > 2:
             m = len(active)
             r = {}
+            d_get = d.get
             for i in active:
-                r[i] = sum(d.get((i, j), 0) for j in active if j != i)
+                total = 0
+                for j in active:
+                    if j != i:
+                        total += d_get((i, j), 0)
+                r[i] = total
 
             best_q = float("inf")
             best_i, best_j = active[0], active[1]
@@ -426,18 +836,23 @@ class QuartetNetwork(Tree):
         n = len(ordering)
         all_taxa_set = frozenset(ordering)
         seen = {}
+        arc_taxa_by_start = [
+            {ordering[start], ordering[(start + 1) % n]}
+            for start in range(n)
+        ]
 
         for arc_len in range(2, n - 1):
             for start in range(n):
-                arc_taxa = frozenset(ordering[(start + k) % n] for k in range(arc_len))
+                arc_taxa = arc_taxa_by_start[start]
                 complement = all_taxa_set - arc_taxa
 
                 if len(arc_taxa) < len(complement):
-                    canonical = arc_taxa
+                    canonical = frozenset(arc_taxa)
                 elif len(arc_taxa) > len(complement):
                     canonical = complement
                 else:
-                    canonical = arc_taxa if sorted(arc_taxa) < sorted(complement) else complement
+                    side = frozenset(arc_taxa)
+                    canonical = side if min(side) < min(complement) else complement
 
                 if canonical in seen:
                     continue
@@ -456,6 +871,10 @@ class QuartetNetwork(Tree):
                      - dist_matrix[ib][ia] - dist_matrix[is_][ie]) / 2.0
                 seen[canonical] = max(w, 0.0)
 
+            if arc_len != n - 2:
+                for start, arc_taxa in enumerate(arc_taxa_by_start):
+                    arc_taxa.add(ordering[(start + arc_len) % n])
+
         return [(s, w) for s, w in seen.items() if w > 1e-10]
 
     # ------------------------------------------------------------------
@@ -463,31 +882,53 @@ class QuartetNetwork(Tree):
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _is_circular_split(split, ordering):
-        """Check if a split has exactly 2 boundary gaps in the circular ordering."""
+    def _circular_gap_positions(split, ordering):
+        """Return the two circular boundary gap positions, or None."""
         n = len(ordering)
-        gaps = 0
-        for i in range(n):
-            curr = ordering[i]
-            nxt = ordering[(i + 1) % n]
-            if (curr in split) != (nxt in split):
-                gaps += 1
-        return gaps == 2
+        if n == 0:
+            return None
+        gap_positions = []
+        first_in_split = ordering[0] in split
+        previous_in_split = first_in_split
+        for i in range(1, n):
+            current_in_split = ordering[i] in split
+            if previous_in_split != current_in_split:
+                gap_positions.append(i - 1)
+                if len(gap_positions) > 2:
+                    return None
+            previous_in_split = current_in_split
+        if previous_in_split != first_in_split:
+            gap_positions.append(n - 1)
+        if len(gap_positions) == 2:
+            return (gap_positions[0], gap_positions[1])
+        return None
 
     @staticmethod
-    def _compute_split_directions(ordering, circular_splits):
+    def _is_circular_split(split, ordering):
+        """Check if a split has exactly 2 boundary gaps in the circular ordering."""
+        return QuartetNetwork._circular_gap_positions(split, ordering) is not None
+
+    @staticmethod
+    def _compute_split_directions(ordering, circular_splits,
+                                  gap_positions_by_split=None):
         """Compute 2D direction vectors for each circular split."""
         n = len(ordering)
-        angles = {taxon: 2 * math.pi * i / n for i, taxon in enumerate(ordering)}
+        cos_by_taxon = {}
+        sin_by_taxon = {}
+        for i, taxon in enumerate(ordering):
+            angle = 2 * math.pi * i / n
+            cos_by_taxon[taxon] = math.cos(angle)
+            sin_by_taxon[taxon] = math.sin(angle)
         directions = {}
         for split, count, freq in circular_splits:
-            gap_positions = []
-            for i in range(n):
-                curr = ordering[i]
-                nxt = ordering[(i + 1) % n]
-                if (curr in split) != (nxt in split):
-                    gap_positions.append(i)
-            if len(gap_positions) != 2:
+            if gap_positions_by_split is None:
+                gap_positions = QuartetNetwork._circular_gap_positions(
+                    split,
+                    ordering,
+                )
+            else:
+                gap_positions = gap_positions_by_split.get(split)
+            if gap_positions is None:
                 continue
             g1 = math.pi * (2 * gap_positions[0] + 1) / n
             g2 = math.pi * (2 * gap_positions[1] + 1) / n
@@ -501,8 +942,14 @@ class QuartetNetwork(Tree):
                 dy /= length
             else:
                 dx, dy = 1.0, 0.0
-            cx_split = sum(math.cos(angles[t]) for t in split) / len(split)
-            cy_split = sum(math.sin(angles[t]) for t in split) / len(split)
+            cx_total = 0.0
+            cy_total = 0.0
+            for taxon in split:
+                cx_total += cos_by_taxon[taxon]
+                cy_total += sin_by_taxon[taxon]
+            center_scale = 1.0 / len(split)
+            cx_split = cx_total * center_scale
+            cy_split = cy_total * center_scale
             if dx * cx_split + dy * cy_split < 0:
                 dx = -dx
                 dy = -dy
@@ -517,10 +964,20 @@ class QuartetNetwork(Tree):
         n_splits = len(splits_list)
         if n_splits == 0:
             return {}, set(), [], [], []
+        bit_values = [1 << idx for idx in range(n_splits)]
         taxon_signs = {}
+        taxon_masks = []
         for taxon in all_taxa:
-            signs = tuple(1 if taxon in sp else -1 for sp in splits_list)
-            taxon_signs[taxon] = signs
+            sign_mask = 0
+            signs = []
+            for split_idx, sp in enumerate(splits_list):
+                if taxon in sp:
+                    signs.append(1)
+                    sign_mask |= bit_values[split_idx]
+                else:
+                    signs.append(-1)
+            taxon_signs[taxon] = tuple(signs)
+            taxon_masks.append(sign_mask)
         forbidden = {}
         for i in range(n_splits):
             for j in range(i + 1, n_splits):
@@ -539,39 +996,65 @@ class QuartetNetwork(Tree):
                     fb.add((-1, -1))
                 if fb:
                     forbidden[(i, j)] = fb
-        valid_nodes = set()
-        for combo in range(2 ** n_splits):
-            signs = tuple(1 if (combo >> j) & 1 else -1 for j in range(n_splits))
-            valid = True
-            for (i, j), fb_pairs in forbidden.items():
-                if (signs[i], signs[j]) in fb_pairs:
-                    valid = False
-                    break
-            if valid:
-                valid_nodes.add(signs)
-        for signs in taxon_signs.values():
-            valid_nodes.add(signs)
+        valid_masks = set()
+        constraints_by_split = [[] for _ in range(n_splits)]
+        for (i, j), fb_pairs in forbidden.items():
+            constraints_by_split[j].append((i, fb_pairs))
+
+        signs = [-1] * n_splits
+
+        def add_valid_signs(split_idx, sign_mask):
+            if split_idx == n_splits:
+                valid_masks.add(sign_mask)
+                return
+            bit_value = bit_values[split_idx]
+            for sign, next_mask in (
+                (-1, sign_mask),
+                (1, sign_mask | bit_value),
+            ):
+                valid = True
+                for prev_idx, fb_pairs in constraints_by_split[split_idx]:
+                    if (signs[prev_idx], sign) in fb_pairs:
+                        valid = False
+                        break
+                if valid:
+                    signs[split_idx] = sign
+                    add_valid_signs(split_idx + 1, next_mask)
+
+        add_valid_signs(0, 0)
+        valid_masks.update(taxon_masks)
+
+        signs_cache = {}
+
+        def mask_to_signs(mask):
+            try:
+                return signs_cache[mask]
+            except KeyError:
+                sign_tuple = tuple(1 if mask & bit else -1 for bit in bit_values)
+                signs_cache[mask] = sign_tuple
+                return sign_tuple
+
+        valid_nodes = {mask_to_signs(mask) for mask in valid_masks}
         edges = []
-        valid_list = list(valid_nodes)
-        for i in range(len(valid_list)):
-            for j in range(i + 1, len(valid_list)):
-                s1 = valid_list[i]
-                s2 = valid_list[j]
-                diff = [k for k in range(n_splits) if s1[k] != s2[k]]
-                if len(diff) == 1:
-                    edges.append((s1, s2, diff[0]))
+        for mask in valid_masks:
+            node = mask_to_signs(mask)
+            for split_idx, bit_value in enumerate(bit_values):
+                flipped = mask ^ bit_value
+                if flipped in valid_masks and mask < flipped:
+                    edges.append((node, mask_to_signs(flipped), split_idx))
         return taxon_signs, valid_nodes, edges, splits_list, weights
 
     def _draw_quartet_network(
         self,
         all_taxa: frozenset,
-        quartet_results: Dict[Tuple, Dict],
+        quartet_results: dict[tuple, dict],
         output_path: str,
     ):
         """Draw a NANUQ-style NeighborNet splits graph."""
         import matplotlib
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
+        from matplotlib.collections import LineCollection
 
         # Compute NANUQ distance matrix and circular ordering
         taxa_list, dist_matrix, taxa_idx = self._compute_nanuq_distance(
@@ -593,16 +1076,22 @@ class QuartetNetwork(Tree):
         splits_with_weights = splits_with_weights[:20]
 
         # Format as (split, count, freq) tuples and filter to circular
-        circular_splits = [
-            (split, 1, weight)
-            for split, weight in splits_with_weights
-            if self._is_circular_split(split, ordering)
-        ]
+        circular_splits = []
+        gap_positions_by_split = {}
+        for split, weight in splits_with_weights:
+            gap_positions = self._circular_gap_positions(split, ordering)
+            if gap_positions is not None:
+                circular_splits.append((split, 1, weight))
+                gap_positions_by_split[split] = gap_positions
 
         n = len(ordering)
         angles = {taxon: 2 * math.pi * i / n for i, taxon in enumerate(ordering)}
 
-        directions = self._compute_split_directions(ordering, circular_splits)
+        directions = self._compute_split_directions(
+            ordering,
+            circular_splits,
+            gap_positions_by_split,
+        )
         circular_splits = [
             (s, c, f) for s, c, f in circular_splits if s in directions
         ]
@@ -633,22 +1122,26 @@ class QuartetNetwork(Tree):
                     y += node[i] * weights[i] * dy / 2
                 node_positions[node] = (x, y)
 
-            all_x = [p[0] for p in node_positions.values()]
-            all_y = [p[1] for p in node_positions.values()]
-            extent = max(
-                max(all_x) - min(all_x) if all_x else 0,
-                max(all_y) - min(all_y) if all_y else 0,
-            )
+            extent = _position_extent(node_positions.values())
             pendant_len = max(0.15, extent * 0.3)
 
+            internal_segments = []
             for s1, s2, split_idx in edges:
                 x1, y1 = node_positions[s1]
                 x2, y2 = node_positions[s2]
-                ax.plot(
-                    [x1, x2], [y1, y2], "-",
-                    color="black", linewidth=1.5, zorder=2,
+                internal_segments.append(((x1, y1), (x2, y2)))
+            if internal_segments:
+                ax.add_collection(
+                    LineCollection(
+                        internal_segments,
+                        colors="black",
+                        linewidths=1.5,
+                        zorder=2,
+                    ),
+                    autolim=True,
                 )
 
+            pendant_segments = []
             for taxon in ordering:
                 angle = angles[taxon]
                 if taxon in taxon_signs and taxon_signs[taxon] in node_positions:
@@ -657,19 +1150,26 @@ class QuartetNetwork(Tree):
                     nx, ny = 0.0, 0.0
                 tx = nx + pendant_len * math.cos(angle)
                 ty = ny + pendant_len * math.sin(angle)
-                ax.plot(
-                    [nx, tx], [ny, ty], "-",
-                    color="black", linewidth=1.5, zorder=2,
-                )
+                pendant_segments.append(((nx, ny), (tx, ty)))
                 lx = tx + 0.03 * math.cos(angle)
                 ly = ty + 0.03 * math.sin(angle)
                 deg = math.degrees(angle)
                 ha = "left" if -90 < deg < 90 or deg > 270 else "right"
                 ax.text(lx, ly, taxon, ha=ha, va="center", fontsize=10, zorder=4)
+            if pendant_segments:
+                ax.add_collection(
+                    LineCollection(
+                        pendant_segments,
+                        colors="black",
+                        linewidths=1.5,
+                        zorder=2,
+                    ),
+                    autolim=True,
+                )
+            ax.autoscale_view()
 
         ax.axis("off")
 
-        plt.tight_layout()
         if config.show_title and config.title:
             ax.set_title(config.title, fontsize=config.title_fontsize)
         plt.savefig(output_path, dpi=config.dpi, bbox_inches="tight")
@@ -680,14 +1180,22 @@ class QuartetNetwork(Tree):
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _format_quartet(quartet: Tuple[str, str, str, str], topo_idx: int) -> str:
-        a, b, c, d = quartet
-        pairs_by_topo = {
-            0: (f"{{{a}, {b}}}", f"{{{c}, {d}}}"),
-            1: (f"{{{a}, {c}}}", f"{{{b}, {d}}}"),
-            2: (f"{{{a}, {d}}}", f"{{{b}, {c}}}"),
-        }
-        left, right = pairs_by_topo[topo_idx]
+    def _format_quartet(quartet: tuple[str, str, str, str], topo_idx: int) -> str:
+        a = quartet[0]
+        b = quartet[1]
+        c = quartet[2]
+        d = quartet[3]
+        if topo_idx == 0:
+            left = f"{{{a}, {b}}}"
+            right = f"{{{c}, {d}}}"
+        elif topo_idx == 1:
+            left = f"{{{a}, {c}}}"
+            right = f"{{{b}, {d}}}"
+        elif topo_idx == 2:
+            left = f"{{{a}, {d}}}"
+            right = f"{{{b}, {c}}}"
+        else:
+            raise KeyError(topo_idx)
         return f"{left} | {right}"
 
     # ------------------------------------------------------------------
@@ -725,8 +1233,7 @@ class QuartetNetwork(Tree):
         for quartet, counts in quartet_cfs.items():
             result = self._classify_quartet(counts, self.alpha, self.beta)
             result["counts"] = counts
-            total = sum(counts)
-            result["cfs"] = [c / total if total > 0 else 0.0 for c in counts]
+            result["cfs"] = self._quartet_cfs_from_counts(counts)
             quartet_results[quartet] = result
 
             if result["classification"] == "tree":
@@ -740,17 +1247,40 @@ class QuartetNetwork(Tree):
 
         if self.json_output:
             quartets_list = []
-            for quartet, result in quartet_results.items():
-                dominant_idx = result["counts"].index(max(result["counts"]))
-                quartets_list.append({
-                    "taxa": list(quartet),
-                    "counts": result["counts"],
-                    "cfs": [round(cf, 4) for cf in result["cfs"]],
-                    "classification": result["classification"],
-                    "p_star": round(result["p_star"], 6),
-                    "p_tree": round(result["p_tree"], 6),
-                    "dominant_topology": self._format_quartet(quartet, dominant_idx),
-                })
+            if total_quartets >= 10_000:
+                for quartet, result in quartet_results.items():
+                    counts = result["counts"]
+                    cfs = result["cfs"]
+                    dominant_idx = self._dominant_topology_index(counts)
+                    quartets_list.append({
+                        "taxa": [quartet[0], quartet[1], quartet[2], quartet[3]],
+                        "counts": counts,
+                        "cfs": [
+                            round(cfs[0], 4),
+                            round(cfs[1], 4),
+                            round(cfs[2], 4),
+                        ],
+                        "classification": result["classification"],
+                        "p_star": round(result["p_star"], 6),
+                        "p_tree": round(result["p_tree"], 6),
+                        "dominant_topology": self._format_quartet(
+                            quartet, dominant_idx
+                        ),
+                    })
+            else:
+                for quartet, result in quartet_results.items():
+                    dominant_idx = self._dominant_topology_index(result["counts"])
+                    quartets_list.append({
+                        "taxa": list(quartet),
+                        "counts": result["counts"],
+                        "cfs": [round(cf, 4) for cf in result["cfs"]],
+                        "classification": result["classification"],
+                        "p_star": round(result["p_star"], 6),
+                        "p_tree": round(result["p_tree"], 6),
+                        "dominant_topology": self._format_quartet(
+                            quartet, dominant_idx
+                        ),
+                    })
             print_json(
                 dict(
                     input_tree_count=n_trees,
@@ -766,33 +1296,40 @@ class QuartetNetwork(Tree):
                 )
             )
         else:
-            print(f"Number of input trees: {n_trees}")
-            print(f"Number of taxa: {len(all_taxa)}")
-            print(f"Significance level (alpha): {self.alpha}")
-            print(f"Star tree threshold (beta): {self.beta}")
+            lines = [
+                f"Number of input trees: {n_trees}",
+                f"Number of taxa: {len(all_taxa)}",
+                f"Significance level (alpha): {self.alpha}",
+                f"Star tree threshold (beta): {self.beta}",
+            ]
             if pruned:
-                print("Pruned to shared taxa: yes")
-            print(f"Total quartets: {total_quartets}")
+                lines.append("Pruned to shared taxa: yes")
             tree_pct = 100 * tree_count / total_quartets if total_quartets > 0 else 0
             hybrid_pct = 100 * hybrid_count / total_quartets if total_quartets > 0 else 0
             unresolved_pct = 100 * unresolved_count / total_quartets if total_quartets > 0 else 0
-            print(f"Tree-like: {tree_count} ({tree_pct:.1f}%)")
-            print(f"Hybrid: {hybrid_count} ({hybrid_pct:.1f}%)")
-            print(f"Unresolved: {unresolved_count} ({unresolved_pct:.1f}%)")
-            print("---")
+            lines.extend(
+                [
+                    f"Total quartets: {total_quartets}",
+                    f"Tree-like: {tree_count} ({tree_pct:.1f}%)",
+                    f"Hybrid: {hybrid_count} ({hybrid_pct:.1f}%)",
+                    f"Unresolved: {unresolved_count} ({unresolved_pct:.1f}%)",
+                    "---",
+                ]
+            )
             for quartet, result in quartet_results.items():
                 counts = result["counts"]
                 cfs = result["cfs"]
-                dominant_idx = counts.index(max(counts))
+                dominant_idx = self._dominant_topology_index(counts)
                 topo_str = self._format_quartet(quartet, dominant_idx)
                 cf_str = "\t".join(f"{cf:.4f}" for cf in cfs)
                 classification = result["classification"]
                 p_star = result["p_star"]
                 p_tree = result["p_tree"]
-                print(
+                lines.append(
                     f"{topo_str}\t{cf_str}\t{classification}\t"
                     f"p_star={p_star:.4f}\tp_tree={p_tree:.4f}"
                 )
+            print("\n".join(lines))
 
         if self.plot_output:
             self._draw_quartet_network(all_taxa, quartet_results, self.plot_output)

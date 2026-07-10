@@ -5,7 +5,7 @@ Provides gene concordance factor (gCF/gDF1/gDF2) computation via the
 four-group bipartition decomposition, and parsing of ASTRAL -t 2 or
 wASTRAL --support 3 q1/q2/q3 annotations from Newick node labels.
 """
-from typing import Dict, List, Optional, Tuple
+from collections import Counter
 
 from ..errors import PhykitUserError
 
@@ -13,12 +13,121 @@ from ..errors import PhykitUserError
 def canonical_split(tips: frozenset, all_taxa: frozenset) -> frozenset:
     """Normalize a bipartition to a canonical frozenset-of-frozensets."""
     complement = all_taxa - tips
-    return frozenset([tips, complement])
+    return frozenset((tips, complement))
+
+
+def _collect_clade_tip_sets(tree, allowed_taxa: frozenset = None) -> dict[int, frozenset]:
+    direct_clade_tips = _collect_clade_tip_sets_direct(tree, allowed_taxa)
+    if direct_clade_tips is not None:
+        return direct_clade_tips
+
+    clade_tips: dict[int, frozenset] = {}
+
+    for clade in tree.find_clades(order="postorder"):
+        if clade.is_terminal():
+            if allowed_taxa is None or clade.name in allowed_taxa:
+                clade_tips[id(clade)] = frozenset({clade.name})
+            else:
+                clade_tips[id(clade)] = frozenset()
+        else:
+            tips = frozenset()
+            for child in clade.clades:
+                tips = tips | clade_tips.get(id(child), frozenset())
+            clade_tips[id(clade)] = tips
+
+    return clade_tips
+
+
+def _collect_clade_tip_sets_direct(
+    tree, allowed_taxa: frozenset = None
+) -> dict[int, frozenset] | None:
+    try:
+        root = tree.root
+        root.clades
+    except AttributeError:
+        return None
+
+    preorder = []
+    stack = [root]
+    append = preorder.append
+    pop = stack.pop
+    extend = stack.extend
+    try:
+        while stack:
+            clade = pop()
+            append(clade)
+            children = clade.clades
+            if children:
+                extend(children)
+    except AttributeError:
+        return None
+
+    clade_tips: dict[int, frozenset] = {}
+    try:
+        for clade in reversed(preorder):
+            children = clade.clades
+            if children:
+                child_count = len(children)
+                if child_count == 2:
+                    tips = (
+                        clade_tips[id(children[0])]
+                        | clade_tips[id(children[1])]
+                    )
+                elif child_count == 1:
+                    tips = clade_tips[id(children[0])]
+                else:
+                    tips = frozenset().union(
+                        *(clade_tips[id(child)] for child in children)
+                    )
+                clade_tips[id(clade)] = tips
+            elif allowed_taxa is None or clade.name in allowed_taxa:
+                clade_tips[id(clade)] = frozenset({clade.name})
+            else:
+                clade_tips[id(clade)] = frozenset()
+    except (AttributeError, KeyError, TypeError):
+        return None
+    return clade_tips
+
+
+def _preorder_clades(tree):
+    direct_clades = _preorder_clades_direct(tree)
+    if direct_clades is not None:
+        return direct_clades
+    return list(tree.find_clades(order="preorder"))
+
+
+def _preorder_clades_direct(tree) -> list | None:
+    try:
+        root = tree.root
+        root.clades
+    except AttributeError:
+        return None
+
+    clades = []
+    stack = [root]
+    try:
+        pop = stack.pop
+        append = stack.append
+        clades_append = clades.append
+        while stack:
+            clade = pop()
+            clades_append(clade)
+            children = clade.clades
+            child_count = len(children)
+            if child_count == 2:
+                append(children[1])
+                append(children[0])
+            elif child_count:
+                for idx in range(child_count - 1, -1, -1):
+                    append(children[idx])
+    except AttributeError:
+        return None
+    return clades
 
 
 def compute_gcf_per_node(
     species_tree, gene_trees: list
-) -> Dict[int, Tuple[float, float, float, int, int, int]]:
+) -> dict[int, tuple[float, float, float, int, int, int]]:
     """Compute (gCF, gDF1, gDF2, concordant, disc1, disc2) per internal node.
 
     Uses the four-group decomposition (C1, C2, S, D) around each internal
@@ -26,44 +135,45 @@ def compute_gcf_per_node(
 
     Returns dict mapping clade id -> (gCF, gDF1, gDF2, n_conc, n_d1, n_d2).
     """
-    all_taxa = frozenset(t.name for t in species_tree.get_terminals())
+    species_clade_tips = _collect_clade_tip_sets(species_tree)
+    try:
+        all_taxa = species_clade_tips[id(species_tree.root)]
+    except (AttributeError, KeyError):
+        all_taxa = frozenset(t.name for t in species_tree.get_terminals())
+    species_preorder = _preorder_clades(species_tree)
 
-    # Build parent map
-    parent_map = {}
-    for clade in species_tree.find_clades(order="preorder"):
-        for child in clade.clades:
-            parent_map[id(child)] = clade
-
-    # Extract bipartitions from all gene trees
-    gt_splits = []
+    # Extract bipartitions from all gene trees and count how many trees support
+    # each split. Each gene tree contributes at most once per split.
+    gt_split_counts = Counter()
     for gt in gene_trees:
-        gt_taxa = frozenset(t.name for t in gt.get_terminals())
-        shared = gt_taxa & all_taxa
+        gt_clade_tips = _collect_clade_tip_sets(gt, all_taxa)
+        shared = gt_clade_tips.get(id(gt.root), frozenset())
         if len(shared) < 4:
-            gt_splits.append(set())
             continue
         splits = set()
-        for clade in gt.get_nonterminals():
-            tips = frozenset(t.name for t in clade.get_terminals()) & shared
+        for clade in _preorder_clades(gt):
+            if not clade.clades:
+                continue
+            tips = gt_clade_tips.get(id(clade), frozenset())
             if len(tips) <= 1 or tips == shared:
                 continue
             splits.add(canonical_split(tips, shared))
-        gt_splits.append(splits)
+        gt_split_counts.update(splits)
 
     result = {}
-    for clade in species_tree.find_clades(order="preorder"):
-        if clade.is_terminal() or clade == species_tree.root:
+    for clade in species_preorder:
+        if not clade.clades or clade == species_tree.root:
             continue
 
         children = clade.clades
         if len(children) < 2:
             continue
 
-        C1 = frozenset(t.name for t in children[0].get_terminals())
-        C2 = frozenset(t.name for t in children[1].get_terminals())
+        C1 = species_clade_tips.get(id(children[0]), frozenset())
+        C2 = species_clade_tips.get(id(children[1]), frozenset())
         # Handle polytomies: merge extra children into C2
         for c in children[2:]:
-            C2 = C2 | frozenset(t.name for t in c.get_terminals())
+            C2 = C2 | species_clade_tips.get(id(c), frozenset())
 
         remaining = all_taxa - C1 - C2
         if not remaining:
@@ -73,9 +183,9 @@ def compute_gcf_per_node(
         nni1_bp = canonical_split(remaining | C2, all_taxa)
         nni2_bp = canonical_split(C1 | remaining, all_taxa)
 
-        conc = sum(1 for s in gt_splits if concordant_bp in s)
-        d1 = sum(1 for s in gt_splits if nni1_bp in s)
-        d2 = sum(1 for s in gt_splits if nni2_bp in s)
+        conc = gt_split_counts[concordant_bp]
+        d1 = gt_split_counts[nni1_bp]
+        d2 = gt_split_counts[nni2_bp]
 
         total = conc + d1 + d2
         if total > 0:
@@ -92,7 +202,7 @@ def compute_gcf_per_node(
 
 def parse_astral_annotations(
     tree,
-) -> Dict[int, Tuple[float, float, float]]:
+) -> dict[int, tuple[float, float, float]]:
     """Parse q1/q2/q3 annotations from ASTRAL/wASTRAL Newick node labels.
 
     Supports ASTRAL -t 2 and wASTRAL --support 3 output formats:
@@ -104,7 +214,7 @@ def parse_astral_annotations(
     Only nodes with valid q1/q2/q3 are included.
     """
     result = {}
-    for clade in tree.find_clades(order="preorder"):
+    for clade in _preorder_clades(tree):
         if clade.is_terminal():
             continue
         label = clade.name or clade.comment or ""
@@ -116,14 +226,14 @@ def parse_astral_annotations(
 
 def parse_astral_branch_info(
     tree,
-) -> Dict[int, Dict[str, float]]:
+) -> dict[int, dict[str, float]]:
     """Parse f1 (concordant count) and pp1 (LPP) from ASTRAL/wASTRAL labels.
 
     Returns dict mapping clade id -> {"f1": ..., "pp1": ...}.
     Keys are only present if the value was found in the annotation.
     """
     result = {}
-    for clade in tree.find_clades(order="preorder"):
+    for clade in _preorder_clades(tree):
         if clade.is_terminal():
             continue
         label = clade.name or clade.comment or ""
@@ -133,7 +243,7 @@ def parse_astral_branch_info(
     return result
 
 
-def _parse_branch_info_from_label(label: str) -> Dict[str, float]:
+def _parse_branch_info_from_label(label: str) -> dict[str, float]:
     """Extract f1, pp1 (and optionally f2, f3, pp2, pp3) from an ASTRAL label."""
     s = label.strip("'\"").strip("[]")
     info = {}
@@ -150,7 +260,7 @@ def _parse_branch_info_from_label(label: str) -> Dict[str, float]:
     return info
 
 
-def _parse_qs_from_label(label: str) -> Optional[Tuple[float, float, float]]:
+def _parse_qs_from_label(label: str) -> tuple[float, float, float] | None:
     """Extract q1, q2, q3 from an ASTRAL node label string."""
     s = label.strip("'\"").strip("[]")
     q1 = q2 = q3 = None
