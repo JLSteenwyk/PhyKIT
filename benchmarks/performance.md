@@ -863,6 +863,7 @@ Results:
 | `Alignment.calculate_rcv` gappy large-short ASCII count matrix | gappy DNA byte matrices sized 10000x80 / 20000x120 / 50000x80 / 100000x50, side-by-side previous per-row `bincount` valid-mask path | 0.113055s / 0.259663s / 0.508456s / 0.775806s | 0.010403s / 0.050741s / 0.107748s / 0.169821s | 10.87x / 5.12x / 4.72x / 4.57x |
 | `Alignment.calculate_rcv` single-record early return | 5 repeated 4.5M-site single-record RCV calls, side-by-side previous sequence materialization before zero return | 0.014365s | 0.000000417s | 34428.75x |
 | `Alignment.calculate_rcv` cached lazy NumPy attributes | 1200 taxa x 4000 gappy DNA sites, side-by-side previous uncached lazy proxy, identical RCV | 0.750559s | 0.487720s | 1.54x |
+| `rcv` default CLI parser bypass | direct dispatch of `rcv alignment` into a no-op service, 1000 calls; direct command timing against `simple.fa`, 30 runs after 5 warmups, stdout matched | 1.552995s; 0.457292s command mean | 0.000823s; 0.285528s command mean | 1886.99x; 1.60x command |
 | `rcv` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006077s | 0.004840s | 1.26x |
 | `OccupancyPerTaxon.calculate_occupancy_per_taxon` | 260 taxa x 5000 sites, alphabet `ACGT-?NX*` | 0.0483s | 0.0037s | 13.1x |
 | `OccupancyPerTaxon.calculate_occupancy_per_taxon` byte lookup | 1200 taxa x 12000 sites, alphabet `ACGT-?*XN` | 0.0753s | 0.0264s | 2.9x |
