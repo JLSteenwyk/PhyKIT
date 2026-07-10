@@ -80,6 +80,19 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.2.1</strong>:
+Character-map correctness and plotting improvements:</p>
+<ul class="simple">
+<li><p>Preserved polytomies in <code class="docutils literal notranslate"><span class="pre">character_map</span></code> analysis and plots. Multifurcating
+trees now use exact unordered-parsimony reconstruction directly on the
+submitted topology, while binary trees retain the optimized Fitch path.</p></li>
+<li><p>Added strict, case-sensitive taxon matching between trees and character
+matrices. Mismatches now report labels unique to each input and fail by
+default; <code class="docutils literal notranslate"><span class="pre">--allow-taxon-mismatch</span></code> explicitly enables warned shared-taxon
+pruning. Empty and duplicate taxon labels are rejected.</p></li>
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">--change-marker-size</span></code> and <code class="docutils literal notranslate"><span class="pre">--change-fontsize</span></code> controls and
+documented exact label matching, whitespace behavior, and Newick quoting.</p></li>
+</ul>
 <p><strong>2.2.0</strong>:
 Profile-guided performance and scalability release:</p>
 <ul class="simple">
