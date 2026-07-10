@@ -65,6 +65,10 @@ np = _LazyNumpy()
 _ZSCORE_FAST_MAX_SIZE = 100_000
 _PLOT_DIRECT_EXTREMA_LIMIT = 1_000
 _OUTLIER_SMALL_LIST_MAX_SIZE = 32
+_BETA_CONTINUED_FRACTION_MAX_ITERATIONS = 200
+_BETA_CONTINUED_FRACTION_EPSILON = 3e-14
+_BETA_CONTINUED_FRACTION_FLOOR = 1e-300
+_PEARSON_SCALAR_BETA_MAX_SIZE = 100_000
 
 
 def _plot_min(values):
@@ -88,6 +92,87 @@ def _zscore(values):
     return (arr - np.mean(arr)) / np.std(arr)
 
 
+def _beta_continued_fraction(a, b, x):
+    qab = a + b
+    qap = a + 1.0
+    qam = a - 1.0
+    floor = _BETA_CONTINUED_FRACTION_FLOOR
+    c = 1.0
+    d = 1.0 - qab * x / qap
+    if abs(d) < floor:
+        d = floor
+    d = 1.0 / d
+    result = d
+
+    for iteration in range(1, _BETA_CONTINUED_FRACTION_MAX_ITERATIONS + 1):
+        twice_iteration = 2 * iteration
+        coefficient = (
+            iteration
+            * (b - iteration)
+            * x
+            / ((qam + twice_iteration) * (a + twice_iteration))
+        )
+        d = 1.0 + coefficient * d
+        if abs(d) < floor:
+            d = floor
+        c = 1.0 + coefficient / c
+        if abs(c) < floor:
+            c = floor
+        d = 1.0 / d
+        result *= d * c
+
+        coefficient = -(
+            (a + iteration)
+            * (qab + iteration)
+            * x
+            / ((a + twice_iteration) * (qap + twice_iteration))
+        )
+        d = 1.0 + coefficient * d
+        if abs(d) < floor:
+            d = floor
+        c = 1.0 + coefficient / c
+        if abs(c) < floor:
+            c = floor
+        d = 1.0 / d
+        delta = d * c
+        result *= delta
+        if abs(delta - 1.0) <= _BETA_CONTINUED_FRACTION_EPSILON:
+            return result
+
+    raise ArithmeticError("incomplete beta continued fraction did not converge")
+
+
+def _pearson_two_sided_p_value(r_value, sample_size):
+    if math.isnan(r_value):
+        return float("nan")
+
+    x = 0.5 * (1.0 - abs(r_value))
+    if x <= 0.0:
+        return 0.0
+    if x >= 0.5:
+        return 1.0
+
+    shape = sample_size / 2.0 - 1.0
+    if sample_size > _PEARSON_SCALAR_BETA_MAX_SIZE:
+        from scipy.special import betainc
+
+        return min(max(2.0 * float(betainc(shape, shape, x)), 0.0), 1.0)
+
+    beta_term = math.exp(
+        math.lgamma(2.0 * shape)
+        - 2.0 * math.lgamma(shape)
+        + shape * math.log(x)
+        + shape * math.log1p(-x)
+    )
+    p_value = (
+        2.0
+        * beta_term
+        * _beta_continued_fraction(shape, shape, x)
+        / shape
+    )
+    return min(max(p_value, 0.0), 1.0)
+
+
 def _pearsonr(x_values, y_values):
     x = np.asarray(x_values, dtype=float)
     y = np.asarray(y_values, dtype=float)
@@ -108,11 +193,7 @@ def _pearsonr(x_values, y_values):
     if x.size == 2:
         return r_value, 1.0
 
-    from scipy.special import betainc
-
-    shape = x.size / 2.0 - 1.0
-    p_value = 2.0 * float(betainc(shape, shape, 0.5 * (1.0 - abs(r_value))))
-    return r_value, min(max(p_value, 0.0), 1.0)
+    return r_value, _pearson_two_sided_p_value(r_value, x.size)
 
 
 class CovaryingEvolutionaryRates(Tree):

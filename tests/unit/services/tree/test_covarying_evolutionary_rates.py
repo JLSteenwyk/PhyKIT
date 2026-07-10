@@ -4,6 +4,7 @@ Unit tests for CovaryingEvolutionaryRates class
 
 import unittest
 import builtins
+import math
 from io import StringIO
 from unittest.mock import Mock, MagicMock, patch
 from concurrent.futures import Future
@@ -202,8 +203,8 @@ class TestCovaryingEvolutionaryRates(unittest.TestCase):
         original_import = builtins.__import__
 
         def fake_import(name, globals=None, locals=None, fromlist=(), level=0):
-            if name == "scipy.stats" or name.startswith("scipy.stats."):
-                raise AssertionError("covarying rates Pearson p-value should not import scipy.stats")
+            if name == "scipy" or name.startswith("scipy."):
+                raise AssertionError("covarying rates Pearson p-value should not import scipy")
             return original_import(name, globals, locals, fromlist, level)
 
         with patch("builtins.__import__", side_effect=fake_import):
@@ -214,6 +215,43 @@ class TestCovaryingEvolutionaryRates(unittest.TestCase):
 
         self.assertAlmostEqual(r_value, 0.8315218406203)
         self.assertAlmostEqual(p_value, 0.1684781593797)
+
+    def test_pearson_two_sided_p_value_matches_scipy(self):
+        cases = [
+            (3, 0.5, 0.6666666666666666),
+            (5, 0.25, 0.6850376424742926),
+            (13, 0.5436, 0.05483673342721399),
+            (32, 0.8, 3.925226358836894e-08),
+            (100, 0.3, 0.0024257334625830307),
+            (1_000, 0.1, 0.001544116107401122),
+            (10_000, 0.01, 0.3173589086629061),
+            (100_000, 0.001, 0.75183257416165),
+        ]
+        for sample_size, r_value, expected in cases:
+            with self.subTest(sample_size=sample_size, r_value=r_value):
+                self.assertAlmostEqual(
+                    cer_module._pearson_two_sided_p_value(r_value, sample_size),
+                    expected,
+                    places=9,
+                )
+
+    def test_pearson_two_sided_p_value_boundaries(self):
+        self.assertEqual(cer_module._pearson_two_sided_p_value(0.0, 10), 1.0)
+        self.assertEqual(cer_module._pearson_two_sided_p_value(1.0, 10), 0.0)
+        self.assertTrue(
+            math.isnan(
+                cer_module._pearson_two_sided_p_value(float("nan"), 10)
+            )
+        )
+
+    def test_pearson_two_sided_p_value_keeps_large_scipy_path(self):
+        sample_size = cer_module._PEARSON_SCALAR_BETA_MAX_SIZE + 1
+        shape = sample_size / 2.0 - 1.0
+        with patch("scipy.special.betainc", return_value=0.125) as betainc:
+            p_value = cer_module._pearson_two_sided_p_value(0.5, sample_size)
+
+        self.assertEqual(p_value, 0.25)
+        betainc.assert_called_once_with(shape, shape, 0.25)
 
     def test_plot_extrema_use_array_methods_for_small_plot_vectors(self):
         values = np.array([0.4, 0.1, 0.9])

@@ -114,6 +114,16 @@ COMMANDS: tuple[tuple[str, tuple[str, ...]], ...] = (
         ("terminal_branch_stats", str(SAMPLES / "small_Aspergillus_tree.tre")),
     ),
     (
+        "covarying_evolutionary_rates",
+        (
+            "covarying_evolutionary_rates",
+            str(SAMPLES / "tree_simple.tre"),
+            str(SAMPLES / "tree_simple_1.tre"),
+            "--reference",
+            str(SAMPLES / "tree_simple_2.tre"),
+        ),
+    ),
+    (
         "compositional_bias_per_site",
         ("compositional_bias_per_site", str(SAMPLES / "simple.fa")),
     ),
