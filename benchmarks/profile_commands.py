@@ -16,12 +16,15 @@ from pathlib import Path
 import statistics
 import subprocess
 import sys
+import tempfile
 import time
 
 
 ROOT = Path(__file__).resolve().parents[1]
 RUNNER = ROOT / "phykit-runner.py"
 SAMPLES = ROOT / "tests" / "sample_files"
+PROFILE_FIXTURES = ROOT / "benchmarks" / "fixtures"
+_OUTPUT_PATH_TOKEN = "__PROFILE_OUTPUT_PATH__"
 
 COMMANDS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("alignment_length", ("alignment_length", str(SAMPLES / "test_alignment_0.fa"))),
@@ -127,6 +130,19 @@ COMMANDS: tuple[tuple[str, tuple[str, ...]], ...] = (
         "compositional_bias_per_site",
         ("compositional_bias_per_site", str(SAMPLES / "simple.fa")),
     ),
+    (
+        "phylo_gwas_multigroup",
+        (
+            "phylo_gwas",
+            "--alignment",
+            str(PROFILE_FIXTURES / "phylo_gwas_multigroup.fa"),
+            "--phenotype",
+            str(PROFILE_FIXTURES / "phylo_gwas_multigroup.tsv"),
+            "--output",
+            _OUTPUT_PATH_TOKEN,
+            "--json",
+        ),
+    ),
 )
 
 
@@ -157,21 +173,26 @@ def profile_commands(
     env["PYTHONPATH"] = str(ROOT)
     results: list[dict[str, object]] = []
 
-    for name in selected:
-        command_args = commands[name]
-        for _ in range(warmup):
-            _run_once(command_args, env)
+    with tempfile.TemporaryDirectory(prefix="phykit-profile-") as output_dir:
+        output_path = str(Path(output_dir) / "phylo_gwas.png")
+        for name in selected:
+            command_args = tuple(
+                output_path if argument == _OUTPUT_PATH_TOKEN else argument
+                for argument in commands[name]
+            )
+            for _ in range(warmup):
+                _run_once(command_args, env)
 
-        timings = [_run_once(command_args, env) for _ in range(repeat)]
-        results.append(
-            {
-                "command": name,
-                "mean_seconds": statistics.mean(timings),
-                "median_seconds": statistics.median(timings),
-                "min_seconds": min(timings),
-                "runs": repeat,
-            }
-        )
+            timings = [_run_once(command_args, env) for _ in range(repeat)]
+            results.append(
+                {
+                    "command": name,
+                    "mean_seconds": statistics.mean(timings),
+                    "median_seconds": statistics.median(timings),
+                    "min_seconds": min(timings),
+                    "runs": repeat,
+                }
+            )
 
     results.sort(key=lambda row: row["mean_seconds"], reverse=True)
     return results

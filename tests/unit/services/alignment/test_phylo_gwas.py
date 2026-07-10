@@ -25,6 +25,7 @@ assert hasattr(module.np, "__getattr__")
 assert callable(module.print_json)
 assert "typing" not in sys.modules
 assert "numpy" not in sys.modules
+assert "scipy" not in sys.modules
 assert "csv" not in sys.modules
 assert "json" not in sys.modules
 assert "phykit.helpers.json_output" not in sys.modules
@@ -1723,6 +1724,69 @@ class TestPhyloGwas:
         assert allele_1 == "G"
         assert p_value == pytest.approx(float(expected_p))
         assert group_freqs == {"X": 0.0, "Y": 0.5, "Z": 1.0}
+
+    @pytest.mark.parametrize(
+        ("degrees_of_freedom", "statistic"),
+        (
+            (1, 0.25),
+            (2, 12.0),
+            (3, 7.5),
+            (5, 50.0),
+            (8, 20.0),
+            (8, 500.0),
+        ),
+    )
+    def test_chi2_sf_integer_df_matches_scipy(
+        self, degrees_of_freedom, statistic
+    ):
+        from scipy.special import chdtrc
+
+        observed = phylo_gwas_module._chi2_sf_integer_df(
+            degrees_of_freedom, statistic
+        )
+
+        assert observed == pytest.approx(
+            float(chdtrc(degrees_of_freedom, statistic)),
+            rel=2e-13,
+            abs=5e-324,
+        )
+
+    def test_test_site_categorical_multigroup_does_not_import_scipy_special(
+        self, monkeypatch
+    ):
+        service = PhyloGwas.__new__(PhyloGwas)
+        original_import = builtins.__import__
+
+        def guarded_import(name, globals=None, locals=None, fromlist=(), level=0):
+            if name == "scipy.special" or name.startswith("scipy.special."):
+                raise AssertionError(
+                    "ordinary multi-group GWAS should not import scipy.special"
+                )
+            return original_import(name, globals, locals, fromlist, level)
+
+        monkeypatch.setattr(builtins, "__import__", guarded_import)
+
+        result = service._test_site_categorical(
+            np.frombuffer(b"AAAGGG", dtype=np.uint8),
+            ["X", "X", "Y", "Y", "Z", "Z"],
+            ["X", "Y", "Z"],
+        )
+
+        assert result is not None
+        assert result[0] == pytest.approx(0.1353352832366127)
+
+    def test_chi2_sf_integer_df_uses_scipy_fallback(self, monkeypatch):
+        calls = []
+
+        def fake_chdtrc(degrees_of_freedom, statistic):
+            calls.append((degrees_of_freedom, statistic))
+            return 0.125
+
+        monkeypatch.setattr(phylo_gwas_module, "_CHDTRC", fake_chdtrc)
+
+        assert phylo_gwas_module._chi2_sf_integer_df(9, 20.0) == 0.125
+        assert phylo_gwas_module._chi2_sf_integer_df(2, 1000.5) == 0.125
+        assert calls == [(9, 20.0), (2, 1000.5)]
 
     def test_test_site_categorical_ascii_fast_path_matches_fallback(self):
         service = PhyloGwas.__new__(PhyloGwas)

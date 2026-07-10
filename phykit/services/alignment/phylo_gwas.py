@@ -42,6 +42,9 @@ _BH_SCALAR_MAX = 7
 _MANHATTAN_PLOT_CACHE = {}
 _MANHATTAN_PLOT_CACHE_MAX = 4
 _MANHATTAN_PLOT_CACHE_MAX_ROWS = 50000
+_CHI2_SCALAR_MAX_DF = 8
+_CHI2_SCALAR_MAX_STATISTIC = 1000.0
+_CHDTRC = None
 
 
 def print_json(*args, **kwargs):
@@ -52,6 +55,50 @@ def print_json(*args, **kwargs):
 
 def _log_comb(n: int, k: int) -> float:
     return math.lgamma(n + 1) - math.lgamma(k + 1) - math.lgamma(n - k + 1)
+
+
+def _chi2_sf_integer_df(degrees_of_freedom: int, statistic: float) -> float:
+    """Return the chi-square survival probability for ordinary integer df."""
+    if degrees_of_freedom <= 0 or statistic <= 0.0:
+        return 1.0
+
+    if (
+        degrees_of_freedom > _CHI2_SCALAR_MAX_DF
+        or statistic > _CHI2_SCALAR_MAX_STATISTIC
+    ):
+        global _CHDTRC
+        if _CHDTRC is None:
+            from scipy.special import chdtrc as _scipy_chdtrc
+
+            _CHDTRC = _scipy_chdtrc
+        return float(_CHDTRC(degrees_of_freedom, statistic))
+
+    half_statistic = statistic * 0.5
+    if degrees_of_freedom % 2 == 0:
+        term = math.exp(-half_statistic)
+        total = term
+        for index in range(1, degrees_of_freedom // 2):
+            term *= half_statistic / index
+            total += term
+        return min(max(total, 0.0), 1.0)
+
+    total = math.erfc(math.sqrt(half_statistic))
+    if degrees_of_freedom == 1:
+        return total
+
+    term = (
+        math.exp(-half_statistic)
+        * 2.0
+        * math.sqrt(half_statistic)
+        / math.sqrt(math.pi)
+    )
+    total += term
+    current_shape = 0.5
+    for _ in range(1, degrees_of_freedom // 2):
+        term *= half_statistic / (current_shape + 1.0)
+        total += term
+        current_shape += 1.0
+    return min(max(total, 0.0), 1.0)
 
 
 def _get_partition_row_pattern():
@@ -531,7 +578,7 @@ class PhyloGwas(Alignment):
             table[:, 1] = derived_counts
             table[:, 0] = group_row_counts - derived_counts
             if chdtrc_func is None:
-                from scipy.special import chdtrc as chdtrc_func
+                chdtrc_func = _chi2_sf_integer_df
 
             # Check for zero-sum rows/columns
             col_sums = table.sum(axis=0)
@@ -994,10 +1041,6 @@ class PhyloGwas(Alignment):
             pheno_ss = float(np.dot(pheno_centered, pheno_centered))
         else:
             unique_groups = sorted(set(pheno_values))
-            chdtrc = None
-            if len(unique_groups) > 2:
-                from scipy.special import chdtrc
-
             group_counts = Counter(pheno_values)
             groups = [phenotypes[t] for t in shared_taxa]
             group_idx = {g: i for i, g in enumerate(unique_groups)}
@@ -1080,8 +1123,7 @@ class PhyloGwas(Alignment):
                     group_codes,
                     group_row_counts,
                     group_code_offsets,
-                    chdtrc,
-                    fisher_cache,
+                    fisher_cache=fisher_cache,
                 )
                 if result is None:
                     continue

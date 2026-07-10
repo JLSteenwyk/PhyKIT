@@ -840,6 +840,7 @@ Results:
 | `PhyloGwas._test_site_categorical` Unicode multiallelic skip | 300k non-ASCII alleles, first three alleles multiallelic, categorical phenotype | 0.036496s | 0.000002125s | 17174.6x |
 | `PhyloGwas._test_site_continuous` Unicode multiallelic skip | 300k non-ASCII alleles, first three alleles multiallelic, continuous phenotype | 0.012269s | 0.000001333s | 9204.1x |
 | `PhyloGwas._test_site_categorical` cached lazy NumPy attributes | 80k repeated byte-column categorical site tests with cached Fisher result, side-by-side previous uncached lazy proxy | 0.000032586s | 0.000018226s | 1.79x |
+| `phylo_gwas` multi-group categorical CLI without eager SciPy | paired cold subprocess runs of 12 taxa x 8 sites across 3 phenotype groups, including JSON output and Manhattan PNG rendering; 15 runs after 3 warmups | 1.204024s | 0.925876s | 1.30x |
 | `PhyloGwas._valid_ascii_columns` all-valid matrix shortcut | 1000 taxa x 12000 sites, clean DNA / gappy DNA ASCII matrices, identical valid-column masks | 0.121870s / 0.130372s | 0.120357s / 0.122030s | 1.01x / 1.07x |
 | `PhyloGwas._binary_alleles_from_unicode_site` two-allele ordering | 21k non-ASCII biallelic sites with mixed major/minor and equal-count cases, identical allele ordering | 0.876059s | 0.761983s | 1.15x |
 | `PhyloGwas` categorical site-result row construction | 1M mocked categorical GWAS site results, identical row dictionaries | 2.008253s | 1.780623s | 1.13x |
@@ -4775,7 +4776,12 @@ Profiling summary:
   two-group categorical run path now also defers `scipy.special.chdtrc` until a
   multi-group phenotype actually needs the chi-square survival function,
   preserving Fisher exact behavior while avoiding SciPy startup on common
-  binary-phenotype GWAS runs. Byte
+  binary-phenotype GWAS runs. Multi-group runs with up to nine phenotype groups
+  now evaluate ordinary chi-square survival probabilities with a bounded scalar
+  integer-degree recurrence, retaining lazy SciPy fallback for larger tables or
+  statistics above 1000. Paired full CLI runs improved by 1.30x; all non-p-value
+  JSON fields were identical and the maximum p-value or FDR difference was
+  1.3e-18. Byte
   major/minor helpers now use ndarray `min()`/`max()` directly, avoiding lazy
   NumPy proxy dispatch in both categorical and continuous ASCII paths. The
   lazy NumPy proxy now also caches resolved attributes after first use,
