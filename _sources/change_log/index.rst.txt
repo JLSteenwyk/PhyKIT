@@ -6,6 +6,42 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.2.0**:
+Profile-guided performance and scalability release:
+
+* Reduced runtime, memory use, and command startup overhead across alignment,
+  tree, trait, plotting, parsing, and output workflows. Optimizations target
+  measured bottlenecks while preserving existing CLI and API results.
+* Added broad regression coverage for optimized paths, including text, JSON,
+  file, and figure output compatibility across Python 3.10 through 3.13.
+* Added a reusable representative-command profiler and recorded before/after
+  measurements for the optimized functions in ``benchmarks/performance.md``.
+
+**2.1.94**:
+Robustness and performance fixes for tree- and trait-based analyses:
+
+* Fixed ``monophyly_check`` crashing with
+  ``TypeError: 'NoneType' object is not subscriptable`` on trees without
+  internal support values (e.g., time trees). Monophyly is still well
+  defined without support, so the status is now reported with ``NA`` (text)
+  / ``null`` (JSON) in place of support statistics.
+* ``phylogenetic_signal`` and ``trait_correlation`` now handle invariant
+  (zero-variance) traits gracefully. ``phylogenetic_signal`` reports ``NA``
+  (text) / ``null`` (JSON) with a warning instead of emitting ``nan``/``inf``,
+  since phylogenetic signal is undefined for a constant trait.
+  ``trait_correlation`` drops invariant trait columns (with a warning) before
+  computing correlations and clustering, rather than crashing in hierarchical
+  clustering with "The condensed distance matrix must contain only finite
+  values".
+* ``fit_discrete`` is substantially faster for multi-state traits. Transition
+  probabilities are now computed from a single eigendecomposition of the rate
+  matrix per likelihood evaluation (with an ``expm`` fallback when the
+  decomposition is numerically unreliable), and the optimizer runs
+  gradient-based L-BFGS-B from each starting value followed by a single
+  Nelder-Mead refinement of the best result. Fitted models are unchanged; a
+  5-state ER/SYM/ARD comparison on 110 taxa that previously did not finish
+  within multi-minute timeouts now completes.
+
 **2.1.93**:
 Added targeted NNI generation to ``nearest_neighbor_interchange``:
 
