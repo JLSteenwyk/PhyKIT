@@ -389,6 +389,32 @@ assert "numpy" not in sys.modules
             dtype=alignment_base_module.np.float64,
         )
 
+    def test_clean_nucleotide_rcv_skips_full_symbol_discovery(
+        self,
+        monkeypatch,
+        args,
+    ):
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("ACGT"), id="t1"),
+                SeqRecord(Seq("AGGT"), id="t2"),
+                SeqRecord(Seq("TCGA"), id="t3"),
+            ]
+        )
+        rcv = RelativeCompositionVariability(args)
+        monkeypatch.setattr(
+            rcv,
+            "get_alignment_and_format",
+            lambda: (alignment, "fasta", False),
+        )
+
+        def fail_unique(*args, **kwargs):
+            raise AssertionError("clean nucleotides should use known symbol codes")
+
+        monkeypatch.setattr(alignment_base_module.np, "unique", fail_unique)
+
+        assert rcv.calculate_rcv() == pytest.approx(2 / 9)
+
     def test_relative_composition_variability_identical_sequences_skip_matrix(
         self, mocker, args
     ):

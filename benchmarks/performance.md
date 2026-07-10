@@ -859,6 +859,7 @@ Results:
 | `Alignment.calculate_rcv` observed-symbol validity DNA | 2000 taxa x 5000 sites, alphabet `ACGT-?NX*`, side-by-side previous full valid-mask path | 0.080328s | 0.047165s | 1.70x |
 | `Alignment.calculate_rcv` observed-symbol validity protein | 2000 taxa x 5000 sites, protein alphabet plus gaps/ambiguous symbols, side-by-side previous full valid-mask path | 0.099660s | 0.078707s | 1.27x |
 | `Alignment.calculate_rcv` no-gap observed-symbol validity | 2000 taxa x 5000 sites, DNA `ACGT` / 20 amino-acid symbols, side-by-side previous full valid-mask path | 0.051012s / 0.063966s | 0.034910s / 0.042129s | 1.46x / 1.52x |
+| `rcv` clean nucleotide symbol discovery | paired full CLI runs of 500 taxa x 50000 clean `ACGT` sites; 15 runs after 3 warmups, byte-identical text and JSON output | 0.262525s | 0.212982s | 1.23x |
 | `Alignment.calculate_rcv` identical-sequence shortcut | 1200 taxa x 12000 sites, lowercase/uppercase identical DNA records, side-by-side previous matrix path | 0.046277s | 0.006825s | 6.78x |
 | `Alignment.calculate_rcv` raw-identical normalization scan | 300k raw-identical DNA rows, side-by-side previous eager uppercase sequence setup with zero RCV | 0.169686s | 0.036446s | 4.66x |
 | `Alignment.calculate_rcv` identical-sequence no-slice scan | 1M uppercase sequence strings, identical / early-different / late-different cases, side-by-side previous `sequences[1:]` shortcut predicate | 0.163491s / 0.008818s / 0.075810s | 0.050280s / 0.000004s / 0.031403s | 3.25x / 2377.98x / 2.41x |
@@ -4899,10 +4900,13 @@ Profiling summary:
   validity pass derives the valid ASCII symbol set from byte codes present in
   the alignment and uses full sequence lengths when no invalid symbols are
   observed, avoiding full validity-mask construction for no-gap inputs and
-  reducing filtered-symbol setup for gap-bearing alignments. Gap-bearing paths
-  now count row valid lengths with `np.count_nonzero` instead of summing boolean
-  masks before float conversion. Identical alignments now return zero RCV
-  before NumPy matrix construction, preserving case-insensitive behavior by
+  reducing filtered-symbol setup for gap-bearing alignments. Clean `ACGTU`
+  alignments now discover only present nucleotide symbols with bounded byte
+  membership checks instead of a full matrix `unique` reduction. Paired full
+  CLI runs improved by 1.23x with byte-identical text and JSON output.
+  Gap-bearing paths now count row valid lengths with `np.count_nonzero` instead
+  of summing boolean masks before float conversion. Identical alignments now
+  return zero RCV before NumPy matrix construction, preserving case-insensitive behavior by
   comparing uppercased sequence strings. Raw-identical alignments now test
   equality before uppercasing every row, avoiding the normalization pass for
   already identical inputs while preserving mixed-case equivalence. A follow-up

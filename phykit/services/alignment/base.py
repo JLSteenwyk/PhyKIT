@@ -30,6 +30,7 @@ _DNA_INVALID_LOOKUP = None
 _PROTEIN_INVALID_LOOKUP = None
 _ASCII_RCV_GLOBAL_BINCOUNT_MIN_RECORDS = 2_048
 _ASCII_RCV_GLOBAL_BINCOUNT_MAX_LENGTH = 512
+_NUCLEOTIDE_ALPHABET_BYTES = b"ACGTU"
 
 
 def _all_sequences_identical(sequences) -> bool:
@@ -174,7 +175,23 @@ class Alignment(BaseService):
                 dtype=np.uint8,
             ).reshape(num_records, aln_len)
             invalid_lookup = _get_invalid_lookup(is_protein)
-            observed_chars = np.unique(alignment_array)
+            if (
+                not is_protein
+                and not alignment_bytes.translate(
+                    None,
+                    _NUCLEOTIDE_ALPHABET_BYTES,
+                )
+            ):
+                observed_chars = np.fromiter(
+                    (
+                        code
+                        for code in _NUCLEOTIDE_ALPHABET_BYTES
+                        if code in alignment_bytes
+                    ),
+                    dtype=np.uint8,
+                )
+            else:
+                observed_chars = np.unique(alignment_array)
             unique_chars = observed_chars[~invalid_lookup[observed_chars]]
             if unique_chars.size == 0:
                 return 0.0
