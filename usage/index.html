@@ -1602,7 +1602,7 @@ output will have the same name as the input file but with the suffix &quot;.fact
 <span id="cmd-character-map"></span><h3>Character map (synapomorphy/homoplasy mapping)<a class="headerlink" href="#character-map-synapomorphy-homoplasy-mapping" title="Link to this heading"></a></h3>
 <p>Function names: character_map; charmap; synapomorphy_map <br/>
 Command line interface: pk_character_map; pk_charmap; pk_synapomorphy_map</p>
-<p>Map character state changes onto a phylogeny using Fitch parsimony with
+<p>Map character state changes onto a phylogeny using unordered parsimony with
 ACCTRAN (default) or DELTRAN optimization. Produces a cladogram (default)
 or phylogram with color-coded circles on each branch showing where
 character state changes occur. This is useful for visualizing
@@ -1631,7 +1631,14 @@ character names, one row per taxon with discrete states). Missing data
 (<code class="docutils literal notranslate"><span class="pre">?</span></code> or <code class="docutils literal notranslate"><span class="pre">-</span></code>) is treated as a wildcard.</p>
 <p>Reports the consistency index (CI), retention index (RI), and total tree
 length (parsimony steps). CI and RI cross-validated against R's phangorn.</p>
-<p>Polytomies are automatically resolved by inserting zero-length branches.</p>
+<p>Polytomies are retained in the analysis and plot. Character states and
+parsimony scores on multifurcating trees are calculated directly on the
+submitted unresolved topology rather than on an arbitrary binary resolution.</p>
+<p>Taxon labels in the tree and character matrix must match exactly and are
+case-sensitive. By default, any label found in only one input is reported and
+the command exits without producing a character map. Use
+<code class="docutils literal notranslate"><span class="pre">--allow-taxon-mismatch</span></code> to warn and analyze only the shared taxa instead.
+Every tree tip and matrix row must have a unique, non-empty taxon label.</p>
 <p><strong>Example usage:</strong></p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># Basic usage with default ACCTRAN optimization and cladogram layout</span>
 phykit<span class="w"> </span>character_map<span class="w"> </span>-t<span class="w"> </span>species.tre<span class="w"> </span>-d<span class="w"> </span>morphology.tsv<span class="w"> </span>-o<span class="w"> </span>charmap.png
@@ -1659,10 +1666,17 @@ Taxon_C      1       0       0       2
 Taxon_D      1       0       1       1
 </pre></div>
 </div>
+<p>Taxon labels are not normalized: leading or trailing whitespace in the TSV is
+retained and therefore affects matching. In Newick files, labels containing
+spaces or reserved punctuation should be enclosed in single quotes, for
+example <code class="docutils literal notranslate"><span class="pre">'Taxon</span> <span class="pre">one'</span></code>. The corresponding TSV label is <code class="docutils literal notranslate"><span class="pre">Taxon</span> <span class="pre">one</span></code> without
+the quote characters.</p>
 <p><strong>Full usage:</strong></p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>character_map<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;data&gt;<span class="w"> </span>-o<span class="w"> </span>&lt;output&gt;
 <span class="w">    </span><span class="o">[</span>--optimization<span class="w"> </span>acctran<span class="p">|</span>deltran<span class="o">]</span><span class="w"> </span><span class="o">[</span>--phylogram<span class="o">]</span>
-<span class="w">    </span><span class="o">[</span>--characters<span class="w"> </span><span class="m">0</span>,1,3<span class="o">]</span><span class="w"> </span><span class="o">[</span>--verbose<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--characters<span class="w"> </span><span class="m">0</span>,1,3<span class="o">]</span><span class="w"> </span><span class="o">[</span>--allow-taxon-mismatch<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--change-marker-size<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--change-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--verbose<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
 <span class="w">    </span><span class="o">[</span>--fig-width<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--fig-height<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--dpi<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--no-title<span class="o">]</span><span class="w"> </span><span class="o">[</span>--title<span class="w"> </span>&lt;str&gt;<span class="o">]</span>
 <span class="w">    </span><span class="o">[</span>--legend-position<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ylabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--xlabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span>
 <span class="w">    </span><span class="o">[</span>--title-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--axis-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--colors<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ladderize<span class="o">]</span>
@@ -1675,6 +1689,9 @@ Taxon_D      1       0       1       1
 <em>--optimization</em>: ancestral state optimization: acctran (default) or deltran <br/>
 <em>--phylogram</em>: draw phylogram instead of cladogram <br/>
 <em>--characters</em>: comma-separated character indices to display (0-based; all characters are still used for CI/RI) <br/>
+<em>--allow-taxon-mismatch</em>: warn and analyze only taxa shared by the tree and matrix; mismatches are errors by default <br/>
+<em>--change-marker-size</em>: positive character-change circle size in points squared; automatically scaled when omitted <br/>
+<em>--change-fontsize</em>: positive font size for character indices and state transitions; automatically scaled when omitted <br/>
 <em>--verbose</em>: print per-character detail <br/>
 <em>--colors</em>: comma-separated colors for synapomorphy, convergence, reversal (default: blue, red, gray) <br/>
 <em>--ladderize</em>: ladderize (sort) the tree before plotting <br/>
