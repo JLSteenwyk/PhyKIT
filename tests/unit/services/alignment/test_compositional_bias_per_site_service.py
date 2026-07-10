@@ -617,6 +617,42 @@ assert "phykit.helpers.plot_config" not in sys.modules
         assert [float(result.statistic) for result in stat_res] == [0.0, 0.0, 0.0, 0.0]
         assert corrected == ["nan", 1.0, "nan", "nan"]
 
+    def test_clean_nucleotide_path_skips_full_symbol_discovery(
+        self,
+        monkeypatch,
+        args,
+    ):
+        service = CompositionalBiasPerSite(args)
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("ACGT"), id="t1"),
+                SeqRecord(Seq("ACGA"), id="t2"),
+                SeqRecord(Seq("TCGT"), id="t3"),
+            ]
+        )
+        monkeypatch.setattr(cbps_module, "_SCALAR_CELL_MAX", 0)
+        original_unique = cbps_module.np.unique
+
+        def guarded_unique(values, *args, **kwargs):
+            if values.ndim == 2:
+                raise AssertionError(
+                    "clean nucleotides should skip matrix symbol discovery"
+                )
+            return original_unique(values, *args, **kwargs)
+
+        monkeypatch.setattr(cbps_module.np, "unique", guarded_unique)
+
+        stat_res, corrected = service.calculate_compositional_bias_per_site(
+            alignment,
+            is_protein=False,
+        )
+
+        assert [float(result.statistic) for result in stat_res] == pytest.approx(
+            [1 / 3, 0.0, 0.0, 1 / 3]
+        )
+        assert corrected[0] == pytest.approx(corrected[3])
+        assert corrected[1:3] == ["nan", "nan"]
+
     def test_calculate_compositional_bias_per_site_protein_no_gap_skips_valid_mask(
         self, mocker, args
     ):

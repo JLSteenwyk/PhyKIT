@@ -453,6 +453,7 @@ Results:
 | `CompositionalBiasPerSite.calculate_compositional_bias_per_site` protein column-major block counts | 1000 taxa x 5000 sites, protein alphabet plus gaps/ambiguous symbols | 0.078616s | 0.059675s | 1.32x |
 | `CompositionalBiasPerSite.calculate_compositional_bias_per_site` DNA observed-symbol validity | 500 taxa x 8000 sites, alphabet `ACGT-?NX*`, side-by-side previous full valid-mask path | 0.056998s | 0.033467s | 1.70x |
 | `CompositionalBiasPerSite.calculate_compositional_bias_per_site` DNA no-gap observed-symbol validity | 1000 taxa x 12000 sites, alphabet `ACGT`, side-by-side previous full valid-mask path | 0.137986s | 0.083428s | 1.65x |
+| `compositional_bias_per_site` clean nucleotide symbol discovery | paired full CLI runs of 500 taxa x 50000 clean `ACGT` sites; 15 runs after 3 warmups, byte-identical 1270826-byte text and 8541674-byte JSON output | 0.413484s | 0.388768s | 1.06x |
 | `CompositionalBiasPerSite.calculate_compositional_bias_per_site` protein no-gap mask elision | 1000 taxa x 5000 sites, 20 amino-acid symbols, side-by-side previous full valid-mask path | 0.052347s | 0.043303s | 1.21x |
 | `CompositionalBiasPerSite.calculate_compositional_bias_per_site` single valid-symbol shortcut | 1200 taxa x 12000 sites, conserved ASCII DNA alignment, side-by-side previous count/statistic path | 0.066130s | 0.047264s | 1.40x |
 | `CompositionalBiasPerSite.calculate_compositional_bias_per_site` identical-sequence shortcut | 1200 taxa x 12000 identical ASCII DNA sites, lowercase/uppercase variants, side-by-side previous matrix/statistic path | 0.087052s | 0.010425s | 8.35x |
@@ -3996,7 +3997,10 @@ Profiling summary:
   pass derives DNA valid symbols from the observed byte-code set and lets
   protein block counts skip the full valid mask when a byte-level scan finds no
   protein gap symbols, while gap-containing protein alignments keep the filtered
-  mask path. Conserved alignments with one valid observed symbol now return zero
+  mask path. Clean `ACGTU` alignments now discover only present nucleotide
+  symbols with bounded byte membership checks instead of a full matrix `unique`
+  reduction. Paired full CLI runs improved by 1.06x with byte-identical text and
+  JSON output. Conserved alignments with one valid observed symbol now return zero
   statistics and `"nan"` corrected p-values directly after the existing
   valid-symbol discovery step, skipping count, statistic, p-value, and FDR work.
   Fully identical normalized alignments now take the same zero-statistic and

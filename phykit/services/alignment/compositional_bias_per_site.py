@@ -36,6 +36,7 @@ _FDR_VECTOR_MIN_LENGTH = 32
 _PLOT_DIRECT_MAX_LIMIT = 100_000
 _ASCII_COUNT_BLOCK_SIZE = 512
 _SCALAR_CELL_MAX = 4096
+_NUCLEOTIDE_ALPHABET_BYTES = b"ACGTU"
 
 
 def _column_sum_squares(counts: np.ndarray) -> np.ndarray:
@@ -600,7 +601,20 @@ class CompositionalBiasPerSite(Alignment):
                 else:
                     valid_symbols = np.unique(alignment_array)
             else:
-                observed_symbols = np.unique(alignment_array)
+                if not alignment_bytes.translate(
+                    None,
+                    _NUCLEOTIDE_ALPHABET_BYTES,
+                ):
+                    observed_symbols = np.fromiter(
+                        (
+                            code
+                            for code in _NUCLEOTIDE_ALPHABET_BYTES
+                            if code in alignment_bytes
+                        ),
+                        dtype=np.uint8,
+                    )
+                else:
+                    observed_symbols = np.unique(alignment_array)
                 valid_symbols = observed_symbols[~gap_lookup[observed_symbols]]
                 if valid_symbols.size > 8 and valid_symbols.size != observed_symbols.size:
                     valid_mask = ~gap_lookup[alignment_array]
