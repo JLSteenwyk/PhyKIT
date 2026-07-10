@@ -176,7 +176,7 @@ assert "Bio.AlignIO" not in sys.modules
 
         assert [row["rcvt"] for row in rows] == [0.1111, 0.1111, 0.1111]
 
-    def test_calculate_rows_counts_valid_lengths_with_count_nonzero(
+    def test_calculate_rows_uses_bounded_ascii_valid_lengths(
         self, mocker, args
     ):
         service = RelativeCompositionVariabilityTaxon(args)
@@ -187,14 +187,49 @@ assert "Bio.AlignIO" not in sys.modules
                 SeqRecord(Seq("AG-T"), id="t3"),
             ]
         )
-        count_nonzero_spy = mocker.spy(rcvt_module.np, "count_nonzero")
+        valid_length_spy = mocker.spy(
+            rcvt_module,
+            "_bounded_ascii_valid_lengths",
+        )
 
         rows = service.calculate_rows(alignment, is_protein=False)
 
         assert [row["rcvt"] for row in rows] == [0.1111, 0.1111, 0.1111]
-        assert any(
-            call.kwargs.get("axis") == 1
-            for call in count_nonzero_spy.call_args_list
+        valid_length_spy.assert_called_once()
+
+    @pytest.mark.parametrize("num_sites", [0xFFFF, 0x10000])
+    def test_bounded_ascii_row_counts_do_not_overflow(self, num_sites):
+        alignment_array = rcvt_module.np.full(
+            (2, num_sites),
+            ord("A"),
+            dtype=rcvt_module.np.uint8,
+        )
+        unique_chars = rcvt_module.np.array(
+            [ord("A"), ord("C")],
+            dtype=rcvt_module.np.uint8,
+        )
+
+        counts = rcvt_module._bounded_ascii_row_symbol_counts(
+            alignment_array,
+            unique_chars,
+        )
+        valid_lengths = rcvt_module._bounded_ascii_valid_lengths(
+            rcvt_module.np.ones_like(alignment_array, dtype=bool),
+        )
+
+        rcvt_module.np.testing.assert_array_equal(
+            counts,
+            rcvt_module.np.array(
+                [
+                    [num_sites, 0],
+                    [num_sites, 0],
+                ],
+                dtype=rcvt_module.np.float32,
+            ),
+        )
+        rcvt_module.np.testing.assert_array_equal(
+            valid_lengths,
+            rcvt_module.np.full(2, num_sites, dtype=rcvt_module.np.float64),
         )
 
     def test_calculate_rows_protein_ascii_large_alphabet_uses_bincount(
