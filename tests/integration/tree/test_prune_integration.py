@@ -58,18 +58,30 @@ class TestPruneTree(object):
 
     @patch("builtins.print")
     def test_prune_wrong_path_tre(self, mocked_print):
-
-        with pytest.raises(SystemExit) as pytest_wrapped_e:
-            Phykit()
+        testargs = [
+            "phykit",
+            "prune",
+            "/does/not/exist.tre",
+            f"{here.parent.parent.parent}/sample_files/tree_simple_prune.txt",
+        ]
+        with patch.object(sys, "argv", testargs):
+            with pytest.raises(SystemExit) as pytest_wrapped_e:
+                Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2
 
     @patch("builtins.print")
     def test_prune_wrong_path_list(self, mocked_print):
-
-        with pytest.raises(SystemExit) as pytest_wrapped_e:
-            Phykit()
+        testargs = [
+            "phykit",
+            "prune",
+            f"{here.parent.parent.parent}/sample_files/tree_simple.tre",
+            "/does/not/exist.txt",
+        ]
+        with patch.object(sys, "argv", testargs):
+            with pytest.raises(SystemExit) as pytest_wrapped_e:
+                Phykit()
 
         assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 2

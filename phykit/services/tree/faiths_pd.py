@@ -137,13 +137,17 @@ class FaithsPD(Tree):
             total = 0.0
             for name in taxa:
                 clade = tip_by_name[name]
+                new_path = []
                 while clade is not tree.root:
                     cid = id(clade)
                     if cid in selected_branch_ids:
                         break
-                    selected_branch_ids.add(cid)
-                    total += clade.branch_length or 0.0
+                    new_path.append(clade)
                     clade = parent_by_id[cid]
+                new_path.reverse()
+                for clade in new_path:
+                    selected_branch_ids.add(id(clade))
+                    total += clade.branch_length or 0.0
             return total, len(taxa)
 
         if len(taxa) == 1:

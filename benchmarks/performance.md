@@ -2683,6 +2683,7 @@ Results:
 | `FaithsPD.calculate_faiths_pd` binary selected-count aggregation | balanced 8192-tip tree, every third taxon selected, `include_root=False`, side-by-side previous generator-sum child count | 0.020002s | 0.015337s | 1.30x |
 | `FaithsPD.calculate_faiths_pd` single-tip exclude-root skip | balanced 32768-tip tree, one selected taxon, `include_root=False` | 0.047379s | 0.029310s | 1.62x |
 | `FaithsPD.calculate_faiths_pd` terminal-name tracking | balanced 65536-tip tree with 32 selected / half selected / all selected taxa, `include_root=True`, side-by-side previous full terminal-name set | 0.153558s / 0.481944s / 0.340403s | 0.117205s / 0.454150s / 0.270359s | 1.31x / 1.06x / 1.26x |
+| `FaithsPD.calculate_faiths_pd` root-to-tip output-order compatibility | balanced 32768-tip tree selecting every 20th taxon / pectinate 12000-tip tree selecting every 12th taxon, `include_root=True`, full calculation side-by-side with the prior tip-to-root optimized accumulator | 0.022785s / 0.010383s | 0.023745s / 0.010648s | 0.96x / 0.98x (1.04x / 1.03x compatibility cost) |
 | `FaithsPD._load_taxa` order-preserving dedupe | 400k taxa rows plus blanks, 180k unique taxa, full file load path | 0.075677s | 0.066871s | 1.13x |
 | `FaithsPD._load_taxa` filtered dedupe values | 400k taxa rows plus blanks, 180k unique taxa, side-by-side previous list-comprehension blank filter | 0.050629s | 0.032650s | 1.55x |
 | `FaithsPD.run` cached read-only tree path | balanced 16384-tip cached tree, 2048-taxon community, taxa/output mocked | 0.138387s | 0.022596s | 6.12x |
@@ -8664,7 +8665,12 @@ Profiling summary:
   summation while preserving shared-branch de-duplication. A pectinate-tree
   pass stops each default-root upward walk as soon as it reaches a branch already
   seen from an earlier selected tip, because all ancestors above that branch
-  have already been marked. The `include_root=False` selected-descendant pass
+  have already been marked. A compatibility correction now buffers only that
+  newly discovered path suffix and accumulates it from root to tip, matching the
+  original floating-point addition order and restoring exact four-decimal CLI and
+  JSON output. The full-calculation cost was 1.04x on a representative balanced
+  tree and 1.03x on a pectinate tree; the shared-ancestor cutoff remains intact. The
+  `include_root=False` selected-descendant pass
   now handles binary nodes with direct child indexing instead of a generator
   `sum`, preserving the generic loop for multifurcations. Cached read-only
   `FaithsPD.run` now also uses the explicit unmodified tree read helper to

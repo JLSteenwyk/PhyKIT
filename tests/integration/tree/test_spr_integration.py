@@ -29,11 +29,14 @@ class TestSprIntegration(object):
         with patch.object(sys, "argv", testargs):
             Phykit()
 
-        # Should print Newick trees to stdout
         assert mocked_print.call_count >= 1
-        # Each call should be a valid Newick string
-        for call in mocked_print.call_args_list:
-            newick_str = call.args[0]
+        newick_lines = [
+            line
+            for print_call in mocked_print.call_args_list
+            for line in print_call.args[0].splitlines()
+            if line
+        ]
+        for newick_str in newick_lines:
             tree = Phylo.read(StringIO(newick_str), "newick")
             taxa = {t.name for t in tree.get_terminals()}
             assert taxa == {"A", "B", "C", "D", "E"}

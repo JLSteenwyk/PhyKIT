@@ -11,8 +11,7 @@ here = Path(__file__)
 
 @pytest.mark.integration
 class TestHiddenParalogyCheck(object):
-    @patch("builtins.print")
-    def test_hidden_paralogy_check(self, mocked_print):
+    def test_hidden_paralogy_check(self, capsys):
         testargs = [
             "phykit",
             "hidden_paralogy_check",
@@ -23,14 +22,13 @@ class TestHiddenParalogyCheck(object):
         with patch.object(sys, "argv", testargs):
             Phykit()
 
-        assert mocked_print.call_args.args[0].splitlines() == [
+        assert capsys.readouterr().out.splitlines() == [
             "monophyletic",
             "not_monophyletic",
             "insufficient_taxon_representation",
         ]
 
-    @patch("builtins.print")
-    def test_hidden_paralogy_check_long(self, mocked_print):
+    def test_hidden_paralogy_check_long(self, capsys):
         testargs = [
             "phykit",
             "hidden_paralogy_check",
@@ -41,14 +39,13 @@ class TestHiddenParalogyCheck(object):
         with patch.object(sys, "argv", testargs):
             Phykit()
 
-        assert mocked_print.call_args.args[0].splitlines() == [
+        assert capsys.readouterr().out.splitlines() == [
             "monophyletic",
             "not_monophyletic",
             "insufficient_taxon_representation",
         ]
 
-    @patch("builtins.print")
-    def test_hidden_paralogy_check_alias(self, mocked_print):
+    def test_hidden_paralogy_check_alias(self, capsys):
         testargs = [
             "phykit",
             "clan_check",
@@ -59,7 +56,7 @@ class TestHiddenParalogyCheck(object):
         with patch.object(sys, "argv", testargs):
             Phykit()
 
-        assert mocked_print.call_args.args[0].splitlines() == [
+        assert capsys.readouterr().out.splitlines() == [
             "monophyletic",
             "not_monophyletic",
             "insufficient_taxon_representation",

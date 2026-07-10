@@ -79,6 +79,7 @@ class TestFaithsPD(object):
         pd_inc, _ = svc.calculate_faiths_pd(tree_simple, community, include_root=True)
         pd_exc, _ = svc.calculate_faiths_pd(tree_simple, community, include_root=False)
         assert isclose(pd_inc, 62.24955, rel_tol=1e-5)
+        assert round(pd_inc, 4) == 62.2495
         assert isclose(pd_exc, 62.24955, rel_tol=1e-5)
 
     def test_deep_community_across_root_children(self, tree_simple, args):
