@@ -278,6 +278,8 @@ Results:
 | `SumOfPairsScore.run` complete equal-length setup | 1200 taxa x 300 sites, complete equal-length pair set from reference IDs | 0.447407s | 0.000721s | 620.5x |
 | `SumOfPairsScore._calculate_equal_length_complete_records` identical records | 1200 taxa x 1000 sites, complete equal-length query/reference records, side-by-side previous matrix stack path | 0.001236s | 0.000309s | 4.00x |
 | `SumOfPairsScore._calculate_equal_length_complete_records` matching taxa count | 4000 taxa x 2000 sites, 2% changed residues, side-by-side previous boolean `np.sum(..., axis=0)` | 0.008258s | 0.005935s | 1.39x |
+| `SumOfPairsScore._bounded_matches_per_site` bounded match counts | 2500 taxa x 10000 sites / 500 taxa x 50000 sites, 15 alternating kernel runs after 3 warmups | 0.019061s / 0.015619s | 0.012100s / 0.014797s | 1.58x / 1.06x |
+| `sum_of_pairs_score` bounded complete-record match counts | query/reference FASTA pairs sized 2500 taxa x 10000 sites / 500 taxa x 50000 sites, full CLI, 15 alternating runs after 3 warmups | 0.168665s / 0.162516s | 0.154190s / 0.163386s | 1.09x / 0.99x |
 | `SumOfPairsScore._calculate_equal_length_complete_records` match-vector sum | 100k-site per-site matching-pair vector, side-by-side previous `np.sum` total | 0.000053360s | 0.000038879s | 1.37x |
 | `SumOfPairsScore._calculate_equal_length_complete_records` direct length validation | 50k reference/query sequence rows x 120 sites, equal lengths / late query mismatch / early reference mismatch, side-by-side previous temporary length-set validation | 0.008408438s / 0.012048581s / 0.007202937s | 0.005344236s / 0.007165569s / 0.000000224s | 1.57x / 1.68x / 32156.86x |
 | `SumOfPairsScore._calculate_equal_length_complete_records` same-record mapping shortcut | 1200 / 10000 / 50000 / 200000 taxa x 120 sites, query and reference share the same parsed record mapping, side-by-side previous duplicate query-sequence extraction and self-comparison | 0.000576334s / 0.006996709s / 0.041661792s / 0.278665833s | 0.000145375s / 0.002160625s / 0.014213917s / 0.132781334s | 3.96x / 3.24x / 2.93x / 2.10x |
@@ -3637,7 +3639,12 @@ Profiling summary:
   path counts taxa whose query and reference residues match at each site, then
   converts those per-site counts to matching pair counts with `n choose 2`;
   current code builds byte-backed alignment matrices for ASCII FASTA content
-  and uses `np.count_nonzero` for the per-site matching-taxon counts.
+  and reduces each per-site match mask with an unsigned accumulator bounded by
+  the changed-taxon count, using `uint16` through 65,535 taxa and wider types
+  above that boundary. The result is converted back to `intp` before adding
+  unchanged taxa and computing `n choose 2`, preserving the previous arithmetic
+  width and exact text/JSON scores. This improves the 2,500-taxon full-command
+  benchmark by 9%; a 500-taxon long-alignment control remains neutral at 0.99x.
   `run` now tries that complete-record path before materializing the full
   `n choose 2` reference pair list, preserving the mixed-length and incomplete
   pair-list fallback while avoiding quadratic setup for ordinary FASTA inputs.

@@ -301,7 +301,7 @@ class TestSumOfPairsScore:
         assert pairs == 4 * len(record_id_pairs)
         mocked_pool.assert_not_called()
 
-    def test_complete_equal_lengths_counts_site_matches_with_count_nonzero(
+    def test_complete_equal_lengths_uses_bounded_site_match_counts(
         self, monkeypatch
     ):
         reference_records = _make_records({
@@ -314,14 +314,13 @@ class TestSumOfPairsScore:
             "id2": "ATAC",
             "id3": "GCAA",
         })
-        original_count_nonzero = module.np.count_nonzero
-        count_nonzero_axes = []
-
-        def counting_count_nonzero(values, axis=None):
-            count_nonzero_axes.append(axis)
-            return original_count_nonzero(values, axis=axis)
-
-        monkeypatch.setattr(module.np, "count_nonzero", counting_count_nonzero)
+        monkeypatch.setattr(
+            module.np,
+            "count_nonzero",
+            lambda *args, **kwargs: pytest.fail(
+                "complete equal-length fast path should use bounded site sums"
+            ),
+        )
         monkeypatch.setattr(
             module.np,
             "sum",
@@ -337,7 +336,23 @@ class TestSumOfPairsScore:
 
         assert matches == 6
         assert pairs == 12
-        assert count_nonzero_axes == [0]
+
+    @pytest.mark.parametrize(
+        ("taxa", "expected_accumulator"),
+        [(0xFFFF, "uint16"), (0x10000, "uint32")],
+    )
+    def test_bounded_matches_per_site_preserves_taxon_count(
+        self, taxa, expected_accumulator
+    ):
+        match_mask = module.np.ones((taxa, 1), dtype=bool)
+
+        counts = module._bounded_matches_per_site(match_mask)
+
+        assert counts.tolist() == [taxa]
+        assert counts.dtype == module.np.dtype("intp")
+        assert module.np.dtype(
+            module._bounded_match_count_dtype(taxa)
+        ) == module.np.dtype(expected_accumulator)
 
     def test_complete_equal_lengths_same_mapping_reads_each_sequence_once(
         self, mocker

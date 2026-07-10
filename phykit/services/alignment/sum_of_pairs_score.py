@@ -50,6 +50,19 @@ np = _LazyNumpy()
 _SOPS_SCALAR_PAIR_MAX_CELLS = 8192
 
 
+def _bounded_match_count_dtype(max_count: int):
+    if max_count <= 0xFFFF:
+        return np.uint16
+    if max_count <= 0xFFFFFFFF:
+        return np.uint32
+    return np.uint64
+
+
+def _bounded_matches_per_site(match_mask):
+    count_dtype = _bounded_match_count_dtype(match_mask.shape[0])
+    return match_mask.sum(axis=0, dtype=count_dtype).astype(np.intp)
+
+
 class SumOfPairsScore(Alignment):
     MP_MIN_PAIRS = 500_000
 
@@ -239,7 +252,7 @@ class SumOfPairsScore(Alignment):
             seq_len,
         )
         matching_taxa_per_site = (
-            np.count_nonzero(ref_array == query_array, axis=0)
+            _bounded_matches_per_site(ref_array == query_array)
             + number_of_records
             - changed_count
         )
