@@ -421,6 +421,7 @@ Results:
 | `EvolutionaryRatePerSite.calculate_evolutionary_rate_per_site` protein column-major block counts | 500 taxa x 8000 sites, protein alphabet plus gaps/ambiguous symbols | 0.060433s | 0.045616s | 1.32x |
 | `EvolutionaryRatePerSite.calculate_evolutionary_rate_per_site` DNA observed-symbol validity | 500 taxa x 8000 sites, alphabet `ACGT-?NX*`, side-by-side previous full valid-mask path | 0.074886s | 0.044362s | 1.69x |
 | `EvolutionaryRatePerSite.calculate_evolutionary_rate_per_site` DNA no-gap observed-symbol validity | 1000 taxa x 12000 sites, alphabet `ACGT`, side-by-side previous full valid-mask path | 0.142018s | 0.118764s | 1.20x |
+| `evolutionary_rate_per_site` clean nucleotide symbol discovery | paired full CLI runs of 500 taxa x 50000 clean `ACGT` sites; 15 runs after 3 warmups, byte-identical 634152-byte text and 4568326-byte JSON output | 0.368363s | 0.330730s | 1.11x |
 | `EvolutionaryRatePerSite.calculate_evolutionary_rate_per_site` small-alphabet column counts | 1200 taxa x 12000 clean DNA sites, side-by-side previous per-symbol lazy `np.sum(alignment_array == symbol, axis=0)` reductions | 0.252684s | 0.102319s | 2.47x |
 | `EvolutionaryRatePerSite.calculate_evolutionary_rate_per_site` protein no-gap mask elision | 1000 taxa x 5000 sites, 20 amino-acid symbols, side-by-side previous full valid-mask path | 0.099297s | 0.069440s | 1.43x |
 | `EvolutionaryRatePerSite.calculate_evolutionary_rate_per_site` single valid-symbol shortcut | 1200 taxa x 12000 sites, conserved ASCII DNA alignment, side-by-side previous count/frequency path | 0.058379s | 0.044176s | 1.32x |
@@ -3933,7 +3934,10 @@ Profiling summary:
   preserving empty-count behavior. A later ASCII validity pass derives DNA
   valid symbols from the observed byte-code set and lets no-gap protein block
   counts skip the full valid mask, while protein alignments containing gap
-  symbols keep the filtered-mask path. Column count sum-of-squares reductions
+  symbols keep the filtered-mask path. Clean `ACGTU` alignments now discover
+  only present nucleotide symbols with bounded byte membership checks instead
+  of a full matrix `unique` reduction. Paired full CLI runs improved by 1.11x
+  with byte-identical text and JSON output. Column count sum-of-squares reductions
   now use an `einsum` column dot, avoiding temporary squared count matrices in
   ASCII block counters and Unicode fallback counters. Column count totals now
   use direct ndarray reductions through 20k-site count matrices while preserving

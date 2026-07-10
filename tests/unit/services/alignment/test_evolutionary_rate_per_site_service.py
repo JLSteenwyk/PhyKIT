@@ -664,6 +664,33 @@ assert "phykit.helpers.plot_config" not in sys.modules
 
         assert values == pytest.approx([4 / 9, 0.0, 0.0, 4 / 9])
 
+    def test_clean_nucleotide_path_skips_full_symbol_discovery(
+        self,
+        monkeypatch,
+        args,
+    ):
+        service = EvolutionaryRatePerSite(args)
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("ACGT"), id="t1"),
+                SeqRecord(Seq("ACGA"), id="t2"),
+                SeqRecord(Seq("TCGT"), id="t3"),
+            ]
+        )
+        monkeypatch.setattr(erps_module, "_ERPS_SCALAR_MAX_CELLS", 0)
+
+        def fail_unique(*args, **kwargs):
+            raise AssertionError("clean nucleotides should use known symbol codes")
+
+        monkeypatch.setattr(erps_module.np, "unique", fail_unique)
+
+        values = service.calculate_evolutionary_rate_per_site(
+            alignment,
+            is_protein=False,
+        )
+
+        assert values == pytest.approx([4 / 9, 0.0, 0.0, 4 / 9])
+
     def test_calculate_evolutionary_rate_per_site_protein_uses_block_counts(
         self, mocker, args
     ):
