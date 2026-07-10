@@ -361,6 +361,8 @@ Results:
 | `GCContent.run` verbose JSON row construction | 500k mocked per-sequence GC rows, identical payload dictionaries | 0.636805s | 0.571975s | 1.11x |
 | `GCContent.run` verbose JSON local round | 500k mocked per-sequence GC rows, identical payload dictionaries, side-by-side previous global `round` lookup | 0.608651s | 0.547883s | 1.11x |
 | `GCContent.calculate_gc_per_sequence_data` cached lazy NumPy attributes | 1200 variable DNA records x 3000 sites, repeated ASCII matrix counts after lookup-table warmup | 0.018320s | 0.011841s | 1.55x |
+| `GCContent._bounded_ascii_row_counts` bounded lookup-mask reductions | 500 taxa x 50000 sites, clean `ACGT` GC / gappy `ACGTN-` GC / gappy valid-length masks, 15 alternating kernel runs after 3 warmups | 0.030937s / 0.032327s / 0.032306s | 0.026581s / 0.028552s / 0.028330s | 1.16x / 1.13x / 1.14x |
+| `gc_content --verbose` bounded ASCII row counts | 500 taxa x 50000 clean `ACGT` / gappy `ACGTN-` sites, full CLI, 15 alternating runs after 3 warmups | 0.209002s / 0.251361s | 0.193656s / 0.221976s | 1.08x / 1.13x |
 | `Phykit.gc_content` default parser bypass | 1000 repeated direct handler calls with service mocked, plus command profiler default `gc_content test_alignment_0.fa`, 30 runs after 5 warmups, default/verbose/JSON stdout matched previous branch | 1.001582s / 0.077593s | 0.000401s / 0.071797s | 2497.71x / 1.08x |
 | `Phykit.gc_content` verbose parser bypass | direct dispatch 1000 mocked service calls for `--verbose`; command profiler `gc_content_verbose`, 30 runs after 5 warmups | 0.908328s / 0.066765s | 0.000497s / 0.053721s | 1827.62x / 1.24x |
 | `gc_content` module import without eager NumPy/Bio.Align | cold subprocess import after lazy NumPy lookup construction and annotation-only Bio.Align import | 0.111378s | 0.023406s | 4.76x |
@@ -3778,7 +3780,12 @@ Profiling summary:
   inputs. Small per-sequence GC output now uses the same direct byte-count
   helpers below an 8 KiB threshold, avoiding NumPy matrix setup for tiny verbose
   command inputs while leaving larger uniform alignments on the existing
-  matrix-count path. A
+  matrix-count path. Large equal-width ASCII verbose rows now reduce GC and
+  valid-site lookup masks with an unsigned accumulator bounded by the sequence
+  length, using `uint16` through 65,535 sites and wider types above that
+  boundary. This preserves default, verbose, JSON, and verbose JSON output
+  byte-for-byte while reducing the clean and gappy full-command benchmarks by
+  8% and 13%, respectively. A
   follow-up identical-row pass checks raw string equality before normalizing
   each row, avoiding repeated uppercase allocations for already-identical rows
   while preserving case-insensitive matching. A

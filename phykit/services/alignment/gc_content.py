@@ -75,6 +75,19 @@ def _get_gc_lookup():
     return _GC_LOOKUP
 
 
+def _bounded_ascii_count_dtype(max_count: int):
+    if max_count <= 0xFFFF:
+        return np.uint16
+    if max_count <= 0xFFFFFFFF:
+        return np.uint32
+    return np.uint64
+
+
+def _bounded_ascii_row_counts(mask):
+    count_dtype = _bounded_ascii_count_dtype(mask.shape[1])
+    return mask.sum(axis=1, dtype=count_dtype)
+
+
 def _has_invalid_bytes(sequence_bytes: bytes, invalid_bytes: bytes) -> bool:
     if len(sequence_bytes) <= _INVALID_SCAN_BYTES:
         return any(code in sequence_bytes for code in invalid_bytes)
@@ -218,11 +231,11 @@ def _gc_counts_from_ascii_matrix(records, is_protein: bool):
         return record_data, None, None
 
     gc_lookup = _get_gc_lookup()
-    gc_counts = np.count_nonzero(gc_lookup[alignment_array], axis=1)
+    gc_counts = _bounded_ascii_row_counts(gc_lookup[alignment_array])
     invalid_bytes = _PROTEIN_INVALID_BYTES if is_protein else _DNA_INVALID_BYTES
     if any(code in alignment_bytes for code in invalid_bytes):
         valid_lookup = _get_valid_lookup(is_protein)
-        valid_counts = np.count_nonzero(valid_lookup[alignment_array], axis=1)
+        valid_counts = _bounded_ascii_row_counts(valid_lookup[alignment_array])
     else:
         valid_counts = np.full(len(sequences), seq_len, dtype=np.intp)
     return record_data, valid_counts, gc_counts

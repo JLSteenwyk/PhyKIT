@@ -164,7 +164,7 @@ assert "phykit.helpers.files" not in sys.modules
             ("b", 0.0),
         ]
 
-    def test_calculate_gc_per_sequence_data_uses_ascii_matrix_path(
+    def test_calculate_gc_per_sequence_data_uses_bounded_ascii_matrix_counts(
         self, args, mocker, monkeypatch
     ):
         service = GCContent(args)
@@ -177,14 +177,30 @@ assert "phykit.helpers.files" not in sys.modules
         monkeypatch.setattr(gc_content_module, "_GC_PER_SEQUENCE_SCALAR_MAX_BYTES", 0)
         mocker.patch.object(
             gc_content_module.np,
-            "sum",
-            side_effect=AssertionError("ASCII matrix path should avoid row sums"),
+            "count_nonzero",
+            side_effect=AssertionError(
+                "ASCII matrix path should use bounded row sums"
+            ),
         )
 
         assert service.calculate_gc_per_sequence_data(records, is_protein=False) == [
             ("a", 1.0),
             ("b", 0.0),
         ]
+
+    @pytest.mark.parametrize(
+        ("sites", "expected_dtype"),
+        [(0xFFFF, "uint16"), (0x10000, "uint32")],
+    )
+    def test_bounded_ascii_row_counts_preserve_site_count(
+        self, sites, expected_dtype
+    ):
+        mask = gc_content_module.np.ones((1, sites), dtype=bool)
+
+        counts = gc_content_module._bounded_ascii_row_counts(mask)
+
+        assert int(counts[0]) == sites
+        assert counts.dtype == gc_content_module.np.dtype(expected_dtype)
 
     def test_calculate_gc_per_sequence_data_no_gap_ascii_skips_valid_lookup(
         self, args, mocker, monkeypatch
