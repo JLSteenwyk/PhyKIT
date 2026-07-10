@@ -148,6 +148,15 @@ class _FastaReferenceJsonDefaultArgs:
         self.json = False
 
 
+class _FastaEntryJsonDefaultArgs:
+    __slots__ = ("fasta", "entry", "json")
+
+    def __init__(self, fasta: str, entry: str) -> None:
+        self.fasta = fasta
+        self.entry = entry
+        self.json = False
+
+
 class _TreeJsonDefaultArgs:
     __slots__ = ("tree", "json")
 
@@ -1538,6 +1547,17 @@ class Phykit:
 
     @staticmethod
     def faidx(argv):
+        if (
+            len(argv) == 3
+            and argv[0]
+            and argv[0][0] != "-"
+            and argv[1] in ("-e", "--entry")
+            and argv[2]
+            and argv[2][0] != "-"
+        ):
+            _run_service_with_args(_FastaEntryJsonDefaultArgs(argv[0], argv[2]), Faidx)
+            return
+
         parser = _new_parser(
             description=_dedent(
                 f"""\

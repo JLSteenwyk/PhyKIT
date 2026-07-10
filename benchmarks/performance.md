@@ -737,6 +737,7 @@ Results:
 | shared `_fasta._clean_sequence` single-line fast path | 80k FASTA records x 120 bp, single-line / wrapped two-line sequences, identical first-token parser output | 0.159723s / 0.209468s | 0.116201s / 0.163365s | 1.37x / 1.28x |
 | shared `_fasta.read_unique_fasta_entries` binary requested-entry scan | 50k FASTA records x 120 bp, five requested entries, duplicate detection preserved across full file | 0.123790s | 0.058433s | 2.12x |
 | shared `_fasta.read_fasta_first_token_set` binary header scan | 50k FASTA records, headers with descriptions / no descriptions / 12 bp short-sequence records, identical first-token taxa sets | 0.058588s / 0.034541s / 0.032067s | 0.028406s / 0.026274s / 0.027007s | 2.06x / 1.31x / 1.19x |
+| `faidx` default CLI parser bypass | direct dispatch of `faidx fasta -e/--entry 1` into a no-op service, 1000 calls; direct command timing against `simple.fa`, 30 runs after 5 warmups, stdout matched | 0.691489s / 0.616481s; 0.052934s command mean | 0.000929s / 0.000535s; 0.049601s command mean | 744.34x / 1152.30x; 1.07x command |
 | `faidx` module import without eager FASTA parser | cold subprocess import after lazy Bio.SeqIO.FastaIO import | 0.181946s | 0.079052s | 2.30x |
 | `faidx` module import without eager JSON helper | median cold subprocess import after lazy JSON wrapper | 0.006110s | 0.004992s | 1.22x |
 | `faidx` module import without `typing` startup | median cold subprocess import after postponing annotations and converting annotation-only typing aliases to built-in annotations | 0.002548s | 0.000926s | 2.75x |
