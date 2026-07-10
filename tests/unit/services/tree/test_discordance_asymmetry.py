@@ -56,28 +56,43 @@ def test_binomial_two_sided_p_value_reuses_cached_exact_result(monkeypatch):
     discordance_asymmetry_module._binomial_two_sided_p_value.cache_clear()
     expected = discordance_asymmetry_module._binomial_two_sided_p_value(13, 20)
 
-    def fail_comb(*_args, **_kwargs):
+    def fail_ldexp(*_args, **_kwargs):
         raise AssertionError("repeated exact binomial p-values should use cache")
 
-    monkeypatch.setattr(discordance_asymmetry_module, "comb", fail_comb)
+    monkeypatch.setattr(discordance_asymmetry_module, "ldexp", fail_ldexp)
 
     assert discordance_asymmetry_module._binomial_two_sided_p_value(13, 20) == expected
 
 
-def test_large_binomial_two_sided_p_value_matches_scipy_fallback():
+def test_extended_exact_binomial_two_sided_p_value_matches_scipy():
     from scipy.special import bdtr
 
-    expected = min(1.0, 2.0 * float(bdtr(2, 65, 0.5)))
+    for successes, total in [(63, 65), (100, 100), (990, 1_000), (959, 1_023)]:
+        expected = min(
+            1.0,
+            2.0 * float(bdtr(min(successes, total - successes), total, 0.5)),
+        )
+        discordance_asymmetry_module._binomial_two_sided_p_value.cache_clear()
+        assert discordance_asymmetry_module._binomial_two_sided_p_value(
+            successes, total
+        ) == pytest.approx(expected)
 
-    assert discordance_asymmetry_module._binomial_two_sided_p_value(63, 65) == pytest.approx(expected)
+
+def test_large_binomial_two_sided_p_value_keeps_scipy_fallback():
+    discordance_asymmetry_module._binomial_two_sided_p_value.cache_clear()
+    with patch("scipy.special.bdtr", return_value=0.125) as bdtr:
+        result = discordance_asymmetry_module._binomial_two_sided_p_value(65, 132)
+
+    assert result == 0.25
+    bdtr.assert_called_once_with(65, 132, 0.5)
 
 
-def test_small_asymmetry_test_does_not_import_scipy(monkeypatch):
+def test_extended_exact_asymmetry_test_does_not_import_scipy(monkeypatch):
     original_import = __import__
 
     def fake_import(name, globals=None, locals=None, fromlist=(), level=0):
         if name == "scipy.stats" or name.startswith(("scipy.stats.", "scipy.special")):
-            raise AssertionError("small discordance asymmetry binomial p-values should not import SciPy")
+            raise AssertionError("exact discordance asymmetry p-values should not import SciPy")
         return original_import(name, globals, locals, fromlist, level)
 
     monkeypatch.setattr("builtins.__import__", fake_import)
@@ -89,8 +104,11 @@ def test_small_asymmetry_test_does_not_import_scipy(monkeypatch):
         json=False,
         plot_output=None,
     )
-    result = discordance_asymmetry_module.DiscordanceAsymmetry(args)._test_asymmetry(9, 1)
-    assert result["p_value"] == pytest.approx(0.021484375)
+    discordance_asymmetry_module._binomial_two_sided_p_value.cache_clear()
+    result = discordance_asymmetry_module.DiscordanceAsymmetry(args)._test_asymmetry(
+        100, 0
+    )
+    assert result["p_value"] == pytest.approx(1.5777218104420236e-30)
     assert result["favored_alt"] == "alt1"
 
 

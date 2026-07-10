@@ -4,7 +4,7 @@ import os
 from functools import lru_cache
 from io import StringIO
 from pathlib import Path
-from math import comb
+from math import ldexp
 
 from .base import Tree
 from ...errors import PhykitUserError
@@ -36,7 +36,8 @@ class _LazyNumpy:
 
 np = _LazyNumpy()
 _FDR_VECTOR_MIN_LENGTH = 32
-_EXACT_BINOMIAL_TOTAL_MAX = 64
+_EXACT_BINOMIAL_TOTAL_MAX = 1_023
+_EXACT_BINOMIAL_TAIL_MAX = 64
 
 
 @lru_cache(maxsize=4096)
@@ -44,11 +45,15 @@ def _binomial_two_sided_p_value(successes: int, total: int) -> float:
     tail_count = min(successes, total - successes)
     if tail_count * 2 >= total:
         return 1.0
-    if total <= _EXACT_BINOMIAL_TOTAL_MAX:
-        probability = 2.0 ** -total
-        tail_probability = 0.0
-        for count in range(tail_count + 1):
-            tail_probability += comb(total, count) * probability
+    if (
+        total <= _EXACT_BINOMIAL_TOTAL_MAX
+        and tail_count <= _EXACT_BINOMIAL_TAIL_MAX
+    ):
+        probability = ldexp(1.0, -total)
+        tail_probability = probability
+        for count in range(tail_count):
+            probability *= (total - count) / (count + 1)
+            tail_probability += probability
         return min(1.0, 2.0 * tail_probability)
 
     from scipy.special import bdtr
