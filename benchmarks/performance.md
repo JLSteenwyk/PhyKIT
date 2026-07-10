@@ -238,6 +238,7 @@ Results:
 | `AlignmentEntropy.calculate_site_entropies` protein ASCII column-major indexing | 1200 taxa x 6000 sites, alphabet `ACDEFGHIKLMNPQRSTVWY-X?*` | 0.156230s | 0.128932s | 1.21x |
 | `AlignmentEntropy._entropy_from_ascii_codes` all-valid protein blocks | 1200 taxa x 12000 sites, 20 amino-acid symbols, side-by-side previous boolean-index path | 0.100458s | 0.090770s | 1.11x |
 | `AlignmentEntropy.calculate_site_entropies` clean protein gap-mask elision | 1200 taxa x 12000 clean protein sites, side-by-side previous full valid-mask setup with identical entropy values | 0.431117s | 0.378430s | 1.14x |
+| `alignment_entropy` clean DNA gap-mask and symbol-discovery elision | paired full CLI runs of 500 taxa x 50000 clean `ACGT` sites; 15 runs after 3 warmups, byte-identical summary and 633436-byte verbose output | 0.593944s | 0.468198s | 1.27x |
 | `AlignmentEntropy._entropy_from_ascii_codes` array-to-list conversion | 12 taxa x 800k clean DNA sites, full helper output conversion with identical Python float list | 0.750628s | 0.476712s | 1.57x |
 | `AlignmentEntropy._entropy_from_counts` masked log terms | 20 x 200k sparse protein count matrix, side-by-side previous `np.where(probs > 0, probs * log2(probs), 0)` terms | 0.040059s | 0.027744s | 1.44x |
 | `AlignmentEntropy`/`MaskAlignment` protein entropy column reductions | count matrices shaped 20x5000 / 64x20000, side-by-side previous in-place probability/log-probability product plus `np.sum(..., axis=0)` | 2.243765s / 3.478205s | 1.991224s / 2.424359s | 1.13x / 1.43x |
@@ -3554,8 +3555,11 @@ Profiling summary:
   small-alphabet entropy pass reuses the existing ndarray `.tolist()` helper
   instead of looping through `float(...)` for every site entropy.
   The clean-protein entropy pass also skips constructing the full valid mask before
-  calling that helper when no protein gap bytes are present, leaving the DNA and
-  Unicode paths unchanged.
+  calling that helper when no protein gap bytes are present. Clean `ACGT` DNA now
+  takes the same mask-free path and discovers its observed symbols with bounded
+  byte membership checks instead of a full matrix `unique` reduction. Paired full
+  CLI runs improved by 1.27x with byte-identical summary and 50000-site verbose
+  output; the existing gappy fallback remained effectively neutral at 0.99x.
   Entropy term calculation now uses masked `np.log2` into a scratch array
   instead of `np.where`, so sparse protein count matrices avoid computing logs
   for zero-probability symbols while preserving exact entropy values.

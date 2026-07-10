@@ -170,7 +170,11 @@ assert "phykit.helpers.plot_config" not in sys.modules
             SeqRecord(Seq("ATGT"), id="t2"),
             SeqRecord(Seq("TCGT"), id="t3"),
         ]
-        monkeypatch.setattr(alignment_entropy_module, "_ENTROPY_SCALAR_MAX_CELLS", 0)
+        monkeypatch.setattr(
+            alignment_entropy_module,
+            "_ENTROPY_SCALAR_MAX_CELLS",
+            0,
+        )
         count_nonzero_spy = mocker.spy(
             alignment_entropy_module.np,
             "count_nonzero",
@@ -228,6 +232,38 @@ assert "phykit.helpers.plot_config" not in sys.modules
         assert len(entropies) == 2
         assert isclose(entropies[0], 0.918295, rel_tol=0.001)
         assert isclose(entropies[1], 1.0, rel_tol=0.001)
+
+    def test_site_entropies_clean_dna_skips_gap_mask_and_unique(
+        self, monkeypatch
+    ):
+        from Bio.Seq import Seq
+        from Bio.SeqRecord import SeqRecord
+
+        entropy = AlignmentEntropy(Namespace(alignment="x.fa", verbose=False))
+        alignment = [
+            SeqRecord(Seq("ACGT"), id="t1"),
+            SeqRecord(Seq("AGGT"), id="t2"),
+            SeqRecord(Seq("TCGA"), id="t3"),
+        ]
+        monkeypatch.setattr(alignment_entropy_module, "_ENTROPY_SCALAR_MAX_CELLS", 0)
+        def fail_gap_codes(*args, **kwargs):
+            raise AssertionError("clean DNA should skip the gap mask")
+
+        def fail_unique(*args, **kwargs):
+            raise AssertionError("clean DNA should use known symbol codes")
+
+        monkeypatch.setattr(
+            alignment_entropy_module,
+            "_get_gap_codes",
+            fail_gap_codes,
+        )
+        monkeypatch.setattr(alignment_entropy_module.np, "unique", fail_unique)
+
+        entropies = entropy.calculate_site_entropies(alignment, is_protein=False)
+
+        assert entropies == pytest.approx(
+            [0.9182958340544896, 0.9182958340544896, 0.0, 0.9182958340544896]
+        )
 
     def test_sparse_protein_entropy_avoids_where_log_terms(self, monkeypatch):
         from Bio.Seq import Seq

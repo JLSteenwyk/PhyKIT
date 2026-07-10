@@ -29,6 +29,8 @@ class _LazyNumpy:
 np = _LazyNumpy()
 _DNA_GAP_CODES = None
 _PROTEIN_GAP_CODES = None
+_DNA_ALPHABET_BYTES = b"ACGT"
+_DNA_GAP_BYTES = b"N-?*X"
 _PROTEIN_GAP_BYTES = b"-?*X"
 _DNA_GAP_CHARS = frozenset("-?*XN")
 _PROTEIN_GAP_CHARS = frozenset("-?*X")
@@ -397,12 +399,24 @@ class AlignmentEntropy(Alignment):
                 alignment_bytes,
                 dtype=np.uint8,
             ).reshape(len(sequences), aln_len)
-            if is_protein and not any(
-                gap_code in alignment_bytes for gap_code in _PROTEIN_GAP_BYTES
-            ):
+            gap_bytes = _PROTEIN_GAP_BYTES if is_protein else _DNA_GAP_BYTES
+            if not any(gap_code in alignment_bytes for gap_code in gap_bytes):
                 valid_mask = None
-                valid_chars = np.unique(alignment_array)
                 all_valid = True
+                if (
+                    not is_protein
+                    and not alignment_bytes.translate(None, _DNA_ALPHABET_BYTES)
+                ):
+                    valid_chars = np.fromiter(
+                        (
+                            code
+                            for code in _DNA_ALPHABET_BYTES
+                            if code in alignment_bytes
+                        ),
+                        dtype=np.uint8,
+                    )
+                else:
+                    valid_chars = np.unique(alignment_array)
             else:
                 invalid_mask = np.zeros(alignment_array.shape, dtype=np.bool_)
                 for gap_code in _get_gap_codes(is_protein):
