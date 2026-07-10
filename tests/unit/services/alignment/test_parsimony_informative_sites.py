@@ -288,6 +288,21 @@ assert "Bio.AlignIO" not in sys.modules
         assert aln_len == 4
         assert isclose(pi_sites_per, 25.0, rel_tol=0.001)
 
+    @pytest.mark.parametrize("num_records", [0xFFFF, 0x10000])
+    def test_clean_dna_counts_use_non_overflowing_accumulator(self, num_records):
+        alignment_array = pi_module.np.full(
+            (num_records, 2),
+            ord("A"),
+            dtype=pi_module.np.uint8,
+        )
+
+        assert (
+            pi_module._count_clean_dna_parsimony_informative_sites(
+                alignment_array,
+            )
+            == 0
+        )
+
     def test_parsimony_informative_nonstandard_dna_uses_generic_clean_path(
         self, mocker, monkeypatch, args
     ):

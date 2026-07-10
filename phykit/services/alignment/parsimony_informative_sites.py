@@ -74,10 +74,18 @@ def _count_ascii_parsimony_informative_sites(
 
 
 def _count_clean_dna_parsimony_informative_sites(alignment_array) -> int | None:
+    num_records = alignment_array.shape[0]
+    if num_records <= 0xFFFF:
+        count_dtype = np.uint16
+    elif num_records <= 0xFFFFFFFF:
+        count_dtype = np.uint32
+    else:
+        count_dtype = np.uint64
+
     recurrent = np.zeros(alignment_array.shape[1], dtype=np.uint8)
-    standard_total = np.zeros(alignment_array.shape[1], dtype=np.intp)
+    standard_total = np.zeros(alignment_array.shape[1], dtype=count_dtype)
     for code in _DNA_STANDARD_CODES:
-        counts = np.count_nonzero(alignment_array == code, axis=0)
+        counts = (alignment_array == code).sum(axis=0, dtype=count_dtype)
         standard_total += counts
         recurrent += counts >= 2
 
