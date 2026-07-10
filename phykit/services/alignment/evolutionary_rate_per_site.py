@@ -40,6 +40,24 @@ def _column_totals(counts: np.ndarray) -> np.ndarray:
     return np.sum(counts, axis=0)
 
 
+def _bounded_ascii_symbol_counts(alignment_array, valid_symbols):
+    num_records = alignment_array.shape[0]
+    if num_records <= 0xFFFF:
+        count_dtype = np.uint16
+    elif num_records <= 0xFFFFFFFF:
+        count_dtype = np.uint32
+    else:
+        count_dtype = np.uint64
+
+    return np.array(
+        [
+            (alignment_array == symbol).sum(axis=0, dtype=count_dtype)
+            for symbol in valid_symbols
+        ],
+        dtype=np.float64,
+    )
+
+
 def _plot_max(values):
     if values.size <= _PLOT_DIRECT_MAX_LIMIT:
         return values.max()
@@ -399,6 +417,13 @@ class EvolutionaryRatePerSite(Alignment):
                 valid_mask,
                 valid_symbols,
             )
+        elif ascii_matrix:
+            counts = _bounded_ascii_symbol_counts(
+                alignment_array,
+                valid_symbols,
+            )
+            totals = _column_totals(counts)
+            sum_squares = _column_sum_squares(counts)
         else:
             counts = np.array(
                 [

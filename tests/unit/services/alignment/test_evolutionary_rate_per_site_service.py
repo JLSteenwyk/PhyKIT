@@ -664,6 +664,29 @@ assert "phykit.helpers.plot_config" not in sys.modules
 
         assert values == pytest.approx([4 / 9, 0.0, 0.0, 4 / 9])
 
+    @pytest.mark.parametrize("num_records", [0xFFFF, 0x10000])
+    def test_bounded_ascii_symbol_counts_do_not_overflow(self, num_records):
+        import numpy as np
+
+        alignment_array = np.full((num_records, 2), ord("A"), dtype=np.uint8)
+        valid_symbols = np.array([ord("A"), ord("C")], dtype=np.uint8)
+
+        observed = erps_module._bounded_ascii_symbol_counts(
+            alignment_array,
+            valid_symbols,
+        )
+
+        np.testing.assert_array_equal(
+            observed,
+            np.array(
+                [
+                    [num_records, num_records],
+                    [0, 0],
+                ],
+                dtype=np.float64,
+            ),
+        )
+
     def test_clean_nucleotide_path_skips_full_symbol_discovery(
         self,
         monkeypatch,

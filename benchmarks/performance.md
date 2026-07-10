@@ -430,6 +430,8 @@ Results:
 | `EvolutionaryRatePerSite.calculate_evolutionary_rate_per_site` DNA no-gap observed-symbol validity | 1000 taxa x 12000 sites, alphabet `ACGT`, side-by-side previous full valid-mask path | 0.142018s | 0.118764s | 1.20x |
 | `evolutionary_rate_per_site` clean nucleotide symbol discovery | paired full CLI runs of 500 taxa x 50000 clean `ACGT` sites; 15 runs after 3 warmups, byte-identical 634152-byte text and 4568326-byte JSON output | 0.368363s | 0.330730s | 1.11x |
 | `EvolutionaryRatePerSite.calculate_evolutionary_rate_per_site` small-alphabet column counts | 1200 taxa x 12000 clean DNA sites, side-by-side previous per-symbol lazy `np.sum(alignment_array == symbol, axis=0)` reductions | 0.252684s | 0.102319s | 2.47x |
+| `EvolutionaryRatePerSite._bounded_ascii_symbol_counts` bounded accumulators | 2500 taxa x 10000 clean `ACGT` sites, four observed symbols, 15 alternating kernel runs after warmup | 0.078971s | 0.047957s | 1.65x |
+| `evolutionary_rate_per_site` bounded small-alphabet counts | 2500 taxa x 10000 clean `ACGT` sites, full CLI, 15 alternating runs after 3 warmups | 0.299603s | 0.258136s | 1.16x |
 | `EvolutionaryRatePerSite.calculate_evolutionary_rate_per_site` protein no-gap mask elision | 1000 taxa x 5000 sites, 20 amino-acid symbols, side-by-side previous full valid-mask path | 0.099297s | 0.069440s | 1.43x |
 | `EvolutionaryRatePerSite.calculate_evolutionary_rate_per_site` single valid-symbol shortcut | 1200 taxa x 12000 sites, conserved ASCII DNA alignment, side-by-side previous count/frequency path | 0.058379s | 0.044176s | 1.32x |
 | `EvolutionaryRatePerSite.calculate_evolutionary_rate_per_site` identical-sequence shortcut | 1200 taxa x 12000 identical ASCII DNA sites, lowercase/uppercase variants, side-by-side previous matrix path | 0.076192s | 0.006297s | 12.10x |
@@ -3935,6 +3937,11 @@ Profiling summary:
   JSON/plot payloads unchanged. The small-alphabet count path now reduces each
   boolean equality matrix with its ndarray `sum(axis=0)` method, avoiding
   repeated lazy `np.sum` dispatch while preserving the protein block counter.
+  A later ASCII pass supplies the smallest unsigned accumulator that can
+  represent the taxon count, using `uint16` through 65,535 taxa and wider types
+  above that boundary. Unicode matrices retain their existing reduction path,
+  and paired full CLI text and JSON outputs matched the previous commit byte for
+  byte.
   A later terminal-output pass skips the intermediate row
   dictionaries unless JSON or plot output needs them. JSON row construction now
   uses `enumerate(..., start=1)` instead of adding one to every zero-based
