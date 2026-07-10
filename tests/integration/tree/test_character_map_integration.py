@@ -26,13 +26,16 @@ class TestCharacterMap:
         tmp_path,
     ):
         tree = tmp_path / "polytomy.tre"
-        tree.write_text("(A:1,B:1,C:1):0;\n")
+        tree.write_text("(A:1,B:1,C:1,D:1,E:1,F:1):0;\n")
         matrix = tmp_path / "polytomy.tsv"
         matrix.write_text(
             "taxon\tchar0\n"
-            "A\t1\n"
-            "B\t1\n"
+            "A\t0\n"
+            "B\t0\n"
             "C\t0\n"
+            "D\t1\n"
+            "E\t1\n"
+            "F\t1\n"
         )
         output = str(tmp_path / "polytomy.png")
         testargs = [
@@ -48,8 +51,11 @@ class TestCharacterMap:
             Phykit()
 
         payload = json.loads(mocked_print.call_args.args[0])
-        assert payload["tree_length"] == 1
-        assert payload["ci"] == 1.0
+        assert payload["tree_length"] == 3
+        assert payload["ci"] == 0.3333
+        assert payload["ri"] == 0.0
+        assert payload["characters"][0]["steps"] == 3
+        assert len(payload["characters"][0]["changes"]) == 3
         assert Path(output).exists()
         assert Path(output).stat().st_size > 0
 
