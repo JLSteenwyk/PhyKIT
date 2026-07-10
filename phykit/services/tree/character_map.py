@@ -262,6 +262,17 @@ class CharacterMap(Tree):
         allow_taxon_mismatch: bool = False,
     ):
         """Validate taxa and optionally return their shared subset."""
+        state_count = len(tip_states)
+        if state_count >= 3 and len(tree_tip_names) == state_count:
+            if tree_tip_names[0] == next(iter(tip_states)):
+                if tree_tip_names[-1] == next(reversed(tip_states)):
+                    state_names = list(tip_states)
+                    if state_names == tree_tip_names:
+                        # Matrix parsing has already rejected empty and duplicate
+                        # labels, so an exact ordered match proves the tree labels
+                        # have those properties as well.
+                        return state_count, [], tip_states
+
         unnamed_tips = sum(
             1
             for name in tree_tip_names
@@ -301,14 +312,6 @@ class CharacterMap(Tree):
                 ["Character matrix contains an empty taxon label."],
                 code=2,
             )
-
-        state_count = len(tip_states)
-        if state_count >= 3 and len(tree_tip_names) == state_count:
-            if tree_tip_names[0] == next(iter(tip_states)):
-                if tree_tip_names[-1] == next(reversed(tip_states)):
-                    state_names = list(tip_states)
-                    if state_names == tree_tip_names:
-                        return state_count, [], tip_states
 
         tree_tips = set(tree_tip_names)
         matrix_taxa = set(tip_states)

@@ -181,9 +181,12 @@ class TestCharacterMapSharedTaxaSetup:
         tip_states = {"A": ["0"], "B": ["1"], "C": ["0"]}
 
         def fail_set(*_args, **_kwargs):
-            raise AssertionError("ordered all-shared character data should skip sets")
+            raise AssertionError(
+                "ordered all-shared character data should skip set validation"
+            )
 
         monkeypatch.setattr(builtins, "set", fail_set)
+        monkeypatch.setattr(character_map_module, "Counter", fail_set)
 
         shared_count, tips_to_prune, filtered = (
             CharacterMap._shared_character_taxa_setup(["A", "B", "C"], tip_states)
