@@ -142,7 +142,7 @@ assert "numpy" not in sys.modules
 
         assert isclose(rcv.calculate_rcv(), 0.3333, rel_tol=0.001)
 
-    def test_relative_composition_variability_counts_valid_lengths_with_count_nonzero(
+    def test_relative_composition_variability_uses_bounded_ascii_valid_lengths(
         self, mocker, args
     ):
         alignment = MultipleSeqAlignment(
@@ -158,12 +158,51 @@ assert "numpy" not in sys.modules
             "get_alignment_and_format",
             return_value=(alignment, "fasta", False),
         )
-        count_nonzero_spy = mocker.spy(alignment_base_module.np, "count_nonzero")
+        valid_length_spy = mocker.spy(
+            alignment_base_module,
+            "_bounded_ascii_valid_lengths",
+        )
 
         assert isclose(rcv.calculate_rcv(), 0.3333, rel_tol=0.001)
-        assert any(
-            call.kwargs.get("axis") == 1
-            for call in count_nonzero_spy.call_args_list
+        valid_length_spy.assert_called_once()
+
+    @pytest.mark.parametrize("num_sites", [0xFFFF, 0x10000])
+    def test_bounded_ascii_rcv_counts_do_not_overflow(self, num_sites):
+        alignment_array = alignment_base_module.np.full(
+            (2, num_sites),
+            ord("A"),
+            dtype=alignment_base_module.np.uint8,
+        )
+        unique_chars = alignment_base_module.np.array(
+            [ord("A"), ord("C")],
+            dtype=alignment_base_module.np.uint8,
+        )
+
+        counts = alignment_base_module._bounded_ascii_row_symbol_counts(
+            alignment_array,
+            unique_chars,
+        )
+        valid_lengths = alignment_base_module._bounded_ascii_valid_lengths(
+            alignment_base_module.np.ones_like(alignment_array, dtype=bool),
+        )
+
+        alignment_base_module.np.testing.assert_array_equal(
+            counts,
+            alignment_base_module.np.array(
+                [
+                    [num_sites, 0],
+                    [num_sites, 0],
+                ],
+                dtype=alignment_base_module.np.float64,
+            ),
+        )
+        alignment_base_module.np.testing.assert_array_equal(
+            valid_lengths,
+            alignment_base_module.np.full(
+                2,
+                num_sites,
+                dtype=alignment_base_module.np.float64,
+            ),
         )
 
     def test_relative_composition_variability_final_total_uses_array_sum(

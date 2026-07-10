@@ -100,6 +100,30 @@ def _rcv_column_totals(count_matrix):
     return np.sum(count_matrix, axis=0)
 
 
+def _bounded_ascii_count_dtype(max_count: int):
+    if max_count <= 0xFFFF:
+        return np.uint16
+    if max_count <= 0xFFFFFFFF:
+        return np.uint32
+    return np.uint64
+
+
+def _bounded_ascii_valid_lengths(valid_mask):
+    count_dtype = _bounded_ascii_count_dtype(valid_mask.shape[1])
+    return valid_mask.sum(axis=1, dtype=count_dtype).astype(np.float64)
+
+
+def _bounded_ascii_row_symbol_counts(alignment_array, unique_chars):
+    count_dtype = _bounded_ascii_count_dtype(alignment_array.shape[1])
+    return np.array(
+        [
+            (alignment_array == char).sum(axis=1, dtype=count_dtype)
+            for char in unique_chars
+        ],
+        dtype=np.float64,
+    ).T
+
+
 class Alignment(BaseService):
     def __init__(
         self,
@@ -200,7 +224,7 @@ class Alignment(BaseService):
                 valid_lengths = np.full(num_records, aln_len, dtype=np.float64)
             else:
                 valid_mask = ~invalid_lookup[alignment_array]
-                valid_lengths = np.count_nonzero(valid_mask, axis=1).astype(np.float64)
+                valid_lengths = _bounded_ascii_valid_lengths(valid_mask)
         except UnicodeEncodeError:
             alignment_array = np.array([list(seq) for seq in sequences], dtype="U1")
             invalid_chars_array = np.array(invalid_chars, dtype="U1")
@@ -218,6 +242,11 @@ class Alignment(BaseService):
                 alignment_array,
                 unique_chars,
                 valid_mask,
+            )
+        elif alignment_array.dtype == np.uint8:
+            count_matrix = _bounded_ascii_row_symbol_counts(
+                alignment_array,
+                unique_chars,
             )
         else:
             count_matrix = np.array(

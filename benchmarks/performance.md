@@ -874,6 +874,8 @@ Results:
 | `Alignment.calculate_rcv` observed-symbol validity protein | 2000 taxa x 5000 sites, protein alphabet plus gaps/ambiguous symbols, side-by-side previous full valid-mask path | 0.099660s | 0.078707s | 1.27x |
 | `Alignment.calculate_rcv` no-gap observed-symbol validity | 2000 taxa x 5000 sites, DNA `ACGT` / 20 amino-acid symbols, side-by-side previous full valid-mask path | 0.051012s / 0.063966s | 0.034910s / 0.042129s | 1.46x / 1.52x |
 | `rcv` clean nucleotide symbol discovery | paired full CLI runs of 500 taxa x 50000 clean `ACGT` sites; 15 runs after 3 warmups, byte-identical text and JSON output | 0.262525s | 0.212982s | 1.23x |
+| `Alignment.calculate_rcv` bounded ASCII row counts | 500 taxa x 50000 sites, four symbol counts / valid-length mask, 15 alternating kernel runs after warmup | 0.024372s / 0.005297s | 0.008945s / 0.001404s | 2.72x / 3.77x |
+| `rcv` bounded ASCII row counts | 500 taxa x 50000 clean `ACGT` / gappy `ACGTN-` sites, full CLI, 15 alternating runs after 3 warmups | 0.224986s / 0.345778s | 0.187962s / 0.313182s | 1.20x / 1.10x |
 | `Alignment.calculate_rcv` identical-sequence shortcut | 1200 taxa x 12000 sites, lowercase/uppercase identical DNA records, side-by-side previous matrix path | 0.046277s | 0.006825s | 6.78x |
 | `Alignment.calculate_rcv` raw-identical normalization scan | 300k raw-identical DNA rows, side-by-side previous eager uppercase sequence setup with zero RCV | 0.169686s | 0.036446s | 4.66x |
 | `Alignment.calculate_rcv` identical-sequence no-slice scan | 1M uppercase sequence strings, identical / early-different / late-different cases, side-by-side previous `sequences[1:]` shortcut predicate | 0.163491s / 0.008818s / 0.075810s | 0.050280s / 0.000004s / 0.031403s | 3.25x / 2377.98x / 2.41x |
@@ -4961,8 +4963,13 @@ Profiling summary:
   alignments now discover only present nucleotide symbols with bounded byte
   membership checks instead of a full matrix `unique` reduction. Paired full
   CLI runs improved by 1.23x with byte-identical text and JSON output.
-  Gap-bearing paths now count row valid lengths with `np.count_nonzero` instead
-  of summing boolean masks before float conversion. Identical alignments now
+  Gap-bearing paths first moved from default-width boolean sums to
+  `np.count_nonzero`. A later pass now reduces those masks and small-alphabet
+  ASCII symbol counts into the smallest unsigned accumulator that can represent
+  the alignment length, using `uint16` through 65,535 sites and wider types
+  above that boundary. Both results convert to float64 before the unchanged RCV
+  formula; clean and gappy CLI text and JSON matched the previous commit byte
+  for byte. Identical alignments now
   return zero RCV before NumPy matrix construction, preserving case-insensitive behavior by
   comparing uppercased sequence strings. Raw-identical alignments now test
   equality before uppercasing every row, avoiding the normalization pass for
