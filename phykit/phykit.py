@@ -119,6 +119,16 @@ class _AlignmentJsonDefaultArgs:
         self.json = False
 
 
+class _AlignmentPlotJsonDefaultArgs:
+    __slots__ = ("alignment", "plot", "plot_output", "json")
+
+    def __init__(self, alignment: str, plot_output: str) -> None:
+        self.alignment = alignment
+        self.plot = False
+        self.plot_output = plot_output
+        self.json = False
+
+
 class _AlignmentEntropyDefaultArgs:
     __slots__ = ("alignment", "verbose", "json", "plot", "plot_output")
 
@@ -2170,6 +2180,13 @@ class Phykit:
 
     @staticmethod
     def rcvt(argv):
+        if len(argv) == 1 and argv[0] and argv[0][0] != "-":
+            _run_service_with_args(
+                _AlignmentPlotJsonDefaultArgs(argv[0], "rcvt_plot.png"),
+                RelativeCompositionVariabilityTaxon,
+            )
+            return
+
         parser = _new_parser(
             description=_dedent(
                 f"""\

@@ -858,6 +858,67 @@ def test_rcv_option_invocation_keeps_parser(monkeypatch):
     assert calls["ran"] is True
 
 
+def test_rcvt_default_invocation_bypasses_parser(monkeypatch):
+    captured = {}
+
+    class Runner:
+        def __init__(self, args):
+            captured["args"] = args
+
+        def run(self):
+            captured["ran"] = True
+
+    def fail_new_parser(*_args, **_kwargs):
+        raise AssertionError("default rcvt should not build parser")
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fail_new_parser)
+    monkeypatch.setattr(phykit_module, "RelativeCompositionVariabilityTaxon", Runner)
+
+    phykit_module.Phykit.rcvt(["alignment.fa"])
+
+    args = captured["args"]
+    assert captured["ran"] is True
+    assert args.alignment == "alignment.fa"
+    assert args.plot is False
+    assert args.plot_output == "rcvt_plot.png"
+    assert args.json is False
+
+
+def test_rcvt_option_invocation_keeps_parser(monkeypatch):
+    calls = {"parser": False, "ran": False}
+
+    class FakeParser:
+        def add_argument(self, *args, **kwargs):
+            return None
+
+        def add_argument_group(self, *args, **kwargs):
+            return self
+
+        def parse_args(self, argv):
+            calls["argv"] = argv
+            return object()
+
+    class Runner:
+        def __init__(self, args):
+            calls["args"] = args
+
+        def run(self):
+            calls["ran"] = True
+
+    def fake_new_parser(*_args, **_kwargs):
+        calls["parser"] = True
+        return FakeParser()
+
+    monkeypatch.setattr(phykit_module, "_new_parser", fake_new_parser)
+    monkeypatch.setattr(phykit_module, "RelativeCompositionVariabilityTaxon", Runner)
+
+    phykit_module.Phykit.rcvt(["alignment.fa", "--plot"])
+
+    assert calls["parser"] is True
+    assert calls["argv"] == ["alignment.fa", "--plot"]
+    assert calls["ran"] is True
+
+
 def test_monophyly_check_default_invocation_bypasses_parser(monkeypatch):
     captured = {}
 

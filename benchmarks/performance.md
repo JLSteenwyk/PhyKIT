@@ -497,6 +497,7 @@ Results:
 | `RelativeCompositionVariabilityTaxon.calculate_rows` zero row construction | 500k mocked zero-RCVT rows for identical/all-invalid alignments, identical row dictionaries | 0.185772s | 0.111760s | 1.66x |
 | `RelativeCompositionVariabilityTaxon.calculate_rows` value row construction | 500k mocked RCVT value rows, identical row dictionaries | 0.545980s | 0.493787s | 1.11x |
 | `RelativeCompositionVariabilityTaxon.run` batched text output | 50k taxon rows, mocked alignment/read and identical stdout text | 0.017426s | 0.011493s | 1.52x |
+| `rcvt` default CLI parser bypass | direct dispatch of `rcvt alignment` into a no-op service, 1000 calls; direct command timing against `simple.fa`, 30 runs after 5 warmups, stdout matched | 2.446485s; 0.420659s command mean | 0.000925s; 0.406689s command mean | 2644.85x; 1.03x command |
 | `RelativeCompositionVariabilityTaxon._plot_rcvt` plot series preparation | 300k taxon rows, repeated RCVT values, identical stable descending taxon order and plotted values | 0.068288s | 0.042674s | 1.60x |
 | `RelativeCompositionVariabilityTaxon._plot_rcvt` redundant tight layout pass | repeated 200-taxon RCVT PNG render, explicit `Figure.tight_layout()` removed while retaining `savefig(..., bbox_inches="tight")` | 7.804717s | 6.236310s | 1.25x |
 | `RelativeCompositionVariabilityTaxon.calculate_rows` cached lazy NumPy attributes | 1800 protein records x 1800 sites, repeated variable-row RCVT calculations after warmup | 0.060981s | 0.035996s | 1.69x |
