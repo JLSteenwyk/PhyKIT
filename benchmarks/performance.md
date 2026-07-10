@@ -156,6 +156,7 @@ Results:
 | `PairwiseIdentity.run` summary-only matrix stats | 180 taxa x 1500 sites, alphabet `ACGT-?NX*`, non-verbose/no-plot output | 0.024218s | 0.008288s | 2.92x |
 | `PairwiseIdentity.calculate_pairwise_identity_stats` clean ASCII exclude-gaps shortcut | 400 taxa x 1000 sites, alphabet `ACGT`, summary-only stats path | 0.263493s | 0.031507s | 8.36x |
 | `PairwiseIdentity.calculate_pairwise_identity_stats` matrix block index reuse | 700 taxa x 900 sites, alphabet `ACGT-?NX*`, side-by-side previous per-block column index allocation | 0.131023s | 0.100191s | 1.31x |
+| `pairwise_identity` clean nucleotide summary BLAS counts | 700 taxa x 3000 sites, alphabet `ACGT`, full summary CLI, 15 alternating runs after 3 warmups, multiprocessing disabled | 0.418158s | 0.194464s | 2.15x |
 | `PairwiseIdentity.calculate_pairwise_identity_stats` gappy matrix condensed extraction | 1800 taxa x 1200 sites synthetic identity-count matrix, side-by-side previous `np.triu_indices` stats extraction | 0.141980s | 0.058894s | 2.41x |
 | `PairwiseIdentity.calculate_pairwise_identity_stats` small scalar stats path | command profiler, 5 runs after 1 warmup, `test_alignment_0.fa` summary-only output | 0.505204s | 0.113659s | 4.44x |
 | `PairwiseIdentity` local small scalar summary stats | 200k repeated summaries of six pairwise identity values, side-by-side previous shared stats helper; representative text/JSON outputs matched previous commit and summary command median was neutral-to-slightly faster | 1.677016s | 0.852067s | 1.97x |
@@ -3395,6 +3396,14 @@ Profiling summary:
   runs now use a scalar pair loop below an 8 KiB cell threshold, preserving
   full-length denominator and `--exclude-gaps` semantics while avoiding NumPy,
   SciPy squareform, pair-label, and dictionary setup for tiny command inputs.
+  Larger clean nucleotide summaries now accumulate exact-match counts with one
+  float32 matrix product per observed `ACGTU` symbol, then summarize the upper
+  triangle directly. Length and matrix-size guards keep integer counts exact and
+  memory bounded; protein, ambiguous, Unicode, and oversized inputs retain the
+  existing blocked comparison path. Text and JSON summary output matched the
+  previous commit byte for byte. The verbose full-result path remains unchanged
+  after a 180-taxon by 1500-site trial measured the matrix-product candidate at
+  0.97x.
   Fully identical
   normalized alignments now compute the constant identity from one sequence
   before matrix construction, preserving the full-length denominator and

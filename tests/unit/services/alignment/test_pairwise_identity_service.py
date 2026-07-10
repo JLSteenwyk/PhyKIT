@@ -14,6 +14,9 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
 from phykit.services.alignment.pairwise_identity import PairwiseIdentity
+from phykit.services.alignment.pairwise_identity import (
+    _clean_nucleotide_identity_counts,
+)
 from phykit.services.alignment.pairwise_identity import _identity_for_identical_sequence
 import phykit.services.alignment.pairwise_identity as pairwise_identity_module
 
@@ -72,6 +75,74 @@ def test_all_sequences_identical_does_not_slice():
     )
     assert not pairwise_identity_module._all_sequences_identical(
         NoSliceList(["ACGT", "ACGT", "TGCA"])
+    )
+
+
+def test_clean_nucleotide_identity_counts_match_direct_comparisons():
+    matrix = np.array(
+        [
+            list(b"ACGTU"),
+            list(b"ACGTT"),
+            list(b"TCGUA"),
+        ],
+        dtype=np.uint8,
+    )
+
+    observed = _clean_nucleotide_identity_counts(
+        matrix,
+        matrix.tobytes(),
+        is_protein=False,
+    )
+
+    expected = (matrix[:, None, :] == matrix[None, :, :]).sum(axis=2)
+    np.testing.assert_array_equal(observed, expected)
+
+
+def test_clean_nucleotide_identity_counts_preserve_fallback_guards(monkeypatch):
+    matrix = np.frombuffer(b"ACGTTCGA", dtype=np.uint8).reshape(2, 4)
+
+    assert _clean_nucleotide_identity_counts(matrix, matrix.tobytes(), True) is None
+    assert _clean_nucleotide_identity_counts(matrix, b"ACGNACGT", False) is None
+
+    monkeypatch.setattr(
+        pairwise_identity_module,
+        "_FLOAT32_EXACT_INTEGER_MAX",
+        matrix.shape[1] - 1,
+    )
+    assert _clean_nucleotide_identity_counts(matrix, matrix.tobytes(), False) is None
+    monkeypatch.setattr(
+        pairwise_identity_module,
+        "_FLOAT32_EXACT_INTEGER_MAX",
+        1 << 24,
+    )
+
+    monkeypatch.setattr(
+        pairwise_identity_module,
+        "_DNA_IDENTITY_PRODUCT_MAX_CELLS",
+        matrix.size - 1,
+    )
+    assert (
+        _clean_nucleotide_identity_counts(
+            matrix,
+            matrix.tobytes(),
+            is_protein=False,
+        )
+        is None
+    )
+
+    taxa_heavy_matrix = matrix.reshape(4, 2)
+    monkeypatch.setattr(
+        pairwise_identity_module,
+        "_DNA_IDENTITY_PRODUCT_MAX_CELLS",
+        taxa_heavy_matrix.size,
+    )
+    assert (
+        _clean_nucleotide_identity_counts(
+            taxa_heavy_matrix,
+            taxa_heavy_matrix.tobytes(),
+            is_protein=False,
+        )
+        is None
     )
 
 

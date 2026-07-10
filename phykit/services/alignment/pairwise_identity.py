@@ -50,6 +50,9 @@ np = _LazyNumpy()
 _SQUAREFORM = None
 _PAIRWISE_IDENTITY_SCALAR_STATS_MAX_CELLS = 8192
 _PAIRWISE_IDENTITY_SCALAR_RESULT_MAX_CELLS = 8192
+_DNA_IDENTITY_PRODUCT_MAX_CELLS = 8 * 1024 * 1024
+_FLOAT32_EXACT_INTEGER_MAX = 1 << 24
+_NUCLEOTIDE_ALPHABET_BYTES = b"ACGTU"
 
 
 def squareform(*args, **kwargs):
@@ -225,6 +228,55 @@ def _all_sequences_identical(sequences: list[str]) -> bool:
         if sequence != first_sequence:
             return False
     return True
+
+
+def _clean_nucleotide_identity_counts(
+    sequence_matrix,
+    joined_bytes: bytes,
+    is_protein: bool,
+):
+    num_records, aln_len = sequence_matrix.shape
+    if (
+        is_protein
+        or aln_len > _FLOAT32_EXACT_INTEGER_MAX
+        or sequence_matrix.size > _DNA_IDENTITY_PRODUCT_MAX_CELLS
+        or num_records * num_records > _DNA_IDENTITY_PRODUCT_MAX_CELLS
+        or joined_bytes.translate(None, _NUCLEOTIDE_ALPHABET_BYTES)
+    ):
+        return None
+
+    identity_counts = np.zeros(
+        (num_records, num_records),
+        dtype=np.float32,
+    )
+    for symbol in _NUCLEOTIDE_ALPHABET_BYTES:
+        if symbol not in joined_bytes:
+            continue
+        symbol_mask = (sequence_matrix == symbol).astype(
+            np.float32,
+            copy=False,
+        )
+        identity_counts += symbol_mask @ symbol_mask.T
+    return identity_counts
+
+
+def _identity_values_from_count_matrix(identity_counts, aln_len: int):
+    num_records = identity_counts.shape[0]
+    values = np.empty(num_records * (num_records - 1) // 2, dtype=np.float64)
+    cursor = 0
+    if aln_len > 0:
+        denominator = float(aln_len)
+        for row_idx in range(num_records - 1):
+            row_values = identity_counts[row_idx, row_idx + 1 :]
+            next_cursor = cursor + row_values.size
+            values[cursor:next_cursor] = row_values.astype(
+                np.float64,
+                copy=False,
+            ) / denominator
+            cursor = next_cursor
+    else:
+        values.fill(0.0)
+    return values
 
 
 def _linear_percentile(sorted_values, position):
@@ -796,6 +848,15 @@ class PairwiseIdentity(Alignment):
             ).reshape(num_records, aln_len)
         except UnicodeEncodeError:
             return None
+
+        identity_counts = _clean_nucleotide_identity_counts(
+            sequence_matrix,
+            joined_bytes,
+            is_protein,
+        )
+        if identity_counts is not None:
+            values = _identity_values_from_count_matrix(identity_counts, aln_len)
+            return calculate_summary_statistics_from_arr(values)
 
         if exclude_gaps:
             gap_bytes = b"-?*X" if is_protein else b"-?*XN"
