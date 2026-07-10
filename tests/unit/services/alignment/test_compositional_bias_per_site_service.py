@@ -653,6 +653,27 @@ assert "phykit.helpers.plot_config" not in sys.modules
         assert corrected[0] == pytest.approx(corrected[3])
         assert corrected[1:3] == ["nan", "nan"]
 
+    @pytest.mark.parametrize("num_records", [0xFFFF, 0x10000])
+    def test_bounded_ascii_symbol_counts_do_not_overflow(self, num_records):
+        alignment_array = np.full((num_records, 2), ord("A"), dtype=np.uint8)
+        valid_symbols = np.array([ord("A"), ord("C")], dtype=np.uint8)
+
+        observed = cbps_module._bounded_ascii_symbol_counts(
+            alignment_array,
+            valid_symbols,
+        )
+
+        np.testing.assert_array_equal(
+            observed,
+            np.array(
+                [
+                    [num_records, num_records],
+                    [0, 0],
+                ],
+                dtype=np.float64,
+            ),
+        )
+
     def test_calculate_compositional_bias_per_site_protein_no_gap_skips_valid_mask(
         self, mocker, args
     ):

@@ -463,6 +463,8 @@ Results:
 | `CompositionalBiasPerSite.calculate_compositional_bias_per_site` DNA observed-symbol validity | 500 taxa x 8000 sites, alphabet `ACGT-?NX*`, side-by-side previous full valid-mask path | 0.056998s | 0.033467s | 1.70x |
 | `CompositionalBiasPerSite.calculate_compositional_bias_per_site` DNA no-gap observed-symbol validity | 1000 taxa x 12000 sites, alphabet `ACGT`, side-by-side previous full valid-mask path | 0.137986s | 0.083428s | 1.65x |
 | `compositional_bias_per_site` clean nucleotide symbol discovery | paired full CLI runs of 500 taxa x 50000 clean `ACGT` sites; 15 runs after 3 warmups, byte-identical 1270826-byte text and 8541674-byte JSON output | 0.413484s | 0.388768s | 1.06x |
+| `CompositionalBiasPerSite._bounded_ascii_symbol_counts` bounded accumulators | 2500 taxa x 10000 clean `ACGT` sites, four observed symbols, 15 alternating kernel runs after warmup | 0.073583s | 0.046180s | 1.59x |
+| `compositional_bias_per_site` bounded small-alphabet counts | 2500 taxa x 10000 clean `ACGT` sites, full CLI, 15 alternating runs after 3 warmups | 0.325466s | 0.291762s | 1.12x |
 | `CompositionalBiasPerSite.calculate_compositional_bias_per_site` protein no-gap mask elision | 1000 taxa x 5000 sites, 20 amino-acid symbols, side-by-side previous full valid-mask path | 0.052347s | 0.043303s | 1.21x |
 | `CompositionalBiasPerSite.calculate_compositional_bias_per_site` single valid-symbol shortcut | 1200 taxa x 12000 sites, conserved ASCII DNA alignment, side-by-side previous count/statistic path | 0.066130s | 0.047264s | 1.40x |
 | `CompositionalBiasPerSite.calculate_compositional_bias_per_site` identical-sequence shortcut | 1200 taxa x 12000 identical ASCII DNA sites, lowercase/uppercase variants, side-by-side previous matrix/statistic path | 0.087052s | 0.010425s | 8.35x |
@@ -4041,7 +4043,12 @@ Profiling summary:
   mask path. Clean `ACGTU` alignments now discover only present nucleotide
   symbols with bounded byte membership checks instead of a full matrix `unique`
   reduction. Paired full CLI runs improved by 1.06x with byte-identical text and
-  JSON output. Conserved alignments with one valid observed symbol now return zero
+  JSON output. Small-alphabet ASCII equality masks now reduce into the smallest
+  unsigned accumulator that can represent the taxon count, using `uint16`
+  through 65,535 taxa and wider types above that boundary. Unicode matrices and
+  protein block counts retain their existing paths; paired full CLI text and
+  JSON again matched the previous commit byte for byte. Conserved alignments
+  with one valid observed symbol now return zero
   statistics and `"nan"` corrected p-values directly after the existing
   valid-symbol discovery step, skipping count, statistic, p-value, and FDR work.
   Fully identical normalized alignments now take the same zero-statistic and
