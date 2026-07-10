@@ -91,6 +91,23 @@ def _entropy_values_to_list(entropies):
     return entropies.tolist()
 
 
+def _bounded_ascii_symbol_counts(alignment_array, valid_chars):
+    num_records = alignment_array.shape[0]
+    if num_records <= 0xFFFF:
+        count_dtype = np.uint16
+    elif num_records <= 0xFFFFFFFF:
+        count_dtype = np.uint32
+    else:
+        count_dtype = np.uint64
+
+    return np.vstack(
+        [
+            (alignment_array == char).sum(axis=0, dtype=count_dtype)
+            for char in valid_chars
+        ]
+    ).astype(np.float64)
+
+
 def _entropy_count_totals(counts):
     if counts.shape[1] <= 20000 or counts.shape[0] >= 8:
         return counts.sum(axis=0)
@@ -448,15 +465,15 @@ class AlignmentEntropy(Alignment):
                 all_valid=all_valid,
             )
 
-        count_reducer = (
-            np.count_nonzero if alignment_array.dtype == np.uint8 else np.sum
-        )
-        counts = np.vstack(
-            [
-                count_reducer(alignment_array == char, axis=0)
-                for char in valid_chars
-            ]
-        ).astype(np.float64)
+        if alignment_array.dtype == np.uint8:
+            counts = _bounded_ascii_symbol_counts(alignment_array, valid_chars)
+        else:
+            counts = np.vstack(
+                [
+                    np.sum(alignment_array == char, axis=0)
+                    for char in valid_chars
+                ]
+            ).astype(np.float64)
         totals = _entropy_count_totals(counts)
 
         entropies = _entropy_from_counts(counts, totals)

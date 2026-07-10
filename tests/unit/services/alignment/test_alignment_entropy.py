@@ -158,7 +158,7 @@ assert "phykit.helpers.plot_config" not in sys.modules
         assert isclose(entropies[0], 0.918295, rel_tol=0.001)
         assert isclose(entropies[1], 1.0, rel_tol=0.001)
 
-    def test_site_entropies_ascii_small_alphabet_counts_with_count_nonzero(
+    def test_site_entropies_ascii_small_alphabet_uses_bounded_counts(
         self, mocker, monkeypatch
     ):
         from Bio.Seq import Seq
@@ -175,18 +175,40 @@ assert "phykit.helpers.plot_config" not in sys.modules
             "_ENTROPY_SCALAR_MAX_CELLS",
             0,
         )
-        count_nonzero_spy = mocker.spy(
-            alignment_entropy_module.np,
-            "count_nonzero",
+        bounded_count_spy = mocker.spy(
+            alignment_entropy_module,
+            "_bounded_ascii_symbol_counts",
         )
 
         entropies = entropy.calculate_site_entropies(alignment, is_protein=False)
 
         assert len(entropies) == 4
         assert isclose(entropies[0], 0.918295, rel_tol=0.001)
-        assert any(
-            call.kwargs.get("axis") == 0
-            for call in count_nonzero_spy.call_args_list
+        bounded_count_spy.assert_called_once()
+
+    @pytest.mark.parametrize("num_records", [0xFFFF, 0x10000])
+    def test_bounded_ascii_symbol_counts_do_not_overflow(self, num_records):
+        alignment_array = np.full(
+            (num_records, 2),
+            ord("A"),
+            dtype=np.uint8,
+        )
+        valid_chars = np.array([ord("A"), ord("C")], dtype=np.uint8)
+
+        observed = alignment_entropy_module._bounded_ascii_symbol_counts(
+            alignment_array,
+            valid_chars,
+        )
+
+        np.testing.assert_array_equal(
+            observed,
+            np.array(
+                [
+                    [num_records, num_records],
+                    [0, 0],
+                ],
+                dtype=np.float64,
+            ),
         )
 
     def test_site_entropies_ascii_path_uses_gap_code_reduction(
