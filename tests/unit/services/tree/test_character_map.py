@@ -57,6 +57,8 @@ def _make_args(tmp_path, **overrides):
         phylogram=False,
         characters=None,
         allow_taxon_mismatch=False,
+        change_marker_size=None,
+        change_fontsize=None,
         verbose=False,
         json=False,
     )
@@ -253,6 +255,18 @@ class TestCharacterMapSharedTaxaSetup:
         assert "1 taxon in tree but not in character matrix: A" in exc.value.messages
         assert "1 taxon in character matrix but not in tree: a" in exc.value.messages
 
+    def test_taxon_matching_does_not_strip_whitespace(self):
+        tip_states = {" A": ["0"], "B": ["1"], "C": ["0"]}
+
+        with pytest.raises(SystemExit) as exc:
+            CharacterMap._shared_character_taxa_setup(
+                ["A", "B", "C"],
+                tip_states,
+            )
+
+        assert "1 taxon in tree but not in character matrix: A" in exc.value.messages
+        assert "1 taxon in character matrix but not in tree:  A" in exc.value.messages
+
     def test_duplicate_tree_taxon_labels_raise(self):
         with pytest.raises(SystemExit) as exc:
             CharacterMap._shared_character_taxa_setup(
@@ -283,6 +297,8 @@ class TestCharacterMapInit:
         assert cm.phylogram is False
         assert cm.characters_filter is None
         assert cm.allow_taxon_mismatch is False
+        assert cm.change_marker_size is None
+        assert cm.change_fontsize is None
         assert cm.verbose is False
         assert cm.json_output is False
 
@@ -290,6 +306,42 @@ class TestCharacterMapInit:
         args = _make_args(tmp_path, characters="0,1,3")
         cm = CharacterMap(args)
         assert cm.characters_filter == [0, 1, 3]
+
+    def test_change_plot_controls_are_stored(self, tmp_path):
+        args = _make_args(
+            tmp_path,
+            change_marker_size=125.0,
+            change_fontsize=8.5,
+        )
+
+        cm = CharacterMap(args)
+
+        assert cm.change_marker_size == 125.0
+        assert cm.change_fontsize == 8.5
+
+    @pytest.mark.parametrize(
+        ("option", "value", "message"),
+        [
+            ("change_marker_size", 0, "--change-marker-size"),
+            ("change_marker_size", -1, "--change-marker-size"),
+            ("change_fontsize", 0, "--change-fontsize"),
+            ("change_fontsize", -1, "--change-fontsize"),
+        ],
+    )
+    def test_change_plot_controls_must_be_positive(
+        self,
+        tmp_path,
+        option,
+        value,
+        message,
+    ):
+        args = _make_args(tmp_path, **{option: value})
+
+        with pytest.raises(SystemExit) as exc:
+            CharacterMap(args)
+
+        assert exc.value.code == 2
+        assert message in exc.value.messages[0]
 
 
 class TestCharacterMapStateSummary:
@@ -896,6 +948,8 @@ class TestCharacterMapPlot:
             legend_position="none",
             ylabel_fontsize=0,
             no_title=True,
+            change_marker_size=123.0,
+            change_fontsize=8.5,
         )
         cm = CharacterMap(args)
         tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
@@ -919,13 +973,20 @@ class TestCharacterMapPlot:
         }
 
         original_scatter = Axes.scatter
+        original_annotate = Axes.annotate
         scatter_calls = []
+        annotation_fontsizes = []
 
         def capture_scatter(self, x, y, *args, **kwargs):
             scatter_calls.append((x, y, kwargs))
             return original_scatter(self, x, y, *args, **kwargs)
 
+        def capture_annotate(self, *args, **kwargs):
+            annotation_fontsizes.append(kwargs.get("fontsize"))
+            return original_annotate(self, *args, **kwargs)
+
         monkeypatch.setattr(Axes, "scatter", capture_scatter)
+        monkeypatch.setattr(Axes, "annotate", capture_annotate)
 
         cm._plot_character_map(tree, classified, node_labels, parent_map)
 
@@ -933,7 +994,9 @@ class TestCharacterMapPlot:
         x, y, kwargs = scatter_calls[0]
         assert len(x) == len(y) == 4
         assert len(kwargs["c"]) == 4
+        assert kwargs["s"] == 123.0
         assert kwargs["edgecolors"] == "black"
+        assert annotation_fontsizes == [8.5] * 8
         out = Path(args.output)
         assert out.exists()
         assert out.stat().st_size > 0

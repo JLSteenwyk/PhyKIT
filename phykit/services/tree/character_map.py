@@ -1,9 +1,10 @@
 """
 Character mapping on a phylogenetic tree.
 
-Performs Fitch parsimony reconstruction on a discrete character matrix,
-classifies changes as synapomorphies, convergences, or reversals, and
-produces a phylogram/cladogram plot with annotated character changes.
+Performs unordered parsimony reconstruction on a discrete character matrix,
+using optimized Fitch reconstruction for binary trees and exact Sankoff costs
+for multifurcations. Classifies changes as synapomorphies, convergences, or
+reversals and produces a phylogram/cladogram plot with annotated changes.
 
 Uses the generalized parsimony utilities in phykit.helpers.parsimony_utils.
 """
@@ -81,6 +82,8 @@ class CharacterMap(Tree):
         self.phylogram = parsed["phylogram"]
         self.characters_filter = parsed["characters_filter"]
         self.allow_taxon_mismatch = parsed["allow_taxon_mismatch"]
+        self.change_marker_size = parsed["change_marker_size"]
+        self.change_fontsize = parsed["change_fontsize"]
         self.verbose = parsed["verbose"]
         self.json_output = parsed["json_output"]
         self.plot_config = parsed["plot_config"]
@@ -94,6 +97,18 @@ class CharacterMap(Tree):
         if chars_str is not None:
             characters_filter = [int(c.strip()) for c in chars_str.split(",")]
 
+        change_marker_size = getattr(args, "change_marker_size", None)
+        change_fontsize = getattr(args, "change_fontsize", None)
+        for option, value in (
+            ("--change-marker-size", change_marker_size),
+            ("--change-fontsize", change_fontsize),
+        ):
+            if value is not None and value <= 0:
+                raise PhykitUserError(
+                    [f"{option} must be greater than 0."],
+                    code=2,
+                )
+
         return dict(
             tree_file_path=args.tree,
             data_path=args.data,
@@ -102,6 +117,8 @@ class CharacterMap(Tree):
             phylogram=getattr(args, "phylogram", False),
             characters_filter=characters_filter,
             allow_taxon_mismatch=getattr(args, "allow_taxon_mismatch", False),
+            change_marker_size=change_marker_size,
+            change_fontsize=change_fontsize,
             verbose=getattr(args, "verbose", False),
             json_output=getattr(args, "json", False),
             plot_config=PlotConfig.from_args(args),
@@ -929,8 +946,16 @@ class CharacterMap(Tree):
 
             # Character change circles on branches
             # Smaller markers in circular mode — radial branches are shorter
-            marker_size = max(10, min(50, 300 / max(n_tips, 1)))
-            change_fontsize = max(3.0, min(5.0, 6.0 - n_tips * 0.03))
+            marker_size = (
+                self.change_marker_size
+                if self.change_marker_size is not None
+                else max(10, min(50, 300 / max(n_tips, 1)))
+            )
+            change_fontsize = (
+                self.change_fontsize
+                if self.change_fontsize is not None
+                else max(3.0, min(5.0, 6.0 - n_tips * 0.03))
+            )
 
             filter_set = set(self.characters_filter) if self.characters_filter else None
             change_x = []
@@ -1100,8 +1125,16 @@ class CharacterMap(Tree):
             # Character change circles on branches
             # Use scatter (marker size in points²) so circles stay round
             # regardless of axis aspect ratio.
-            marker_size = max(15, min(80, 600 / max(n_tips, 1)))
-            change_fontsize = max(3.0, min(6.0, 7.0 - n_tips * 0.03))
+            marker_size = (
+                self.change_marker_size
+                if self.change_marker_size is not None
+                else max(15, min(80, 600 / max(n_tips, 1)))
+            )
+            change_fontsize = (
+                self.change_fontsize
+                if self.change_fontsize is not None
+                else max(3.0, min(6.0, 7.0 - n_tips * 0.03))
+            )
 
             # Filter characters if requested
             filter_set = set(self.characters_filter) if self.characters_filter else None
