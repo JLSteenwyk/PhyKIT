@@ -181,6 +181,43 @@ assert "Bio.SeqIO.FastaIO" not in sys.modules
         assert np.array_equal(by_taxon["t2"], np.array([1.0]))
         assert np.array_equal(by_taxon["t3"], np.array([0.0]))
 
+    def test_clean_dna_skips_full_symbol_discovery(self, monkeypatch):
+        service = CompositionPerTaxon(Namespace(alignment="x.fa"))
+        alignment = [
+            SeqRecord(Seq("ACGT"), id="t1"),
+            SeqRecord(Seq("AGGT"), id="t2"),
+            SeqRecord(Seq("TCGA"), id="t3"),
+        ]
+
+        def fail_unique(*args, **kwargs):
+            raise AssertionError("clean DNA should use known symbol codes")
+
+        monkeypatch.setattr(
+            composition_per_taxon_module,
+            "_COMPOSITION_SCALAR_MAX_CELLS",
+            0,
+        )
+        monkeypatch.setattr(
+            composition_per_taxon_module.np,
+            "unique",
+            fail_unique,
+        )
+
+        symbols, rows = service.calculate_composition_per_taxon(
+            alignment,
+            is_protein=False,
+        )
+
+        assert symbols == ["A", "C", "G", "T"]
+        np.testing.assert_allclose(
+            [frequencies for _, frequencies in rows],
+            [
+                [0.25, 0.25, 0.25, 0.25],
+                [0.25, 0.0, 0.5, 0.25],
+                [0.25, 0.25, 0.25, 0.25],
+            ],
+        )
+
     def test_calculate_composition_per_taxon_ignores_ambiguous_sites_and_uppercases(self, args):
         svc = CompositionPerTaxon(args)
         alignment = MultipleSeqAlignment(

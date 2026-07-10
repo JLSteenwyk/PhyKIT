@@ -32,6 +32,7 @@ _IDENTICAL_INDEXED_SCAN_MIN_RECORDS = 200_000
 _IDENTICAL_ROW_TILE_MIN_COUNT = 1_000
 _ASCII_OFFSET_BINCOUNT_MAX_ROWS = 16_384
 _COMPOSITION_SCALAR_MAX_CELLS = 8192
+_DNA_ALPHABET_BYTES = b"ACGTU"
 _NUCLEOTIDE_BYTES = b"ACGTUacgtu-Nn?*"
 _NUCLEOTIDE_CHARS = {"A", "C", "G", "T", "U", "-", "N", "?", "*"}
 
@@ -419,7 +420,20 @@ class CompositionPerTaxon(Alignment):
             else:
                 valid_mask = None
                 valid_lengths = np.full(len(sequences), aln_len, dtype=np.intp)
-                valid_symbols_raw = np.unique(alignment_array)
+                if (
+                    not is_protein
+                    and not alignment_bytes.translate(None, _DNA_ALPHABET_BYTES)
+                ):
+                    valid_symbols_raw = np.fromiter(
+                        (
+                            code
+                            for code in _DNA_ALPHABET_BYTES
+                            if code in alignment_bytes
+                        ),
+                        dtype=np.uint8,
+                    )
+                else:
+                    valid_symbols_raw = np.unique(alignment_array)
             symbols = [chr(int(symbol)) for symbol in valid_symbols_raw]
             symbol_values = valid_symbols_raw
         except UnicodeEncodeError:
