@@ -488,6 +488,7 @@ Results:
 | `RelativeCompositionVariabilityTaxon.calculate_rows` observed-symbol validity DNA | 2000 taxa x 5000 sites, alphabet `ACGT-?NX*`, side-by-side previous full valid-mask path | 0.100830s | 0.066724s | 1.51x |
 | `RelativeCompositionVariabilityTaxon.calculate_rows` observed-symbol validity protein | 2000 taxa x 5000 sites, protein alphabet plus gaps/ambiguous symbols, side-by-side previous full valid-mask path | 0.134780s | 0.085772s | 1.57x |
 | `RelativeCompositionVariabilityTaxon.calculate_rows` no-gap observed-symbol validity | 2000 taxa x 5000 sites, DNA `ACGT` / 20 amino-acid symbols, side-by-side previous full valid-mask path | 0.078720s / 0.091700s | 0.052968s / 0.046669s | 1.49x / 1.96x |
+| `rcvt` clean nucleotide symbol discovery | paired full CLI runs of 500 taxa x 50000 clean `ACGT` sites; 15 runs after 3 warmups, byte-identical 7500-byte text and 38021-byte JSON output | 0.285992s | 0.230976s | 1.24x |
 | RCV/RCVT/AlignmentOutlierTaxa valid-length mask counts | 5000 taxa x 4000-site boolean valid mask, side-by-side previous `np.sum(mask, axis=1).astype(float)` | 0.008596s | 0.004423s | 1.94x |
 | `RelativeCompositionVariabilityTaxon.calculate_rows` many-short protein count table | 50k taxa x 50 no-gap protein sites, side-by-side previous one `np.bincount` per taxon row | 1.300922s | 0.921645s | 1.41x |
 | `RelativeCompositionVariabilityTaxon.calculate_rows` count-matrix column totals | count matrices shaped 260x4 / 1200x20 / 2000x20 / 50000x20, side-by-side previous `np.sum(..., axis=0)` wrapper | 3.497999s / 3.163409s / 4.144007s / 4.768939s | 1.929073s / 2.924800s / 3.469921s / 3.756192s | 1.81x / 1.08x / 1.19x / 1.27x |
@@ -4031,7 +4032,10 @@ Profiling summary:
   pass derives valid ASCII symbols from byte codes present in the alignment and
   uses full sequence lengths when no invalid symbols are observed, avoiding the
   full validity mask for no-gap inputs and reducing setup work for gap-bearing
-  alignments. Gap-bearing paths now count row valid lengths with
+  alignments. Clean `ACGTU` alignments now discover only present nucleotide
+  symbols with bounded byte membership checks instead of a full matrix `unique`
+  reduction. Paired full CLI runs improved by 1.24x with byte-identical text and
+  JSON output. Gap-bearing paths now count row valid lengths with
   `np.count_nonzero` instead of summing boolean masks before float conversion.
   Many-short no-gap protein alignments now build the per-taxon symbol count
   table with one row-offset `bincount`, avoiding tens of thousands of tiny

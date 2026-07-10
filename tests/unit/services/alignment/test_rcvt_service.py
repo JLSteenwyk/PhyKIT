@@ -281,6 +281,31 @@ assert "Bio.AlignIO" not in sys.modules
             dtype=rcvt_module.np.float64,
         )
 
+    def test_clean_nucleotide_rows_skip_full_symbol_discovery(
+        self,
+        monkeypatch,
+        args,
+    ):
+        service = RelativeCompositionVariabilityTaxon(args)
+        alignment = MultipleSeqAlignment(
+            [
+                SeqRecord(Seq("ACGT"), id="t1"),
+                SeqRecord(Seq("AGGT"), id="t2"),
+                SeqRecord(Seq("TCGA"), id="t3"),
+            ]
+        )
+
+        def fail_unique(*args, **kwargs):
+            raise AssertionError("clean nucleotides should use known symbol codes")
+
+        monkeypatch.setattr(rcvt_module.np, "unique", fail_unique)
+
+        assert service.calculate_rows(alignment, is_protein=False) == [
+            {"taxon": "t1", "rcvt": 0.0556},
+            {"taxon": "t2", "rcvt": 0.1111},
+            {"taxon": "t3", "rcvt": 0.0556},
+        ]
+
     def test_ascii_count_matrix_matches_per_row_bincount_reference(self):
         alphabet = b"ACDEFGHIKLMNPQRSTVWY"
         matrix = rcvt_module.np.frombuffer(
