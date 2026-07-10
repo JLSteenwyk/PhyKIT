@@ -805,7 +805,7 @@ class Phykit:
         sys.exit(1)
 
     ## print version
-    def version(self):
+    def version(self, argv=None):
         print(_dedented_version_banner(self.help_header))
 
     ## Alignment functions
@@ -9989,6 +9989,11 @@ class Phykit:
 
 def main(argv=None):
     Phykit()
+
+
+def version(argv=None):
+    instance = object.__new__(Phykit)
+    instance.version(argv)
 
 
 # Alignment-based functions

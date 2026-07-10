@@ -2638,6 +2638,17 @@ class TestPhykitCliDispatch:
         out, _ = capsys.readouterr()
         assert "Version:" in out
 
+    def test_init_dispatches_version_command(self, monkeypatch, capsys):
+        monkeypatch.setattr("sys.argv", ["phykit", "version"])
+        Phykit()
+        out, _ = capsys.readouterr()
+        assert "Version:" in out
+
+    def test_version_entry_point_wrapper(self, capsys):
+        phykit_module.version()
+        out, _ = capsys.readouterr()
+        assert "Version:" in out
+
     def test_version_reuses_cached_default_banner(self, monkeypatch, mocker):
         instance = object.__new__(Phykit)
         instance.help_header = Phykit.help_header
