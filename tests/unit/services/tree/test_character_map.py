@@ -56,6 +56,7 @@ def _make_args(tmp_path, **overrides):
         optimization="acctran",
         phylogram=False,
         characters=None,
+        allow_taxon_mismatch=False,
         verbose=False,
         json=False,
     )
@@ -102,6 +103,34 @@ class TestParseCharacterMatrix:
         cm = CharacterMap(args)
         with pytest.raises(SystemExit):
             cm._parse_character_matrix(str(matrix_path))
+
+    @pytest.mark.parametrize("taxon", ["", "   "])
+    def test_empty_taxon_label_raises(self, tmp_path, taxon):
+        matrix_path = tmp_path / "empty-taxon.tsv"
+        matrix_path.write_text(
+            "taxon\tc0\n"
+            f"{taxon}\t0\n"
+        )
+
+        with pytest.raises(SystemExit) as exc:
+            CharacterMap._parse_character_matrix(str(matrix_path))
+
+        assert exc.value.code == 2
+        assert "empty taxon label" in exc.value.messages[0]
+
+    def test_duplicate_taxon_label_raises(self, tmp_path):
+        matrix_path = tmp_path / "duplicate-taxon.tsv"
+        matrix_path.write_text(
+            "taxon\tc0\n"
+            "A\t0\n"
+            "A\t1\n"
+        )
+
+        with pytest.raises(SystemExit) as exc:
+            CharacterMap._parse_character_matrix(str(matrix_path))
+
+        assert exc.value.code == 2
+        assert "duplicate taxon label 'A'" in exc.value.messages[0]
 
     def test_parse_character_matrix_streams_nonblank_rows(self, monkeypatch, tmp_path):
         class StreamingOnlyFile:
@@ -162,19 +191,86 @@ class TestCharacterMapSharedTaxaSetup:
         assert tips_to_prune == []
         assert filtered is tip_states
 
-    def test_partial_overlap_filters_states_and_preserves_prune_order(self):
+    def test_partial_overlap_fails_with_names_from_both_inputs(self):
+        tip_states = {"A": ["0"], "C": ["1"], "off_tree": ["0"]}
+
+        with pytest.raises(SystemExit) as exc:
+            CharacterMap._shared_character_taxa_setup(
+                ["A", "B", "C", "D"],
+                tip_states,
+            )
+
+        assert exc.value.code == 2
+        assert exc.value.messages == [
+            "Taxon labels differ between the tree and character matrix.",
+            "2 taxa in tree but not in character matrix: B, D",
+            "1 taxon in character matrix but not in tree: off_tree",
+            "Use --allow-taxon-mismatch to analyze only shared taxa.",
+        ]
+
+    def test_allow_mismatch_warns_filters_and_preserves_prune_order(self, capsys):
         tip_states = {"A": ["0"], "C": ["1"], "off_tree": ["0"]}
 
         shared_count, tips_to_prune, filtered = (
             CharacterMap._shared_character_taxa_setup(
                 ["A", "B", "C", "D"],
                 tip_states,
+                allow_taxon_mismatch=True,
             )
         )
 
+        assert capsys.readouterr().err == (
+            "Warning: 2 taxa in tree but not in character matrix: B, D\n"
+            "Warning: 1 taxon in character matrix but not in tree: off_tree\n"
+        )
         assert shared_count == 2
         assert tips_to_prune == ["B", "D"]
         assert filtered == {"A": ["0"], "C": ["1"]}
+
+    def test_matching_taxa_in_different_order_are_accepted(self):
+        tip_states = {"C": ["0"], "A": ["1"], "B": ["0"]}
+
+        shared_count, tips_to_prune, filtered = (
+            CharacterMap._shared_character_taxa_setup(
+                ["A", "B", "C"],
+                tip_states,
+            )
+        )
+
+        assert shared_count == 3
+        assert tips_to_prune == []
+        assert filtered is tip_states
+
+    def test_taxon_matching_is_case_sensitive(self):
+        tip_states = {"a": ["0"], "B": ["1"], "C": ["0"]}
+
+        with pytest.raises(SystemExit) as exc:
+            CharacterMap._shared_character_taxa_setup(
+                ["A", "B", "C"],
+                tip_states,
+            )
+
+        assert "1 taxon in tree but not in character matrix: A" in exc.value.messages
+        assert "1 taxon in character matrix but not in tree: a" in exc.value.messages
+
+    def test_duplicate_tree_taxon_labels_raise(self):
+        with pytest.raises(SystemExit) as exc:
+            CharacterMap._shared_character_taxa_setup(
+                ["A", "A", "B"],
+                {"A": ["0"], "B": ["1"]},
+            )
+
+        assert exc.value.messages[0] == "Tree contains duplicate taxon labels: A"
+
+    @pytest.mark.parametrize("empty_name", [None, "", "   "])
+    def test_empty_tree_taxon_labels_raise(self, empty_name):
+        with pytest.raises(SystemExit) as exc:
+            CharacterMap._shared_character_taxa_setup(
+                ["A", "B", empty_name],
+                {"A": ["0"], "B": ["1"], "C": ["0"]},
+            )
+
+        assert "empty or unnamed taxon labels" in exc.value.messages[0]
 
 
 class TestCharacterMapInit:
@@ -186,6 +282,7 @@ class TestCharacterMapInit:
         assert cm.optimization == "acctran"
         assert cm.phylogram is False
         assert cm.characters_filter is None
+        assert cm.allow_taxon_mismatch is False
         assert cm.verbose is False
         assert cm.json_output is False
 
@@ -987,7 +1084,7 @@ class TestCharacterMapJson:
         assert payload["ci"] == 1.0
 
     def test_run_copies_before_pruning_missing_tree_tips(self, mocker, tmp_path):
-        args = _make_args(tmp_path, json=True)
+        args = _make_args(tmp_path, json=True, allow_taxon_mismatch=True)
         cm = CharacterMap(args)
         tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1):0;"), "newick")
         tree_copy = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1):0;"), "newick")

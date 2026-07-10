@@ -3036,7 +3036,8 @@ class Phykit:
                 Usage:
                 phykit character_map -t <tree> -d <data> -o <output>
                   [--optimization acctran|deltran] [--phylogram]
-                  [--characters 0,1,3] [--verbose] [--json]
+                  [--characters 0,1,3] [--allow-taxon-mismatch]
+                  [--verbose] [--json]
                   [--fig-width <float>] [--fig-height <float>]
                   [--dpi <int>] [--no-title] [--title <str>]
                   [--legend-position <str>]
@@ -3067,6 +3068,10 @@ class Phykit:
                                             plot (e.g., 0,1,3); all
                                             characters shown by default
 
+                --allow-taxon-mismatch      warn and analyze only taxa shared
+                                            by the tree and character matrix;
+                                            mismatches are errors by default
+
                 --verbose                   print per-character details
                                             including CI/RI and changes
 
@@ -3094,6 +3099,10 @@ class Phykit:
         parser.add_argument(
             "--characters", type=str, default=None,
             required=False, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "--allow-taxon-mismatch", action="store_true",
+            required=False, help=SUPPRESS,
         )
         parser.add_argument(
             "--verbose", action="store_true", required=False, help=SUPPRESS

@@ -80,6 +80,7 @@ class CharacterMap(Tree):
         self.optimization = parsed["optimization"]
         self.phylogram = parsed["phylogram"]
         self.characters_filter = parsed["characters_filter"]
+        self.allow_taxon_mismatch = parsed["allow_taxon_mismatch"]
         self.verbose = parsed["verbose"]
         self.json_output = parsed["json_output"]
         self.plot_config = parsed["plot_config"]
@@ -100,6 +101,7 @@ class CharacterMap(Tree):
             optimization=getattr(args, "optimization", "acctran"),
             phylogram=getattr(args, "phylogram", False),
             characters_filter=characters_filter,
+            allow_taxon_mismatch=getattr(args, "allow_taxon_mismatch", False),
             verbose=getattr(args, "verbose", False),
             json_output=getattr(args, "json", False),
             plot_config=PlotConfig.from_args(args),
@@ -115,6 +117,7 @@ class CharacterMap(Tree):
         shared_count, tips_to_prune, tip_states = self._shared_character_taxa_setup(
             tree_tip_names,
             tip_states,
+            allow_taxon_mismatch=self.allow_taxon_mismatch,
         )
         if shared_count < 3:
             raise PhykitUserError(
@@ -236,8 +239,52 @@ class CharacterMap(Tree):
             )
 
     @staticmethod
-    def _shared_character_taxa_setup(tree_tip_names: list[str], tip_states: dict):
-        """Return shared count, tree tips to prune, and filtered states."""
+    def _shared_character_taxa_setup(
+        tree_tip_names: list[str],
+        tip_states: dict,
+        allow_taxon_mismatch: bool = False,
+    ):
+        """Validate taxa and optionally return their shared subset."""
+        unnamed_tips = sum(
+            1
+            for name in tree_tip_names
+            if not isinstance(name, str) or not name.strip()
+        )
+        if unnamed_tips:
+            raise PhykitUserError(
+                [
+                    f"Tree contains {unnamed_tips} empty or unnamed taxon labels.",
+                    "Every tree tip must have a unique, non-empty name.",
+                ],
+                code=2,
+            )
+
+        duplicate_tree_tips = sorted(
+            name
+            for name, count in Counter(tree_tip_names).items()
+            if count > 1
+        )
+        if duplicate_tree_tips:
+            raise PhykitUserError(
+                [
+                    f"Tree contains duplicate taxon labels: "
+                    f"{', '.join(duplicate_tree_tips)}",
+                    "Every tree tip must have a unique name.",
+                ],
+                code=2,
+            )
+
+        empty_matrix_taxa = [
+            name
+            for name in tip_states
+            if not isinstance(name, str) or not name.strip()
+        ]
+        if empty_matrix_taxa:
+            raise PhykitUserError(
+                ["Character matrix contains an empty taxon label."],
+                code=2,
+            )
+
         state_count = len(tip_states)
         if state_count >= 3 and len(tree_tip_names) == state_count:
             if tree_tip_names[0] == next(iter(tip_states)):
@@ -249,8 +296,38 @@ class CharacterMap(Tree):
         tree_tips = set(tree_tip_names)
         matrix_taxa = set(tip_states)
         shared = tree_tips & matrix_taxa
+        tree_only = tree_tips - matrix_taxa
+        matrix_only = matrix_taxa - tree_tips
+        if not tree_only and not matrix_only:
+            return len(shared), [], tip_states
+
+        tree_only_text = ", ".join(sorted(tree_only)) if tree_only else "none"
+        matrix_only_text = ", ".join(sorted(matrix_only)) if matrix_only else "none"
+        tree_taxon_word = "taxon" if len(tree_only) == 1 else "taxa"
+        matrix_taxon_word = "taxon" if len(matrix_only) == 1 else "taxa"
+        difference_messages = [
+            "Taxon labels differ between the tree and character matrix.",
+            f"{len(tree_only)} {tree_taxon_word} in tree but not in character matrix: "
+            f"{tree_only_text}",
+            f"{len(matrix_only)} {matrix_taxon_word} in character matrix but not in tree: "
+            f"{matrix_only_text}",
+        ]
+        if not allow_taxon_mismatch:
+            difference_messages.append(
+                "Use --allow-taxon-mismatch to analyze only shared taxa."
+            )
+            raise PhykitUserError(difference_messages, code=2)
+
+        import sys
+
+        for message in difference_messages[1:]:
+            print(f"Warning: {message}", file=sys.stderr)
         tips_to_prune = [tip for tip in tree_tip_names if tip not in shared]
-        filtered_states = {taxon: tip_states[taxon] for taxon in shared}
+        filtered_states = {
+            taxon: states
+            for taxon, states in tip_states.items()
+            if taxon in shared
+        }
         return len(shared), tips_to_prune, filtered_states
 
     @staticmethod
@@ -532,6 +609,19 @@ class CharacterMap(Tree):
                     fields = line.rstrip("\n\r").split("\t")
                     taxon = fields[0]
                     states = fields[1:]
+                    if not taxon.strip():
+                        raise PhykitUserError(
+                            [f"Row {row_num} has an empty taxon label."],
+                            code=2,
+                        )
+                    if taxon in tip_states:
+                        raise PhykitUserError(
+                            [
+                                f"Row {row_num} contains duplicate taxon label "
+                                f"'{taxon}'."
+                            ],
+                            code=2,
+                        )
                     if len(states) != n_expected:
                         raise PhykitUserError(
                             [

@@ -20,6 +20,73 @@ here = Path(__file__)
 @pytest.mark.integration
 class TestCharacterMap:
     @patch("builtins.print")
+    def test_taxon_mismatch_fails_with_names_from_both_inputs(
+        self,
+        mocked_print,
+        tmp_path,
+    ):
+        matrix = tmp_path / "mismatched.tsv"
+        matrix.write_text(
+            "taxon\tchar0\n"
+            "A\t0\n"
+            "B\t0\n"
+            "C\t1\n"
+            "off_tree\t1\n"
+        )
+        output = str(tmp_path / "mismatch.png")
+        testargs = [
+            "phykit",
+            "character_map",
+            "-t", f"{here.parent.parent.parent}/sample_files/tree_character_map.tre",
+            "-d", str(matrix),
+            "-o", output,
+        ]
+
+        with patch.object(sys, "argv", testargs), pytest.raises(SystemExit) as exc:
+            Phykit()
+
+        assert exc.value.code == 2
+        messages = [call.args[0] for call in mocked_print.call_args_list]
+        assert "3 taxa in tree but not in character matrix: D, E, F" in messages
+        assert "1 taxon in character matrix but not in tree: off_tree" in messages
+        assert not Path(output).exists()
+
+    @patch("builtins.print")
+    def test_allow_taxon_mismatch_warns_and_uses_shared_taxa(
+        self,
+        mocked_print,
+        tmp_path,
+    ):
+        matrix = tmp_path / "mismatched.tsv"
+        matrix.write_text(
+            "taxon\tchar0\n"
+            "A\t0\n"
+            "B\t0\n"
+            "C\t1\n"
+            "off_tree\t1\n"
+        )
+        output = str(tmp_path / "shared.png")
+        testargs = [
+            "phykit",
+            "character_map",
+            "-t", f"{here.parent.parent.parent}/sample_files/tree_character_map.tre",
+            "-d", str(matrix),
+            "-o", output,
+            "--allow-taxon-mismatch",
+            "--json",
+        ]
+
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+
+        messages = [call.args[0] for call in mocked_print.call_args_list]
+        assert "Warning: 3 taxa in tree but not in character matrix: D, E, F" in messages
+        assert "Warning: 1 taxon in character matrix but not in tree: off_tree" in messages
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload["n_characters"] == 1
+        assert Path(output).exists()
+
+    @patch("builtins.print")
     def test_basic_invocation(self, mocked_print, tmp_path):
         output = str(tmp_path / "charmap.png")
         testargs = [
