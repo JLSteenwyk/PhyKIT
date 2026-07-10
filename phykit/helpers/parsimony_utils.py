@@ -480,6 +480,151 @@ def _mask_to_state_set(states: tuple[str, ...], mask: int):
     )
 
 
+def sankoff_downpass(
+    tree,
+    tip_states: dict[str, list[str]],
+) -> tuple[
+    dict[int, list[tuple[int, ...]]],
+    list[tuple[str, ...]],
+    list[int],
+]:
+    """Calculate exact unordered-parsimony costs on any tree topology.
+
+    Unlike the optimized Fitch path, this dynamic program handles nodes with
+    any number of children without introducing arbitrary binary resolutions.
+    Missing states (``?`` and ``-``) are compatible with every observed state.
+    """
+    n_chars = len(next(iter(tip_states.values())))
+    wildcard = {"?", "-"}
+    observed_states = [set() for _ in range(n_chars)]
+    for states in tip_states.values():
+        for index, state in enumerate(states):
+            if state not in wildcard:
+                observed_states[index].add(state)
+
+    states_by_char = [
+        tuple(sorted(states)) if states else ("?",)
+        for states in observed_states
+    ]
+    state_indexes = [
+        {state: index for index, state in enumerate(states)}
+        for states in states_by_char
+    ]
+
+    clades = _postorder_clades_direct(tree)
+    if clades is None:
+        clades = list(tree.find_clades(order="postorder"))
+    unreachable = len(clades) + 1
+    node_costs: dict[int, list[tuple[int, ...]]] = {}
+
+    for clade in clades:
+        cid = id(clade)
+        children = clade.clades
+        if not children:
+            costs_by_char = []
+            for index, state in enumerate(tip_states[clade.name]):
+                state_count = len(states_by_char[index])
+                if state in wildcard:
+                    costs_by_char.append((0,) * state_count)
+                    continue
+
+                observed_index = state_indexes[index][state]
+                costs_by_char.append(
+                    tuple(
+                        0 if candidate == observed_index else unreachable
+                        for candidate in range(state_count)
+                    )
+                )
+            node_costs[cid] = costs_by_char
+            continue
+
+        child_costs = [node_costs[id(child)] for child in children]
+        costs_by_char = []
+        for char_index, states in enumerate(states_by_char):
+            state_count = len(states)
+            parent_costs = []
+            for parent_index in range(state_count):
+                total = 0
+                for child in child_costs:
+                    child_char_costs = child[char_index]
+                    total += min(
+                        cost + (child_index != parent_index)
+                        for child_index, cost in enumerate(child_char_costs)
+                    )
+                parent_costs.append(total)
+            costs_by_char.append(tuple(parent_costs))
+        node_costs[cid] = costs_by_char
+
+    root_costs = node_costs[id(tree.root)]
+    scores = [min(costs) for costs in root_costs]
+    return node_costs, states_by_char, scores
+
+
+def sankoff_uppass(
+    tree,
+    node_costs: dict[int, list[tuple[int, ...]]],
+    states_by_char: list[tuple[str, ...]],
+    parent_map: dict[int, object],
+    optimization: str = "acctran",
+) -> dict[int, list[str]]:
+    """Trace back one deterministic, globally optimal reconstruction.
+
+    DELTRAN prefers inheriting the parent state when a tie permits delaying a
+    change. ACCTRAN prefers a different child state when a tie permits moving
+    that change toward the root. Root ties use lexical state order for stable
+    output independent of child order.
+    """
+    node_states: dict[int, list[str]] = {}
+    root = tree.root
+    root_costs = node_costs[id(root)]
+    node_states[id(root)] = [
+        states[min_costs.index(min(min_costs))]
+        for states, min_costs in zip(states_by_char, root_costs)
+    ]
+
+    clades = _preorder_clades_direct(tree)
+    if clades is None:
+        clades = list(tree.find_clades(order="preorder"))
+
+    delay_changes = optimization == "deltran"
+    for clade in clades:
+        if clade == root:
+            continue
+
+        cid = id(clade)
+        parent_states = node_states[id(parent_map[cid])]
+        costs_by_char = node_costs[cid]
+        assigned = []
+        for states, costs, parent_state in zip(
+            states_by_char,
+            costs_by_char,
+            parent_states,
+        ):
+            transition_costs = [
+                cost + (state != parent_state)
+                for state, cost in zip(states, costs)
+            ]
+            best_cost = min(transition_costs)
+            candidates = [
+                state
+                for state, cost in zip(states, transition_costs)
+                if cost == best_cost
+            ]
+            if delay_changes and parent_state in candidates:
+                assigned.append(parent_state)
+                continue
+
+            changed_candidates = [
+                state for state in candidates if state != parent_state
+            ]
+            assigned.append(
+                changed_candidates[0] if changed_candidates else candidates[0]
+            )
+        node_states[cid] = assigned
+
+    return node_states
+
+
 def fitch_uppass_acctran(
     tree,
     node_state_sets: dict[int, list[set[str]]],

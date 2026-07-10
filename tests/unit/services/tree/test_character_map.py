@@ -18,6 +18,7 @@ from Bio import Phylo
 from Bio.Phylo.BaseTree import Clade, TreeMixin
 
 from phykit.helpers.parsimony_utils import build_parent_map, retention_index
+import phykit.services.tree.character_map as character_map_module
 from phykit.services.tree.character_map import CharacterMap
 
 
@@ -27,7 +28,8 @@ import sys
 import phykit.services.tree.character_map as module
 assert callable(module.print_json)
 assert callable(module.build_parent_map)
-assert callable(module.resolve_polytomies)
+assert callable(module.sankoff_downpass)
+assert callable(module.sankoff_uppass)
 assert "typing" not in sys.modules
 assert "pickle" not in sys.modules
 assert "json" not in sys.modules
@@ -870,7 +872,6 @@ class TestCharacterMapJson:
         mocker.patch.object(
             cm, "_parse_character_matrix", return_value=(["c1"], tip_states)
         )
-        mocker.patch("phykit.services.tree.character_map.resolve_polytomies")
         mocker.patch("phykit.services.tree.character_map.build_parent_map", return_value={})
         mocker.patch("phykit.services.tree.character_map.fitch_downpass", return_value=({}, [0]))
         mocker.patch(
@@ -912,8 +913,8 @@ class TestCharacterMapJson:
             side_effect=AssertionError("clean all-shared analysis should not copy tree"),
         )
         mocker.patch(
-            "phykit.services.tree.character_map.resolve_polytomies",
-            side_effect=AssertionError("binary trees should not resolve polytomies"),
+            "phykit.services.tree.character_map.sankoff_downpass",
+            side_effect=AssertionError("binary trees should stay on the Fitch path"),
         )
         mocker.patch("phykit.services.tree.character_map.build_parent_map", return_value={})
         mocker.patch("phykit.services.tree.character_map.fitch_downpass", return_value=({}, [0]))
@@ -938,6 +939,52 @@ class TestCharacterMapJson:
 
         fast_copy.assert_not_called()
         assert plot_character_map.call_args.args[0] is tree
+
+    def test_run_preserves_polytomy_and_uses_exact_sankoff_path(
+        self,
+        mocker,
+        tmp_path,
+    ):
+        args = _make_args(tmp_path, json=True)
+        cm = CharacterMap(args)
+        tree = Phylo.read(StringIO("(A:1,B:1,C:1):0;"), "newick")
+        tip_states = {"A": ["1"], "B": ["1"], "C": ["0"]}
+
+        mocker.patch.object(cm, "read_tree_file_unmodified", return_value=tree)
+        mocker.patch.object(
+            cm,
+            "get_tip_names_from_tree",
+            return_value=list(tip_states),
+        )
+        mocker.patch.object(
+            cm,
+            "_parse_character_matrix",
+            return_value=(["c1"], tip_states),
+        )
+        mocker.patch.object(
+            cm,
+            "_fast_copy",
+            side_effect=AssertionError("a clean polytomy should not be copied"),
+        )
+        mocker.patch(
+            "phykit.services.tree.character_map.fitch_downpass",
+            side_effect=AssertionError("polytomies should use exact Sankoff costs"),
+        )
+        sankoff_spy = mocker.spy(character_map_module, "sankoff_downpass")
+        plot_character_map = mocker.patch.object(cm, "_plot_character_map")
+        mocked_json = mocker.patch(
+            "phykit.services.tree.character_map.print_json"
+        )
+
+        cm.run()
+
+        sankoff_spy.assert_called_once()
+        plotted_tree = plot_character_map.call_args.args[0]
+        assert plotted_tree is tree
+        assert len(plotted_tree.root.clades) == 3
+        payload = mocked_json.call_args.args[0]
+        assert payload["tree_length"] == 1
+        assert payload["ci"] == 1.0
 
     def test_run_copies_before_pruning_missing_tree_tips(self, mocker, tmp_path):
         args = _make_args(tmp_path, json=True)

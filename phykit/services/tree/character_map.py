@@ -39,10 +39,6 @@ def build_parent_map(*args, **kwargs):
     return _parsimony_utils().build_parent_map(*args, **kwargs)
 
 
-def resolve_polytomies(*args, **kwargs):
-    return _parsimony_utils().resolve_polytomies(*args, **kwargs)
-
-
 def fitch_downpass(*args, **kwargs):
     return _parsimony_utils().fitch_downpass(*args, **kwargs)
 
@@ -53,6 +49,14 @@ def fitch_uppass_acctran(*args, **kwargs):
 
 def fitch_uppass_deltran(*args, **kwargs):
     return _parsimony_utils().fitch_uppass_deltran(*args, **kwargs)
+
+
+def sankoff_downpass(*args, **kwargs):
+    return _parsimony_utils().sankoff_downpass(*args, **kwargs)
+
+
+def sankoff_uppass(*args, **kwargs):
+    return _parsimony_utils().sankoff_uppass(*args, **kwargs)
 
 
 def detect_changes(*args, **kwargs):
@@ -122,25 +126,19 @@ class CharacterMap(Tree):
             )
 
         preorder_clades = list(self._iter_preorder(tree.root))
-        needs_polytomy_resolution = any(
+        has_multifurcation = any(
             len(clade.clades) > 2 for clade in preorder_clades
         )
         needs_branch_length_fill = any(
             clade.branch_length is None for clade in preorder_clades
         )
         needs_working_copy = bool(tips_to_prune) or (
-            needs_polytomy_resolution
-            or needs_branch_length_fill
-            or self.plot_config.ladderize
+            needs_branch_length_fill or self.plot_config.ladderize
         )
         if needs_working_copy:
             tree = self._fast_copy(tree)
         if tips_to_prune:
             tree = self.prune_tree_using_taxa_list(tree, tips_to_prune)
-
-        # Resolve polytomies
-        if needs_polytomy_resolution:
-            resolve_polytomies(tree)
 
         # Ladderize if requested
         if self.plot_config.ladderize:
@@ -155,14 +153,33 @@ class CharacterMap(Tree):
         # Build parent map
         parent_map = build_parent_map(tree)
 
-        # Fitch downpass
-        node_state_sets, scores = fitch_downpass(tree, tip_states)
-
-        # Uppass: ACCTRAN or DELTRAN
-        if self.optimization == "deltran":
-            node_states = fitch_uppass_deltran(tree, node_state_sets, parent_map)
+        if has_multifurcation:
+            node_costs, states_by_char, scores = sankoff_downpass(
+                tree,
+                tip_states,
+            )
+            node_states = sankoff_uppass(
+                tree,
+                node_costs,
+                states_by_char,
+                parent_map,
+                optimization=self.optimization,
+            )
         else:
-            node_states = fitch_uppass_acctran(tree, node_state_sets, parent_map)
+            # Keep the optimized Fitch implementation for binary trees.
+            node_state_sets, scores = fitch_downpass(tree, tip_states)
+            if self.optimization == "deltran":
+                node_states = fitch_uppass_deltran(
+                    tree,
+                    node_state_sets,
+                    parent_map,
+                )
+            else:
+                node_states = fitch_uppass_acctran(
+                    tree,
+                    node_state_sets,
+                    parent_map,
+                )
 
         # Detect and classify changes
         branch_changes = detect_changes(tree, node_states, parent_map)
