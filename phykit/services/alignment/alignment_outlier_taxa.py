@@ -43,6 +43,41 @@ def _row_sums(matrix):
     return matrix.sum(axis=1)
 
 
+def _bounded_ascii_count_dtype(max_count: int):
+    if max_count <= 0xFFFF:
+        return np.uint16
+    if max_count <= 0xFFFFFFFF:
+        return np.uint32
+    return np.uint64
+
+
+def _bounded_ascii_valid_lengths(valid_mask):
+    count_dtype = _bounded_ascii_count_dtype(valid_mask.shape[1])
+    return valid_mask.sum(axis=1, dtype=count_dtype).astype(np.float64)
+
+
+def _bounded_ascii_row_symbol_counts(alignment_array, symbols):
+    count_dtype = _bounded_ascii_count_dtype(alignment_array.shape[1])
+    return np.array(
+        [
+            (alignment_array == symbol).sum(axis=1, dtype=count_dtype)
+            for symbol in symbols
+        ],
+        dtype=np.float64,
+    ).T
+
+
+def _bounded_ascii_site_symbol_counts(alignment_array, symbols):
+    count_dtype = _bounded_ascii_count_dtype(alignment_array.shape[0])
+    return np.array(
+        [
+            (alignment_array == symbol).sum(axis=0, dtype=count_dtype)
+            for symbol in symbols
+        ],
+        dtype=np.float64,
+    )
+
+
 def _column_dot(left, right):
     return np.einsum("ij,ij->j", left, right)
 
@@ -363,6 +398,9 @@ class AlignmentOutlierTaxa(Alignment):
                 counts[row_idx] = np.bincount(row, minlength=max_code)[symbols]
             return counts
 
+        if alignment_array.dtype == np.uint8:
+            return _bounded_ascii_row_symbol_counts(alignment_array, symbols)
+
         return np.array(
             [
                 np.sum(alignment_array == symbol, axis=1)
@@ -388,12 +426,9 @@ class AlignmentOutlierTaxa(Alignment):
                     )
                 )
             ):
-                return np.array(
-                    [
-                        np.sum(alignment_array == symbol, axis=0)
-                        for symbol in symbols
-                    ],
-                    dtype=np.float64,
+                return _bounded_ascii_site_symbol_counts(
+                    alignment_array,
+                    symbols,
                 )
 
             max_code = int(symbols.max()) + 1
@@ -404,6 +439,9 @@ class AlignmentOutlierTaxa(Alignment):
                 minlength=n_sites * max_code,
             ).reshape(n_sites, max_code)
             return counts[:, symbols].T.astype(np.float64, copy=False)
+
+        if alignment_array.dtype == np.uint8:
+            return _bounded_ascii_site_symbol_counts(alignment_array, symbols)
 
         return np.array(
             [
@@ -554,7 +592,12 @@ class AlignmentOutlierTaxa(Alignment):
             invalid_chars_array = np.array(invalid_chars, dtype="U1")
             valid_mask = ~np.isin(alignment_array, invalid_chars_array)
         if not all_valid_ascii:
-            valid_lengths = np.count_nonzero(valid_mask, axis=1).astype(np.float64)
+            if alignment_array.dtype == np.uint8:
+                valid_lengths = _bounded_ascii_valid_lengths(valid_mask)
+            else:
+                valid_lengths = np.count_nonzero(valid_mask, axis=1).astype(
+                    np.float64
+                )
 
         if aln_len > 0:
             gap_rates = 1.0 - (valid_lengths / float(aln_len))

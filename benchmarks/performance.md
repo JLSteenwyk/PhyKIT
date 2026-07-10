@@ -540,6 +540,8 @@ Results:
 | `AlignmentOutlierTaxa._symbol_counts_by_row` large-short ASCII counts | 20000 taxa x 128 sites / 30000 taxa x 96 sites / 50000 taxa x 64 sites / 80000 taxa x 128 sites, 20 valid symbols, side-by-side previous per-row `bincount` loop | 4.549077s / 6.862011s / 7.782192s / 6.304361s | 1.803506s / 1.586349s / 1.926483s / 2.222659s | 2.52x / 4.33x / 4.04x / 2.84x |
 | `AlignmentOutlierTaxa._symbol_counts_by_site` expanded ASCII histogram threshold | 80000 taxa x 128 sites / 1200 taxa x 12000 sites / 3000 taxa x 8000 sites, 20 valid symbols, side-by-side previous repeated equality scans above the old 8M-cell cutoff | 5.065210s / 2.208961s / 4.031251s | 0.814091s / 0.832620s / 1.356734s | 6.22x / 2.65x / 2.97x |
 | `AlignmentOutlierTaxa._symbol_counts_by_site` wide small-alphabet counts | 100 taxa x 5000 DNA sites, 4 valid symbols, side-by-side previous encoded `bincount` site histogram | 0.005280s | 0.002711s | 1.95x |
+| `AlignmentOutlierTaxa` bounded ASCII counts | 2500 taxa x 10000 clean `ACGT` sites, row symbols / site symbols / valid lengths, 15 alternating kernel runs after warmup | 0.023973s / 0.075191s / 0.005423s | 0.008551s / 0.047300s / 0.001344s | 2.80x / 1.59x / 4.03x |
+| `alignment_outlier_taxa` bounded ASCII counts | 2500 taxa x 10000 clean `ACGT` sites, 15 alternating runs after 3 warmups / 700 taxa x 3000 `ACGTN-` control, 10 alternating runs after 2 warmups | 0.505533s / 0.281840s | 0.453565s / 0.288183s | 1.11x / 0.98x |
 | `AlignmentOutlierTaxa.calculate_outliers` all-valid protein long-branch formula | two repeated 220-taxon x 2000-site protein analyses, side-by-side previous all-valid pairwise matrix-product long-branch path | 9.241269s | 0.075789s | 121.93x |
 | `AlignmentOutlierTaxa.calculate_outliers` composition-distance row norms | 400 taxa x 1200 DNA sites and 1000 taxa x 5000 protein sites, side-by-side previous `np.linalg.norm(..., axis=1)` with identical rows | 0.039359s / 0.229932s | 0.016265s / 0.188438s | 2.42x / 1.22x |
 | `AlignmentOutlierTaxa.calculate_outliers` entropy column dot | site probability/log-probability matrices shaped 4x12000 / 8x12000 / 20x5000 / 64x20000, side-by-side previous `np.sum(site_probs * log_probs, axis=0)` | 0.420023s / 0.620534s / 0.777484s / 1.564784s | 0.380694s / 0.425398s / 0.542617s / 1.111065s | 1.10x / 1.46x / 1.43x / 1.41x |
@@ -4175,11 +4177,17 @@ Profiling summary:
   Variable-composition ASCII alignments with no invalid symbols now use a
   byte-scan guard to skip invalid lookup construction, validity-mask allocation,
   and validity-weighted entropy averaging while preserving the existing mask
-  path for ambiguous or gapped data. Gapped paths now count row valid lengths
-  with `np.count_nonzero` instead of summing boolean masks before float
-  conversion. A later protein-oriented pass counts ASCII symbols by row/site
-  with `bincount` when the symbol-count setup is large enough to beat repeated
-  equality reductions. The row-count helper now also keeps that encoded
+  path for ambiguous or gapped data. Gapped paths first moved from default-width
+  boolean sums to `np.count_nonzero`. A later bounded-count pass now reduces
+  ASCII valid-length masks plus small-alphabet row and site equality masks into
+  the smallest unsigned accumulator that can represent their reduced dimension,
+  selecting `uint16` through 65,535 observations and wider types above that
+  boundary. Unicode and encoded protein-histogram paths remain unchanged. The
+  high-taxon clean CLI improved by 1.11x; the pairwise-dominated ambiguous
+  control measured 0.98x, and text/JSON output matched the previous commit byte
+  for byte in both cases. A later protein-oriented pass counts ASCII symbols by
+  row/site with `bincount` when the symbol-count setup is large enough to beat
+  repeated equality reductions. The row-count helper now also keeps that encoded
   histogram path for large taxon counts with short alignments, avoiding one
   Python `bincount` loop per taxon while leaving longer matrices on the existing
   row loop. The site-count helper now keeps encoded histograms through 32M

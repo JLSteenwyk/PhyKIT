@@ -3,6 +3,7 @@ from pathlib import Path
 import subprocess
 import sys
 import numpy as np
+import pytest
 from Bio import AlignIO
 from Bio.Align import MultipleSeqAlignment
 from Bio.Seq import Seq
@@ -546,7 +547,7 @@ class TestAlignmentOutlierTaxa:
         mocked_isin.assert_not_called()
         assert result["rows"][1]["gap_rate"] == 0.5
 
-    def test_ascii_path_counts_valid_lengths_with_count_nonzero(self, mocker):
+    def test_ascii_path_uses_bounded_valid_lengths(self, mocker):
         service = self._service()
         alignment = MultipleSeqAlignment(
             [
@@ -559,17 +560,60 @@ class TestAlignmentOutlierTaxa:
             alignment_outlier_taxa_module.np,
             "count_nonzero",
         )
+        valid_length_spy = mocker.spy(
+            alignment_outlier_taxa_module,
+            "_bounded_ascii_valid_lengths",
+        )
 
         result = service.calculate_outliers(alignment, is_protein=False)
 
         assert result["rows"][1]["gap_rate"] == 0.5
-        assert any(
-            call.kwargs.get("axis") == 1
-            for call in count_nonzero_spy.call_args_list
-        )
+        valid_length_spy.assert_called_once()
         assert any(
             call.kwargs.get("axis") == 1 and call.args[0].shape == (3, 3)
             for call in count_nonzero_spy.call_args_list
+        )
+
+    @pytest.mark.parametrize("max_count", [0xFFFF, 0x10000])
+    def test_bounded_ascii_outlier_counts_do_not_overflow(self, max_count):
+        row_matrix = np.full((2, max_count), ord("A"), dtype=np.uint8)
+        symbols = np.array([ord("A"), ord("C")], dtype=np.uint8)
+
+        row_counts = alignment_outlier_taxa_module._bounded_ascii_row_symbol_counts(
+            row_matrix,
+            symbols,
+        )
+        site_counts = alignment_outlier_taxa_module._bounded_ascii_site_symbol_counts(
+            row_matrix.T,
+            symbols,
+        )
+        valid_lengths = alignment_outlier_taxa_module._bounded_ascii_valid_lengths(
+            np.ones_like(row_matrix, dtype=bool),
+        )
+
+        np.testing.assert_array_equal(
+            row_counts,
+            np.array(
+                [
+                    [max_count, 0],
+                    [max_count, 0],
+                ],
+                dtype=np.float64,
+            ),
+        )
+        np.testing.assert_array_equal(
+            site_counts,
+            np.array(
+                [
+                    [max_count, max_count],
+                    [0, 0],
+                ],
+                dtype=np.float64,
+            ),
+        )
+        np.testing.assert_array_equal(
+            valid_lengths,
+            np.full(2, max_count, dtype=np.float64),
         )
 
     def test_all_valid_ascii_path_skips_invalid_lookup(self, mocker):
