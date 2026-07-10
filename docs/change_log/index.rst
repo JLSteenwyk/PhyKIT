@@ -6,6 +6,17 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.2.0**:
+Profile-guided performance and scalability release:
+
+* Reduced runtime, memory use, and command startup overhead across alignment,
+  tree, trait, plotting, parsing, and output workflows. Optimizations target
+  measured bottlenecks while preserving existing CLI and API results.
+* Added broad regression coverage for optimized paths, including text, JSON,
+  file, and figure output compatibility across Python 3.10 through 3.13.
+* Added a reusable representative-command profiler and recorded before/after
+  measurements for the optimized functions in ``benchmarks/performance.md``.
+
 **2.1.94**:
 Robustness and performance fixes for tree- and trait-based analyses:
 
