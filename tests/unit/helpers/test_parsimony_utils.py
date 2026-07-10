@@ -8,6 +8,7 @@ consistency index, and retention index.
 import subprocess
 import sys
 import builtins
+from itertools import product
 
 import pytest
 import numpy as np
@@ -22,6 +23,8 @@ from phykit.helpers.parsimony_utils import (
     fitch_downpass,
     fitch_uppass_acctran,
     fitch_uppass_deltran,
+    sankoff_downpass,
+    sankoff_uppass,
     detect_changes,
     classify_changes,
     consistency_index,
@@ -217,6 +220,170 @@ class TestResolvePolytomies:
         Phylo.write(expected, expected_out, "newick")
         Phylo.write(actual, actual_out, "newick")
         assert actual_out.getvalue() == expected_out.getvalue()
+
+
+# ---------------------------------------------------------------------------
+# exact multifurcation parsimony
+# ---------------------------------------------------------------------------
+
+def _brute_force_unordered_score(tree, tip_states):
+    """Independent exhaustive oracle for small, single-character trees."""
+    observed = sorted(
+        {
+            states[0]
+            for states in tip_states.values()
+            if states[0] not in {"?", "-"}
+        }
+    )
+    internal = [clade for clade in tree.find_clades() if not clade.is_terminal()]
+    parent_map = build_parent_map(tree)
+    best = None
+    for assignment in product(observed, repeat=len(internal)):
+        node_states = {
+            id(clade): state for clade, state in zip(internal, assignment)
+        }
+        for tip in tree.get_terminals():
+            node_states[id(tip)] = tip_states[tip.name][0]
+        score = sum(
+            node_states[id(clade)] != node_states[id(parent_map[id(clade)])]
+            for clade in tree.find_clades()
+            if clade is not tree.root
+        )
+        best = score if best is None else min(best, score)
+    return best
+
+
+class TestSankoffPolytomies:
+    def test_repeated_state_at_trifurcation_uses_exact_optimum(self):
+        tree = _make_tree("(A:1,B:1,C:1):0;")
+        tip_states = {"A": ["1"], "B": ["1"], "C": ["0"]}
+
+        node_costs, states_by_char, scores = sankoff_downpass(tree, tip_states)
+        parent_map = build_parent_map(tree)
+        node_states = sankoff_uppass(
+            tree,
+            node_costs,
+            states_by_char,
+            parent_map,
+            optimization="acctran",
+        )
+        changes = detect_changes(tree, node_states, parent_map)
+
+        assert scores == [1]
+        assert scores[0] == _brute_force_unordered_score(tree, tip_states)
+        assert node_states[id(tree.root)] == ["1"]
+        assert sum(len(branch) for branch in changes.values()) == 1
+        assert len(tree.root.clades) == 3
+
+    @pytest.mark.parametrize(
+        "newick",
+        [
+            "(A:1,B:1,C:1,D:1):0;",
+            "(D:1,C:1,B:1,A:1):0;",
+            "(B:1,D:1,A:1,C:1):0;",
+        ],
+    )
+    @pytest.mark.parametrize("optimization", ["acctran", "deltran"])
+    def test_child_order_does_not_change_score_or_mapping(self, newick, optimization):
+        tree = _make_tree(newick)
+        tip_states = {
+            "A": ["1"],
+            "B": ["1"],
+            "C": ["1"],
+            "D": ["0"],
+        }
+
+        node_costs, states_by_char, scores = sankoff_downpass(tree, tip_states)
+        parent_map = build_parent_map(tree)
+        node_states = sankoff_uppass(
+            tree,
+            node_costs,
+            states_by_char,
+            parent_map,
+            optimization=optimization,
+        )
+        changes = detect_changes(tree, node_states, parent_map)
+        changed_tips = {
+            clade.name
+            for clade in tree.get_terminals()
+            if id(clade) in changes
+        }
+
+        assert scores == [1]
+        assert node_states[id(tree.root)] == ["1"]
+        assert changed_tips == {"D"}
+
+    @pytest.mark.parametrize("optimization", ["acctran", "deltran"])
+    def test_nested_multifurcations_match_exhaustive_oracle(self, optimization):
+        tree = _make_tree("((A:1,B:1,C:1):1,D:1,E:1,F:1):0;")
+        tip_states = {
+            "A": ["0"],
+            "B": ["1"],
+            "C": ["1"],
+            "D": ["0"],
+            "E": ["2"],
+            "F": ["2"],
+        }
+
+        node_costs, states_by_char, scores = sankoff_downpass(tree, tip_states)
+        parent_map = build_parent_map(tree)
+        node_states = sankoff_uppass(
+            tree,
+            node_costs,
+            states_by_char,
+            parent_map,
+            optimization=optimization,
+        )
+        changes = detect_changes(tree, node_states, parent_map)
+        mapped_score = sum(len(branch) for branch in changes.values())
+
+        assert scores[0] == _brute_force_unordered_score(tree, tip_states)
+        assert mapped_score == scores[0]
+        assert len(tree.root.clades) == 4
+        assert len(tree.root.clades[0].clades) == 3
+
+    def test_wildcard_tips_do_not_force_changes(self):
+        tree = _make_tree("(A:1,B:1,C:1):0;")
+        tip_states = {"A": ["1"], "B": ["?"], "C": ["-"]}
+
+        node_costs, states_by_char, scores = sankoff_downpass(tree, tip_states)
+        parent_map = build_parent_map(tree)
+        node_states = sankoff_uppass(
+            tree,
+            node_costs,
+            states_by_char,
+            parent_map,
+        )
+
+        assert scores == [0]
+        assert not detect_changes(tree, node_states, parent_map)
+
+    def test_multiple_characters_are_reconstructed_independently(self):
+        tree = _make_tree("(A:1,B:1,C:1,D:1):0;")
+        tip_states = {
+            "A": ["0", "0"],
+            "B": ["0", "1"],
+            "C": ["1", "1"],
+            "D": ["1", "1"],
+        }
+
+        node_costs, states_by_char, scores = sankoff_downpass(tree, tip_states)
+        parent_map = build_parent_map(tree)
+        node_states = sankoff_uppass(
+            tree,
+            node_costs,
+            states_by_char,
+            parent_map,
+        )
+        changes = detect_changes(tree, node_states, parent_map)
+        mapped_per_char = [0, 0]
+        for branch_changes in changes.values():
+            for char_index, _old, _new in branch_changes:
+                mapped_per_char[char_index] += 1
+
+        assert scores == [2, 1]
+        assert node_states[id(tree.root)] == ["0", "1"]
+        assert mapped_per_char == scores
 
 
 # ---------------------------------------------------------------------------

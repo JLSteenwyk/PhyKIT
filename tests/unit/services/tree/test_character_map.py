@@ -18,6 +18,7 @@ from Bio import Phylo
 from Bio.Phylo.BaseTree import Clade, TreeMixin
 
 from phykit.helpers.parsimony_utils import build_parent_map, retention_index
+import phykit.services.tree.character_map as character_map_module
 from phykit.services.tree.character_map import CharacterMap
 
 
@@ -27,7 +28,8 @@ import sys
 import phykit.services.tree.character_map as module
 assert callable(module.print_json)
 assert callable(module.build_parent_map)
-assert callable(module.resolve_polytomies)
+assert callable(module.sankoff_downpass)
+assert callable(module.sankoff_uppass)
 assert "typing" not in sys.modules
 assert "pickle" not in sys.modules
 assert "json" not in sys.modules
@@ -54,6 +56,9 @@ def _make_args(tmp_path, **overrides):
         optimization="acctran",
         phylogram=False,
         characters=None,
+        allow_taxon_mismatch=False,
+        change_marker_size=None,
+        change_fontsize=None,
         verbose=False,
         json=False,
     )
@@ -100,6 +105,34 @@ class TestParseCharacterMatrix:
         cm = CharacterMap(args)
         with pytest.raises(SystemExit):
             cm._parse_character_matrix(str(matrix_path))
+
+    @pytest.mark.parametrize("taxon", ["", "   "])
+    def test_empty_taxon_label_raises(self, tmp_path, taxon):
+        matrix_path = tmp_path / "empty-taxon.tsv"
+        matrix_path.write_text(
+            "taxon\tc0\n"
+            f"{taxon}\t0\n"
+        )
+
+        with pytest.raises(SystemExit) as exc:
+            CharacterMap._parse_character_matrix(str(matrix_path))
+
+        assert exc.value.code == 2
+        assert "empty taxon label" in exc.value.messages[0]
+
+    def test_duplicate_taxon_label_raises(self, tmp_path):
+        matrix_path = tmp_path / "duplicate-taxon.tsv"
+        matrix_path.write_text(
+            "taxon\tc0\n"
+            "A\t0\n"
+            "A\t1\n"
+        )
+
+        with pytest.raises(SystemExit) as exc:
+            CharacterMap._parse_character_matrix(str(matrix_path))
+
+        assert exc.value.code == 2
+        assert "duplicate taxon label 'A'" in exc.value.messages[0]
 
     def test_parse_character_matrix_streams_nonblank_rows(self, monkeypatch, tmp_path):
         class StreamingOnlyFile:
@@ -148,9 +181,12 @@ class TestCharacterMapSharedTaxaSetup:
         tip_states = {"A": ["0"], "B": ["1"], "C": ["0"]}
 
         def fail_set(*_args, **_kwargs):
-            raise AssertionError("ordered all-shared character data should skip sets")
+            raise AssertionError(
+                "ordered all-shared character data should skip set validation"
+            )
 
         monkeypatch.setattr(builtins, "set", fail_set)
+        monkeypatch.setattr(character_map_module, "Counter", fail_set)
 
         shared_count, tips_to_prune, filtered = (
             CharacterMap._shared_character_taxa_setup(["A", "B", "C"], tip_states)
@@ -160,19 +196,98 @@ class TestCharacterMapSharedTaxaSetup:
         assert tips_to_prune == []
         assert filtered is tip_states
 
-    def test_partial_overlap_filters_states_and_preserves_prune_order(self):
+    def test_partial_overlap_fails_with_names_from_both_inputs(self):
+        tip_states = {"A": ["0"], "C": ["1"], "off_tree": ["0"]}
+
+        with pytest.raises(SystemExit) as exc:
+            CharacterMap._shared_character_taxa_setup(
+                ["A", "B", "C", "D"],
+                tip_states,
+            )
+
+        assert exc.value.code == 2
+        assert exc.value.messages == [
+            "Taxon labels differ between the tree and character matrix.",
+            "2 taxa in tree but not in character matrix: B, D",
+            "1 taxon in character matrix but not in tree: off_tree",
+            "Use --allow-taxon-mismatch to analyze only shared taxa.",
+        ]
+
+    def test_allow_mismatch_warns_filters_and_preserves_prune_order(self, capsys):
         tip_states = {"A": ["0"], "C": ["1"], "off_tree": ["0"]}
 
         shared_count, tips_to_prune, filtered = (
             CharacterMap._shared_character_taxa_setup(
                 ["A", "B", "C", "D"],
                 tip_states,
+                allow_taxon_mismatch=True,
             )
         )
 
+        assert capsys.readouterr().err == (
+            "Warning: 2 taxa in tree but not in character matrix: B, D\n"
+            "Warning: 1 taxon in character matrix but not in tree: off_tree\n"
+        )
         assert shared_count == 2
         assert tips_to_prune == ["B", "D"]
         assert filtered == {"A": ["0"], "C": ["1"]}
+
+    def test_matching_taxa_in_different_order_are_accepted(self):
+        tip_states = {"C": ["0"], "A": ["1"], "B": ["0"]}
+
+        shared_count, tips_to_prune, filtered = (
+            CharacterMap._shared_character_taxa_setup(
+                ["A", "B", "C"],
+                tip_states,
+            )
+        )
+
+        assert shared_count == 3
+        assert tips_to_prune == []
+        assert filtered is tip_states
+
+    def test_taxon_matching_is_case_sensitive(self):
+        tip_states = {"a": ["0"], "B": ["1"], "C": ["0"]}
+
+        with pytest.raises(SystemExit) as exc:
+            CharacterMap._shared_character_taxa_setup(
+                ["A", "B", "C"],
+                tip_states,
+            )
+
+        assert "1 taxon in tree but not in character matrix: A" in exc.value.messages
+        assert "1 taxon in character matrix but not in tree: a" in exc.value.messages
+
+    def test_taxon_matching_does_not_strip_whitespace(self):
+        tip_states = {" A": ["0"], "B": ["1"], "C": ["0"]}
+
+        with pytest.raises(SystemExit) as exc:
+            CharacterMap._shared_character_taxa_setup(
+                ["A", "B", "C"],
+                tip_states,
+            )
+
+        assert "1 taxon in tree but not in character matrix: A" in exc.value.messages
+        assert "1 taxon in character matrix but not in tree:  A" in exc.value.messages
+
+    def test_duplicate_tree_taxon_labels_raise(self):
+        with pytest.raises(SystemExit) as exc:
+            CharacterMap._shared_character_taxa_setup(
+                ["A", "A", "B"],
+                {"A": ["0"], "B": ["1"]},
+            )
+
+        assert exc.value.messages[0] == "Tree contains duplicate taxon labels: A"
+
+    @pytest.mark.parametrize("empty_name", [None, "", "   "])
+    def test_empty_tree_taxon_labels_raise(self, empty_name):
+        with pytest.raises(SystemExit) as exc:
+            CharacterMap._shared_character_taxa_setup(
+                ["A", "B", empty_name],
+                {"A": ["0"], "B": ["1"], "C": ["0"]},
+            )
+
+        assert "empty or unnamed taxon labels" in exc.value.messages[0]
 
 
 class TestCharacterMapInit:
@@ -184,6 +299,9 @@ class TestCharacterMapInit:
         assert cm.optimization == "acctran"
         assert cm.phylogram is False
         assert cm.characters_filter is None
+        assert cm.allow_taxon_mismatch is False
+        assert cm.change_marker_size is None
+        assert cm.change_fontsize is None
         assert cm.verbose is False
         assert cm.json_output is False
 
@@ -191,6 +309,42 @@ class TestCharacterMapInit:
         args = _make_args(tmp_path, characters="0,1,3")
         cm = CharacterMap(args)
         assert cm.characters_filter == [0, 1, 3]
+
+    def test_change_plot_controls_are_stored(self, tmp_path):
+        args = _make_args(
+            tmp_path,
+            change_marker_size=125.0,
+            change_fontsize=8.5,
+        )
+
+        cm = CharacterMap(args)
+
+        assert cm.change_marker_size == 125.0
+        assert cm.change_fontsize == 8.5
+
+    @pytest.mark.parametrize(
+        ("option", "value", "message"),
+        [
+            ("change_marker_size", 0, "--change-marker-size"),
+            ("change_marker_size", -1, "--change-marker-size"),
+            ("change_fontsize", 0, "--change-fontsize"),
+            ("change_fontsize", -1, "--change-fontsize"),
+        ],
+    )
+    def test_change_plot_controls_must_be_positive(
+        self,
+        tmp_path,
+        option,
+        value,
+        message,
+    ):
+        args = _make_args(tmp_path, **{option: value})
+
+        with pytest.raises(SystemExit) as exc:
+            CharacterMap(args)
+
+        assert exc.value.code == 2
+        assert message in exc.value.messages[0]
 
 
 class TestCharacterMapStateSummary:
@@ -797,6 +951,8 @@ class TestCharacterMapPlot:
             legend_position="none",
             ylabel_fontsize=0,
             no_title=True,
+            change_marker_size=123.0,
+            change_fontsize=8.5,
         )
         cm = CharacterMap(args)
         tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
@@ -820,13 +976,20 @@ class TestCharacterMapPlot:
         }
 
         original_scatter = Axes.scatter
+        original_annotate = Axes.annotate
         scatter_calls = []
+        annotation_fontsizes = []
 
         def capture_scatter(self, x, y, *args, **kwargs):
             scatter_calls.append((x, y, kwargs))
             return original_scatter(self, x, y, *args, **kwargs)
 
+        def capture_annotate(self, *args, **kwargs):
+            annotation_fontsizes.append(kwargs.get("fontsize"))
+            return original_annotate(self, *args, **kwargs)
+
         monkeypatch.setattr(Axes, "scatter", capture_scatter)
+        monkeypatch.setattr(Axes, "annotate", capture_annotate)
 
         cm._plot_character_map(tree, classified, node_labels, parent_map)
 
@@ -834,7 +997,9 @@ class TestCharacterMapPlot:
         x, y, kwargs = scatter_calls[0]
         assert len(x) == len(y) == 4
         assert len(kwargs["c"]) == 4
+        assert kwargs["s"] == 123.0
         assert kwargs["edgecolors"] == "black"
+        assert annotation_fontsizes == [8.5] * 8
         out = Path(args.output)
         assert out.exists()
         assert out.stat().st_size > 0
@@ -870,7 +1035,6 @@ class TestCharacterMapJson:
         mocker.patch.object(
             cm, "_parse_character_matrix", return_value=(["c1"], tip_states)
         )
-        mocker.patch("phykit.services.tree.character_map.resolve_polytomies")
         mocker.patch("phykit.services.tree.character_map.build_parent_map", return_value={})
         mocker.patch("phykit.services.tree.character_map.fitch_downpass", return_value=({}, [0]))
         mocker.patch(
@@ -912,8 +1076,8 @@ class TestCharacterMapJson:
             side_effect=AssertionError("clean all-shared analysis should not copy tree"),
         )
         mocker.patch(
-            "phykit.services.tree.character_map.resolve_polytomies",
-            side_effect=AssertionError("binary trees should not resolve polytomies"),
+            "phykit.services.tree.character_map.sankoff_downpass",
+            side_effect=AssertionError("binary trees should stay on the Fitch path"),
         )
         mocker.patch("phykit.services.tree.character_map.build_parent_map", return_value={})
         mocker.patch("phykit.services.tree.character_map.fitch_downpass", return_value=({}, [0]))
@@ -939,8 +1103,54 @@ class TestCharacterMapJson:
         fast_copy.assert_not_called()
         assert plot_character_map.call_args.args[0] is tree
 
-    def test_run_copies_before_pruning_missing_tree_tips(self, mocker, tmp_path):
+    def test_run_preserves_polytomy_and_uses_exact_sankoff_path(
+        self,
+        mocker,
+        tmp_path,
+    ):
         args = _make_args(tmp_path, json=True)
+        cm = CharacterMap(args)
+        tree = Phylo.read(StringIO("(A:1,B:1,C:1):0;"), "newick")
+        tip_states = {"A": ["1"], "B": ["1"], "C": ["0"]}
+
+        mocker.patch.object(cm, "read_tree_file_unmodified", return_value=tree)
+        mocker.patch.object(
+            cm,
+            "get_tip_names_from_tree",
+            return_value=list(tip_states),
+        )
+        mocker.patch.object(
+            cm,
+            "_parse_character_matrix",
+            return_value=(["c1"], tip_states),
+        )
+        mocker.patch.object(
+            cm,
+            "_fast_copy",
+            side_effect=AssertionError("a clean polytomy should not be copied"),
+        )
+        mocker.patch(
+            "phykit.services.tree.character_map.fitch_downpass",
+            side_effect=AssertionError("polytomies should use exact Sankoff costs"),
+        )
+        sankoff_spy = mocker.spy(character_map_module, "sankoff_downpass")
+        plot_character_map = mocker.patch.object(cm, "_plot_character_map")
+        mocked_json = mocker.patch(
+            "phykit.services.tree.character_map.print_json"
+        )
+
+        cm.run()
+
+        sankoff_spy.assert_called_once()
+        plotted_tree = plot_character_map.call_args.args[0]
+        assert plotted_tree is tree
+        assert len(plotted_tree.root.clades) == 3
+        payload = mocked_json.call_args.args[0]
+        assert payload["tree_length"] == 1
+        assert payload["ci"] == 1.0
+
+    def test_run_copies_before_pruning_missing_tree_tips(self, mocker, tmp_path):
+        args = _make_args(tmp_path, json=True, allow_taxon_mismatch=True)
         cm = CharacterMap(args)
         tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1):0;"), "newick")
         tree_copy = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1):0;"), "newick")

@@ -1,5 +1,5 @@
 """
-Integration tests for character_map (discrete character mapping via Fitch parsimony).
+Integration tests for character_map (discrete unordered-parsimony mapping).
 
 Test data:
   tree_character_map.tre  — ((A:1,B:1):1,((C:1,D:1):1,E:1):1,F:1);
@@ -19,6 +19,145 @@ here = Path(__file__)
 
 @pytest.mark.integration
 class TestCharacterMap:
+    @patch("builtins.print")
+    def test_unresolved_polytomy_is_analyzed_and_plotted(
+        self,
+        mocked_print,
+        tmp_path,
+    ):
+        tree = tmp_path / "polytomy.tre"
+        tree.write_text("(A:1,B:1,C:1,D:1,E:1,F:1):0;\n")
+        matrix = tmp_path / "polytomy.tsv"
+        matrix.write_text(
+            "taxon\tchar0\n"
+            "A\t0\n"
+            "B\t0\n"
+            "C\t0\n"
+            "D\t1\n"
+            "E\t1\n"
+            "F\t1\n"
+        )
+        output = str(tmp_path / "polytomy.png")
+        testargs = [
+            "phykit",
+            "character_map",
+            "-t", str(tree),
+            "-d", str(matrix),
+            "-o", output,
+            "--json",
+        ]
+
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload["tree_length"] == 3
+        assert payload["ci"] == 0.3333
+        assert payload["ri"] == 0.0
+        assert payload["characters"][0]["steps"] == 3
+        assert len(payload["characters"][0]["changes"]) == 3
+        assert Path(output).exists()
+        assert Path(output).stat().st_size > 0
+
+    @patch("builtins.print")
+    def test_quoted_newick_label_matches_literal_matrix_label(
+        self,
+        mocked_print,
+        tmp_path,
+    ):
+        tree = tmp_path / "quoted-labels.tre"
+        tree.write_text("('Taxon one':1,Taxon-two:1,Taxon_three:1):0;\n")
+        matrix = tmp_path / "quoted-labels.tsv"
+        matrix.write_text(
+            "taxon\tchar0\n"
+            "Taxon one\t0\n"
+            "Taxon-two\t1\n"
+            "Taxon_three\t1\n"
+        )
+        output = str(tmp_path / "quoted-labels.png")
+        testargs = [
+            "phykit",
+            "character_map",
+            "-t", str(tree),
+            "-d", str(matrix),
+            "-o", output,
+            "--json",
+        ]
+
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload["n_characters"] == 1
+        assert Path(output).exists()
+
+    @patch("builtins.print")
+    def test_taxon_mismatch_fails_with_names_from_both_inputs(
+        self,
+        mocked_print,
+        tmp_path,
+    ):
+        matrix = tmp_path / "mismatched.tsv"
+        matrix.write_text(
+            "taxon\tchar0\n"
+            "A\t0\n"
+            "B\t0\n"
+            "C\t1\n"
+            "off_tree\t1\n"
+        )
+        output = str(tmp_path / "mismatch.png")
+        testargs = [
+            "phykit",
+            "character_map",
+            "-t", f"{here.parent.parent.parent}/sample_files/tree_character_map.tre",
+            "-d", str(matrix),
+            "-o", output,
+        ]
+
+        with patch.object(sys, "argv", testargs), pytest.raises(SystemExit) as exc:
+            Phykit()
+
+        assert exc.value.code == 2
+        messages = [call.args[0] for call in mocked_print.call_args_list]
+        assert "3 taxa in tree but not in character matrix: D, E, F" in messages
+        assert "1 taxon in character matrix but not in tree: off_tree" in messages
+        assert not Path(output).exists()
+
+    @patch("builtins.print")
+    def test_allow_taxon_mismatch_warns_and_uses_shared_taxa(
+        self,
+        mocked_print,
+        tmp_path,
+    ):
+        matrix = tmp_path / "mismatched.tsv"
+        matrix.write_text(
+            "taxon\tchar0\n"
+            "A\t0\n"
+            "B\t0\n"
+            "C\t1\n"
+            "off_tree\t1\n"
+        )
+        output = str(tmp_path / "shared.png")
+        testargs = [
+            "phykit",
+            "character_map",
+            "-t", f"{here.parent.parent.parent}/sample_files/tree_character_map.tre",
+            "-d", str(matrix),
+            "-o", output,
+            "--allow-taxon-mismatch",
+            "--json",
+        ]
+
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+
+        messages = [call.args[0] for call in mocked_print.call_args_list]
+        assert "Warning: 3 taxa in tree but not in character matrix: D, E, F" in messages
+        assert "Warning: 1 taxon in character matrix but not in tree: off_tree" in messages
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload["n_characters"] == 1
+        assert Path(output).exists()
+
     @patch("builtins.print")
     def test_basic_invocation(self, mocked_print, tmp_path):
         output = str(tmp_path / "charmap.png")
@@ -133,6 +272,28 @@ class TestCharacterMap:
         payload = json.loads(mocked_print.call_args.args[0])
         assert payload["n_characters"] == 8
         assert Path(output).exists()
+
+    @patch("builtins.print")
+    def test_change_marker_and_font_size_options(self, mocked_print, tmp_path):
+        output = str(tmp_path / "charmap-sized.png")
+        testargs = [
+            "phykit",
+            "character_map",
+            "-t", f"{here.parent.parent.parent}/sample_files/tree_character_map.tre",
+            "-d", f"{here.parent.parent.parent}/sample_files/character_matrix_simple.tsv",
+            "-o", output,
+            "--change-marker-size", "120",
+            "--change-fontsize", "8.5",
+            "--json",
+        ]
+
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload["n_characters"] == 8
+        assert Path(output).exists()
+        assert Path(output).stat().st_size > 0
 
     @patch("builtins.print")
     def test_verbose_output(self, mocked_print, tmp_path):

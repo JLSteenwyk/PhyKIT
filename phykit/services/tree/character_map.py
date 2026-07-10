@@ -1,9 +1,10 @@
 """
 Character mapping on a phylogenetic tree.
 
-Performs Fitch parsimony reconstruction on a discrete character matrix,
-classifies changes as synapomorphies, convergences, or reversals, and
-produces a phylogram/cladogram plot with annotated character changes.
+Performs unordered parsimony reconstruction on a discrete character matrix,
+using optimized Fitch reconstruction for binary trees and exact Sankoff costs
+for multifurcations. Classifies changes as synapomorphies, convergences, or
+reversals and produces a phylogram/cladogram plot with annotated changes.
 
 Uses the generalized parsimony utilities in phykit.helpers.parsimony_utils.
 """
@@ -39,10 +40,6 @@ def build_parent_map(*args, **kwargs):
     return _parsimony_utils().build_parent_map(*args, **kwargs)
 
 
-def resolve_polytomies(*args, **kwargs):
-    return _parsimony_utils().resolve_polytomies(*args, **kwargs)
-
-
 def fitch_downpass(*args, **kwargs):
     return _parsimony_utils().fitch_downpass(*args, **kwargs)
 
@@ -53,6 +50,14 @@ def fitch_uppass_acctran(*args, **kwargs):
 
 def fitch_uppass_deltran(*args, **kwargs):
     return _parsimony_utils().fitch_uppass_deltran(*args, **kwargs)
+
+
+def sankoff_downpass(*args, **kwargs):
+    return _parsimony_utils().sankoff_downpass(*args, **kwargs)
+
+
+def sankoff_uppass(*args, **kwargs):
+    return _parsimony_utils().sankoff_uppass(*args, **kwargs)
 
 
 def detect_changes(*args, **kwargs):
@@ -76,6 +81,9 @@ class CharacterMap(Tree):
         self.optimization = parsed["optimization"]
         self.phylogram = parsed["phylogram"]
         self.characters_filter = parsed["characters_filter"]
+        self.allow_taxon_mismatch = parsed["allow_taxon_mismatch"]
+        self.change_marker_size = parsed["change_marker_size"]
+        self.change_fontsize = parsed["change_fontsize"]
         self.verbose = parsed["verbose"]
         self.json_output = parsed["json_output"]
         self.plot_config = parsed["plot_config"]
@@ -89,6 +97,18 @@ class CharacterMap(Tree):
         if chars_str is not None:
             characters_filter = [int(c.strip()) for c in chars_str.split(",")]
 
+        change_marker_size = getattr(args, "change_marker_size", None)
+        change_fontsize = getattr(args, "change_fontsize", None)
+        for option, value in (
+            ("--change-marker-size", change_marker_size),
+            ("--change-fontsize", change_fontsize),
+        ):
+            if value is not None and value <= 0:
+                raise PhykitUserError(
+                    [f"{option} must be greater than 0."],
+                    code=2,
+                )
+
         return dict(
             tree_file_path=args.tree,
             data_path=args.data,
@@ -96,6 +116,9 @@ class CharacterMap(Tree):
             optimization=getattr(args, "optimization", "acctran"),
             phylogram=getattr(args, "phylogram", False),
             characters_filter=characters_filter,
+            allow_taxon_mismatch=getattr(args, "allow_taxon_mismatch", False),
+            change_marker_size=change_marker_size,
+            change_fontsize=change_fontsize,
             verbose=getattr(args, "verbose", False),
             json_output=getattr(args, "json", False),
             plot_config=PlotConfig.from_args(args),
@@ -111,6 +134,7 @@ class CharacterMap(Tree):
         shared_count, tips_to_prune, tip_states = self._shared_character_taxa_setup(
             tree_tip_names,
             tip_states,
+            allow_taxon_mismatch=self.allow_taxon_mismatch,
         )
         if shared_count < 3:
             raise PhykitUserError(
@@ -122,25 +146,19 @@ class CharacterMap(Tree):
             )
 
         preorder_clades = list(self._iter_preorder(tree.root))
-        needs_polytomy_resolution = any(
+        has_multifurcation = any(
             len(clade.clades) > 2 for clade in preorder_clades
         )
         needs_branch_length_fill = any(
             clade.branch_length is None for clade in preorder_clades
         )
         needs_working_copy = bool(tips_to_prune) or (
-            needs_polytomy_resolution
-            or needs_branch_length_fill
-            or self.plot_config.ladderize
+            needs_branch_length_fill or self.plot_config.ladderize
         )
         if needs_working_copy:
             tree = self._fast_copy(tree)
         if tips_to_prune:
             tree = self.prune_tree_using_taxa_list(tree, tips_to_prune)
-
-        # Resolve polytomies
-        if needs_polytomy_resolution:
-            resolve_polytomies(tree)
 
         # Ladderize if requested
         if self.plot_config.ladderize:
@@ -155,14 +173,33 @@ class CharacterMap(Tree):
         # Build parent map
         parent_map = build_parent_map(tree)
 
-        # Fitch downpass
-        node_state_sets, scores = fitch_downpass(tree, tip_states)
-
-        # Uppass: ACCTRAN or DELTRAN
-        if self.optimization == "deltran":
-            node_states = fitch_uppass_deltran(tree, node_state_sets, parent_map)
+        if has_multifurcation:
+            node_costs, states_by_char, scores = sankoff_downpass(
+                tree,
+                tip_states,
+            )
+            node_states = sankoff_uppass(
+                tree,
+                node_costs,
+                states_by_char,
+                parent_map,
+                optimization=self.optimization,
+            )
         else:
-            node_states = fitch_uppass_acctran(tree, node_state_sets, parent_map)
+            # Keep the optimized Fitch implementation for binary trees.
+            node_state_sets, scores = fitch_downpass(tree, tip_states)
+            if self.optimization == "deltran":
+                node_states = fitch_uppass_deltran(
+                    tree,
+                    node_state_sets,
+                    parent_map,
+                )
+            else:
+                node_states = fitch_uppass_acctran(
+                    tree,
+                    node_state_sets,
+                    parent_map,
+                )
 
         # Detect and classify changes
         branch_changes = detect_changes(tree, node_states, parent_map)
@@ -219,21 +256,98 @@ class CharacterMap(Tree):
             )
 
     @staticmethod
-    def _shared_character_taxa_setup(tree_tip_names: list[str], tip_states: dict):
-        """Return shared count, tree tips to prune, and filtered states."""
+    def _shared_character_taxa_setup(
+        tree_tip_names: list[str],
+        tip_states: dict,
+        allow_taxon_mismatch: bool = False,
+    ):
+        """Validate taxa and optionally return their shared subset."""
         state_count = len(tip_states)
         if state_count >= 3 and len(tree_tip_names) == state_count:
             if tree_tip_names[0] == next(iter(tip_states)):
                 if tree_tip_names[-1] == next(reversed(tip_states)):
                     state_names = list(tip_states)
                     if state_names == tree_tip_names:
+                        # Matrix parsing has already rejected empty and duplicate
+                        # labels, so an exact ordered match proves the tree labels
+                        # have those properties as well.
                         return state_count, [], tip_states
+
+        unnamed_tips = sum(
+            1
+            for name in tree_tip_names
+            if not isinstance(name, str) or not name.strip()
+        )
+        if unnamed_tips:
+            raise PhykitUserError(
+                [
+                    f"Tree contains {unnamed_tips} empty or unnamed taxon labels.",
+                    "Every tree tip must have a unique, non-empty name.",
+                ],
+                code=2,
+            )
+
+        duplicate_tree_tips = sorted(
+            name
+            for name, count in Counter(tree_tip_names).items()
+            if count > 1
+        )
+        if duplicate_tree_tips:
+            raise PhykitUserError(
+                [
+                    f"Tree contains duplicate taxon labels: "
+                    f"{', '.join(duplicate_tree_tips)}",
+                    "Every tree tip must have a unique name.",
+                ],
+                code=2,
+            )
+
+        empty_matrix_taxa = [
+            name
+            for name in tip_states
+            if not isinstance(name, str) or not name.strip()
+        ]
+        if empty_matrix_taxa:
+            raise PhykitUserError(
+                ["Character matrix contains an empty taxon label."],
+                code=2,
+            )
 
         tree_tips = set(tree_tip_names)
         matrix_taxa = set(tip_states)
         shared = tree_tips & matrix_taxa
+        tree_only = tree_tips - matrix_taxa
+        matrix_only = matrix_taxa - tree_tips
+        if not tree_only and not matrix_only:
+            return len(shared), [], tip_states
+
+        tree_only_text = ", ".join(sorted(tree_only)) if tree_only else "none"
+        matrix_only_text = ", ".join(sorted(matrix_only)) if matrix_only else "none"
+        tree_taxon_word = "taxon" if len(tree_only) == 1 else "taxa"
+        matrix_taxon_word = "taxon" if len(matrix_only) == 1 else "taxa"
+        difference_messages = [
+            "Taxon labels differ between the tree and character matrix.",
+            f"{len(tree_only)} {tree_taxon_word} in tree but not in character matrix: "
+            f"{tree_only_text}",
+            f"{len(matrix_only)} {matrix_taxon_word} in character matrix but not in tree: "
+            f"{matrix_only_text}",
+        ]
+        if not allow_taxon_mismatch:
+            difference_messages.append(
+                "Use --allow-taxon-mismatch to analyze only shared taxa."
+            )
+            raise PhykitUserError(difference_messages, code=2)
+
+        import sys
+
+        for message in difference_messages[1:]:
+            print(f"Warning: {message}", file=sys.stderr)
         tips_to_prune = [tip for tip in tree_tip_names if tip not in shared]
-        filtered_states = {taxon: tip_states[taxon] for taxon in shared}
+        filtered_states = {
+            taxon: states
+            for taxon, states in tip_states.items()
+            if taxon in shared
+        }
         return len(shared), tips_to_prune, filtered_states
 
     @staticmethod
@@ -515,6 +629,19 @@ class CharacterMap(Tree):
                     fields = line.rstrip("\n\r").split("\t")
                     taxon = fields[0]
                     states = fields[1:]
+                    if not taxon.strip():
+                        raise PhykitUserError(
+                            [f"Row {row_num} has an empty taxon label."],
+                            code=2,
+                        )
+                    if taxon in tip_states:
+                        raise PhykitUserError(
+                            [
+                                f"Row {row_num} contains duplicate taxon label "
+                                f"'{taxon}'."
+                            ],
+                            code=2,
+                        )
                     if len(states) != n_expected:
                         raise PhykitUserError(
                             [
@@ -822,8 +949,16 @@ class CharacterMap(Tree):
 
             # Character change circles on branches
             # Smaller markers in circular mode — radial branches are shorter
-            marker_size = max(10, min(50, 300 / max(n_tips, 1)))
-            change_fontsize = max(3.0, min(5.0, 6.0 - n_tips * 0.03))
+            marker_size = (
+                self.change_marker_size
+                if self.change_marker_size is not None
+                else max(10, min(50, 300 / max(n_tips, 1)))
+            )
+            change_fontsize = (
+                self.change_fontsize
+                if self.change_fontsize is not None
+                else max(3.0, min(5.0, 6.0 - n_tips * 0.03))
+            )
 
             filter_set = set(self.characters_filter) if self.characters_filter else None
             change_x = []
@@ -993,8 +1128,16 @@ class CharacterMap(Tree):
             # Character change circles on branches
             # Use scatter (marker size in points²) so circles stay round
             # regardless of axis aspect ratio.
-            marker_size = max(15, min(80, 600 / max(n_tips, 1)))
-            change_fontsize = max(3.0, min(6.0, 7.0 - n_tips * 0.03))
+            marker_size = (
+                self.change_marker_size
+                if self.change_marker_size is not None
+                else max(15, min(80, 600 / max(n_tips, 1)))
+            )
+            change_fontsize = (
+                self.change_fontsize
+                if self.change_fontsize is not None
+                else max(3.0, min(6.0, 7.0 - n_tips * 0.03))
+            )
 
             # Filter characters if requested
             filter_set = set(self.characters_filter) if self.characters_filter else None

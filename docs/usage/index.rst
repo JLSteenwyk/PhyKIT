@@ -1618,7 +1618,7 @@ Character map (synapomorphy/homoplasy mapping)
 Function names: character_map; charmap; synapomorphy_map |br|
 Command line interface: pk_character_map; pk_charmap; pk_synapomorphy_map
 
-Map character state changes onto a phylogeny using Fitch parsimony with
+Map character state changes onto a phylogeny using unordered parsimony with
 ACCTRAN (default) or DELTRAN optimization. Produces a cladogram (default)
 or phylogram with color-coded circles on each branch showing where
 character state changes occur. This is useful for visualizing
@@ -1653,7 +1653,15 @@ character names, one row per taxon with discrete states). Missing data
 Reports the consistency index (CI), retention index (RI), and total tree
 length (parsimony steps). CI and RI cross-validated against R's phangorn.
 
-Polytomies are automatically resolved by inserting zero-length branches.
+Polytomies are retained in the analysis and plot. Character states and
+parsimony scores on multifurcating trees are calculated directly on the
+submitted unresolved topology rather than on an arbitrary binary resolution.
+
+Taxon labels in the tree and character matrix must match exactly and are
+case-sensitive. By default, any label found in only one input is reported and
+the command exits without producing a character map. Use
+``--allow-taxon-mismatch`` to warn and analyze only the shared taxa instead.
+Every tree tip and matrix row must have a unique, non-empty taxon label.
 
 **Example usage:**
 
@@ -1686,13 +1694,21 @@ has a taxon name followed by the character states:
    Taxon_C	1	0	0	2
    Taxon_D	1	0	1	1
 
+Taxon labels are not normalized: leading or trailing whitespace in the TSV is
+retained and therefore affects matching. In Newick files, labels containing
+spaces or reserved punctuation should be enclosed in single quotes, for
+example ``'Taxon one'``. The corresponding TSV label is ``Taxon one`` without
+the quote characters.
+
 **Full usage:**
 
 .. code-block:: shell
 
    phykit character_map -t <tree> -d <data> -o <output>
        [--optimization acctran|deltran] [--phylogram]
-       [--characters 0,1,3] [--verbose] [--json]
+       [--characters 0,1,3] [--allow-taxon-mismatch]
+       [--change-marker-size <float>] [--change-fontsize <float>]
+       [--verbose] [--json]
        [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
        [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
        [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize]
@@ -1704,6 +1720,9 @@ Options: |br|
 *--optimization*: ancestral state optimization: acctran (default) or deltran |br|
 *--phylogram*: draw phylogram instead of cladogram |br|
 *--characters*: comma-separated character indices to display (0-based; all characters are still used for CI/RI) |br|
+*--allow-taxon-mismatch*: warn and analyze only taxa shared by the tree and matrix; mismatches are errors by default |br|
+*--change-marker-size*: positive character-change circle size in points squared; automatically scaled when omitted |br|
+*--change-fontsize*: positive font size for character indices and state transitions; automatically scaled when omitted |br|
 *--verbose*: print per-character detail |br|
 *--colors*: comma-separated colors for synapomorphy, convergence, reversal (default: blue, red, gray) |br|
 *--ladderize*: ladderize (sort) the tree before plotting |br|

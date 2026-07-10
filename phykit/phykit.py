@@ -3011,7 +3011,7 @@ class Phykit:
                 {help_header}
 
                 Map discrete character changes onto a phylogenetic tree
-                using Fitch parsimony, classifying each change as a
+                using unordered parsimony, classifying each change as a
                 synapomorphy, convergence, or reversal.
 
                 Two optimization strategies are supported:
@@ -3023,7 +3023,11 @@ class Phykit:
                 Output is a cladogram (default) or phylogram (with
                 --phylogram) annotated with colored circles indicating
                 character state changes on each branch. Polytomies are
-                automatically resolved by adding zero-length branches.
+                retained and analyzed directly.
+
+                Tree and matrix taxon labels are matched exactly and are
+                case-sensitive. Mismatches are errors unless
+                --allow-taxon-mismatch is specified.
 
                 Summary statistics include tree length (total parsimony
                 steps), consistency index (CI), and retention index (RI).
@@ -3036,7 +3040,9 @@ class Phykit:
                 Usage:
                 phykit character_map -t <tree> -d <data> -o <output>
                   [--optimization acctran|deltran] [--phylogram]
-                  [--characters 0,1,3] [--verbose] [--json]
+                  [--characters 0,1,3] [--allow-taxon-mismatch]
+                  [--change-marker-size <float>] [--change-fontsize <float>]
+                  [--verbose] [--json]
                   [--fig-width <float>] [--fig-height <float>]
                   [--dpi <int>] [--no-title] [--title <str>]
                   [--legend-position <str>]
@@ -3067,6 +3073,17 @@ class Phykit:
                                             plot (e.g., 0,1,3); all
                                             characters shown by default
 
+                --allow-taxon-mismatch      warn and analyze only taxa shared
+                                            by the tree and character matrix;
+                                            mismatches are errors by default
+
+                --change-marker-size        character-change circle size in
+                                            points squared; must be positive
+
+                --change-fontsize           font size for character indices
+                                            and state transitions; must be
+                                            positive
+
                 --verbose                   print per-character details
                                             including CI/RI and changes
 
@@ -3094,6 +3111,18 @@ class Phykit:
         parser.add_argument(
             "--characters", type=str, default=None,
             required=False, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "--allow-taxon-mismatch", action="store_true",
+            required=False, help=SUPPRESS,
+        )
+        parser.add_argument(
+            "--change-marker-size", type=float, default=None,
+            required=False, help=SUPPRESS, metavar="",
+        )
+        parser.add_argument(
+            "--change-fontsize", type=float, default=None,
+            required=False, help=SUPPRESS, metavar="",
         )
         parser.add_argument(
             "--verbose", action="store_true", required=False, help=SUPPRESS
