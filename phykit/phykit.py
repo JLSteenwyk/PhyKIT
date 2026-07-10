@@ -205,6 +205,18 @@ class _TreesConsensusNetworkDefaultArgs:
         self.json = False
 
 
+class _TreesQuartetNetworkDefaultArgs:
+    __slots__ = ("trees", "alpha", "beta", "missing_taxa", "plot_output", "json")
+
+    def __init__(self, trees: str) -> None:
+        self.trees = trees
+        self.alpha = 0.05
+        self.beta = 0.95
+        self.missing_taxa = "error"
+        self.plot_output = None
+        self.json = False
+
+
 class _TreeVerboseJsonDefaultArgs:
     __slots__ = ("tree", "verbose", "json")
 
@@ -7207,6 +7219,18 @@ class Phykit:
 
     @staticmethod
     def quartet_network(argv):
+        if (
+            len(argv) == 2
+            and argv[0] in ("-t", "--trees")
+            and argv[1]
+            and argv[1][0] != "-"
+        ):
+            _run_service_with_args(
+                _TreesQuartetNetworkDefaultArgs(argv[1]),
+                QuartetNetwork,
+            )
+            return
+
         parser = _new_parser(
             description=_dedent(
                 f"""\

@@ -1178,6 +1178,7 @@ Results:
 | `QuartetNetwork.run` batched text quartet output | 100k quartet rows, captured stdout and identical text | 0.180601s | 0.166519s | 1.08x |
 | `QuartetNetwork._parse_trees_from_source` source cleanup | 500k path-like rows with comments/blanks, cleanup before tree parsing | 0.091090s | 0.067767s | 1.34x |
 | `QuartetNetwork._parse_trees_from_source` path-list resolver | 50k existing relative tree paths, tree parsing mocked | 0.720531s | 0.507855s | 1.42x |
+| `quartet_network` default CLI parser bypass | direct dispatch of `quartet_network -t/--trees trees.nwk` into a no-op service, 1000 calls; direct command timing against a six-tree Newick file, 30 runs after 5 warmups, stdout matched | 2.267403s / 2.348134s; 0.631729s mean | 0.000423s / 0.000439s; 0.508468s mean | 5360.29x / 5348.82x; 1.24x |
 | `quartet_network` module import without eager Bio.Phylo | cold subprocess import after lazy `Phylo.read` proxy | 0.134003s | 0.032005s | 4.19x |
 | `QuartetNetwork._LazyPhylo.read` cached callable | 10k / 100k / 1M repeated no-op reads after first Bio.Phylo resolution | 0.010175313s / 0.130497375s / 1.084046708s | 0.000816333s / 0.036962438s / 0.118325771s | 12.46x / 3.53x / 9.16x |
 | `quartet_network` module import without eager JSON/plot helpers | median cold subprocess import after localizing `PlotConfig` and lazy JSON wrapper | 0.017726s | 0.006822s | 2.60x |
