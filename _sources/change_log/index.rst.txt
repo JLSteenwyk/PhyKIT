@@ -6,7 +6,7 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
-**Next release**:
+**2.3.0**:
 
 * Added ``codon_dnds`` (aliases: ``dnds``, ``dn_ds``, and ``kaks``) for
   pairwise dN, dS, and omega estimation from codon alignments using NG86,
