@@ -89,6 +89,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#occupancy-filter">Occupancy filter</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#occupancy-per-taxon">Occupancy per taxon</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#pairwise-identity">Pairwise identity</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#codon-dn-ds">Codon dN/dS</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#parsimony-informative-sites">Parsimony informative sites</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#phylo-gwas">Phylo GWAS</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#plot-alignment-qc">Plot alignment QC</a></li>
@@ -317,6 +318,7 @@ are grouped by analytical purpose to help you find the right tool for your analy
 <li><p><a class="reference internal" href="#cmd-alignment-outlier-taxa"><span class="std std-ref">Alignment outlier taxa</span></a>: Identify outlier taxa in alignments</p></li>
 <li><p><a class="reference internal" href="#cmd-column-score"><span class="std std-ref">Column score</span></a>: Column score for alignment quality</p></li>
 <li><p><a class="reference internal" href="#cmd-composition-per-taxon"><span class="std std-ref">Composition per taxon</span></a>: Nucleotide or amino acid composition per taxon</p></li>
+<li><p><a class="reference internal" href="#cmd-codon-dnds"><span class="std std-ref">Codon dN/dS</span></a>: Pairwise synonymous and nonsynonymous substitution-rate estimates</p></li>
 <li><p><a class="reference internal" href="#cmd-compositional-bias-per-site"><span class="std std-ref">Compositional bias per site</span></a>: Detect compositional bias across sites</p></li>
 <li><p><a class="reference internal" href="#cmd-evolutionary-rate-per-site"><span class="std std-ref">Evolutionary rate per site</span></a>: Site-specific evolutionary rate estimation</p></li>
 <li><p><a class="reference internal" href="#cmd-gc-content"><span class="std std-ref">Guanine-cytosine (GC) content</span></a>: GC content of an alignment</p></li>
@@ -457,6 +459,7 @@ are grouped by analytical purpose to help you find the right tool for your analy
 <section id="evolutionary-rate-analysis">
 <h3>Evolutionary rate analysis<a class="headerlink" href="#evolutionary-rate-analysis" title="Link to this heading"></a></h3>
 <ul class="simple">
+<li><p><a class="reference internal" href="#cmd-codon-dnds"><span class="std std-ref">Codon dN/dS</span></a>: Pairwise dN, dS, and omega estimates from a codon alignment</p></li>
 <li><p><a class="reference internal" href="#cmd-covarying-evolutionary-rates"><span class="std std-ref">Covarying evolutionary rates</span></a>: Detect covariation in evolutionary rates</p></li>
 <li><p><a class="reference internal" href="#cmd-relative-rate-test"><span class="std std-ref">Relative rate test</span></a>: Relative rate test between lineages</p></li>
 </ul>
@@ -1176,6 +1179,84 @@ Genome Biology and Evolution (2017), doi: 10.1093/gbe/evx147.</p>
 <em>--circular</em>: draw circular (radial/fan) phylogram instead of rectangular <br/>
 <em>--color-file</em>: color annotation file for tip labels, clade ranges, and branch colors (iTOL-inspired TSV format) <br/>
 <em>--json</em>: optional argument to print results as JSON</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="codon-dn-ds">
+<span id="cmd-codon-dnds"></span><h3>Codon dN/dS<a class="headerlink" href="#codon-dn-ds" title="Link to this heading"></a></h3>
+<p>Function names: codon_dnds; dnds; dn_ds; kaks <br/>
+Command line interface: pk_codon_dnds; pk_dnds; pk_dn_ds; pk_kaks</p>
+<p>Estimate pairwise nonsynonymous substitutions per nonsynonymous site (dN),
+synonymous substitutions per synonymous site (dS), and their ratio
+<code class="docutils literal notranslate"><span class="pre">omega</span> <span class="pre">=</span> <span class="pre">dN/dS</span></code> from an in-frame nucleotide alignment.</p>
+<p>Four estimators are available:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">NG86</span></code>: Nei and Gojobori (1986), the default counting method.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">LWL85</span></code>: Li, Wu, and Luo (1985).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">YN00</span></code>: Yang and Nielsen (2000), accounting for transition and codon-frequency biases.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ML</span></code>: Goldman and Yang (1994) codon-model maximum likelihood. This can be substantially slower than the counting methods.</p></li>
+</ul>
+<p>By default, PhyKIT analyzes every unique sequence pair and reports aggregate
+statistics. <code class="docutils literal notranslate"><span class="pre">--verbose</span></code> prints a TSV row for each pair. <code class="docutils literal notranslate"><span class="pre">--reference</span></code>
+restricts analysis to pairs containing one exact taxon ID, which is useful
+for comparisons against a designated reference and for limiting expensive
+ML calculations.</p>
+<p><strong>Input requirements and exclusions</strong></p>
+<p>The input must be an aligned nucleotide coding sequence that starts at codon
+position one. Alignment length must be divisible by three, all sequences must
+have equal length, and gaps must occupy complete codons (<code class="docutils literal notranslate"><span class="pre">---</span></code>). RNA <code class="docutils literal notranslate"><span class="pre">U</span></code>
+is treated as <code class="docutils literal notranslate"><span class="pre">T</span></code> and <code class="docutils literal notranslate"><span class="pre">.</span></code> is treated as a gap.</p>
+<p>Codons containing a gap or an ambiguous nucleotide are excluded independently
+for each sequence pair. Terminal stop codons are also excluded. Internal stop
+codons fail by default; <code class="docutils literal notranslate"><span class="pre">--stop-policy</span> <span class="pre">skip</span></code> explicitly excludes them
+pairwise. <code class="docutils literal notranslate"><span class="pre">codons_used</span></code> and <code class="docutils literal notranslate"><span class="pre">codons_skipped</span></code> in verbose output disclose
+the effective data for each estimate.</p>
+<p>Estimates that are undefined, saturated, or have <code class="docutils literal notranslate"><span class="pre">dS</span> <span class="pre">=</span> <span class="pre">0</span></code> are emitted as
+<code class="docutils literal notranslate"><span class="pre">NA</span></code> with an explanatory status instead of producing an infinite or invalid
+omega value.</p>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>Pairwise omega is a descriptive average across the analyzed sequence and
+pair. An omega greater than one is not, by itself, a statistical test for
+positive selection. This command does not fit branch-specific or
+site-specific selection models.</p>
+</div>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># NG86 summary across all sequence pairs</span>
+phykit<span class="w"> </span>codon_dnds<span class="w"> </span>codon_alignment.fa
+
+<span class="c1"># Pairwise TSV using YN00</span>
+phykit<span class="w"> </span>dnds<span class="w"> </span>codon_alignment.fa<span class="w"> </span>--method<span class="w"> </span>YN00<span class="w"> </span>--verbose
+
+<span class="c1"># Compare every sequence with one reference using genetic code 4</span>
+phykit<span class="w"> </span>dnds<span class="w"> </span>codon_alignment.fa<span class="w"> </span>--reference<span class="w"> </span>taxon_a<span class="w"> </span>--genetic-code<span class="w"> </span><span class="m">4</span><span class="w"> </span>--json
+
+<span class="c1"># Goldman-Yang ML with F61 codon frequencies</span>
+phykit<span class="w"> </span>dnds<span class="w"> </span>codon_alignment.fa<span class="w"> </span>--method<span class="w"> </span>ML<span class="w"> </span>--codon-frequency<span class="w"> </span>F61<span class="w"> </span>--verbose
+</pre></div>
+</div>
+<p>Verbose columns: <br/>
+<code class="docutils literal notranslate"><span class="pre">taxon_a</span></code>; <code class="docutils literal notranslate"><span class="pre">taxon_b</span></code>; <code class="docutils literal notranslate"><span class="pre">dN</span></code>; <code class="docutils literal notranslate"><span class="pre">dS</span></code>; <code class="docutils literal notranslate"><span class="pre">omega</span></code>; <code class="docutils literal notranslate"><span class="pre">codons_used</span></code>;
+<code class="docutils literal notranslate"><span class="pre">codons_skipped</span></code>; <code class="docutils literal notranslate"><span class="pre">status</span></code></p>
+<p>Options: <br/>
+<em>&lt;alignment&gt;</em>: in-frame codon alignment (required) <br/>
+<em>--method</em>: <code class="docutils literal notranslate"><span class="pre">NG86</span></code>, <code class="docutils literal notranslate"><span class="pre">LWL85</span></code>, <code class="docutils literal notranslate"><span class="pre">YN00</span></code>, or <code class="docutils literal notranslate"><span class="pre">ML</span></code> (default: <code class="docutils literal notranslate"><span class="pre">NG86</span></code>) <br/>
+<em>--genetic-code</em>: NCBI genetic-code ID (default: <code class="docutils literal notranslate"><span class="pre">1</span></code>) <br/>
+<em>--kappa</em>: transition/transversion ratio used by NG86 (default: <code class="docutils literal notranslate"><span class="pre">1.0</span></code>) <br/>
+<em>--codon-frequency</em>: <code class="docutils literal notranslate"><span class="pre">F1x4</span></code>, <code class="docutils literal notranslate"><span class="pre">F3x4</span></code>, or <code class="docutils literal notranslate"><span class="pre">F61</span></code> for ML (default: <code class="docutils literal notranslate"><span class="pre">F3x4</span></code>) <br/>
+<em>--stop-policy</em>: <code class="docutils literal notranslate"><span class="pre">error</span></code> or <code class="docutils literal notranslate"><span class="pre">skip</span></code> for internal stops (default: <code class="docutils literal notranslate"><span class="pre">error</span></code>) <br/>
+<em>--reference</em>: analyze only pairs containing this exact taxon ID <br/>
+<em>-v/--verbose</em>: print one TSV row per sequence pair <br/>
+<em>--json</em>: output structured JSON</p>
+<p>References: <br/>
+Nei M, Gojobori T. 1986. Molecular Biology and Evolution 3:418-426.
+doi: <a class="reference external" href="https://doi.org/10.1093/oxfordjournals.molbev.a040410">10.1093/oxfordjournals.molbev.a040410</a>. <br/>
+Li WH, Wu CI, Luo CC. 1985. Molecular Biology and Evolution 2:150-174.
+doi: <a class="reference external" href="https://doi.org/10.1093/oxfordjournals.molbev.a040343">10.1093/oxfordjournals.molbev.a040343</a>. <br/>
+Yang Z, Nielsen R. 2000. Molecular Biology and Evolution 17:32-43.
+doi: <a class="reference external" href="https://doi.org/10.1093/oxfordjournals.molbev.a026236">10.1093/oxfordjournals.molbev.a026236</a>. <br/>
+Goldman N, Yang Z. 1994. Molecular Biology and Evolution 11:725-736.
+doi: <a class="reference external" href="https://doi.org/10.1093/oxfordjournals.molbev.a040153">10.1093/oxfordjournals.molbev.a040153</a>.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
