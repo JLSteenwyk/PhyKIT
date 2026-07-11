@@ -6,6 +6,14 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**Next release**:
+
+* Added ``codon_dnds`` (aliases: ``dnds``, ``dn_ds``, and ``kaks``) for
+  pairwise dN, dS, and omega estimation from codon alignments using NG86,
+  LWL85, YN00, or Goldman-Yang maximum likelihood. The command supports NCBI
+  genetic codes, reference-taxon comparisons, pairwise ambiguity filtering,
+  strict frame/stop-codon validation, TSV output, and JSON output.
+
 **2.2.1**:
 Character-map correctness and plotting improvements:
 

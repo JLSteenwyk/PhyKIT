@@ -26,6 +26,7 @@ AlignmentOutlierTaxa = _LazyServiceFactory("phykit.services.alignment.alignment_
 ColumnScore = _LazyServiceFactory("phykit.services.alignment.column_score", "ColumnScore")
 CompositionalBiasPerSite = _LazyServiceFactory("phykit.services.alignment.compositional_bias_per_site", "CompositionalBiasPerSite")
 CompositionPerTaxon = _LazyServiceFactory("phykit.services.alignment.composition_per_taxon", "CompositionPerTaxon")
+CodonDnDs = _LazyServiceFactory("phykit.services.alignment.codon_dnds", "CodonDnDs")
 CreateConcatenationMatrix = _LazyServiceFactory("phykit.services.alignment.create_concatenation_matrix", "CreateConcatenationMatrix")
 DNAThreader = _LazyServiceFactory("phykit.services.alignment.dna_threader", "DNAThreader")
 Dtt = _LazyServiceFactory("phykit.services.tree.dtt", "Dtt")

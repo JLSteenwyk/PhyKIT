@@ -10,6 +10,7 @@ _EXPORTS = {
     "ColumnScore": "column_score",
     "CompositionalBiasPerSite": "compositional_bias_per_site",
     "CompositionPerTaxon": "composition_per_taxon",
+    "CodonDnDs": "codon_dnds",
     "CreateConcatenationMatrix": "create_concatenation_matrix",
     "DNAThreader": "dna_threader",
     "Dstatistic": "dstatistic",
