@@ -546,6 +546,9 @@ class Phykit:
                     - detects site-wise compositional biases in an alignment
                 composition_per_taxon (alias: comp_taxon; comp_tax)
                     - calculates sequence composition per taxon
+                codon_dnds (alias: dnds; dn_ds; kaks)
+                    - estimate pairwise nonsynonymous and synonymous
+                      substitution rates from a codon alignment
                 create_concatenation_matrix (alias: create_concat; cc)
                     - create concatenation matrix from a set of alignments
                 evolutionary_rate_per_site (alias: evo_rate_per_site; erps)
@@ -1993,6 +1996,111 @@ class Phykit:
         add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, PairwiseIdentity)
+
+    @staticmethod
+    def codon_dnds(argv):
+        parser = _new_parser(
+            description=_dedent(
+                f"""\
+                {help_header}
+
+                Estimate pairwise nonsynonymous substitutions per
+                nonsynonymous site (dN), synonymous substitutions per
+                synonymous site (dS), and omega (dN/dS) from an
+                in-frame codon alignment.
+
+                Available estimators are Nei-Gojobori 1986 (NG86),
+                Li-Wu-Luo 1985 (LWL85), Yang-Nielsen 2000 (YN00),
+                and Goldman-Yang 1994 maximum likelihood (ML). NG86
+                is the default. ML can be substantially slower for
+                alignments containing many taxa.
+
+                Alignment length must be divisible by three. Gaps
+                must occupy complete codons (---). Codons containing
+                gaps or ambiguous bases are excluded independently
+                for each sequence pair. Terminal stop codons are
+                excluded. Internal stops fail by default.
+
+                Summary statistics are printed by default. Use
+                --verbose to print one TSV row per pair. Omega is a
+                descriptive pairwise estimate; this command does not
+                perform a branch- or site-selection significance test.
+
+                Aliases:
+                  codon_dnds, dnds, dn_ds, kaks
+                Command line interfaces:
+                  pk_codon_dnds, pk_dnds, pk_dn_ds, pk_kaks
+
+                Usage:
+                phykit codon_dnds <alignment>
+                  [--method NG86|LWL85|YN00|ML]
+                  [--genetic-code <int>] [--kappa <float>]
+                  [--codon-frequency F1x4|F3x4|F61]
+                  [--stop-policy error|skip] [--reference <taxon>]
+                  [-v/--verbose] [--json]
+
+                Options
+                =====================================================
+                <alignment>                 in-frame nucleotide
+                                            alignment
+
+                --method                    dN/dS estimator
+                                            (default: NG86)
+
+                --genetic-code              NCBI genetic-code ID
+                                            (default: 1)
+
+                --kappa                     transition/transversion
+                                            ratio used by NG86
+                                            (default: 1.0)
+
+                --codon-frequency           codon-frequency model used
+                                            by ML (default: F3x4)
+
+                --stop-policy               fail on internal stops or
+                                            exclude them pairwise
+                                            (default: error)
+
+                --reference                 estimate only pairs that
+                                            include this exact taxon ID
+
+                -v/--verbose                print pairwise TSV results
+
+                --json                      output structured JSON
+                """
+            ),
+        )
+        parser.add_argument("alignment", type=str, help=SUPPRESS)
+        parser.add_argument(
+            "--method",
+            type=str.upper,
+            choices=("NG86", "LWL85", "YN00", "ML"),
+            default="NG86",
+            help=SUPPRESS,
+        )
+        parser.add_argument(
+            "--genetic-code", type=int, default=1, help=SUPPRESS
+        )
+        parser.add_argument("--kappa", type=float, default=1.0, help=SUPPRESS)
+        parser.add_argument(
+            "--codon-frequency",
+            type=str.upper,
+            choices=("F1X4", "F3X4", "F61"),
+            default="F3X4",
+            help=SUPPRESS,
+        )
+        parser.add_argument(
+            "--stop-policy",
+            choices=("error", "skip"),
+            default="error",
+            help=SUPPRESS,
+        )
+        parser.add_argument("--reference", type=str, default=None, help=SUPPRESS)
+        parser.add_argument(
+            "-v", "--verbose", action="store_true", required=False, help=SUPPRESS
+        )
+        _add_json_argument(parser)
+        _run_service(parser, argv, CodonDnDs)
 
     @staticmethod
     def identity_matrix(argv):
@@ -10080,6 +10188,10 @@ def occupancy_per_taxon(argv=None):
 
 def pairwise_identity(argv=None):
     Phykit.pairwise_identity(sys.argv[1:])
+
+
+def codon_dnds(argv=None):
+    Phykit.codon_dnds(sys.argv[1:])
 
 
 def identity_matrix(argv=None):

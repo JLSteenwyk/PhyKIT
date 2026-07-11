@@ -14,6 +14,11 @@ class TestLazyExports:
         with pytest.raises(AttributeError):
             _ = alignment_services.NotARealAlignmentService
 
+    def test_codon_dnds_lazy_getattr_success(self):
+        cls = alignment_services.CodonDnDs
+        assert cls.__name__ == "CodonDnDs"
+        assert "CodonDnDs" in alignment_services.__all__
+
     def test_tree_lazy_getattr_success(self):
         cls = tree_services.DVMC
         assert cls.__name__ == "DVMC"
