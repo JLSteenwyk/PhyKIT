@@ -73,6 +73,7 @@ def test_spec_contains_complete_documentation_contract():
 
 
 def test_catalog_contains_runtime_argument_contracts():
+    checked_examples = 0
     for command in load_commands(CATALOG_PATH):
         assert "arguments" in command
         for argument in command["arguments"]:
@@ -88,6 +89,20 @@ def test_catalog_contains_runtime_argument_contracts():
                 "metavar",
                 "action",
             }
+        output = command["output_contract"]
+        assert set(output) == {"stdout", "stderr", "file_options", "json"}
+        json_contract = output["json"]
+        if json_contract["available"]:
+            assert json_contract["schema"]["type"] == ["object", "array"]
+            assert all(
+                isinstance(example, (dict, list))
+                for example in json_contract["examples"]
+            )
+            checked_examples += len(json_contract["examples"])
+        else:
+            assert json_contract["schema"] is None
+            assert json_contract["examples"] == []
+    assert checked_examples >= 1
 
 
 def test_generated_catalog_is_current():

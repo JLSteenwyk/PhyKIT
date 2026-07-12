@@ -24,7 +24,12 @@ def prepare_data(destination: Path) -> None:
             shutil.copy2(source, destination / source.name)
     for archive in destination.glob("*.tar.gz"):
         with tarfile.open(archive) as handle:
-            handle.extractall(destination, filter="data")
+            root = destination.resolve()
+            for member in handle.getmembers():
+                target = (destination / member.name).resolve()
+                if root not in (target, *target.parents):
+                    raise RuntimeError(f"archive path escapes destination: {member.name}")
+            handle.extractall(destination)
 
 
 def run_smoke(python: str) -> int:
@@ -72,6 +77,9 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--python", default=os.environ.get("PYTHON", "python"))
     args = parser.parse_args()
+    interpreter = Path(args.python)
+    if interpreter.exists():
+        args.python = str(interpreter.resolve())
     return run_smoke(args.python)
 
 

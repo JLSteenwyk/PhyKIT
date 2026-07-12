@@ -22,3 +22,15 @@ watch:
 
 clean:
 	rm -rf $(BUILDDIR)/*
+
+strict:
+	@sphinx-build -q -n -W --keep-going -b html . $(BUILDDIR)/html
+
+check-generated:
+	@cd .. && python scripts/build_docs_catalog.py --check
+
+benchmark:
+	@cd .. && python scripts/benchmark_docs_retrieval.py
+
+smoke:
+	@cd .. && python scripts/smoke_tutorials.py

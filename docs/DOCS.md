@@ -17,8 +17,24 @@ pipenv run serve
 ```
 
 #### Running Manually
-You can build the docs manually by running:
+Build with the warning and reference checks used in CI:
+
 ```shell
 cd docs
-pipenv run make html
+pipenv run make strict
+```
+
+Check generated command and LLM artifacts and run the retrieval benchmark:
+
+```shell
+cd docs
+pipenv run make check-generated
+pipenv run make benchmark
+```
+
+Run one isolated command from every tutorial:
+
+```shell
+cd docs
+pipenv run make smoke
 ```

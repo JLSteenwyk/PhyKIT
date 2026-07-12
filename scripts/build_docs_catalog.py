@@ -7,6 +7,7 @@ import argparse
 import contextlib
 import io
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -180,6 +181,83 @@ validation and scientific limitations are described in the guidance below.
 """
 
 
+def json_examples(page: Path) -> list[Any]:
+    examples = []
+    pattern = re.compile(
+        r"\.\. code-block:: json\s*\n\n((?:(?:   |\t).*\n?)+)", re.MULTILINE
+    )
+    for match in pattern.finditer(page.read_text()):
+        content = "\n".join(
+            line[3:] if line.startswith("   ") else line.lstrip("\t")
+            for line in match.group(1).splitlines()
+        ).strip()
+        try:
+            examples.append(json.loads(content))
+        except json.JSONDecodeError as error:
+            raise RuntimeError(f"invalid JSON example in {page}: {error}") from error
+    return examples
+
+
+def tutorial_json_examples() -> dict[str, list[Any]]:
+    public_to_canonical = {
+        name: identity.canonical
+        for identity in COMMAND_IDENTITIES
+        for name in (identity.canonical, *identity.aliases)
+    }
+    examples: dict[str, list[Any]] = {}
+    block_pattern = re.compile(
+        r"\.\. code-block:: (shell|json)\s*\n\n((?:(?:   |\t).*\n?)+)",
+        re.MULTILINE,
+    )
+    for page in sorted((DOCS / "tutorials" / "pages").glob("*.rst")):
+        current = None
+        for match in block_pattern.finditer(page.read_text()):
+            block_type, raw_content = match.groups()
+            content = "\n".join(
+                line[3:] if line.startswith("   ") else line.lstrip("\t")
+                for line in raw_content.splitlines()
+            ).strip()
+            if block_type == "shell":
+                commands = re.findall(r"\bphykit\s+([a-z][a-z0-9_]*)", content)
+                current = public_to_canonical.get(commands[-1]) if commands else None
+            elif current:
+                try:
+                    example = json.loads(content)
+                except json.JSONDecodeError as error:
+                    raise RuntimeError(f"invalid JSON example in {page}: {error}") from error
+                examples.setdefault(current, []).append(example)
+    return examples
+
+
+def output_contract(
+    arguments: list[dict[str, Any]], page: Path, tutorial_examples: list[Any]
+) -> dict[str, Any]:
+    available = any("--json" in argument["flags"] for argument in arguments)
+    files = sorted(
+        {
+            flag
+            for argument in arguments
+            for flag in argument["flags"]
+            if flag.startswith("--") and "output" in flag
+        }
+    )
+    return {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data."
+        if available else "Command-specific text or data; see the canonical page.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": files,
+        "json": {
+            "available": available,
+            "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": ["object", "array"],
+                "description": "Command-specific fields are documented on the canonical page and in checked examples.",
+            } if available else None,
+            "examples": (json_examples(page) + tutorial_examples) if available else [],
+        },
+    }
+
+
 def llms_index(commands: list[dict[str, Any]]) -> str:
     categories: dict[str, list[dict[str, Any]]] = {}
     for command in commands:
@@ -277,6 +355,7 @@ def build() -> tuple[dict[str, str], str, str, str]:
 
     includes = {}
     catalog_commands = []
+    examples_by_command = tutorial_json_examples()
     for canonical in sorted(records):
         identity = identities[canonical]
         parser = capture_parser(identity)
@@ -286,6 +365,11 @@ def build() -> tuple[dict[str, str], str, str, str]:
         command = dict(records[canonical])
         command["arguments"] = arguments
         command["documentation_url"] = f"reference/commands/{canonical}.html"
+        command["output_contract"] = output_contract(
+            arguments,
+            DOCS / command["page"],
+            examples_by_command.get(canonical, []),
+        )
         includes[canonical] = runtime_include(command)
         catalog_commands.append(command)
     catalog = {
