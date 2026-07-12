@@ -24,6 +24,7 @@ Guidance, interpretation, and examples
 --------------------------------------
 
 .. image:: /_static/docs_img/pairwise_identity.png 
+   :alt: PhyKIT pairwise identity figure
    :align: center
    :width: 75%
 

@@ -24,6 +24,7 @@ Guidance, interpretation, and examples
 --------------------------------------
 
 .. image:: /_static/docs_img/faidx.png 
+   :alt: PhyKIT faidx figure
    :align: center
    :width: 75%
 

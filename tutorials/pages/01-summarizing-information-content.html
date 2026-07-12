@@ -1,0 +1,421 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tutorial 1: Summarizing information content &mdash; phykit 2.3.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=ae8b8648" />
+
+  
+    <link rel="shortcut icon" href="../../_static/flavicon.png"/>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=c3c8ae58"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Tutorial 2: Evaluating gene-gene covariation" href="02-evaluating-gene-gene-covariation.html" />
+    <link rel="prev" title="Tutorials" href="../index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html">
+            
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../about/index.html">About</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/index.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">Command reference</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Tutorials</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#tutorial-index">Tutorial index</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Tutorial 1: Summarizing information content</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#objectives">Objectives</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#prerequisites-and-working-directory">Prerequisites and working directory</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#related-command-references">Related command references</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#workflow">Workflow</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#expected-artifacts">Expected artifacts</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#troubleshooting">Troubleshooting</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="02-evaluating-gene-gene-covariation.html">Tutorial 2: Evaluating gene-gene covariation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="03-identifying-signatures-of-rapid-radiations.html">Tutorial 3: Identifying signatures of rapid radiations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="04-evaluating-the-accuracy-of-a-multiple-sequence-alignment.html">Tutorial 4: Evaluating the accuracy of a multiple sequence alignment</a></li>
+<li class="toctree-l3"><a class="reference internal" href="05-mapping-the-evolutionary-history-of-discrete-traits.html">Tutorial 5: Mapping the evolutionary history of discrete traits</a></li>
+<li class="toctree-l3"><a class="reference internal" href="06-testing-for-phylogenetic-signal-in-continuous-traits.html">Tutorial 6: Testing for phylogenetic signal in continuous traits</a></li>
+<li class="toctree-l3"><a class="reference internal" href="07-phylogenetic-ordination-for-multivariate-trait-analysis.html">Tutorial 7: Phylogenetic ordination for multivariate trait analysis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="08-visualizing-trait-evolution-with-phylomorphospace.html">Tutorial 8: Visualizing trait evolution with phylomorphospace</a></li>
+<li class="toctree-l3"><a class="reference internal" href="09-phylogenetic-regression-pgls.html">Tutorial 9: Phylogenetic regression (PGLS)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="10-phylogenetic-glm-for-binary-and-count-data.html">Tutorial 10: Phylogenetic GLM for binary and count data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="11-reconstructing-ancestral-trait-values-and-mapping-them-onto-a-phylogeny.html">Tutorial 11: Reconstructing ancestral trait values and mapping them onto a phylogeny</a></li>
+<li class="toctree-l3"><a class="reference internal" href="12-spectral-discordance-decomposition.html">Tutorial 12: Spectral discordance decomposition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="13-testing-for-rate-heterogeneity-across-phylogenetic-regimes.html">Tutorial 13: Testing for rate heterogeneity across phylogenetic regimes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="14-visualization-commands.html">Tutorial 14: Visualization commands</a></li>
+<li class="toctree-l3"><a class="reference internal" href="15-comparing-continuous-trait-evolution-models.html">Tutorial 15: Comparing continuous trait evolution models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="16-multi-regime-ou-models-ouwie.html">Tutorial 16: Multi-regime OU models (OUwie)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="17-automatic-detection-of-adaptive-shifts-on-a-phylogeny.html">Tutorial 17: Automatic detection of adaptive shifts on a phylogeny</a></li>
+<li class="toctree-l3"><a class="reference internal" href="18-visualizing-conflicting-phylogenetic-signal-with-splits-networks.html">Tutorial 18: Visualizing conflicting phylogenetic signal with splits networks</a></li>
+<li class="toctree-l3"><a class="reference internal" href="19-end-to-end-comparative-methods-workflow.html">Tutorial 19: End-to-end comparative methods workflow</a></li>
+<li class="toctree-l3"><a class="reference internal" href="20-gene-tree-discordance-analysis-pipeline.html">Tutorial 20: Gene tree discordance analysis pipeline</a></li>
+<li class="toctree-l3"><a class="reference internal" href="21-customizing-phylogenetic-plots.html">Tutorial 21: Customizing phylogenetic plots</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#legacy-tutorial-anchors">Legacy tutorial anchors</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../troubleshooting/index.html">Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../change_log/index.html">Change log</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../other_software/index.html">Other software</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../frequently_asked_questions/index.html">FAQ</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">phykit</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Tutorials</a></li>
+      <li class="breadcrumb-item active">Tutorial 1: Summarizing information content</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="tutorial-1-summarizing-information-content">
+<span id="tutorial-summarizing-information-content"></span><span id="tutorial-01"></span><h1>Tutorial 1: Summarizing information content<a class="headerlink" href="#tutorial-1-summarizing-information-content" title="Link to this heading"></a></h1>
+<section id="objectives">
+<h2>Objectives<a class="headerlink" href="#objectives" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Complete the summarizing information content workflow.</p></li>
+<li><p>Interpret the reported values and generated artifacts in their scientific context.</p></li>
+<li><p>Identify the canonical command references for each analysis step.</p></li>
+</ul>
+</section>
+<section id="prerequisites-and-working-directory">
+<h2>Prerequisites and working directory<a class="headerlink" href="#prerequisites-and-working-directory" title="Link to this heading"></a></h2>
+<p>Install the current PhyKIT release and create a dedicated working directory.
+Download the data linked in this tutorial into that directory before running
+the commands. All paths below are relative to this directory.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>mkdir<span class="w"> </span>phykit-tutorial-01
+<span class="nb">cd</span><span class="w"> </span>phykit-tutorial-01
+</pre></div>
+</div>
+</section>
+<section id="related-command-references">
+<h2>Related command references<a class="headerlink" href="#related-command-references" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="../../reference/commands/alignment_length.html"><span class="doc">Alignment Length</span></a></p></li>
+<li><p><a class="reference internal" href="../../reference/commands/alignment_length_no_gaps.html"><span class="doc">Alignment Length No Gaps</span></a></p></li>
+<li><p><a class="reference internal" href="../../reference/commands/bipartition_support_stats.html"><span class="doc">Bipartition Support Stats</span></a></p></li>
+<li><p><a class="reference internal" href="../../reference/commands/long_branch_score.html"><span class="doc">Long Branch Score</span></a></p></li>
+<li><p><a class="reference internal" href="../../reference/commands/parsimony_informative_sites.html"><span class="doc">Parsimony Informative Sites</span></a></p></li>
+<li><p><a class="reference internal" href="../../reference/commands/saturation.html"><span class="doc">Saturation</span></a></p></li>
+<li><p><a class="reference internal" href="../../reference/commands/treeness_over_rcv.html"><span class="doc">Treeness Over Rcv</span></a></p></li>
+<li><p><a class="reference internal" href="../../reference/commands/treeness.html"><span class="doc">Treeness</span></a></p></li>
+<li><p><a class="reference internal" href="../../reference/commands/relative_composition_variability.html"><span class="doc">Relative Composition Variability</span></a></p></li>
+<li><p><a class="reference internal" href="../../reference/commands/variable_sites.html"><span class="doc">Variable Sites</span></a></p></li>
+</ul>
+</section>
+<section id="workflow">
+<h2>Workflow<a class="headerlink" href="#workflow" title="Link to this heading"></a></h2>
+<p>PhyKIT implements numerous functions that can be used to examine the information content and help researchers
+summarize information content and identify potential biases in multiple sequence alignments and phylogenies.</p>
+<p>Among other uses, one use of summarizing information content is to facilitate subsampling larger phylogenomic
+data matrices to further explore tree space during species-level tree inference or for divergence time estimation.
+(<a class="reference external" href="https://www.nature.com/articles/nature12130">Salichos and Rokas 2013</a>;
+<a class="reference external" href="https://www.pnas.org/content/114/35/E7282">Liu et al. 2017</a>;
+<a class="reference external" href="https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0197433">Smith et al. 2018</a>;
+<a class="reference external" href="https://www.cell.com/cell/fulltext/S0092-8674(18)31332-1?_returnURL=https%3A%2F%2Flinkinghub.elsevier.com%2Fretrieve%2Fpii%2FS0092867418313321%3Fshowall%3Dtrue">Shen et al. 2018</a>
+&amp; <a class="reference external" href="https://www.biorxiv.org/content/10.1101/2020.05.11.088658v1">2020</a>;
+<a class="reference external" href="https://mbio.asm.org/content/10/4/e00925-19">Steenwyk et al. 2019</a>;
+<a class="reference external" href="https://peerj.com/articles/7747/">Walker et al. 2019</a>;
+<a class="reference external" href="https://www.biorxiv.org/content/10.1101/2020.08.23.262857v1">Li et al. 2020</a>)</p>
+<p>The information content summarized in the remainder of this section is associated with strong phylogenetic signal
+(or robust and accurate tree inference). When subsampling genes, a researcher could take a fraction of the best
+scoring phylogenies to reinfer species-level relationships or divergence times (e.g., robustly supported phylogenies
+and genes that do not violate clock-like patterns of evolution).</p>
+<p>For example, in <a class="reference external" href="https://mbio.asm.org/content/10/4/e00925-19">Steenwyk et al. 2019</a>, we subsampled the complete
+phylogenomic data matrix for 50% of genes that had the best score for various matrices. Using the subsampled matrices,
+we reinferred species trees and compared the topologies across all species-level phylogenies. Bipartitions that were
+not recovered in all analyses were considered unstable. The following figure depicts the general pipeline we used (note,
+some of the metrics have been modified following newer insights).</p>
+<a class="reference internal image-reference" href="../../_images/subsampling_pipeline.png"><img alt="PhyKIT subsampling pipeline figure" class="align-center" src="../../_images/subsampling_pipeline.png" style="width: 80%;" />
+</a>
+<p>In this tutorial, we will use the following test multiple sequence alignment and phylogenetic tree, which came
+from <a class="reference external" href="https://mbio.asm.org/content/10/4/e00925-19">Steenwyk et al. 2019</a>. <br /></p>
+<p class="centered">
+<strong>Download test data:
+<a class="reference download internal" download="" href="../../_downloads/b3b8b32d2254e806d4a91204bf0614ce/Steenwyk_etal_mBio_2019_EOG091N44MS.aln.fa"><code class="xref download docutils literal notranslate"><span class="pre">Multiple</span> <span class="pre">sequence</span> <span class="pre">alignment</span></code></a>;
+<a class="reference download internal" download="" href="../../_downloads/610bbf71e4c2f0ed3ef43e0e2bbe1905/Steenwyk_etal_mBio_2019_EOG091N44MS.tre"><code class="xref download docutils literal notranslate"><span class="pre">Single-gene</span> <span class="pre">phylogeny</span></code></a></strong></p><div class="line-block">
+<div class="line"><br /></div>
+</div>
+<section id="alignment-length">
+<h3>Alignment length<a class="headerlink" href="#alignment-length" title="Link to this heading"></a></h3>
+<p>Alignment length and the length of an alignment excluding sites with gaps are associated with
+robust and accurate tree inferences
+(<a class="reference external" href="https://academic.oup.com/gbe/article/8/8/2565/2198327">Shen et al. 2016</a>).
+Calculate alignment length with the following command:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>aln_len<span class="w"> </span>Steenwyk_etal_mBio_2019_EOG091N44MS.aln.fa
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>624
+</pre></div>
+</div>
+<p>To exclude alignment gaps, use the following option:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>aln_len_no_gaps<span class="w"> </span>Steenwyk_etal_mBio_2019_EOG091N44MS.aln.fa
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>321     624     51.4423
+</pre></div>
+</div>
+<p>col1: number of sites without gaps <br />
+col2: total number of sites <br />
+col3: percentage of sites without gaps</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="bipartition-support-statistics">
+<h3>Bipartition support statistics<a class="headerlink" href="#bipartition-support-statistics" title="Link to this heading"></a></h3>
+<p>High average bipartition support in a phylogeny is associated with robust phylogenetic inference
+(<a class="reference external" href="https://www.nature.com/articles/nature12130">Salichos and Rokas 2013</a>;
+<a class="reference external" href="https://academic.oup.com/gbe/article/8/8/2565/2198327">Shen et al. 2016</a>). Thus,
+genes with high bipartition support values have greater certainty among bipartitions.
+Calculate bipartition support summary statistics with the following command:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>bss<span class="w"> </span>Steenwyk_etal_mBio_2019_EOG091N44MS.tre
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>mean: 88.6437
+median: 99
+25th percentile: 83.0
+75th percentile: 100.0
+minimum: 28
+maximum: 100
+standard deviation: 18.5504
+variance: 344.1157
+</pre></div>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="long-branch-score">
+<h3>Long branch score<a class="headerlink" href="#long-branch-score" title="Link to this heading"></a></h3>
+<p>Long branch scores (or LB scores) help determine taxa that may be contributing to long-branch
+problems
+(<a class="reference external" href="https://journals.sagepub.com/doi/10.4137/EBO.S14239">Struck 2014</a>).
+Similarly, the standard deviation of LB scores among taxa can be used as a measure of heterogeneity.
+To calculate summary statistics of LB scores for all taxa in a given phylogeny, use the following command:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>lb_score<span class="w"> </span>Steenwyk_etal_mBio_2019_EOG091N44MS.tre
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>mean: -1.1111
+median: -14.4566
+25th percentile: -17.8686
+75th percentile: -3.4048
+minimum: -23.7982
+maximum: 211.1845
+standard deviation: 39.1931
+variance: 1536.0987
+</pre></div>
+</div>
+<p>LB scores of individual taxa are also informative for diagnosing taxa driving long-branch problems.
+The lower the values, the less susceptible the taxon is to long-branch problems. To get
+the LB score of each taxon, use the verbose option:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>lb_score<span class="w"> </span>Steenwyk_etal_mBio_2019_EOG091N44MS.tre<span class="w"> </span>--verbose
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Aspergillus_aculeatus   -13.7403
+Aspergillus_arachidicola        -15.382
+Aspergillus_parasiticus -15.2214
+Aspergillus_sojae       -15.2627
+Aspergillus_flavus      -14.7755
+Aspergillus_oryzae      -14.7755
+Aspergillus_bombycis    -11.1987
+...                     ...
+</pre></div>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="parsimony-informative-sites">
+<h3>Parsimony informative sites<a class="headerlink" href="#parsimony-informative-sites" title="Link to this heading"></a></h3>
+<p>The number of parsimony informative sites in an alignment is associated with strong phylogenetic signal.
+(<a class="reference external" href="https://academic.oup.com/gbe/article/8/8/2565/2198327">Shen et al. 2016</a>;
+<a class="reference external" href="https://www.biorxiv.org/content/10.1101/2020.06.08.140384v1">Steenwyk et al. 2020</a>).
+Calculate the number of parsimony informative sites in an alignment with the following command:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>pis<span class="w"> </span>Steenwyk_etal_mBio_2019_EOG091N44MS.aln.fa
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>517     624     82.8526
+</pre></div>
+</div>
+<p>col1: number of parsimony informative sites <br />
+col2: total number of sites <br />
+col3: percentage of parsimony informative sites</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="saturation">
+<h3>Saturation<a class="headerlink" href="#saturation" title="Link to this heading"></a></h3>
+<p>Saturation in a multiple sequence alignment is driven by sites with multiple substitutions and results in
+the alignment underestimating real genetic distances among taxa. Values of 1 have no saturation and values
+of 0 are completely saturated by multiple substitutions
+(<a class="reference external" href="https://journals.plos.org/plosbiology/article?id=10.1371/journal.pbio.1000602">Philippe et al. 2011</a>).
+Estimate saturation with the following command:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>sat<span class="w"> </span>-a<span class="w"> </span>Steenwyk_etal_mBio_2019_EOG091N44MS.aln.fa<span class="w"> </span>-t<span class="w"> </span>Steenwyk_etal_mBio_2019_EOG091N44MS.tre
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>0.3017  0.6983
+</pre></div>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="treeness-divided-by-relative-composition-variability">
+<h3>Treeness divided by relative composition variability<a class="headerlink" href="#treeness-divided-by-relative-composition-variability" title="Link to this heading"></a></h3>
+<p>Treeness divided by relative composition variability (treeness/RCV) is associated with strong
+phylogenetic signal. Higher treeness and lower RCV values are indicative of a lower potential for
+bias (composition-based or otherwise) and a lower degree of composition bias. Thus, higher treeness/RCV
+values are indicative of genes less susceptible to composition and other biases.
+(<a class="reference external" href="https://academic.oup.com/auk/article-abstract/105/3/565/5193152?redirectedFrom=fulltext">Lanyon 1988</a>;
+<a class="reference external" href="http://people.bu.edu/msoren/Phillips.pdf">Phillips and Penny 2003</a>;
+<a class="reference external" href="https://academic.oup.com/gbe/article/8/8/2565/2198327">Shen et al. 2016</a>).
+Calculate treeness/RCV using the following command:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>toverr<span class="w"> </span>-a<span class="w"> </span>Steenwyk_etal_mBio_2019_EOG091N44MS.aln.fa<span class="w"> </span>-t<span class="w"> </span>Steenwyk_etal_mBio_2019_EOG091N44MS.tre
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>5.0727  0.5136  0.1013
+</pre></div>
+</div>
+<p>col1: treeness/RCV <br />
+col2: treeness <br />
+col3: RCV</p>
+<p>To individually calculate treeness, a measure of signal-to-noise among branch lengths
+(<a class="reference external" href="https://academic.oup.com/auk/article-abstract/105/3/565/5193152?redirectedFrom=fulltext">Lanyon 1988</a>;
+<a class="reference external" href="http://people.bu.edu/msoren/Phillips.pdf">Phillips and Penny 2003</a>),
+and RCV, a measure of composition bias (<a class="reference external" href="http://people.bu.edu/msoren/Phillips.pdf">Phillips and Penny 2003</a>),
+use the following commands:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># calculate treeness</span>
+phykit<span class="w"> </span>tness<span class="w"> </span>Steenwyk_etal_mBio_2019_EOG091N44MS.tre
+
+<span class="c1"># calculate RCV</span>
+phykit<span class="w"> </span>rcv<span class="w"> </span>Steenwyk_etal_mBio_2019_EOG091N44MS.aln.fa
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>0.5136
+0.1013
+</pre></div>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="variable-sites">
+<h3>Variable sites<a class="headerlink" href="#variable-sites" title="Link to this heading"></a></h3>
+<p>The number of variable sites in an alignment is associated with strong phylogenetic signal.
+(<a class="reference external" href="https://academic.oup.com/gbe/article/8/8/2565/2198327">Shen et al. 2016</a>).
+Calculate the number of variable sites with the following command:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>vs<span class="w"> </span>Steenwyk_etal_mBio_2019_EOG091N44MS.aln.fa
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>555     624     88.9423
+</pre></div>
+</div>
+<p>col1: number of variable sites <br />
+col2: total number of sites <br />
+col3: percentage of variable sites</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+</section>
+<section id="expected-artifacts">
+<h2>Expected artifacts<a class="headerlink" href="#expected-artifacts" title="Link to this heading"></a></h2>
+<p>Each step identifies its expected terminal output or generated files. Confirm
+that those artifacts exist before continuing to the next step; filenames are
+relative to the tutorial working directory unless an absolute path is shown.</p>
+</section>
+<section id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Run <code class="docutils literal notranslate"><span class="pre">phykit</span> <span class="pre">&lt;command&gt;</span> <span class="pre">--help</span></code> to compare an invocation with the live interface.</p></li>
+<li><p>Confirm that downloaded files are in the current working directory and retain
+the filenames shown in the tutorial.</p></li>
+<li><p>For parsing errors, compare taxon names exactly across alignments, trees, and
+trait tables, including capitalization and underscores.</p></li>
+<li><p>See <a class="reference internal" href="../../troubleshooting/index.html"><span class="doc">Troubleshooting</span></a> for installation, format,
+and error-reporting guidance.</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../index.html" class="btn btn-neutral float-left" title="Tutorials" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="02-evaluating-gene-gene-covariation.html" class="btn btn-neutral float-right" title="Tutorial 2: Evaluating gene-gene covariation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020-2026 Jacob L. Steenwyk.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

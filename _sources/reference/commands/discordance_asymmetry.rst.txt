@@ -117,6 +117,7 @@ To generate a visualization:
    phykit discordance_asymmetry -t <species_tree> -g <gene_trees> --plot asymmetry.png
 
 .. image:: /_static/img/discordance_asymmetry_plot.png
+   :alt: PhyKIT discordance asymmetry plot figure
    :align: center
    :width: 80%
 

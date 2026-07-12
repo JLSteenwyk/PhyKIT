@@ -1,0 +1,462 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tutorial 19: End-to-end comparative methods workflow &mdash; phykit 2.3.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=ae8b8648" />
+
+  
+    <link rel="shortcut icon" href="../../_static/flavicon.png"/>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=c3c8ae58"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Tutorial 20: Gene tree discordance analysis pipeline" href="20-gene-tree-discordance-analysis-pipeline.html" />
+    <link rel="prev" title="Tutorial 18: Visualizing conflicting phylogenetic signal with splits networks" href="18-visualizing-conflicting-phylogenetic-signal-with-splits-networks.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html">
+            
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../about/index.html">About</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/index.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">Command reference</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Tutorials</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#tutorial-index">Tutorial index</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="01-summarizing-information-content.html">Tutorial 1: Summarizing information content</a></li>
+<li class="toctree-l3"><a class="reference internal" href="02-evaluating-gene-gene-covariation.html">Tutorial 2: Evaluating gene-gene covariation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="03-identifying-signatures-of-rapid-radiations.html">Tutorial 3: Identifying signatures of rapid radiations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="04-evaluating-the-accuracy-of-a-multiple-sequence-alignment.html">Tutorial 4: Evaluating the accuracy of a multiple sequence alignment</a></li>
+<li class="toctree-l3"><a class="reference internal" href="05-mapping-the-evolutionary-history-of-discrete-traits.html">Tutorial 5: Mapping the evolutionary history of discrete traits</a></li>
+<li class="toctree-l3"><a class="reference internal" href="06-testing-for-phylogenetic-signal-in-continuous-traits.html">Tutorial 6: Testing for phylogenetic signal in continuous traits</a></li>
+<li class="toctree-l3"><a class="reference internal" href="07-phylogenetic-ordination-for-multivariate-trait-analysis.html">Tutorial 7: Phylogenetic ordination for multivariate trait analysis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="08-visualizing-trait-evolution-with-phylomorphospace.html">Tutorial 8: Visualizing trait evolution with phylomorphospace</a></li>
+<li class="toctree-l3"><a class="reference internal" href="09-phylogenetic-regression-pgls.html">Tutorial 9: Phylogenetic regression (PGLS)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="10-phylogenetic-glm-for-binary-and-count-data.html">Tutorial 10: Phylogenetic GLM for binary and count data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="11-reconstructing-ancestral-trait-values-and-mapping-them-onto-a-phylogeny.html">Tutorial 11: Reconstructing ancestral trait values and mapping them onto a phylogeny</a></li>
+<li class="toctree-l3"><a class="reference internal" href="12-spectral-discordance-decomposition.html">Tutorial 12: Spectral discordance decomposition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="13-testing-for-rate-heterogeneity-across-phylogenetic-regimes.html">Tutorial 13: Testing for rate heterogeneity across phylogenetic regimes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="14-visualization-commands.html">Tutorial 14: Visualization commands</a></li>
+<li class="toctree-l3"><a class="reference internal" href="15-comparing-continuous-trait-evolution-models.html">Tutorial 15: Comparing continuous trait evolution models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="16-multi-regime-ou-models-ouwie.html">Tutorial 16: Multi-regime OU models (OUwie)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="17-automatic-detection-of-adaptive-shifts-on-a-phylogeny.html">Tutorial 17: Automatic detection of adaptive shifts on a phylogeny</a></li>
+<li class="toctree-l3"><a class="reference internal" href="18-visualizing-conflicting-phylogenetic-signal-with-splits-networks.html">Tutorial 18: Visualizing conflicting phylogenetic signal with splits networks</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Tutorial 19: End-to-end comparative methods workflow</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#objectives">Objectives</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#prerequisites-and-working-directory">Prerequisites and working directory</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#related-command-references">Related command references</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#workflow">Workflow</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#expected-artifacts">Expected artifacts</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#troubleshooting">Troubleshooting</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="20-gene-tree-discordance-analysis-pipeline.html">Tutorial 20: Gene tree discordance analysis pipeline</a></li>
+<li class="toctree-l3"><a class="reference internal" href="21-customizing-phylogenetic-plots.html">Tutorial 21: Customizing phylogenetic plots</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#legacy-tutorial-anchors">Legacy tutorial anchors</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../troubleshooting/index.html">Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../change_log/index.html">Change log</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../other_software/index.html">Other software</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../frequently_asked_questions/index.html">FAQ</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">phykit</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Tutorials</a></li>
+      <li class="breadcrumb-item active">Tutorial 19: End-to-end comparative methods workflow</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="tutorial-19-end-to-end-comparative-methods-workflow">
+<span id="tutorial-end-to-end-comparative-methods-workflow"></span><span id="tutorial-19"></span><h1>Tutorial 19: End-to-end comparative methods workflow<a class="headerlink" href="#tutorial-19-end-to-end-comparative-methods-workflow" title="Link to this heading"></a></h1>
+<section id="objectives">
+<h2>Objectives<a class="headerlink" href="#objectives" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Complete the end-to-end comparative methods workflow workflow.</p></li>
+<li><p>Interpret the reported values and generated artifacts in their scientific context.</p></li>
+<li><p>Identify the canonical command references for each analysis step.</p></li>
+</ul>
+</section>
+<section id="prerequisites-and-working-directory">
+<h2>Prerequisites and working directory<a class="headerlink" href="#prerequisites-and-working-directory" title="Link to this heading"></a></h2>
+<p>Install the current PhyKIT release and create a dedicated working directory.
+Download the data linked in this tutorial into that directory before running
+the commands. All paths below are relative to this directory.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>mkdir<span class="w"> </span>phykit-tutorial-19
+<span class="nb">cd</span><span class="w"> </span>phykit-tutorial-19
+</pre></div>
+</div>
+</section>
+<section id="related-command-references">
+<h2>Related command references<a class="headerlink" href="#related-command-references" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="../../reference/commands/phylogenetic_signal.html"><span class="doc">Phylogenetic Signal</span></a></p></li>
+<li><p><a class="reference internal" href="../../reference/commands/fit_continuous.html"><span class="doc">Fit Continuous</span></a></p></li>
+<li><p><a class="reference internal" href="../../reference/commands/phylogenetic_regression.html"><span class="doc">Phylogenetic Regression</span></a></p></li>
+<li><p><a class="reference internal" href="../../reference/commands/cont_map.html"><span class="doc">Cont Map</span></a></p></li>
+<li><p><a class="reference internal" href="../../reference/commands/phenogram.html"><span class="doc">Phenogram</span></a></p></li>
+<li><p><a class="reference internal" href="../../reference/commands/phylomorphospace.html"><span class="doc">Phylomorphospace</span></a></p></li>
+</ul>
+</section>
+<section id="workflow">
+<h2>Workflow<a class="headerlink" href="#workflow" title="Link to this heading"></a></h2>
+<p>Phylogenetic comparative methods are most powerful when used together.
+This tutorial demonstrates a complete workflow: testing for phylogenetic
+signal, comparing evolutionary models, fitting a regression, and
+visualizing results — all using PhyKIT.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<section id="scenario">
+<h3>Scenario<a class="headerlink" href="#scenario" title="Link to this heading"></a></h3>
+<p>Imagine you have assembled a phylogeny of eight mammal species and measured
+their body mass and brain size. You want to answer a classic question in
+comparative biology: <em>does body mass predict brain size after controlling
+for shared evolutionary history?</em> Before testing this relationship, you
+need to verify that your traits have phylogenetic signal (justifying the
+use of phylogenetic methods) and determine which evolutionary model best
+describes how body mass has evolved. Finally, you want publication-ready
+figures that show trait evolution on the phylogeny and visualize the
+brain-body relationship in phylogenetic morphospace.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="overview">
+<h3>Overview<a class="headerlink" href="#overview" title="Link to this heading"></a></h3>
+<p>We will use an eight-taxon mammal tree and body-mass trait data to:</p>
+<ol class="arabic simple">
+<li><p>Test whether body mass has phylogenetic signal (<code class="docutils literal notranslate"><span class="pre">phylogenetic_signal</span></code>)</p></li>
+<li><p>Compare models of trait evolution (<code class="docutils literal notranslate"><span class="pre">fit_continuous</span></code>)</p></li>
+<li><p>Ask whether body mass predicts brain size (<code class="docutils literal notranslate"><span class="pre">pgls</span></code>)</p></li>
+<li><p>Visualize results (<code class="docutils literal notranslate"><span class="pre">cont_map</span></code>, <code class="docutils literal notranslate"><span class="pre">phenogram</span></code>, <code class="docutils literal notranslate"><span class="pre">phylomorphospace</span></code>)</p></li>
+</ol>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="data-files-used-in-this-tutorial">
+<h3>Data files used in this tutorial:<a class="headerlink" href="#data-files-used-in-this-tutorial" title="Link to this heading"></a></h3>
+<p class="centered">
+<strong>Download test data:
+<a class="reference download internal" download="" href="../../_downloads/97c38abccff78ac60aee3f25ca0b02f5/tree_simple.tre"><code class="xref download docutils literal notranslate"><span class="pre">Mammal</span> <span class="pre">phylogeny</span></code></a>;
+<a class="reference download internal" download="" href="../../_downloads/b9b38de12b46a5f753d0fc77e586cea3/tree_simple_traits.tsv"><code class="xref download docutils literal notranslate"><span class="pre">Continuous</span> <span class="pre">trait</span> <span class="pre">data</span> <span class="pre">(body</span> <span class="pre">mass)</span></code></a>;
+<a class="reference download internal" download="" href="../../_downloads/7d32036238e91ae254c5ef40edf727db/tree_simple_multi_traits.tsv"><code class="xref download docutils literal notranslate"><span class="pre">Multi-trait</span> <span class="pre">data</span> <span class="pre">(body</span> <span class="pre">mass,</span> <span class="pre">brain</span> <span class="pre">size,</span> <span class="pre">longevity)</span></code></a></strong></p><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">tree_simple.tre</span></code> — an eight-taxon mammal phylogeny in Newick format</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">tree_simple_traits.tsv</span></code> — body mass (log-transformed kg), tab-delimited
+with taxon and value columns (no header, lines starting with <code class="docutils literal notranslate"><span class="pre">#</span></code> are comments)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">tree_simple_multi_traits.tsv</span></code> — body mass, brain size, and longevity,
+tab-delimited with a header row</p></li>
+</ul>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="step-1-test-for-phylogenetic-signal">
+<h3>Step 1: Test for phylogenetic signal<a class="headerlink" href="#step-1-test-for-phylogenetic-signal" title="Link to this heading"></a></h3>
+<p>Before running any comparative analysis, check whether the trait shows
+phylogenetic signal — i.e., whether closely related species have more
+similar trait values than expected by chance. For our mammal dataset, we
+expect body mass to show strong phylogenetic signal because closely
+related mammals tend to have similar body sizes.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>phylogenetic_signal<span class="w"> </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span>-d<span class="w"> </span>tree_simple_traits.tsv
+</pre></div>
+</div>
+<p>Expected output:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>0.5842       0.474   0.9499
+</pre></div>
+</div>
+<p>col1: Blomberg's K <br />
+col2: p-value (from permutation test) <br />
+col3: R²_phylo, the relative reduction in fitted variance under Brownian
+motion compared with a white-noise model</p>
+<p>Here, K = 0.58 and the permutation p-value of 0.474 is non-significant
+with these 8 taxa. R²_phylo = 0.95 indicates that the Brownian-motion
+model has substantially lower fitted variance than the white-noise model.
+It is not an estimate of Pagel's lambda; calculate lambda explicitly with
+<code class="docutils literal notranslate"><span class="pre">-m</span> <span class="pre">lambda</span></code> as shown in Tutorial 6.</p>
+<p><em>What if signal is weak?</em> A K near 0 with a non-significant permutation
+test provides little evidence for phylogenetic signal in this analysis.
+Model choice should consider the signal estimate, uncertainty, sample size,
+and assumptions of the downstream analysis.</p>
+<p>For JSON output including the effect size (R² phylo):</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>phylogenetic_signal<span class="w"> </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span>-d<span class="w"> </span>tree_simple_traits.tsv<span class="w"> </span>--json
+</pre></div>
+</div>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="nt">&quot;K&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.5842</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;p_value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.474</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;permutations&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1000</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;r_squared_phylo&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.9499</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">r_squared_phylo</span></code> value compares the fitted Brownian-motion variance
+with the white-noise variance. It should not be interpreted as the literal
+percentage of trait variance caused by phylogenetic relatedness.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="step-2-compare-evolutionary-models">
+<h3>Step 2: Compare evolutionary models<a class="headerlink" href="#step-2-compare-evolutionary-models" title="Link to this heading"></a></h3>
+<p>Next, determine which model of continuous trait evolution best explains
+the observed body-mass data. This helps interpret <em>how</em> body mass has
+evolved across these mammals — did it drift randomly (Brownian motion),
+was it pulled toward an optimal size (OU), or did most change happen
+early in the clade's history (Early Burst)?</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>fit_continuous<span class="w"> </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span>-d<span class="w"> </span>tree_simple_traits.tsv
+</pre></div>
+</div>
+<p>Expected output:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Model Comparison (fitContinuous)
+
+Number of tips: 8
+
+Model       Param     Value      Sigma2    z0        LL         AIC      dAIC     AICw     BIC      dBIC     R2
+White       -         -          0.7667    1.2062    -10.289    24.58    0.00     0.304    24.74    0.00     0.000
+EB          a         -0.0785    0.0854    1.4827    -9.595     25.19    0.61     0.224    25.43    0.69     0.889
+Kappa       kappa     0.0100     0.3428    1.3230    -9.722     25.44    0.87     0.197    25.68    0.94     0.553
+OU          alpha     0.7848     1.2035    1.2063    -10.289    26.58    2.00     0.112    26.82    2.08     -0.570
+BM          -         -          0.0384    1.6447    -11.570    27.14    2.56     0.084    27.30    2.56     0.950
+Delta       delta     0.5188     0.1968    1.4939    -11.128    28.26    3.68     0.048    28.49    3.76     0.743
+Lambda      lambda    1.0000     0.0384    1.6447    -11.570    29.14    4.56     0.031    29.38    4.64     0.950
+
+Best model (AIC): White
+Best model (BIC): White
+</pre></div>
+</div>
+<p>Models are ranked by AIC (lower is better). The <code class="docutils literal notranslate"><span class="pre">dAIC</span></code> column shows the
+difference from the best model, and <code class="docutils literal notranslate"><span class="pre">AICw</span></code> gives the Akaike weight
+(probability of being the best model). The <code class="docutils literal notranslate"><span class="pre">R2</span></code> column shows each model's
+effect size relative to the White (no phylogenetic structure) model. In
+this small dataset, the White model wins by AIC, but BM has R² = 0.95,
+indicating that BM explains most trait variance — with more taxa, BM
+would likely be preferred.</p>
+<p>To compare only a subset of models:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span><span class="nb">fc</span><span class="w"> </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span>-d<span class="w"> </span>tree_simple_traits.tsv<span class="w"> </span>--models<span class="w"> </span>BM,OU,Lambda
+</pre></div>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="step-3-test-a-trait-trait-relationship-with-pgls">
+<h3>Step 3: Test a trait-trait relationship with PGLS<a class="headerlink" href="#step-3-test-a-trait-trait-relationship-with-pgls" title="Link to this heading"></a></h3>
+<p>Now we arrive at the central question: <em>does body mass predict brain
+size?</em> A naive correlation would be misleading because closely related
+species share both large bodies and large brains simply due to common
+descent. PGLS (phylogenetic generalized least squares) controls for this
+non-independence.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>pgls<span class="w"> </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span>-d<span class="w"> </span>tree_simple_multi_traits.tsv<span class="w"> </span>-y<span class="w"> </span>brain_size<span class="w"> </span>-x<span class="w"> </span>body_mass
+</pre></div>
+</div>
+<p>Expected output:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Phylogenetic Generalized Least Squares (PGLS)
+
+Formula: brain_size ~ body_mass
+
+Coefficients:
+                        Estimate   Std.Error     t-value     p-value
+(Intercept)               0.9972      0.0871     11.4467    0.000027    ***
+body_mass                 0.7086      0.0451     15.7140    0.000004    ***
+---
+Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1
+
+Residual standard error: 0.0250 on 6 degrees of freedom
+Multiple R-squared: 0.9763    Adjusted R-squared: 0.9723
+R-squared (total):   0.9988   (phylo + predictor)
+R-squared (phylo):   0.0225   (phylogeny contribution)
+F-statistic: 246.93 on 1 and 6 DF    p-value: 0.000004
+Log-likelihood: 6.0558    AIC: -6.1117
+</pre></div>
+</div>
+<p>The slope of 0.71 means that for every 1-unit increase in log body mass,
+log brain size increases by 0.71 — consistent with allometric scaling.
+The p-value (0.000004) is highly significant. The R² decomposition reveals
+that body mass explains 97.6% of brain-size variance (<code class="docutils literal notranslate"><span class="pre">r_squared</span></code>),
+while phylogenetic relatedness alone explains only 2.3%
+(<code class="docutils literal notranslate"><span class="pre">r_squared_phylo</span></code>). The total R² of 99.9% (<code class="docutils literal notranslate"><span class="pre">r_squared_total</span></code>)
+captures both sources combined.</p>
+<p>For JSON output:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>pgls<span class="w"> </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span>-d<span class="w"> </span>tree_simple_multi_traits.tsv<span class="w"> </span>-y<span class="w"> </span>brain_size<span class="w"> </span>-x<span class="w"> </span>body_mass<span class="w"> </span>--json
+</pre></div>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="step-4-visualize-trait-evolution">
+<h3>Step 4: Visualize trait evolution<a class="headerlink" href="#step-4-visualize-trait-evolution" title="Link to this heading"></a></h3>
+<p>Finally, generate publication-ready figures. Visualization often reveals
+patterns that summary statistics miss — for example, a contMap might
+show that large body mass evolved independently in two distant clades,
+or a phylomorphospace might reveal an outlier species that departs from
+the brain-body allometry.</p>
+<p><strong>contMap</strong> — paint continuous body-mass values onto the phylogeny, showing
+where evolutionary increases and decreases occurred:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>cont_map<span class="w"> </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span>-d<span class="w"> </span>tree_simple_traits.tsv<span class="w"> </span>-o<span class="w"> </span>body_mass_contmap.png
+</pre></div>
+</div>
+<a class="reference internal image-reference" href="../../_images/tutorial18_contmap.png"><img alt="PhyKIT tutorial18 contmap figure" class="align-center" src="../../_images/tutorial18_contmap.png" style="width: 80%;" />
+</a>
+<p>The contMap shows body mass reconstructed along each branch using
+Brownian motion. Warm colors indicate high body mass (bear, sea lion)
+while cool colors indicate low body mass (weasel). The color gradient
+along branches shows where evolutionary changes occurred.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>phenogram</strong> — plot body-mass values against distance from the root,
+revealing whether trait change was gradual or punctuated:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>phenogram<span class="w"> </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span>-d<span class="w"> </span>tree_simple_traits.tsv<span class="w"> </span>-o<span class="w"> </span>body_mass_phenogram.png
+</pre></div>
+</div>
+<a class="reference internal image-reference" href="../../_images/tutorial18_phenogram.png"><img alt="PhyKIT tutorial18 phenogram figure" class="align-center" src="../../_images/tutorial18_phenogram.png" style="width: 80%;" />
+</a>
+<p>The phenogram (traitgram) plots trait values on the y-axis against
+evolutionary time on the x-axis. Lineages trace from their common
+ancestor to tips, revealing the tempo and mode of body-mass evolution.
+Closely related species (e.g., bear and raccoon) converge toward their
+common ancestor's value.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>phylomorphospace</strong> — visualize body mass and brain size simultaneously
+in phylogenetic space, with branches connecting ancestors to descendants:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>phylomorphospace<span class="w"> </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span>-d<span class="w"> </span>tree_simple_multi_traits.tsv<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--trait-x<span class="w"> </span>body_mass<span class="w"> </span>--trait-y<span class="w"> </span>brain_size<span class="w"> </span>--plot-output<span class="w"> </span>morphospace.png
+</pre></div>
+</div>
+<a class="reference internal image-reference" href="../../_images/tutorial18_morphospace.png"><img alt="PhyKIT tutorial18 morphospace figure" class="align-center" src="../../_images/tutorial18_morphospace.png" style="width: 80%;" />
+</a>
+<p>The phylomorphospace plots each species as a point in body-mass ×
+brain-size space, with branches connecting species through their
+reconstructed ancestors. The tight clustering along the diagonal
+confirms the strong allometric relationship detected by PGLS. The
+monkey stands apart from the carnivore cluster, reflecting its distinct
+clade membership.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="putting-it-all-together">
+<h3>Putting it all together<a class="headerlink" href="#putting-it-all-together" title="Link to this heading"></a></h3>
+<p>Returning to our mammal example, a typical analysis would proceed as:</p>
+<ol class="arabic simple">
+<li><p><strong>Phylogenetic signal?</strong> Body mass shows strong signal (K &gt; 1,
+lambda ≈ 1), confirming that phylogenetic methods are necessary.</p></li>
+<li><p><strong>Which evolutionary model?</strong> If BM fits best, body mass drifted
+randomly; if OU wins, mammals are evolving toward a preferred body
+size. This shapes how we interpret downstream results.</p></li>
+<li><p><strong>Trait-trait association?</strong> PGLS confirms that body mass predicts
+brain size even after accounting for phylogeny. The R² decomposition
+tells us how much of brain-size variation is explained by body mass
+vs. by phylogenetic relatedness alone.</p></li>
+<li><p><strong>Visualization</strong> — the contMap shows where on the tree body mass
+increased, the phenogram reveals the tempo of change, and the
+phylomorphospace shows whether species cluster by clade or by
+ecological niche in brain-body space.</p></li>
+</ol>
+<p>This workflow generalizes to any trait and phylogeny: substitute your
+own tree, trait data, and biological question.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+</section>
+<section id="expected-artifacts">
+<h2>Expected artifacts<a class="headerlink" href="#expected-artifacts" title="Link to this heading"></a></h2>
+<p>Each step identifies its expected terminal output or generated files. Confirm
+that those artifacts exist before continuing to the next step; filenames are
+relative to the tutorial working directory unless an absolute path is shown.</p>
+</section>
+<section id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Run <code class="docutils literal notranslate"><span class="pre">phykit</span> <span class="pre">&lt;command&gt;</span> <span class="pre">--help</span></code> to compare an invocation with the live interface.</p></li>
+<li><p>Confirm that downloaded files are in the current working directory and retain
+the filenames shown in the tutorial.</p></li>
+<li><p>For parsing errors, compare taxon names exactly across alignments, trees, and
+trait tables, including capitalization and underscores.</p></li>
+<li><p>See <a class="reference internal" href="../../troubleshooting/index.html"><span class="doc">Troubleshooting</span></a> for installation, format,
+and error-reporting guidance.</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="18-visualizing-conflicting-phylogenetic-signal-with-splits-networks.html" class="btn btn-neutral float-left" title="Tutorial 18: Visualizing conflicting phylogenetic signal with splits networks" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="20-gene-tree-discordance-analysis-pipeline.html" class="btn btn-neutral float-right" title="Tutorial 20: Gene tree discordance analysis pipeline" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020-2026 Jacob L. Steenwyk.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,425 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tutorial 21: Customizing phylogenetic plots &mdash; phykit 2.3.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=ae8b8648" />
+
+  
+    <link rel="shortcut icon" href="../../_static/flavicon.png"/>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=c3c8ae58"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Troubleshooting" href="../../troubleshooting/index.html" />
+    <link rel="prev" title="Tutorial 20: Gene tree discordance analysis pipeline" href="20-gene-tree-discordance-analysis-pipeline.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html">
+            
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../about/index.html">About</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/index.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">Command reference</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Tutorials</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#tutorial-index">Tutorial index</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="01-summarizing-information-content.html">Tutorial 1: Summarizing information content</a></li>
+<li class="toctree-l3"><a class="reference internal" href="02-evaluating-gene-gene-covariation.html">Tutorial 2: Evaluating gene-gene covariation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="03-identifying-signatures-of-rapid-radiations.html">Tutorial 3: Identifying signatures of rapid radiations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="04-evaluating-the-accuracy-of-a-multiple-sequence-alignment.html">Tutorial 4: Evaluating the accuracy of a multiple sequence alignment</a></li>
+<li class="toctree-l3"><a class="reference internal" href="05-mapping-the-evolutionary-history-of-discrete-traits.html">Tutorial 5: Mapping the evolutionary history of discrete traits</a></li>
+<li class="toctree-l3"><a class="reference internal" href="06-testing-for-phylogenetic-signal-in-continuous-traits.html">Tutorial 6: Testing for phylogenetic signal in continuous traits</a></li>
+<li class="toctree-l3"><a class="reference internal" href="07-phylogenetic-ordination-for-multivariate-trait-analysis.html">Tutorial 7: Phylogenetic ordination for multivariate trait analysis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="08-visualizing-trait-evolution-with-phylomorphospace.html">Tutorial 8: Visualizing trait evolution with phylomorphospace</a></li>
+<li class="toctree-l3"><a class="reference internal" href="09-phylogenetic-regression-pgls.html">Tutorial 9: Phylogenetic regression (PGLS)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="10-phylogenetic-glm-for-binary-and-count-data.html">Tutorial 10: Phylogenetic GLM for binary and count data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="11-reconstructing-ancestral-trait-values-and-mapping-them-onto-a-phylogeny.html">Tutorial 11: Reconstructing ancestral trait values and mapping them onto a phylogeny</a></li>
+<li class="toctree-l3"><a class="reference internal" href="12-spectral-discordance-decomposition.html">Tutorial 12: Spectral discordance decomposition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="13-testing-for-rate-heterogeneity-across-phylogenetic-regimes.html">Tutorial 13: Testing for rate heterogeneity across phylogenetic regimes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="14-visualization-commands.html">Tutorial 14: Visualization commands</a></li>
+<li class="toctree-l3"><a class="reference internal" href="15-comparing-continuous-trait-evolution-models.html">Tutorial 15: Comparing continuous trait evolution models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="16-multi-regime-ou-models-ouwie.html">Tutorial 16: Multi-regime OU models (OUwie)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="17-automatic-detection-of-adaptive-shifts-on-a-phylogeny.html">Tutorial 17: Automatic detection of adaptive shifts on a phylogeny</a></li>
+<li class="toctree-l3"><a class="reference internal" href="18-visualizing-conflicting-phylogenetic-signal-with-splits-networks.html">Tutorial 18: Visualizing conflicting phylogenetic signal with splits networks</a></li>
+<li class="toctree-l3"><a class="reference internal" href="19-end-to-end-comparative-methods-workflow.html">Tutorial 19: End-to-end comparative methods workflow</a></li>
+<li class="toctree-l3"><a class="reference internal" href="20-gene-tree-discordance-analysis-pipeline.html">Tutorial 20: Gene tree discordance analysis pipeline</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Tutorial 21: Customizing phylogenetic plots</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#objectives">Objectives</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#prerequisites-and-working-directory">Prerequisites and working directory</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#related-command-references">Related command references</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#workflow">Workflow</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#expected-artifacts">Expected artifacts</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#troubleshooting">Troubleshooting</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#legacy-tutorial-anchors">Legacy tutorial anchors</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../troubleshooting/index.html">Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../change_log/index.html">Change log</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../other_software/index.html">Other software</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../frequently_asked_questions/index.html">FAQ</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">phykit</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Tutorials</a></li>
+      <li class="breadcrumb-item active">Tutorial 21: Customizing phylogenetic plots</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="tutorial-21-customizing-phylogenetic-plots">
+<span id="tutorial-customizing-phylogenetic-plots"></span><span id="tutorial-21"></span><h1>Tutorial 21: Customizing phylogenetic plots<a class="headerlink" href="#tutorial-21-customizing-phylogenetic-plots" title="Link to this heading"></a></h1>
+<section id="objectives">
+<h2>Objectives<a class="headerlink" href="#objectives" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Complete the customizing phylogenetic plots workflow.</p></li>
+<li><p>Interpret the reported values and generated artifacts in their scientific context.</p></li>
+<li><p>Identify the canonical command references for each analysis step.</p></li>
+</ul>
+</section>
+<section id="prerequisites-and-working-directory">
+<h2>Prerequisites and working directory<a class="headerlink" href="#prerequisites-and-working-directory" title="Link to this heading"></a></h2>
+<p>Install the current PhyKIT release and create a dedicated working directory.
+Download the data linked in this tutorial into that directory before running
+the commands. All paths below are relative to this directory.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>mkdir<span class="w"> </span>phykit-tutorial-21
+<span class="nb">cd</span><span class="w"> </span>phykit-tutorial-21
+</pre></div>
+</div>
+</section>
+<section id="related-command-references">
+<h2>Related command references<a class="headerlink" href="#related-command-references" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="../../reference/commands/quartet_pie.html"><span class="doc">Quartet Pie</span></a></p></li>
+</ul>
+</section>
+<section id="workflow">
+<h2>Workflow<a class="headerlink" href="#workflow" title="Link to this heading"></a></h2>
+<p>All PhyKIT commands that produce tree visualizations share a common set
+of plot customization options. This tutorial walks through each option
+using <code class="docutils literal notranslate"><span class="pre">quartet_pie</span></code> as a demonstration, but the same options work for
+<code class="docutils literal notranslate"><span class="pre">character_map</span></code>, <code class="docutils literal notranslate"><span class="pre">phylo_heatmap</span></code>, <code class="docutils literal notranslate"><span class="pre">cont_map</span></code>, <code class="docutils literal notranslate"><span class="pre">density_map</span></code>,
+<code class="docutils literal notranslate"><span class="pre">stochastic_character_map</span></code>, <code class="docutils literal notranslate"><span class="pre">ancestral_state_reconstruction</span></code>,
+<code class="docutils literal notranslate"><span class="pre">concordance_asr</span></code>, <code class="docutils literal notranslate"><span class="pre">discordance_asymmetry</span></code>, <code class="docutils literal notranslate"><span class="pre">rate_heterogeneity</span></code>,
+and <code class="docutils literal notranslate"><span class="pre">cophylo</span></code>.</p>
+<p>We use the 8-taxon mammal tree and 10 gene trees included in PhyKIT's
+sample data:</p>
+<p class="centered">
+<strong>Download test data:
+<a class="reference download internal" download="" href="../../_downloads/97c38abccff78ac60aee3f25ca0b02f5/tree_simple.tre"><code class="xref download docutils literal notranslate"><span class="pre">Mammal</span> <span class="pre">phylogeny</span></code></a>;
+<a class="reference download internal" download="" href="../../_downloads/2ad5ce93fa4158c0aa386911f0f004de/gene_trees_simple.nwk"><code class="xref download docutils literal notranslate"><span class="pre">Gene</span> <span class="pre">trees</span></code></a></strong></p><div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="nv">TREE</span><span class="o">=</span>tree_simple.tre
+<span class="nv">GENES</span><span class="o">=</span>gene_trees_simple.nwk
+</pre></div>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<section id="default-output">
+<h3>Default output<a class="headerlink" href="#default-output" title="Link to this heading"></a></h3>
+<p>The default <code class="docutils literal notranslate"><span class="pre">quartet_pie</span></code> command produces a phylogram with pie charts
+at internal nodes showing concordance proportions:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>quartet_pie<span class="w"> </span>-t<span class="w"> </span><span class="nv">$TREE</span><span class="w"> </span>-g<span class="w"> </span><span class="nv">$GENES</span><span class="w"> </span>-o<span class="w"> </span>qpie_default.png
+</pre></div>
+</div>
+<a class="reference internal image-reference" href="../../_images/qpie_default.png"><img alt="PhyKIT qpie default figure" class="align-center" src="../../_images/qpie_default.png" style="width: 80%;" />
+</a>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="ladderizing-the-tree">
+<h3>Ladderizing the tree<a class="headerlink" href="#ladderizing-the-tree" title="Link to this heading"></a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">--ladderize</span></code> flag sorts the tree by the number of descendant
+tips at each node, producing a cleaner visual layout:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>quartet_pie<span class="w"> </span>-t<span class="w"> </span><span class="nv">$TREE</span><span class="w"> </span>-g<span class="w"> </span><span class="nv">$GENES</span><span class="w"> </span>-o<span class="w"> </span>qpie_ladderize.png<span class="w"> </span>--ladderize
+</pre></div>
+</div>
+<a class="reference internal image-reference" href="../../_images/qpie_ladderize.png"><img alt="PhyKIT qpie ladderize figure" class="align-center" src="../../_images/qpie_ladderize.png" style="width: 80%;" />
+</a>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="cladogram-layout">
+<h3>Cladogram layout<a class="headerlink" href="#cladogram-layout" title="Link to this heading"></a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">--cladogram</span></code> flag draws the tree with equal branch lengths and
+all tips aligned at the right edge. This is useful when branch lengths
+are uninformative or when you want to emphasize topology over
+evolutionary distance:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>quartet_pie<span class="w"> </span>-t<span class="w"> </span><span class="nv">$TREE</span><span class="w"> </span>-g<span class="w"> </span><span class="nv">$GENES</span><span class="w"> </span>-o<span class="w"> </span>qpie_cladogram.png<span class="w"> </span>--cladogram
+</pre></div>
+</div>
+<a class="reference internal image-reference" href="../../_images/qpie_cladogram.png"><img alt="PhyKIT qpie cladogram figure" class="align-center" src="../../_images/qpie_cladogram.png" style="width: 80%;" />
+</a>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="circular-layout">
+<h3>Circular layout<a class="headerlink" href="#circular-layout" title="Link to this heading"></a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">--circular</span></code> flag draws the tree as a radial phylogram with
+the root at the center. Branches radiate outward and curved arcs
+connect sister clades at each internal node:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>quartet_pie<span class="w"> </span>-t<span class="w"> </span><span class="nv">$TREE</span><span class="w"> </span>-g<span class="w"> </span><span class="nv">$GENES</span><span class="w"> </span>-o<span class="w"> </span>qpie_circular.png<span class="w"> </span>--circular
+</pre></div>
+</div>
+<a class="reference internal image-reference" href="../../_images/qpie_circular.png"><img alt="PhyKIT qpie circular figure" class="align-center" src="../../_images/qpie_circular.png" style="width: 80%;" />
+</a>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="circular-cladogram">
+<h3>Circular + cladogram<a class="headerlink" href="#circular-cladogram" title="Link to this heading"></a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">--circular</span></code> and <code class="docutils literal notranslate"><span class="pre">--cladogram</span></code> flags can be combined. This
+draws a circular cladogram where all tips sit on the outer ring at
+equal distance from the center:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>quartet_pie<span class="w"> </span>-t<span class="w"> </span><span class="nv">$TREE</span><span class="w"> </span>-g<span class="w"> </span><span class="nv">$GENES</span><span class="w"> </span>-o<span class="w"> </span>qpie_circular_clado.png<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--circular<span class="w"> </span>--cladogram
+</pre></div>
+</div>
+<a class="reference internal image-reference" href="../../_images/qpie_circular_cladogram.png"><img alt="PhyKIT qpie circular cladogram figure" class="align-center" src="../../_images/qpie_circular_cladogram.png" style="width: 80%;" />
+</a>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="annotating-with-values">
+<h3>Annotating with values<a class="headerlink" href="#annotating-with-values" title="Link to this heading"></a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">--annotate</span></code> flag adds numeric values (gCF/gDF1/gDF2) near each
+pie chart:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>quartet_pie<span class="w"> </span>-t<span class="w"> </span><span class="nv">$TREE</span><span class="w"> </span>-g<span class="w"> </span><span class="nv">$GENES</span><span class="w"> </span>-o<span class="w"> </span>qpie_annotate.png<span class="w"> </span>--annotate
+</pre></div>
+</div>
+<a class="reference internal image-reference" href="../../_images/qpie_annotate.png"><img alt="PhyKIT qpie annotate figure" class="align-center" src="../../_images/qpie_annotate.png" style="width: 80%;" />
+</a>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="custom-colors">
+<h3>Custom colors<a class="headerlink" href="#custom-colors" title="Link to this heading"></a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">--colors</span></code> flag accepts comma-separated colors (hex or named) to
+override the defaults. For <code class="docutils literal notranslate"><span class="pre">quartet_pie</span></code>, the three colors represent
+concordant, discordant alt 1, and discordant alt 2:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>quartet_pie<span class="w"> </span>-t<span class="w"> </span><span class="nv">$TREE</span><span class="w"> </span>-g<span class="w"> </span><span class="nv">$GENES</span><span class="w"> </span>-o<span class="w"> </span>qpie_colors.png<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--colors<span class="w"> </span><span class="s2">&quot;#2ca02c,#ff7f0e,#9467bd&quot;</span>
+</pre></div>
+</div>
+<a class="reference internal image-reference" href="../../_images/qpie_custom_colors.png"><img alt="PhyKIT qpie custom colors figure" class="align-center" src="../../_images/qpie_custom_colors.png" style="width: 80%;" />
+</a>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="custom-title">
+<h3>Custom title<a class="headerlink" href="#custom-title" title="Link to this heading"></a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">--title</span></code> flag sets a custom title. Use <code class="docutils literal notranslate"><span class="pre">--no-title</span></code> to remove
+the title entirely:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>quartet_pie<span class="w"> </span>-t<span class="w"> </span><span class="nv">$TREE</span><span class="w"> </span>-g<span class="w"> </span><span class="nv">$GENES</span><span class="w"> </span>-o<span class="w"> </span>qpie_title.png<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--title<span class="w"> </span><span class="s2">&quot;Mammal Quartet Concordance&quot;</span>
+</pre></div>
+</div>
+<a class="reference internal image-reference" href="../../_images/qpie_custom_title.png"><img alt="PhyKIT qpie custom title figure" class="align-center" src="../../_images/qpie_custom_title.png" style="width: 80%;" />
+</a>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>quartet_pie<span class="w"> </span>-t<span class="w"> </span><span class="nv">$TREE</span><span class="w"> </span>-g<span class="w"> </span><span class="nv">$GENES</span><span class="w"> </span>-o<span class="w"> </span>qpie_no_title.png<span class="w"> </span>--no-title
+</pre></div>
+</div>
+<a class="reference internal image-reference" href="../../_images/qpie_no_title.png"><img alt="PhyKIT qpie no title figure" class="align-center" src="../../_images/qpie_no_title.png" style="width: 80%;" />
+</a>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="legend-position">
+<h3>Legend position<a class="headerlink" href="#legend-position" title="Link to this heading"></a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">--legend-position</span></code> flag controls legend placement. Options include
+<code class="docutils literal notranslate"><span class="pre">upper</span> <span class="pre">right</span></code> (default), <code class="docutils literal notranslate"><span class="pre">upper</span> <span class="pre">left</span></code>, <code class="docutils literal notranslate"><span class="pre">lower</span> <span class="pre">left</span></code>, <code class="docutils literal notranslate"><span class="pre">lower</span> <span class="pre">right</span></code>,
+<code class="docutils literal notranslate"><span class="pre">center</span> <span class="pre">left</span></code>, <code class="docutils literal notranslate"><span class="pre">center</span> <span class="pre">right</span></code>, or <code class="docutils literal notranslate"><span class="pre">none</span></code> to hide the legend:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>quartet_pie<span class="w"> </span>-t<span class="w"> </span><span class="nv">$TREE</span><span class="w"> </span>-g<span class="w"> </span><span class="nv">$GENES</span><span class="w"> </span>-o<span class="w"> </span>qpie_legend.png<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--legend-position<span class="w"> </span><span class="s2">&quot;lower right&quot;</span>
+</pre></div>
+</div>
+<a class="reference internal image-reference" href="../../_images/qpie_legend_lower.png"><img alt="PhyKIT qpie legend lower figure" class="align-center" src="../../_images/qpie_legend_lower.png" style="width: 80%;" />
+</a>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="coloring-clades-with-a-color-file">
+<h3>Coloring clades with a color file<a class="headerlink" href="#coloring-clades-with-a-color-file" title="Link to this heading"></a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">--color-file</span></code> flag accepts an iTOL-inspired TSV file for coloring
+tip labels, highlighting clades with transparent background bands, and
+coloring clade branches.</p>
+<p>Create a color annotation file (e.g., <code class="docutils literal notranslate"><span class="pre">colors.tsv</span></code>):</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span># node(s)            type     color      label
+bear                 label    #e41a1c
+raccoon              label    #e41a1c
+sea_lion             label    #377eb8
+seal                 label    #377eb8
+bear,raccoon         range    #ffe0e0    Ursids
+sea_lion,seal        range    #e0e0ff    Pinnipeds
+monkey,cat,weasel    range    #e0ffe0    Carnivorans+Primates
+</pre></div>
+</div>
+<p>The file supports three entry types:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">label</span></code> — color a tip's label text (field 1 = single taxon name)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">range</span></code> — draw a transparent background band behind a clade
+(field 1 = comma-separated taxa whose MRCA defines the clade)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">clade</span></code> — color the branches of a clade (same MRCA logic)</p></li>
+</ul>
+<p>For <code class="docutils literal notranslate"><span class="pre">range</span></code> and <code class="docutils literal notranslate"><span class="pre">clade</span></code>, you only need to list enough taxa to
+uniquely identify the most recent common ancestor — typically one
+taxon from each side of the clade.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>quartet_pie<span class="w"> </span>-t<span class="w"> </span><span class="nv">$TREE</span><span class="w"> </span>-g<span class="w"> </span><span class="nv">$GENES</span><span class="w"> </span>-o<span class="w"> </span>qpie_colored.png<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--color-file<span class="w"> </span>colors.tsv
+</pre></div>
+</div>
+<a class="reference internal image-reference" href="../../_images/qpie_colorfile.png"><img alt="PhyKIT qpie colorfile figure" class="align-center" src="../../_images/qpie_colorfile.png" style="width: 80%;" />
+</a>
+<p>The color file also works with the circular layout:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>quartet_pie<span class="w"> </span>-t<span class="w"> </span><span class="nv">$TREE</span><span class="w"> </span>-g<span class="w"> </span><span class="nv">$GENES</span><span class="w"> </span>-o<span class="w"> </span>qpie_colored_circ.png<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--color-file<span class="w"> </span>colors.tsv<span class="w"> </span>--circular
+</pre></div>
+</div>
+<a class="reference internal image-reference" href="../../_images/qpie_colorfile_circular.png"><img alt="PhyKIT qpie colorfile circular figure" class="align-center" src="../../_images/qpie_colorfile_circular.png" style="width: 80%;" />
+</a>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="combining-everything">
+<h3>Combining everything<a class="headerlink" href="#combining-everything" title="Link to this heading"></a></h3>
+<p>All options can be combined for maximum customization:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>quartet_pie<span class="w"> </span>-t<span class="w"> </span><span class="nv">$TREE</span><span class="w"> </span>-g<span class="w"> </span><span class="nv">$GENES</span><span class="w"> </span>-o<span class="w"> </span>qpie_full.png<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--circular<span class="w"> </span>--ladderize<span class="w"> </span>--color-file<span class="w"> </span>colors.tsv<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--annotate<span class="w"> </span>--legend-position<span class="w"> </span><span class="s2">&quot;upper left&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--title<span class="w"> </span><span class="s2">&quot;Full Customization&quot;</span>
+</pre></div>
+</div>
+<a class="reference internal image-reference" href="../../_images/qpie_all_options.png"><img alt="PhyKIT qpie all options figure" class="align-center" src="../../_images/qpie_all_options.png" style="width: 80%;" />
+</a>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="additional-options">
+<h3>Additional options<a class="headerlink" href="#additional-options" title="Link to this heading"></a></h3>
+<p>Several other options are available for fine-tuning:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">--fig-width</span></code> / <code class="docutils literal notranslate"><span class="pre">--fig-height</span></code> — figure dimensions in inches
+(auto-scaled if omitted)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--dpi</span></code> — resolution in dots per inch (default: 300)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--ylabel-fontsize</span></code> — font size for tip labels; 0 to hide</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--xlabel-fontsize</span></code> — font size for x-axis labels; 0 to hide</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--title-fontsize</span></code> — font size for the title</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--axis-fontsize</span></code> — font size for axis labels</p></li>
+</ul>
+<p>These are useful for preparing figures for publication where
+specific dimensions or resolutions are required.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+</section>
+<section id="expected-artifacts">
+<h2>Expected artifacts<a class="headerlink" href="#expected-artifacts" title="Link to this heading"></a></h2>
+<p>Each step identifies its expected terminal output or generated files. Confirm
+that those artifacts exist before continuing to the next step; filenames are
+relative to the tutorial working directory unless an absolute path is shown.</p>
+</section>
+<section id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Run <code class="docutils literal notranslate"><span class="pre">phykit</span> <span class="pre">&lt;command&gt;</span> <span class="pre">--help</span></code> to compare an invocation with the live interface.</p></li>
+<li><p>Confirm that downloaded files are in the current working directory and retain
+the filenames shown in the tutorial.</p></li>
+<li><p>For parsing errors, compare taxon names exactly across alignments, trees, and
+trait tables, including capitalization and underscores.</p></li>
+<li><p>See <a class="reference internal" href="../../troubleshooting/index.html"><span class="doc">Troubleshooting</span></a> for installation, format,
+and error-reporting guidance.</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="20-gene-tree-discordance-analysis-pipeline.html" class="btn btn-neutral float-left" title="Tutorial 20: Gene tree discordance analysis pipeline" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../../troubleshooting/index.html" class="btn btn-neutral float-right" title="Troubleshooting" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020-2026 Jacob L. Steenwyk.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

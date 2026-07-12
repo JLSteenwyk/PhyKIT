@@ -43,6 +43,7 @@ If the trait file has exactly 2 trait columns and ``--trait-x`` / ``--trait-y``
 are omitted, the first two columns are selected automatically.
 
 .. image:: /_static/docs_img/phylomorphospace_plot.png
+   :alt: PhyKIT phylomorphospace plot figure
    :align: center
 
 |

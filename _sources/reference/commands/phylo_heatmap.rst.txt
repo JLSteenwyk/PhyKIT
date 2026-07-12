@@ -28,6 +28,7 @@ of numeric trait values, with rows aligned to tree tips. Analogous to
 R's phytools::phylo.heatmap().
 
 .. image:: /_static/phylo_heatmap_example.png
+   :alt: PhyKIT phylo heatmap example figure
    :align: center
    :width: 90%
 

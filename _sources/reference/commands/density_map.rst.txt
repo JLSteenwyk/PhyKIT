@@ -61,5 +61,6 @@ Options: |br|
 *--json*: optional argument to print results as JSON
 
 .. image:: /_static/img/densitymap_example.png
+   :alt: PhyKIT densitymap example figure
    :align: center
    :width: 80%

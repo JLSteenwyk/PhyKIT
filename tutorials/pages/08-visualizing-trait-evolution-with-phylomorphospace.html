@@ -1,0 +1,288 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tutorial 8: Visualizing trait evolution with phylomorphospace &mdash; phykit 2.3.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=ae8b8648" />
+
+  
+    <link rel="shortcut icon" href="../../_static/flavicon.png"/>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=c3c8ae58"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Tutorial 9: Phylogenetic regression (PGLS)" href="09-phylogenetic-regression-pgls.html" />
+    <link rel="prev" title="Tutorial 7: Phylogenetic ordination for multivariate trait analysis" href="07-phylogenetic-ordination-for-multivariate-trait-analysis.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html">
+            
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../about/index.html">About</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/index.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">Command reference</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Tutorials</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#tutorial-index">Tutorial index</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="01-summarizing-information-content.html">Tutorial 1: Summarizing information content</a></li>
+<li class="toctree-l3"><a class="reference internal" href="02-evaluating-gene-gene-covariation.html">Tutorial 2: Evaluating gene-gene covariation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="03-identifying-signatures-of-rapid-radiations.html">Tutorial 3: Identifying signatures of rapid radiations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="04-evaluating-the-accuracy-of-a-multiple-sequence-alignment.html">Tutorial 4: Evaluating the accuracy of a multiple sequence alignment</a></li>
+<li class="toctree-l3"><a class="reference internal" href="05-mapping-the-evolutionary-history-of-discrete-traits.html">Tutorial 5: Mapping the evolutionary history of discrete traits</a></li>
+<li class="toctree-l3"><a class="reference internal" href="06-testing-for-phylogenetic-signal-in-continuous-traits.html">Tutorial 6: Testing for phylogenetic signal in continuous traits</a></li>
+<li class="toctree-l3"><a class="reference internal" href="07-phylogenetic-ordination-for-multivariate-trait-analysis.html">Tutorial 7: Phylogenetic ordination for multivariate trait analysis</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Tutorial 8: Visualizing trait evolution with phylomorphospace</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#objectives">Objectives</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#prerequisites-and-working-directory">Prerequisites and working directory</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#related-command-references">Related command references</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#workflow">Workflow</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#expected-artifacts">Expected artifacts</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#troubleshooting">Troubleshooting</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="09-phylogenetic-regression-pgls.html">Tutorial 9: Phylogenetic regression (PGLS)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="10-phylogenetic-glm-for-binary-and-count-data.html">Tutorial 10: Phylogenetic GLM for binary and count data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="11-reconstructing-ancestral-trait-values-and-mapping-them-onto-a-phylogeny.html">Tutorial 11: Reconstructing ancestral trait values and mapping them onto a phylogeny</a></li>
+<li class="toctree-l3"><a class="reference internal" href="12-spectral-discordance-decomposition.html">Tutorial 12: Spectral discordance decomposition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="13-testing-for-rate-heterogeneity-across-phylogenetic-regimes.html">Tutorial 13: Testing for rate heterogeneity across phylogenetic regimes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="14-visualization-commands.html">Tutorial 14: Visualization commands</a></li>
+<li class="toctree-l3"><a class="reference internal" href="15-comparing-continuous-trait-evolution-models.html">Tutorial 15: Comparing continuous trait evolution models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="16-multi-regime-ou-models-ouwie.html">Tutorial 16: Multi-regime OU models (OUwie)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="17-automatic-detection-of-adaptive-shifts-on-a-phylogeny.html">Tutorial 17: Automatic detection of adaptive shifts on a phylogeny</a></li>
+<li class="toctree-l3"><a class="reference internal" href="18-visualizing-conflicting-phylogenetic-signal-with-splits-networks.html">Tutorial 18: Visualizing conflicting phylogenetic signal with splits networks</a></li>
+<li class="toctree-l3"><a class="reference internal" href="19-end-to-end-comparative-methods-workflow.html">Tutorial 19: End-to-end comparative methods workflow</a></li>
+<li class="toctree-l3"><a class="reference internal" href="20-gene-tree-discordance-analysis-pipeline.html">Tutorial 20: Gene tree discordance analysis pipeline</a></li>
+<li class="toctree-l3"><a class="reference internal" href="21-customizing-phylogenetic-plots.html">Tutorial 21: Customizing phylogenetic plots</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#legacy-tutorial-anchors">Legacy tutorial anchors</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../troubleshooting/index.html">Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../change_log/index.html">Change log</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../other_software/index.html">Other software</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../frequently_asked_questions/index.html">FAQ</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">phykit</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Tutorials</a></li>
+      <li class="breadcrumb-item active">Tutorial 8: Visualizing trait evolution with phylomorphospace</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="tutorial-8-visualizing-trait-evolution-with-phylomorphospace">
+<span id="tutorial-visualizing-trait-evolution-with-phylomorphospace"></span><span id="tutorial-08"></span><h1>Tutorial 8: Visualizing trait evolution with phylomorphospace<a class="headerlink" href="#tutorial-8-visualizing-trait-evolution-with-phylomorphospace" title="Link to this heading"></a></h1>
+<section id="objectives">
+<h2>Objectives<a class="headerlink" href="#objectives" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Complete the visualizing trait evolution with phylomorphospace workflow.</p></li>
+<li><p>Interpret the reported values and generated artifacts in their scientific context.</p></li>
+<li><p>Identify the canonical command references for each analysis step.</p></li>
+</ul>
+</section>
+<section id="prerequisites-and-working-directory">
+<h2>Prerequisites and working directory<a class="headerlink" href="#prerequisites-and-working-directory" title="Link to this heading"></a></h2>
+<p>Install the current PhyKIT release and create a dedicated working directory.
+Download the data linked in this tutorial into that directory before running
+the commands. All paths below are relative to this directory.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>mkdir<span class="w"> </span>phykit-tutorial-08
+<span class="nb">cd</span><span class="w"> </span>phykit-tutorial-08
+</pre></div>
+</div>
+</section>
+<section id="related-command-references">
+<h2>Related command references<a class="headerlink" href="#related-command-references" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="../../reference/commands/phylomorphospace.html"><span class="doc">Phylomorphospace</span></a></p></li>
+</ul>
+</section>
+<section id="workflow">
+<h2>Workflow<a class="headerlink" href="#workflow" title="Link to this heading"></a></h2>
+<p>Phylomorphospace plots overlay the phylogeny onto a two-dimensional trait space, connecting
+species to their ancestors via edges that trace the evolutionary trajectory of traits
+(<a class="reference external" href="https://doi.org/10.1111/j.1558-5646.2008.00469.x">Sidlauskas 2008</a>).
+Internal node positions are estimated by maximum-likelihood ancestral state reconstruction.
+This visualization reveals how lineages have moved through morphospace over evolutionary
+time — showing convergence, divergence, and the overall geometry of trait evolution.</p>
+<p><strong>Hypothetical study question.</strong> Suppose we want to visualize how body mass and brain size
+have coevolved across our eight mammal species. Do closely related species cluster together
+in trait space? Have any lineages converged on similar body mass–brain size combinations
+despite being distantly related?</p>
+<p>PhyKIT's <code class="docutils literal notranslate"><span class="pre">phylomorphospace</span></code> command (aliases: <code class="docutils literal notranslate"><span class="pre">phylomorpho</span></code>, <code class="docutils literal notranslate"><span class="pre">phmo</span></code>) generates these
+plots directly from the command line. <br /></p>
+<p class="centered">
+<strong>Download test data:
+<a class="reference download internal" download="" href="../../_downloads/97c38abccff78ac60aee3f25ca0b02f5/tree_simple.tre"><code class="xref download docutils literal notranslate"><span class="pre">Mammal</span> <span class="pre">phylogeny</span></code></a>;
+<a class="reference download internal" download="" href="../../_downloads/7d32036238e91ae254c5ef40edf727db/tree_simple_multi_traits.tsv"><code class="xref download docutils literal notranslate"><span class="pre">Multi-trait</span> <span class="pre">data</span></code></a></strong></p><div class="line-block">
+<div class="line"><br /></div>
+</div>
+<section id="step-0-prepare-data">
+<h3>Step 0: Prepare data<a class="headerlink" href="#step-0-prepare-data" title="Link to this heading"></a></h3>
+<p>Two input files are needed: a phylogenetic tree and a tab-delimited multi-trait file with a
+header row (same format as for phylogenetic PCA). When the trait file has exactly two trait
+columns, they are automatically selected. With three or more traits, you must specify
+which two traits to plot using <code class="docutils literal notranslate"><span class="pre">--trait-x</span></code> and <code class="docutils literal notranslate"><span class="pre">--trait-y</span></code>.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="step-1-generate-a-phylomorphospace-plot">
+<h3>Step 1: Generate a phylomorphospace plot<a class="headerlink" href="#step-1-generate-a-phylomorphospace-plot" title="Link to this heading"></a></h3>
+<p>Since our trait file has three traits (body_mass, brain_size, longevity), we specify which
+two to plot:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>phylomorphospace<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-d<span class="w"> </span>tree_simple_multi_traits.tsv<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--trait-x<span class="w"> </span>body_mass<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--trait-y<span class="w"> </span>brain_size
+</pre></div>
+</div>
+<p>This generates a plot file (<code class="docutils literal notranslate"><span class="pre">phylomorphospace_plot.png</span></code> by default) showing:</p>
+<ul class="simple">
+<li><p><strong>Tip points</strong> positioned at observed trait values for each species</p></li>
+<li><p><strong>Internal nodes</strong> positioned at ML-reconstructed ancestral trait values</p></li>
+<li><p><strong>Tree edges</strong> connecting parent and child nodes, colored by distance from the root
+(coolwarm colormap with colorbar)</p></li>
+<li><p><strong>Tip labels</strong> identifying each species</p></li>
+</ul>
+<a class="reference internal image-reference" href="../../_images/tutorial8_morphospace.png"><img alt="PhyKIT tutorial8 morphospace figure" class="align-center" src="../../_images/tutorial8_morphospace.png" style="width: 80%;" />
+</a>
+<p><strong>Interpretation.</strong> In the resulting plot, species with large body mass and brain size
+(bear, sea_lion, seal) cluster in the upper right, while small-bodied species (weasel, cat)
+appear in the lower left. The tree edges show the evolutionary trajectories: the ancestral
+node reconstructions reveal whether lineages traveled through morphospace gradually or
+underwent rapid shifts.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="step-2-export-data-as-json">
+<h3>Step 2: Export data as JSON<a class="headerlink" href="#step-2-export-data-as-json" title="Link to this heading"></a></h3>
+<p>For programmatic access to the tip data and reconstructed ancestral states:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>phylomorphospace<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-d<span class="w"> </span>tree_simple_multi_traits.tsv<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--trait-x<span class="w"> </span>body_mass<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--trait-y<span class="w"> </span>brain_size<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--json
+</pre></div>
+</div>
+<p>The JSON output includes the tip data, selected traits, and output path, enabling custom
+post-processing or alternative visualizations.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="summary">
+<h3>Summary<a class="headerlink" href="#summary" title="Link to this heading"></a></h3>
+<p>In this tutorial, we used phylomorphospace to visualize the coevolution of body mass and
+brain size across a mammal phylogeny. The plot reveals evolutionary trajectories through
+trait space and highlights patterns of convergence or divergence. Combined with
+phylogenetic PCA and phylogenetic signal analyses, phylomorphospace provides a powerful
+complement for understanding multivariate trait evolution.</p>
+<p>For methodological details, see
+<a class="reference external" href="https://doi.org/10.1111/j.1558-5646.2008.00469.x">Sidlauskas (2008)</a>.
+The R equivalent is <code class="docutils literal notranslate"><span class="pre">phytools::phylomorphospace()</span></code>
+(<a class="reference external" href="https://doi.org/10.1111/j.2041-210X.2011.00169.x">Revell 2012</a>).</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+</section>
+<section id="expected-artifacts">
+<h2>Expected artifacts<a class="headerlink" href="#expected-artifacts" title="Link to this heading"></a></h2>
+<p>Each step identifies its expected terminal output or generated files. Confirm
+that those artifacts exist before continuing to the next step; filenames are
+relative to the tutorial working directory unless an absolute path is shown.</p>
+</section>
+<section id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Run <code class="docutils literal notranslate"><span class="pre">phykit</span> <span class="pre">&lt;command&gt;</span> <span class="pre">--help</span></code> to compare an invocation with the live interface.</p></li>
+<li><p>Confirm that downloaded files are in the current working directory and retain
+the filenames shown in the tutorial.</p></li>
+<li><p>For parsing errors, compare taxon names exactly across alignments, trees, and
+trait tables, including capitalization and underscores.</p></li>
+<li><p>See <a class="reference internal" href="../../troubleshooting/index.html"><span class="doc">Troubleshooting</span></a> for installation, format,
+and error-reporting guidance.</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="07-phylogenetic-ordination-for-multivariate-trait-analysis.html" class="btn btn-neutral float-left" title="Tutorial 7: Phylogenetic ordination for multivariate trait analysis" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="09-phylogenetic-regression-pgls.html" class="btn btn-neutral float-right" title="Tutorial 9: Phylogenetic regression (PGLS)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020-2026 Jacob L. Steenwyk.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

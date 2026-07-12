@@ -1,0 +1,397 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tutorial 5: Mapping the evolutionary history of discrete traits &mdash; phykit 2.3.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=ae8b8648" />
+
+  
+    <link rel="shortcut icon" href="../../_static/flavicon.png"/>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=c3c8ae58"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Tutorial 6: Testing for phylogenetic signal in continuous traits" href="06-testing-for-phylogenetic-signal-in-continuous-traits.html" />
+    <link rel="prev" title="Tutorial 4: Evaluating the accuracy of a multiple sequence alignment" href="04-evaluating-the-accuracy-of-a-multiple-sequence-alignment.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html">
+            
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../about/index.html">About</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/index.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">Command reference</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Tutorials</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#tutorial-index">Tutorial index</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="01-summarizing-information-content.html">Tutorial 1: Summarizing information content</a></li>
+<li class="toctree-l3"><a class="reference internal" href="02-evaluating-gene-gene-covariation.html">Tutorial 2: Evaluating gene-gene covariation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="03-identifying-signatures-of-rapid-radiations.html">Tutorial 3: Identifying signatures of rapid radiations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="04-evaluating-the-accuracy-of-a-multiple-sequence-alignment.html">Tutorial 4: Evaluating the accuracy of a multiple sequence alignment</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Tutorial 5: Mapping the evolutionary history of discrete traits</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#objectives">Objectives</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#prerequisites-and-working-directory">Prerequisites and working directory</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#related-command-references">Related command references</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#workflow">Workflow</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#expected-artifacts">Expected artifacts</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#troubleshooting">Troubleshooting</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="06-testing-for-phylogenetic-signal-in-continuous-traits.html">Tutorial 6: Testing for phylogenetic signal in continuous traits</a></li>
+<li class="toctree-l3"><a class="reference internal" href="07-phylogenetic-ordination-for-multivariate-trait-analysis.html">Tutorial 7: Phylogenetic ordination for multivariate trait analysis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="08-visualizing-trait-evolution-with-phylomorphospace.html">Tutorial 8: Visualizing trait evolution with phylomorphospace</a></li>
+<li class="toctree-l3"><a class="reference internal" href="09-phylogenetic-regression-pgls.html">Tutorial 9: Phylogenetic regression (PGLS)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="10-phylogenetic-glm-for-binary-and-count-data.html">Tutorial 10: Phylogenetic GLM for binary and count data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="11-reconstructing-ancestral-trait-values-and-mapping-them-onto-a-phylogeny.html">Tutorial 11: Reconstructing ancestral trait values and mapping them onto a phylogeny</a></li>
+<li class="toctree-l3"><a class="reference internal" href="12-spectral-discordance-decomposition.html">Tutorial 12: Spectral discordance decomposition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="13-testing-for-rate-heterogeneity-across-phylogenetic-regimes.html">Tutorial 13: Testing for rate heterogeneity across phylogenetic regimes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="14-visualization-commands.html">Tutorial 14: Visualization commands</a></li>
+<li class="toctree-l3"><a class="reference internal" href="15-comparing-continuous-trait-evolution-models.html">Tutorial 15: Comparing continuous trait evolution models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="16-multi-regime-ou-models-ouwie.html">Tutorial 16: Multi-regime OU models (OUwie)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="17-automatic-detection-of-adaptive-shifts-on-a-phylogeny.html">Tutorial 17: Automatic detection of adaptive shifts on a phylogeny</a></li>
+<li class="toctree-l3"><a class="reference internal" href="18-visualizing-conflicting-phylogenetic-signal-with-splits-networks.html">Tutorial 18: Visualizing conflicting phylogenetic signal with splits networks</a></li>
+<li class="toctree-l3"><a class="reference internal" href="19-end-to-end-comparative-methods-workflow.html">Tutorial 19: End-to-end comparative methods workflow</a></li>
+<li class="toctree-l3"><a class="reference internal" href="20-gene-tree-discordance-analysis-pipeline.html">Tutorial 20: Gene tree discordance analysis pipeline</a></li>
+<li class="toctree-l3"><a class="reference internal" href="21-customizing-phylogenetic-plots.html">Tutorial 21: Customizing phylogenetic plots</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#legacy-tutorial-anchors">Legacy tutorial anchors</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../troubleshooting/index.html">Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../change_log/index.html">Change log</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../other_software/index.html">Other software</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../frequently_asked_questions/index.html">FAQ</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">phykit</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Tutorials</a></li>
+      <li class="breadcrumb-item active">Tutorial 5: Mapping the evolutionary history of discrete traits</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="tutorial-5-mapping-the-evolutionary-history-of-discrete-traits">
+<span id="tutorial-mapping-the-evolutionary-history-of-discrete-traits"></span><span id="tutorial-05"></span><h1>Tutorial 5: Mapping the evolutionary history of discrete traits<a class="headerlink" href="#tutorial-5-mapping-the-evolutionary-history-of-discrete-traits" title="Link to this heading"></a></h1>
+<section id="objectives">
+<h2>Objectives<a class="headerlink" href="#objectives" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Complete the mapping the evolutionary history of discrete traits workflow.</p></li>
+<li><p>Interpret the reported values and generated artifacts in their scientific context.</p></li>
+<li><p>Identify the canonical command references for each analysis step.</p></li>
+</ul>
+</section>
+<section id="prerequisites-and-working-directory">
+<h2>Prerequisites and working directory<a class="headerlink" href="#prerequisites-and-working-directory" title="Link to this heading"></a></h2>
+<p>Install the current PhyKIT release and create a dedicated working directory.
+Download the data linked in this tutorial into that directory before running
+the commands. All paths below are relative to this directory.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>mkdir<span class="w"> </span>phykit-tutorial-05
+<span class="nb">cd</span><span class="w"> </span>phykit-tutorial-05
+</pre></div>
+</div>
+</section>
+<section id="related-command-references">
+<h2>Related command references<a class="headerlink" href="#related-command-references" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="../../reference/commands/stochastic_character_map.html"><span class="doc">Stochastic Character Map</span></a></p></li>
+</ul>
+</section>
+<section id="workflow">
+<h2>Workflow<a class="headerlink" href="#workflow" title="Link to this heading"></a></h2>
+<p>A common question in comparative biology is: how did a discrete trait, such as diet, habitat,
+or reproductive strategy, evolve across a phylogeny? Simply labeling tips on a tree does not
+tell us <em>when</em> or <em>how often</em> transitions between states occurred. Stochastic character mapping
+(<a class="reference external" href="https://doi.org/10.1080/10635150390192780">Huelsenbeck et al. 2003</a>;
+<a class="reference external" href="https://doi.org/10.1186/1471-2148-6-88">Bollback 2006</a>)
+addresses this by simulating plausible evolutionary histories of a discrete trait along each
+branch, conditioned on the observed tip states and a fitted substitution model. This approach
+is widely used in macroevolutionary studies to quantify the tempo and mode of trait evolution
+(<a class="reference external" href="https://doi.org/10.1146/annurev-ecolsys-110411-160331">O'Meara 2012</a>).</p>
+<p><strong>Hypothetical study question.</strong> Suppose we are studying a group of eight mammal species and
+want to understand how diet (carnivore, herbivore, or omnivore) has evolved across the
+phylogeny. Specifically, we want to know: (1) Is the transition rate between all dietary states
+equal, or are some transitions more frequent than others? (2) How much evolutionary time has
+been spent in each dietary state? (3) How many transitions between states occurred on average?</p>
+<p>PhyKIT's <code class="docutils literal notranslate"><span class="pre">stochastic_character_map</span></code> command (alias: <code class="docutils literal notranslate"><span class="pre">simmap</span></code>) lets us answer these
+questions directly from the command line.</p>
+<p>In this tutorial, we will use test data included with PhyKIT: an eight-taxon mammal phylogeny
+and a tab-delimited file assigning each species to a dietary category. <br /></p>
+<p class="centered">
+<strong>Download test data:
+<a class="reference download internal" download="" href="../../_downloads/97c38abccff78ac60aee3f25ca0b02f5/tree_simple.tre"><code class="xref download docutils literal notranslate"><span class="pre">Mammal</span> <span class="pre">phylogeny</span></code></a>;
+<a class="reference download internal" download="" href="../../_downloads/eb1e1a4c08691d20c03a9f1889e028a3/tree_simple_discrete_traits.tsv"><code class="xref download docutils literal notranslate"><span class="pre">Discrete</span> <span class="pre">trait</span> <span class="pre">data</span></code></a></strong></p><div class="line-block">
+<div class="line"><br /></div>
+</div>
+<section id="step-0-prepare-data">
+<h3>Step 0: Prepare data<a class="headerlink" href="#step-0-prepare-data" title="Link to this heading"></a></h3>
+<p>Two input files are needed: a phylogenetic tree in Newick format and a tab-delimited trait
+file with a header row. The trait file looks like this:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>taxon        diet
+raccoon      carnivore
+bear carnivore
+sea_lion     carnivore
+seal herbivore
+monkey       herbivore
+cat  omnivore
+weasel       omnivore
+dog  omnivore
+</pre></div>
+</div>
+<p>The first column is the taxon name (must match the tree tip labels) and subsequent columns
+contain discrete trait values. You specify which column to use with the <code class="docutils literal notranslate"><span class="pre">-c/--trait</span></code> flag.
+Lines starting with <code class="docutils literal notranslate"><span class="pre">#</span></code> are treated as comments and blank lines are ignored.</p>
+<p>Download both files above into the tutorial working directory.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="step-1-fit-a-substitution-model-and-run-stochastic-mapping">
+<h3>Step 1: Fit a substitution model and run stochastic mapping<a class="headerlink" href="#step-1-fit-a-substitution-model-and-run-stochastic-mapping" title="Link to this heading"></a></h3>
+<p>First, run stochastic character mapping with the default equal-rates (ER) model and 100
+simulations:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>simmap<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-d<span class="w"> </span>tree_simple_discrete_traits.tsv<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-c<span class="w"> </span>diet<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-n<span class="w"> </span><span class="m">100</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--seed<span class="w"> </span><span class="m">42</span>
+</pre></div>
+</div>
+<p>This produces the following output:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Stochastic Character Mapping (SIMMAP)
+
+Model: ER
+Number of simulations: 100
+
+Fitted Q matrix:
+                 carnivore   herbivore    omnivore
+carnivore          -0.1138      0.0569      0.0569
+herbivore           0.0569     -0.1138      0.0569
+omnivore            0.0569      0.0569     -0.1138
+
+Log-likelihood: -8.7874
+
+Mean dwelling times:
+  carnivore         99.08 (35.7%)
+  herbivore         89.18 (32.2%)
+  omnivore          89.02 (32.1%)
+
+Mean transitions:
+  carnivore -&gt; herbivore:  5.51
+  carnivore -&gt; omnivore:  5.69
+  herbivore -&gt; carnivore:  5.48
+  herbivore -&gt; omnivore:  5.37
+  omnivore -&gt; carnivore:  4.94
+  omnivore -&gt; herbivore:  4.89
+  Total:                      31.88
+</pre></div>
+</div>
+<p><strong>Interpreting the output.</strong> The fitted Q matrix shows the instantaneous rates of transition
+between states. Under the ER model, all off-diagonal rates are equal (0.0569 per unit branch
+length). The log-likelihood of -8.79 is the maximized log-likelihood of the data given the
+model.</p>
+<p>The mean dwelling times tell us how much total evolutionary time (summed across all branches)
+was spent in each state, averaged over all 100 simulated histories. Here, the three dietary
+states have roughly equal dwelling times, reflecting the ER model's symmetry and the
+distribution of states across the tree.</p>
+<p>The mean transition counts show how many times each type of state change occurred on average.
+These are averaged across 100 stochastic maps.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="step-2-compare-substitution-models">
+<h3>Step 2: Compare substitution models<a class="headerlink" href="#step-2-compare-substitution-models" title="Link to this heading"></a></h3>
+<p>Is the equal-rates model adequate, or do different transitions have different rates? We can
+compare the ER model with the all-rates-different (ARD) model:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>simmap<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-d<span class="w"> </span>tree_simple_discrete_traits.tsv<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-c<span class="w"> </span>diet<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-m<span class="w"> </span>ARD<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-n<span class="w"> </span><span class="m">100</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--seed<span class="w"> </span><span class="m">42</span>
+</pre></div>
+</div>
+<p>You can also try the symmetric (SYM) model, which assumes forward and reverse rates between
+any pair of states are equal but allows different pairs to differ:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>simmap<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-d<span class="w"> </span>tree_simple_discrete_traits.tsv<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-c<span class="w"> </span>diet<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-m<span class="w"> </span>SYM<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-n<span class="w"> </span><span class="m">100</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--seed<span class="w"> </span><span class="m">42</span>
+</pre></div>
+</div>
+<p>Compare the log-likelihoods across models to assess fit. Because ARD has more parameters than
+SYM, which has more than ER, a likelihood ratio test or AIC comparison can be used to
+determine whether the additional parameters are justified.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="step-3-generate-a-stochastic-character-map-plot">
+<h3>Step 3: Generate a stochastic character map plot<a class="headerlink" href="#step-3-generate-a-stochastic-character-map-plot" title="Link to this heading"></a></h3>
+<p>To visualize one of the simulated character histories on the phylogeny, use the <code class="docutils literal notranslate"><span class="pre">--plot</span></code>
+flag:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>simmap<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-d<span class="w"> </span>tree_simple_discrete_traits.tsv<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-c<span class="w"> </span>diet<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-n<span class="w"> </span><span class="m">100</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--seed<span class="w"> </span><span class="m">42</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--plot<span class="w"> </span>simmap_diet.png
+</pre></div>
+</div>
+<p>This generates a horizontal phylogram with branches colored by the mapped character state.
+Each branch segment is colored according to the state occupied during that interval,
+reflecting one of the simulated character histories. A legend maps colors to states.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="step-4-export-results-as-json">
+<h3>Step 4: Export results as JSON<a class="headerlink" href="#step-4-export-results-as-json" title="Link to this heading"></a></h3>
+<p>For downstream analysis or scripting, results can be exported as JSON:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>simmap<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-d<span class="w"> </span>tree_simple_discrete_traits.tsv<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-c<span class="w"> </span>diet<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-n<span class="w"> </span><span class="m">100</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--seed<span class="w"> </span><span class="m">42</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--json
+</pre></div>
+</div>
+<p>The JSON output includes the fitted Q matrix, log-likelihood, state list, mean dwelling times
+and proportions, and mean transition counts. This can be parsed with standard JSON tools
+(e.g., <code class="docutils literal notranslate"><span class="pre">jq</span></code>, Python's <code class="docutils literal notranslate"><span class="pre">json</span></code> module) for further analysis.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="step-5-ensure-reproducibility">
+<h3>Step 5: Ensure reproducibility<a class="headerlink" href="#step-5-ensure-reproducibility" title="Link to this heading"></a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">--seed</span></code> flag ensures that the stochastic simulations are reproducible. Running the same
+command with the same seed will produce identical results. This is important for
+reproducibility in publications. Omitting <code class="docutils literal notranslate"><span class="pre">--seed</span></code> produces different results each time due
+to the stochastic nature of the simulations.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="summary">
+<h3>Summary<a class="headerlink" href="#summary" title="Link to this heading"></a></h3>
+<p>In this tutorial, we used stochastic character mapping to reconstruct the evolutionary history
+of diet across a mammal phylogeny. The key steps were: (1) fitting a continuous-time Markov
+chain rate matrix to estimate transition rates, (2) comparing equal-rates and
+all-rates-different models to assess whether transition rates vary, (3) simulating character
+histories to estimate dwelling times and transition counts, and (4) plotting a stochastic
+character map for visualization.</p>
+<p>For methodological details, see
+<a class="reference external" href="https://doi.org/10.1080/10635150390192780">Huelsenbeck et al. (2003)</a> and
+<a class="reference external" href="https://doi.org/10.1186/1471-2148-6-88">Bollback (2006)</a>.
+The R equivalent is <code class="docutils literal notranslate"><span class="pre">phytools::make.simmap()</span></code>
+(<a class="reference external" href="https://doi.org/10.1111/j.2041-210X.2011.00169.x">Revell 2012</a>).</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+</section>
+<section id="expected-artifacts">
+<h2>Expected artifacts<a class="headerlink" href="#expected-artifacts" title="Link to this heading"></a></h2>
+<p>Each step identifies its expected terminal output or generated files. Confirm
+that those artifacts exist before continuing to the next step; filenames are
+relative to the tutorial working directory unless an absolute path is shown.</p>
+</section>
+<section id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Run <code class="docutils literal notranslate"><span class="pre">phykit</span> <span class="pre">&lt;command&gt;</span> <span class="pre">--help</span></code> to compare an invocation with the live interface.</p></li>
+<li><p>Confirm that downloaded files are in the current working directory and retain
+the filenames shown in the tutorial.</p></li>
+<li><p>For parsing errors, compare taxon names exactly across alignments, trees, and
+trait tables, including capitalization and underscores.</p></li>
+<li><p>See <a class="reference internal" href="../../troubleshooting/index.html"><span class="doc">Troubleshooting</span></a> for installation, format,
+and error-reporting guidance.</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="04-evaluating-the-accuracy-of-a-multiple-sequence-alignment.html" class="btn btn-neutral float-left" title="Tutorial 4: Evaluating the accuracy of a multiple sequence alignment" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="06-testing-for-phylogenetic-signal-in-continuous-traits.html" class="btn btn-neutral float-right" title="Tutorial 6: Testing for phylogenetic signal in continuous traits" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020-2026 Jacob L. Steenwyk.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

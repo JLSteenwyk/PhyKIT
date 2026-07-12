@@ -77,11 +77,13 @@ Options: |br|
 *--json*: output results as JSON
 
 .. image:: /_static/img/spectral_discordance_example_scatter.png
+   :alt: PhyKIT spectral discordance example scatter figure
    :align: center
    :width: 80%
 
 |
 
 .. image:: /_static/img/spectral_discordance_example_eigengap.png
+   :alt: PhyKIT spectral discordance example eigengap figure
    :align: center
    :width: 80%

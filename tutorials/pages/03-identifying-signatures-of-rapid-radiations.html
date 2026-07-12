@@ -1,0 +1,290 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tutorial 3: Identifying signatures of rapid radiations &mdash; phykit 2.3.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=ae8b8648" />
+
+  
+    <link rel="shortcut icon" href="../../_static/flavicon.png"/>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=c3c8ae58"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Tutorial 4: Evaluating the accuracy of a multiple sequence alignment" href="04-evaluating-the-accuracy-of-a-multiple-sequence-alignment.html" />
+    <link rel="prev" title="Tutorial 2: Evaluating gene-gene covariation" href="02-evaluating-gene-gene-covariation.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html">
+            
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../about/index.html">About</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/index.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">Command reference</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Tutorials</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#tutorial-index">Tutorial index</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="01-summarizing-information-content.html">Tutorial 1: Summarizing information content</a></li>
+<li class="toctree-l3"><a class="reference internal" href="02-evaluating-gene-gene-covariation.html">Tutorial 2: Evaluating gene-gene covariation</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Tutorial 3: Identifying signatures of rapid radiations</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#objectives">Objectives</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#prerequisites-and-working-directory">Prerequisites and working directory</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#related-command-references">Related command references</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#workflow">Workflow</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#expected-artifacts">Expected artifacts</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#troubleshooting">Troubleshooting</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="04-evaluating-the-accuracy-of-a-multiple-sequence-alignment.html">Tutorial 4: Evaluating the accuracy of a multiple sequence alignment</a></li>
+<li class="toctree-l3"><a class="reference internal" href="05-mapping-the-evolutionary-history-of-discrete-traits.html">Tutorial 5: Mapping the evolutionary history of discrete traits</a></li>
+<li class="toctree-l3"><a class="reference internal" href="06-testing-for-phylogenetic-signal-in-continuous-traits.html">Tutorial 6: Testing for phylogenetic signal in continuous traits</a></li>
+<li class="toctree-l3"><a class="reference internal" href="07-phylogenetic-ordination-for-multivariate-trait-analysis.html">Tutorial 7: Phylogenetic ordination for multivariate trait analysis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="08-visualizing-trait-evolution-with-phylomorphospace.html">Tutorial 8: Visualizing trait evolution with phylomorphospace</a></li>
+<li class="toctree-l3"><a class="reference internal" href="09-phylogenetic-regression-pgls.html">Tutorial 9: Phylogenetic regression (PGLS)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="10-phylogenetic-glm-for-binary-and-count-data.html">Tutorial 10: Phylogenetic GLM for binary and count data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="11-reconstructing-ancestral-trait-values-and-mapping-them-onto-a-phylogeny.html">Tutorial 11: Reconstructing ancestral trait values and mapping them onto a phylogeny</a></li>
+<li class="toctree-l3"><a class="reference internal" href="12-spectral-discordance-decomposition.html">Tutorial 12: Spectral discordance decomposition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="13-testing-for-rate-heterogeneity-across-phylogenetic-regimes.html">Tutorial 13: Testing for rate heterogeneity across phylogenetic regimes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="14-visualization-commands.html">Tutorial 14: Visualization commands</a></li>
+<li class="toctree-l3"><a class="reference internal" href="15-comparing-continuous-trait-evolution-models.html">Tutorial 15: Comparing continuous trait evolution models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="16-multi-regime-ou-models-ouwie.html">Tutorial 16: Multi-regime OU models (OUwie)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="17-automatic-detection-of-adaptive-shifts-on-a-phylogeny.html">Tutorial 17: Automatic detection of adaptive shifts on a phylogeny</a></li>
+<li class="toctree-l3"><a class="reference internal" href="18-visualizing-conflicting-phylogenetic-signal-with-splits-networks.html">Tutorial 18: Visualizing conflicting phylogenetic signal with splits networks</a></li>
+<li class="toctree-l3"><a class="reference internal" href="19-end-to-end-comparative-methods-workflow.html">Tutorial 19: End-to-end comparative methods workflow</a></li>
+<li class="toctree-l3"><a class="reference internal" href="20-gene-tree-discordance-analysis-pipeline.html">Tutorial 20: Gene tree discordance analysis pipeline</a></li>
+<li class="toctree-l3"><a class="reference internal" href="21-customizing-phylogenetic-plots.html">Tutorial 21: Customizing phylogenetic plots</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#legacy-tutorial-anchors">Legacy tutorial anchors</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../troubleshooting/index.html">Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../change_log/index.html">Change log</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../other_software/index.html">Other software</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../frequently_asked_questions/index.html">FAQ</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">phykit</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Tutorials</a></li>
+      <li class="breadcrumb-item active">Tutorial 3: Identifying signatures of rapid radiations</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="tutorial-3-identifying-signatures-of-rapid-radiations">
+<span id="tutorial-identifying-signatures-of-rapid-radiations"></span><span id="tutorial-03"></span><h1>Tutorial 3: Identifying signatures of rapid radiations<a class="headerlink" href="#tutorial-3-identifying-signatures-of-rapid-radiations" title="Link to this heading"></a></h1>
+<section id="objectives">
+<h2>Objectives<a class="headerlink" href="#objectives" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Complete the identifying signatures of rapid radiations workflow.</p></li>
+<li><p>Interpret the reported values and generated artifacts in their scientific context.</p></li>
+<li><p>Identify the canonical command references for each analysis step.</p></li>
+</ul>
+</section>
+<section id="prerequisites-and-working-directory">
+<h2>Prerequisites and working directory<a class="headerlink" href="#prerequisites-and-working-directory" title="Link to this heading"></a></h2>
+<p>Install the current PhyKIT release and create a dedicated working directory.
+Download the data linked in this tutorial into that directory before running
+the commands. All paths below are relative to this directory.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>mkdir<span class="w"> </span>phykit-tutorial-03
+<span class="nb">cd</span><span class="w"> </span>phykit-tutorial-03
+</pre></div>
+</div>
+</section>
+<section id="related-command-references">
+<h2>Related command references<a class="headerlink" href="#related-command-references" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="../../reference/commands/polytomy_test.html"><span class="doc">Polytomy Test</span></a></p></li>
+</ul>
+</section>
+<section id="workflow">
+<h2>Workflow<a class="headerlink" href="#workflow" title="Link to this heading"></a></h2>
+<p>Signatures of rapid radiations or diversification events can be identified by pinpointing polytomies in a putative species tree
+(<a class="reference external" href="https://www.mdpi.com/2073-4425/9/3/132">Sayyari and Mirarab 2018</a>;
+<a class="reference external" href="https://www.nature.com/articles/s41586-019-1693-2">One Thousand Plant Transcriptomes Initiative 2019</a>;
+<a class="reference external" href="https://www.biorxiv.org/content/10.1101/2020.08.23.262857v1">Li et al. 2020</a>).</p>
+<p>PhyKIT uses a gene-based approach to evaluate polytomies. In other words, PhyKIT will determine what topology each gene supports.
+Thereafter, PhyKIT will conduct a chi-squared test to determine if there is equal support among gene trees for the various topologies.
+In the chi-squared test, the null hypothesis is that there is equal support among gene trees for the various topologies and the
+alternative hypothesis is that there is unequal support for the various topologies. Thus, failing to reject the null hypothesis
+would indicate that there is a polytomy whereas rejecting the null hypothesis would indicate there is no polytomy.
+The various topologies examined by PhyKIT are determined by the groups file. Formatting this file will be explained later.</p>
+<p>To demonstrate how to identify polytomies, we will use a subset of 250 gene phylogenies from
+<a class="reference external" href="https://mbio.asm.org/content/10/4/e00925-19">Steenwyk et al. 2019</a>.</p>
+<p class="centered">
+<strong>Download test data:
+<a class="reference download internal" download="" href="../../_downloads/825af78eae72758221fb88615fc165e6/polytomy_tutorial.tar.gz"><code class="xref download docutils literal notranslate"><span class="pre">polytomy_tutorial.tar.gz</span></code></a></strong></p><div class="line-block">
+<div class="line"><br /></div>
+</div>
+<section id="step-0-prepare-data">
+<h3>Step 0: Prepare data<a class="headerlink" href="#step-0-prepare-data" title="Link to this heading"></a></h3>
+<p>For this tutorial, the data has already been formatted for the user. There are two input files for the polytomy testing function:</p>
+<ol class="arabic simple">
+<li><p>a file that specifies the location of gene trees</p></li>
+<li><p>a file that specifies the groups to test</p></li>
+</ol>
+<p>Thus, this tutorial assumes that gene phylogenies have already been inferred and the area of the phylogeny that the user wishes to
+test for a polytomy has already been identified.</p>
+<p>Examination of the first file reveals that it is a single column file that specifies the pathing of gene phylogenies to use
+during polytomy testing. Examination of the second file reveals that groups are specified using a tab-separated five column file.</p>
+<p><em>column 1:</em> an identifier for the test, which is not used by PhyKIT. Instead, this column is intended to be for the user to write any
+keywords or notes that can help remind them of what they were testing.</p>
+<p><em>column 2-4:</em> the tip names in the groups. Each column represents a single group to conduct polytomy testing for. If a group has multiple
+taxa, separate each tip name using a semi-colon ';'. For example, in <em>groups_file0.txt</em> there is one group with <em>Aspergillus_persii;Aspergillus_sclerotiorum</em>
+wherein this group has two taxa, <em>Aspergillus_persii</em> and <em>Aspergillus_sclerotiorum</em>.</p>
+<p><em>column 5:</em> the outgroup taxa. This column specifies the name of outgroup taxa, which are used to root the gene trees prior to
+determining what topology they support.</p>
+</section>
+<section id="step-1-conduct-polytomy-test">
+<h3>Step 1: Conduct polytomy test<a class="headerlink" href="#step-1-conduct-polytomy-test" title="Link to this heading"></a></h3>
+<p>Among the groups that have already been predetermined for the user, we will first conduct a polytomy test for <em>groups_file0.txt</em>. To
+execute the polytomy test, use the following command:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>ptt<span class="w"> </span>-t<span class="w"> </span>filamentous_fungi_250_trees.txt<span class="w"> </span>-g<span class="w"> </span>groups_file0.txt
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Gene Support Frequency Results
+==============================
+chi-squared: 19.425
+p-value: 6.1e-05
+total genes: 240
+0-1: 103
+0-2: 49
+1-2: 88
+</pre></div>
+</div>
+<p><em>Note,</em> if you are getting an error, it may be due to improper pathing in <em>filamentous_fungi_250_trees.txt.</em> Please check this file and
+modify it accordingly.</p>
+<p>We will now go over the output of PhyKIT. PhyKIT will report the <em>chi-squared</em> value, the <em>p</em> value, the total number of genes used, followed
+by the support of sister relationships examined. Here, the <em>chi-squared</em> value is very high and the <em>p</em> value is very low indicating
+that the null hypothesis was rejected and that there is no evidence of a polytomy. The total number of genes used during the polytomy
+test was 240. However, you may have noticed that there were 250 genes used as input. This discrepancy is not an error but may be caused by
+two different reasons. (1) 10 genes were unable to be used due to incomplete taxon representation in the groups and (2) PhyKIT can account
+for gene tree uncertainty (i.e., gene phylogenies with collapsed bipartitions), which may render the support of a given gene tree
+to be uncertain and therefore not be used during polytomy testing.</p>
+<p>Next, the section <em>0-1, 0-2,</em> and <em>1-2</em> refers to the sister relationships between the groups. Group 0 is specified in column 2 of the
+groups file while group 1 and group 2 are specified in columns 3 and 4, respectively. Thus, <em>0-1</em> refers to the following topology
+<em>(((0,1),2),outgroup);</em> whereas <em>0-2</em> and <em>1-2</em> refers to the following topologies <em>(((0,2),1),outgroup);</em> and <em>(((1,2),0),outgroup);</em>,
+respectively. PhyKIT identified that 103 gene phylogenies support <em>(((0,1),2),outgroup);</em> whereas 49 and 88 gene phylogenies support
+the topologies <em>(((0,2),1),outgroup);</em> and <em>(((1,2),0),outgroup);</em>, respectively.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p>Next, conduct a polytomy test using the other group file using the following command:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>ptt<span class="w"> </span>-t<span class="w"> </span>filamentous_fungi_250_trees.txt<span class="w"> </span>-g<span class="w"> </span>groups_file1.txt
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Gene Support Frequency Results
+==============================
+chi-squared: 0.129
+p-value: 0.937521
+total genes: 248
+0-1: 84
+0-2: 84
+1-2: 80
+</pre></div>
+</div>
+<p>In contrast to the previous test, the <em>chi-squared</em> value is very low and the <em>p</em> value is very high indicating a failure to reject the null
+hypothesis. Thus, there is a signature of rapid radiation or diversification event for these groups. Additional details provided by PhyKIT
+reveal 248 genes were used during the polytomy test and that there is nearly equal support for the various topologies.</p>
+<p>Taken together, this tutorial reveals how to identify signatures of rapid radiation or diversification events in phylogenomic data.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+</section>
+<section id="expected-artifacts">
+<h2>Expected artifacts<a class="headerlink" href="#expected-artifacts" title="Link to this heading"></a></h2>
+<p>Each step identifies its expected terminal output or generated files. Confirm
+that those artifacts exist before continuing to the next step; filenames are
+relative to the tutorial working directory unless an absolute path is shown.</p>
+</section>
+<section id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Run <code class="docutils literal notranslate"><span class="pre">phykit</span> <span class="pre">&lt;command&gt;</span> <span class="pre">--help</span></code> to compare an invocation with the live interface.</p></li>
+<li><p>Confirm that downloaded files are in the current working directory and retain
+the filenames shown in the tutorial.</p></li>
+<li><p>For parsing errors, compare taxon names exactly across alignments, trees, and
+trait tables, including capitalization and underscores.</p></li>
+<li><p>See <a class="reference internal" href="../../troubleshooting/index.html"><span class="doc">Troubleshooting</span></a> for installation, format,
+and error-reporting guidance.</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="02-evaluating-gene-gene-covariation.html" class="btn btn-neutral float-left" title="Tutorial 2: Evaluating gene-gene covariation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="04-evaluating-the-accuracy-of-a-multiple-sequence-alignment.html" class="btn btn-neutral float-right" title="Tutorial 4: Evaluating the accuracy of a multiple sequence alignment" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020-2026 Jacob L. Steenwyk.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

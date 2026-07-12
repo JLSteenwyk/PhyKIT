@@ -1,0 +1,364 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tutorial 17: Automatic detection of adaptive shifts on a phylogeny &mdash; phykit 2.3.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=ae8b8648" />
+
+  
+    <link rel="shortcut icon" href="../../_static/flavicon.png"/>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=c3c8ae58"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Tutorial 18: Visualizing conflicting phylogenetic signal with splits networks" href="18-visualizing-conflicting-phylogenetic-signal-with-splits-networks.html" />
+    <link rel="prev" title="Tutorial 16: Multi-regime OU models (OUwie)" href="16-multi-regime-ou-models-ouwie.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html">
+            
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../about/index.html">About</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/index.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">Command reference</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Tutorials</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#tutorial-index">Tutorial index</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="01-summarizing-information-content.html">Tutorial 1: Summarizing information content</a></li>
+<li class="toctree-l3"><a class="reference internal" href="02-evaluating-gene-gene-covariation.html">Tutorial 2: Evaluating gene-gene covariation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="03-identifying-signatures-of-rapid-radiations.html">Tutorial 3: Identifying signatures of rapid radiations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="04-evaluating-the-accuracy-of-a-multiple-sequence-alignment.html">Tutorial 4: Evaluating the accuracy of a multiple sequence alignment</a></li>
+<li class="toctree-l3"><a class="reference internal" href="05-mapping-the-evolutionary-history-of-discrete-traits.html">Tutorial 5: Mapping the evolutionary history of discrete traits</a></li>
+<li class="toctree-l3"><a class="reference internal" href="06-testing-for-phylogenetic-signal-in-continuous-traits.html">Tutorial 6: Testing for phylogenetic signal in continuous traits</a></li>
+<li class="toctree-l3"><a class="reference internal" href="07-phylogenetic-ordination-for-multivariate-trait-analysis.html">Tutorial 7: Phylogenetic ordination for multivariate trait analysis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="08-visualizing-trait-evolution-with-phylomorphospace.html">Tutorial 8: Visualizing trait evolution with phylomorphospace</a></li>
+<li class="toctree-l3"><a class="reference internal" href="09-phylogenetic-regression-pgls.html">Tutorial 9: Phylogenetic regression (PGLS)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="10-phylogenetic-glm-for-binary-and-count-data.html">Tutorial 10: Phylogenetic GLM for binary and count data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="11-reconstructing-ancestral-trait-values-and-mapping-them-onto-a-phylogeny.html">Tutorial 11: Reconstructing ancestral trait values and mapping them onto a phylogeny</a></li>
+<li class="toctree-l3"><a class="reference internal" href="12-spectral-discordance-decomposition.html">Tutorial 12: Spectral discordance decomposition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="13-testing-for-rate-heterogeneity-across-phylogenetic-regimes.html">Tutorial 13: Testing for rate heterogeneity across phylogenetic regimes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="14-visualization-commands.html">Tutorial 14: Visualization commands</a></li>
+<li class="toctree-l3"><a class="reference internal" href="15-comparing-continuous-trait-evolution-models.html">Tutorial 15: Comparing continuous trait evolution models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="16-multi-regime-ou-models-ouwie.html">Tutorial 16: Multi-regime OU models (OUwie)</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Tutorial 17: Automatic detection of adaptive shifts on a phylogeny</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#objectives">Objectives</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#prerequisites-and-working-directory">Prerequisites and working directory</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#related-command-references">Related command references</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#workflow">Workflow</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#expected-artifacts">Expected artifacts</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#troubleshooting">Troubleshooting</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="18-visualizing-conflicting-phylogenetic-signal-with-splits-networks.html">Tutorial 18: Visualizing conflicting phylogenetic signal with splits networks</a></li>
+<li class="toctree-l3"><a class="reference internal" href="19-end-to-end-comparative-methods-workflow.html">Tutorial 19: End-to-end comparative methods workflow</a></li>
+<li class="toctree-l3"><a class="reference internal" href="20-gene-tree-discordance-analysis-pipeline.html">Tutorial 20: Gene tree discordance analysis pipeline</a></li>
+<li class="toctree-l3"><a class="reference internal" href="21-customizing-phylogenetic-plots.html">Tutorial 21: Customizing phylogenetic plots</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#legacy-tutorial-anchors">Legacy tutorial anchors</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../troubleshooting/index.html">Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../change_log/index.html">Change log</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../other_software/index.html">Other software</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../frequently_asked_questions/index.html">FAQ</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">phykit</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Tutorials</a></li>
+      <li class="breadcrumb-item active">Tutorial 17: Automatic detection of adaptive shifts on a phylogeny</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="tutorial-17-automatic-detection-of-adaptive-shifts-on-a-phylogeny">
+<span id="tutorial-automatic-detection-of-adaptive-shifts-on-a-phylogeny"></span><span id="tutorial-17"></span><h1>Tutorial 17: Automatic detection of adaptive shifts on a phylogeny<a class="headerlink" href="#tutorial-17-automatic-detection-of-adaptive-shifts-on-a-phylogeny" title="Link to this heading"></a></h1>
+<section id="objectives">
+<h2>Objectives<a class="headerlink" href="#objectives" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Complete the automatic detection of adaptive shifts on a phylogeny workflow.</p></li>
+<li><p>Interpret the reported values and generated artifacts in their scientific context.</p></li>
+<li><p>Identify the canonical command references for each analysis step.</p></li>
+</ul>
+</section>
+<section id="prerequisites-and-working-directory">
+<h2>Prerequisites and working directory<a class="headerlink" href="#prerequisites-and-working-directory" title="Link to this heading"></a></h2>
+<p>Install the current PhyKIT release and create a dedicated working directory.
+Download the data linked in this tutorial into that directory before running
+the commands. All paths below are relative to this directory.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>mkdir<span class="w"> </span>phykit-tutorial-17
+<span class="nb">cd</span><span class="w"> </span>phykit-tutorial-17
+</pre></div>
+</div>
+</section>
+<section id="related-command-references">
+<h2>Related command references<a class="headerlink" href="#related-command-references" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="../../reference/commands/ou_shift_detection.html"><span class="doc">Ou Shift Detection</span></a></p></li>
+</ul>
+</section>
+<section id="workflow">
+<h2>Workflow<a class="headerlink" href="#workflow" title="Link to this heading"></a></h2>
+<p>OUwie (tutorial 15, above) requires specifying regimes <em>a priori</em>. But
+what if you don't know where on the tree the trait optimum changed?
+PhyKIT's <code class="docutils literal notranslate"><span class="pre">ou_shift_detection</span></code> command (aliases: <code class="docutils literal notranslate"><span class="pre">l1ou</span></code>, <code class="docutils literal notranslate"><span class="pre">ou_shifts</span></code>,
+<code class="docutils literal notranslate"><span class="pre">detect_shifts</span></code>) answers this question automatically using the
+LASSO-based approach of
+<a class="reference external" href="https://doi.org/10.1093/sysbio/syw062">Khabbazian et al. (2016)</a>.</p>
+<p><strong>When to use this command:</strong> You have a continuous trait and a phylogeny
+and want to discover which lineages experienced shifts in their adaptive
+optimum — for example, identifying which lizard clades adapted to
+different body sizes, or which mammal lineages evolved distinct metabolic
+rates. Unlike OUwie, no regime file is needed.</p>
+<p class="centered">
+<strong>Download test data:
+<a class="reference download internal" download="" href="../../_downloads/97c38abccff78ac60aee3f25ca0b02f5/tree_simple.tre"><code class="xref download docutils literal notranslate"><span class="pre">Mammal</span> <span class="pre">phylogeny</span></code></a>;
+<a class="reference download internal" download="" href="../../_downloads/b9b38de12b46a5f753d0fc77e586cea3/tree_simple_traits.tsv"><code class="xref download docutils literal notranslate"><span class="pre">Continuous</span> <span class="pre">trait</span> <span class="pre">data</span></code></a></strong></p><div class="line-block">
+<div class="line"><br /></div>
+</div>
+<section id="step-1-prepare-input-files">
+<h3>Step 1: Prepare input files<a class="headerlink" href="#step-1-prepare-input-files" title="Link to this heading"></a></h3>
+<p>You need two files:</p>
+<ol class="arabic">
+<li><p><strong>Newick tree file</strong> -- a phylogenetic tree with branch lengths.</p></li>
+<li><p><strong>Trait data file</strong> -- a tab-delimited file with two columns: taxon
+name and continuous trait value (no header row). Lines starting with
+<code class="docutils literal notranslate"><span class="pre">#</span></code> are treated as comments.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>raccoon   1.04
+bear      2.39
+sea_lion  2.30
+seal      1.88
+cat       0.5
+weasel    1.7
+monkey    0.3
+</pre></div>
+</div>
+</li>
+</ol>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="step-2-run-ou-shift-detection">
+<h3>Step 2: Run OU shift detection<a class="headerlink" href="#step-2-run-ou-shift-detection" title="Link to this heading"></a></h3>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>l1ou<span class="w"> </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span>-d<span class="w"> </span>tree_simple_traits.tsv
+</pre></div>
+</div>
+<p>Expected output:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>============================================================
+OU Shift Detection (l1ou)
+============================================================
+Number of tips:       8
+Number of shifts:     1
+Selection criterion:  pBIC
+Alpha (OU strength):  0.784768
+Sigma² (BM rate):     0.407049
+Root optimum (θ₀):    1.758001
+Log-likelihood:       -5.9531
+pBIC:                 26.7533
+BIC:                  22.3034
+AICc:                 51.9062
+
+Detected shifts:
+------------------------------------------------------------
+  Shift 1: stem of (cat, monkey, weasel)
+           New optimum: 0.286667
+============================================================
+</pre></div>
+</div>
+<p><strong>Interpretation.</strong> The algorithm detected one adaptive shift on the stem
+branch leading to the (cat, monkey, weasel) clade, with the trait optimum
+shifting from 1.76 (root) to 0.29. This means these three species are
+evolving toward a much lower body mass optimum than the rest of the tree.
+Alpha = 0.78 indicates moderate pull-back strength toward the optima.
+The pBIC of 26.75 is the most conservative criterion; BIC and AICc give
+lower values, suggesting the shift is well-supported.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="step-3-interpret-the-output">
+<h3>Step 3: Interpret the output<a class="headerlink" href="#step-3-interpret-the-output" title="Link to this heading"></a></h3>
+<p>The output reports:</p>
+<ul class="simple">
+<li><p><strong>Number of shifts</strong> -- how many adaptive regime changes were detected</p></li>
+<li><p><strong>Alpha</strong> -- OU selection strength (higher = trait is pulled more
+strongly toward the optimum)</p></li>
+<li><p><strong>Sigma²</strong> -- Brownian rate of stochastic variation</p></li>
+<li><p><strong>Root optimum (θ₀)</strong> -- ancestral/background trait optimum</p></li>
+<li><p><strong>Shifts</strong> -- each shift includes a description of where it occurred
+and the new optimum value for that regime</p></li>
+</ul>
+<p>A shift described as &quot;stem of (taxon_A, taxon_B, ... +N more)&quot; means the
+adaptive optimum changed on the branch leading to the clade containing
+those taxa. A &quot;terminal branch to taxon_X&quot; means only that single species
+shifted to a different optimum.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="step-4-choose-a-model-selection-criterion">
+<h3>Step 4: Choose a model selection criterion<a class="headerlink" href="#step-4-choose-a-model-selection-criterion" title="Link to this heading"></a></h3>
+<p>Three criteria are available:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>l1ou<span class="w"> </span>-t<span class="w"> </span>tree.nwk<span class="w"> </span>-d<span class="w"> </span>traits.tsv<span class="w"> </span>--criterion<span class="w"> </span>pBIC<span class="w">   </span><span class="c1"># default, most conservative</span>
+phykit<span class="w"> </span>l1ou<span class="w"> </span>-t<span class="w"> </span>tree.nwk<span class="w"> </span>-d<span class="w"> </span>traits.tsv<span class="w"> </span>--criterion<span class="w"> </span>BIC<span class="w">    </span><span class="c1"># standard BIC</span>
+phykit<span class="w"> </span>l1ou<span class="w"> </span>-t<span class="w"> </span>tree.nwk<span class="w"> </span>-d<span class="w"> </span>traits.tsv<span class="w"> </span>--criterion<span class="w"> </span>AICc<span class="w">   </span><span class="c1"># corrected AIC</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>pBIC</strong> (phylogenetic BIC) accounts for the combinatorial cost of
+choosing which edges shifted and is recommended for most analyses. It
+tends to be conservative, avoiding false positives.</p></li>
+<li><p><strong>BIC</strong> and <strong>AICc</strong> may detect more shifts, but carry a higher risk of
+overfitting, especially on large trees.</p></li>
+</ul>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="step-5-limit-the-search">
+<h3>Step 5: Limit the search<a class="headerlink" href="#step-5-limit-the-search" title="Link to this heading"></a></h3>
+<p>For large trees, you can cap the maximum number of shifts to speed up
+the analysis:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>l1ou<span class="w"> </span>-t<span class="w"> </span>tree.nwk<span class="w"> </span>-d<span class="w"> </span>traits.tsv<span class="w"> </span>--max-shifts<span class="w"> </span><span class="m">10</span>
+</pre></div>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="step-6-json-output-for-downstream-analysis">
+<h3>Step 6: JSON output for downstream analysis<a class="headerlink" href="#step-6-json-output-for-downstream-analysis" title="Link to this heading"></a></h3>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>l1ou<span class="w"> </span>-t<span class="w"> </span>tree.nwk<span class="w"> </span>-d<span class="w"> </span>traits.tsv<span class="w"> </span>--json
+</pre></div>
+</div>
+<p>The JSON output includes all model parameters, information criterion
+scores, and a list of detected shift edges with their descriptions and
+optima.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="biological-example-lizard-body-size-evolution">
+<h3>Biological example: lizard body size evolution<a class="headerlink" href="#biological-example-lizard-body-size-evolution" title="Link to this heading"></a></h3>
+<p>Consider a phylogeny of 100 Anolis lizard species with log-transformed
+body size measurements. Running:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>l1ou<span class="w"> </span>-t<span class="w"> </span>lizards.tre<span class="w"> </span>-d<span class="w"> </span>lizard_body_size.tsv
+</pre></div>
+</div>
+<p>might reveal 8 adaptive shifts, indicating that 8 lineages independently
+evolved toward different body size optima. The output shows which clades
+shifted and their new optimal values, enabling you to map adaptive
+radiation without specifying regimes in advance.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="comparison-with-r-s-l1ou">
+<h3>Comparison with R's l1ou<a class="headerlink" href="#comparison-with-r-s-l1ou" title="Link to this heading"></a></h3>
+<p>PhyKIT's OU shift detection implementation has been validated against
+R's l1ou package (Khabbazian et al. 2016). On a 100-tip Anolis dataset,
+PhyKIT detects the same 8 shifts with matching alpha (0.607) and
+comparable pBIC scores (PhyKIT: 17.6, R: 16.8). The small numerical
+difference arises from optimizer precision, not algorithmic differences.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+</section>
+<section id="expected-artifacts">
+<h2>Expected artifacts<a class="headerlink" href="#expected-artifacts" title="Link to this heading"></a></h2>
+<p>Each step identifies its expected terminal output or generated files. Confirm
+that those artifacts exist before continuing to the next step; filenames are
+relative to the tutorial working directory unless an absolute path is shown.</p>
+</section>
+<section id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Run <code class="docutils literal notranslate"><span class="pre">phykit</span> <span class="pre">&lt;command&gt;</span> <span class="pre">--help</span></code> to compare an invocation with the live interface.</p></li>
+<li><p>Confirm that downloaded files are in the current working directory and retain
+the filenames shown in the tutorial.</p></li>
+<li><p>For parsing errors, compare taxon names exactly across alignments, trees, and
+trait tables, including capitalization and underscores.</p></li>
+<li><p>See <a class="reference internal" href="../../troubleshooting/index.html"><span class="doc">Troubleshooting</span></a> for installation, format,
+and error-reporting guidance.</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="16-multi-regime-ou-models-ouwie.html" class="btn btn-neutral float-left" title="Tutorial 16: Multi-regime OU models (OUwie)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="18-visualizing-conflicting-phylogenetic-signal-with-splits-networks.html" class="btn btn-neutral float-right" title="Tutorial 18: Visualizing conflicting phylogenetic signal with splits networks" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020-2026 Jacob L. Steenwyk.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

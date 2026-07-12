@@ -101,6 +101,7 @@ comparison reaches significance. The heatmap is uniformly pale with no
 asterisks:
 
 .. image:: /_static/img/rrt_equal_rates.png
+   :alt: PhyKIT rrt equal rates figure
    :align: center
    :width: 80%
 
@@ -111,6 +112,7 @@ than A and D. Significant pairs (dark red, marked with ``*``) indicate
 lineages evolving at detectably different rates:
 
 .. image:: /_static/img/rrt_unequal_rates.png
+   :alt: PhyKIT rrt unequal rates figure
    :align: center
    :width: 80%
 

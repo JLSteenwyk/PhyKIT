@@ -34,6 +34,7 @@ discordant alt 2 (gray) proportions. Use ``--annotate`` to add numeric
 values near each pie.
 
 .. image:: /_static/quartet_pie_example.png
+   :alt: PhyKIT quartet pie example figure
    :align: center
    :width: 90%
 

@@ -59,5 +59,6 @@ Options: |br|
 *--json*: optional argument to print results as JSON
 
 .. image:: /_static/img/cophylo_example.png
+   :alt: PhyKIT cophylo example figure
    :align: center
    :width: 80%

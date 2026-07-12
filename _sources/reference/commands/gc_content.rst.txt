@@ -24,6 +24,7 @@ Guidance, interpretation, and examples
 --------------------------------------
 
 .. image:: /_static/docs_img/gc_content.png 
+   :alt: PhyKIT gc content figure
    :align: center
    :width: 75%
 

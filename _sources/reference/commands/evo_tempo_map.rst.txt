@@ -105,6 +105,7 @@ To generate a visualization:
    phykit evo_tempo_map -t <species_tree> -g <gene_trees> --plot tempo_map.png
 
 .. image:: /_static/img/tutorial_etm_plot.png
+   :alt: PhyKIT tutorial etm plot figure
    :align: center
    :width: 80%
 

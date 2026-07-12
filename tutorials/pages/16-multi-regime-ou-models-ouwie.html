@@ -1,0 +1,361 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tutorial 16: Multi-regime OU models (OUwie) &mdash; phykit 2.3.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=ae8b8648" />
+
+  
+    <link rel="shortcut icon" href="../../_static/flavicon.png"/>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=c3c8ae58"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Tutorial 17: Automatic detection of adaptive shifts on a phylogeny" href="17-automatic-detection-of-adaptive-shifts-on-a-phylogeny.html" />
+    <link rel="prev" title="Tutorial 15: Comparing continuous trait evolution models" href="15-comparing-continuous-trait-evolution-models.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html">
+            
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../about/index.html">About</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/index.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">Command reference</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Tutorials</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#tutorial-index">Tutorial index</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="01-summarizing-information-content.html">Tutorial 1: Summarizing information content</a></li>
+<li class="toctree-l3"><a class="reference internal" href="02-evaluating-gene-gene-covariation.html">Tutorial 2: Evaluating gene-gene covariation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="03-identifying-signatures-of-rapid-radiations.html">Tutorial 3: Identifying signatures of rapid radiations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="04-evaluating-the-accuracy-of-a-multiple-sequence-alignment.html">Tutorial 4: Evaluating the accuracy of a multiple sequence alignment</a></li>
+<li class="toctree-l3"><a class="reference internal" href="05-mapping-the-evolutionary-history-of-discrete-traits.html">Tutorial 5: Mapping the evolutionary history of discrete traits</a></li>
+<li class="toctree-l3"><a class="reference internal" href="06-testing-for-phylogenetic-signal-in-continuous-traits.html">Tutorial 6: Testing for phylogenetic signal in continuous traits</a></li>
+<li class="toctree-l3"><a class="reference internal" href="07-phylogenetic-ordination-for-multivariate-trait-analysis.html">Tutorial 7: Phylogenetic ordination for multivariate trait analysis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="08-visualizing-trait-evolution-with-phylomorphospace.html">Tutorial 8: Visualizing trait evolution with phylomorphospace</a></li>
+<li class="toctree-l3"><a class="reference internal" href="09-phylogenetic-regression-pgls.html">Tutorial 9: Phylogenetic regression (PGLS)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="10-phylogenetic-glm-for-binary-and-count-data.html">Tutorial 10: Phylogenetic GLM for binary and count data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="11-reconstructing-ancestral-trait-values-and-mapping-them-onto-a-phylogeny.html">Tutorial 11: Reconstructing ancestral trait values and mapping them onto a phylogeny</a></li>
+<li class="toctree-l3"><a class="reference internal" href="12-spectral-discordance-decomposition.html">Tutorial 12: Spectral discordance decomposition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="13-testing-for-rate-heterogeneity-across-phylogenetic-regimes.html">Tutorial 13: Testing for rate heterogeneity across phylogenetic regimes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="14-visualization-commands.html">Tutorial 14: Visualization commands</a></li>
+<li class="toctree-l3"><a class="reference internal" href="15-comparing-continuous-trait-evolution-models.html">Tutorial 15: Comparing continuous trait evolution models</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Tutorial 16: Multi-regime OU models (OUwie)</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#objectives">Objectives</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#prerequisites-and-working-directory">Prerequisites and working directory</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#related-command-references">Related command references</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#workflow">Workflow</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#expected-artifacts">Expected artifacts</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#troubleshooting">Troubleshooting</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="17-automatic-detection-of-adaptive-shifts-on-a-phylogeny.html">Tutorial 17: Automatic detection of adaptive shifts on a phylogeny</a></li>
+<li class="toctree-l3"><a class="reference internal" href="18-visualizing-conflicting-phylogenetic-signal-with-splits-networks.html">Tutorial 18: Visualizing conflicting phylogenetic signal with splits networks</a></li>
+<li class="toctree-l3"><a class="reference internal" href="19-end-to-end-comparative-methods-workflow.html">Tutorial 19: End-to-end comparative methods workflow</a></li>
+<li class="toctree-l3"><a class="reference internal" href="20-gene-tree-discordance-analysis-pipeline.html">Tutorial 20: Gene tree discordance analysis pipeline</a></li>
+<li class="toctree-l3"><a class="reference internal" href="21-customizing-phylogenetic-plots.html">Tutorial 21: Customizing phylogenetic plots</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#legacy-tutorial-anchors">Legacy tutorial anchors</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../troubleshooting/index.html">Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../change_log/index.html">Change log</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../other_software/index.html">Other software</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../frequently_asked_questions/index.html">FAQ</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">phykit</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Tutorials</a></li>
+      <li class="breadcrumb-item active">Tutorial 16: Multi-regime OU models (OUwie)</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="tutorial-16-multi-regime-ou-models-ouwie">
+<span id="tutorial-multi-regime-ou-models-ouwie"></span><span id="tutorial-16"></span><h1>Tutorial 16: Multi-regime OU models (OUwie)<a class="headerlink" href="#tutorial-16-multi-regime-ou-models-ouwie" title="Link to this heading"></a></h1>
+<section id="objectives">
+<h2>Objectives<a class="headerlink" href="#objectives" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Complete the multi-regime ou models (ouwie) workflow.</p></li>
+<li><p>Interpret the reported values and generated artifacts in their scientific context.</p></li>
+<li><p>Identify the canonical command references for each analysis step.</p></li>
+</ul>
+</section>
+<section id="prerequisites-and-working-directory">
+<h2>Prerequisites and working directory<a class="headerlink" href="#prerequisites-and-working-directory" title="Link to this heading"></a></h2>
+<p>Install the current PhyKIT release and create a dedicated working directory.
+Download the data linked in this tutorial into that directory before running
+the commands. All paths below are relative to this directory.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>mkdir<span class="w"> </span>phykit-tutorial-16
+<span class="nb">cd</span><span class="w"> </span>phykit-tutorial-16
+</pre></div>
+</div>
+</section>
+<section id="related-command-references">
+<h2>Related command references<a class="headerlink" href="#related-command-references" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="../../reference/commands/ouwie.html"><span class="doc">Ouwie</span></a></p></li>
+</ul>
+</section>
+<section id="workflow">
+<h2>Workflow<a class="headerlink" href="#workflow" title="Link to this heading"></a></h2>
+<p>PhyKIT's <code class="docutils literal notranslate"><span class="pre">ouwie</span></code> command (aliases: <code class="docutils literal notranslate"><span class="pre">fit_ouwie</span></code>, <code class="docutils literal notranslate"><span class="pre">multi_regime_ou</span></code>)
+fits multi-regime Ornstein-Uhlenbeck models, analogous to R's OUwie
+package (Beaulieu et al. 2012). These models allow different clades to
+evolve toward different trait optima with potentially different rates.</p>
+<p class="centered">
+<strong>Download test data:
+<a class="reference download internal" download="" href="../../_downloads/97c38abccff78ac60aee3f25ca0b02f5/tree_simple.tre"><code class="xref download docutils literal notranslate"><span class="pre">Mammal</span> <span class="pre">phylogeny</span></code></a>;
+<a class="reference download internal" download="" href="../../_downloads/b9b38de12b46a5f753d0fc77e586cea3/tree_simple_traits.tsv"><code class="xref download docutils literal notranslate"><span class="pre">Continuous</span> <span class="pre">trait</span> <span class="pre">data</span></code></a>;
+<a class="reference download internal" download="" href="../../_downloads/1da27d327ebff5ba767e2acbcf3bc2bd/tree_simple_regimes.tsv"><code class="xref download docutils literal notranslate"><span class="pre">Regime</span> <span class="pre">assignments</span></code></a></strong></p><div class="line-block">
+<div class="line"><br /></div>
+</div>
+<section id="step-1-prepare-input-files">
+<h3>Step 1: Prepare input files<a class="headerlink" href="#step-1-prepare-input-files" title="Link to this heading"></a></h3>
+<p>You need three files:</p>
+<ol class="arabic">
+<li><p><strong>Newick tree file</strong> -- a phylogenetic tree in Newick format. The tree
+should include all taxa present in the trait and regime files.</p></li>
+<li><p><strong>Trait data file</strong> -- a tab-delimited file with two columns: taxon name
+and continuous trait value (no header row). Lines starting with <code class="docutils literal notranslate"><span class="pre">#</span></code>
+are treated as comments.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>dog       1.1
+bear      1.9
+raccoon   1.5
+seal      1.8
+sea_lion  1.8
+cat       0.5
+weasel    1.7
+monkey    0.3
+</pre></div>
+</div>
+</li>
+<li><p><strong>Regime data file</strong> -- a tab-delimited file with two columns: taxon
+name and discrete regime label (no header row). Regime labels can be
+any string (e.g., <code class="docutils literal notranslate"><span class="pre">aquatic</span></code> / <code class="docutils literal notranslate"><span class="pre">terrestrial</span></code>, <code class="docutils literal notranslate"><span class="pre">herbivore</span></code> /
+<code class="docutils literal notranslate"><span class="pre">carnivore</span></code>). Internal branch regimes are inferred via Fitch
+parsimony.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>dog       terrestrial
+bear      terrestrial
+raccoon   terrestrial
+seal      aquatic
+sea_lion  aquatic
+cat       terrestrial
+weasel    terrestrial
+monkey    terrestrial
+</pre></div>
+</div>
+</li>
+</ol>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="step-2-run-ouwie-with-all-models">
+<h3>Step 2: Run OUwie with all models<a class="headerlink" href="#step-2-run-ouwie-with-all-models" title="Link to this heading"></a></h3>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>ouwie<span class="w"> </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span>-d<span class="w"> </span>tree_simple_traits.tsv<span class="w"> </span>-r<span class="w"> </span>tree_simple_regimes.tsv
+</pre></div>
+</div>
+<p>Expected output:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>OUwie Model Comparison (Multi-Regime OU)
+
+Number of tips: 8
+Regimes: 2 (aquatic, terrestrial)
+
+Model   k    LL          AIC       AICc      dAICc    AICcW    BIC       dBIC     R2
+BM1     2    -11.570     27.14     29.54     0.00     0.759    27.30     2.93     0.000
+OU1     3    -10.289     26.58     32.58     3.04     0.166    26.82     2.45     -30.335
+BMS     3    -11.205     28.41     34.41     4.87     0.067    28.65     4.28     -0.034
+OUM     4    -8.630      25.26     38.59     9.05     0.008    25.58     1.21     -19.695
+OUMA    5    -6.986      23.97     53.97     24.43    0.000    24.37     0.00     -143.555
+OUMV    5    -6.986      23.97     53.97     24.43    0.000    24.37     0.00     -59.882
+OUMVA   6    -6.986      25.97     109.97    80.43    0.000    26.45     2.08     -861.136
+
+Best model (AICc): BM1
+Best model (BIC):  OUMA
+</pre></div>
+</div>
+<p><strong>Interpretation.</strong> By AICc (preferred for small samples), BM1 is the best model
+with an AICc weight of 0.76, meaning a single Brownian motion rate adequately
+explains the data. The more complex OU models are penalized by the AICc correction
+for only 8 taxa. By BIC, OUMA wins — but this should be treated cautiously given
+the small sample size. This illustrates why model selection criteria matter: AICc
+is more conservative with few taxa.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="step-3-run-with-a-subset-of-models">
+<h3>Step 3: Run with a subset of models<a class="headerlink" href="#step-3-run-with-a-subset-of-models" title="Link to this heading"></a></h3>
+<p>To compare only specific models, use <code class="docutils literal notranslate"><span class="pre">--models</span></code>:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>ouwie<span class="w"> </span>-t<span class="w"> </span>tree.nwk<span class="w"> </span>-d<span class="w"> </span>traits.tsv<span class="w"> </span>-r<span class="w"> </span>regimes.tsv<span class="w"> </span>--models<span class="w"> </span>BM1,OUM,OUMVA
+</pre></div>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="step-4-interpret-the-output">
+<h3>Step 4: Interpret the output<a class="headerlink" href="#step-4-interpret-the-output" title="Link to this heading"></a></h3>
+<p>The output table includes:</p>
+<ul class="simple">
+<li><p><strong>logLik</strong> -- log-likelihood (higher = better fit)</p></li>
+<li><p><strong>AICc</strong> -- small-sample corrected AIC (lower = better)</p></li>
+<li><p><strong>BIC</strong> -- Bayesian Information Criterion (lower = better)</p></li>
+<li><p><strong>k</strong> -- number of free parameters</p></li>
+<li><p><strong>AICc_w</strong> -- AICc weight (relative support, sums to 1 across models)</p></li>
+<li><p><strong>Params</strong> -- estimated parameter values</p></li>
+</ul>
+<p>Key parameters:</p>
+<ul class="simple">
+<li><p><strong>sigma2</strong> -- diffusion rate (BM rate of evolution)</p></li>
+<li><p><strong>alpha</strong> -- strength of selection toward the optimum (OU pull-back
+parameter; larger values = stronger constraint)</p></li>
+<li><p><strong>theta</strong> -- trait optimum for each regime (the value the trait is
+&quot;pulled&quot; toward)</p></li>
+<li><p><strong>z0</strong> -- root ancestral state (BM models only)</p></li>
+</ul>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="step-5-model-selection-guidance">
+<h3>Step 5: Model selection guidance<a class="headerlink" href="#step-5-model-selection-guidance" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>If <strong>BM1</strong> is best, a single Brownian motion rate explains the data.</p></li>
+<li><p>If <strong>BMS</strong> is best, different regimes evolve at different rates but
+without directional selection.</p></li>
+<li><p>If <strong>OUM</strong> is best, different regimes have different trait optima --
+the most common finding in comparative studies.</p></li>
+<li><p>If <strong>OUMV</strong> or <strong>OUMA</strong> is best, regimes differ in both optima and
+either rates (OUMV) or selection strength (OUMA).</p></li>
+<li><p>If <strong>OUMVA</strong> is best, all parameters are regime-specific. Be cautious
+with this model on small datasets as it has the most parameters (3R).</p></li>
+</ul>
+<p>Use AICc for small datasets (n &lt; 40 * k) and BIC when you prefer a
+more conservative penalty on model complexity.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="step-6-json-output-for-downstream-analysis">
+<h3>Step 6: JSON output for downstream analysis<a class="headerlink" href="#step-6-json-output-for-downstream-analysis" title="Link to this heading"></a></h3>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>ouwie<span class="w"> </span>-t<span class="w"> </span>tree.nwk<span class="w"> </span>-d<span class="w"> </span>traits.tsv<span class="w"> </span>-r<span class="w"> </span>regimes.tsv<span class="w"> </span>--json
+</pre></div>
+</div>
+<p>The JSON output includes all model results, the best model by AICc and
+BIC, regime labels, and parameter estimates. This is useful for
+programmatic downstream analysis or integration into pipelines.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="comparison-with-r-s-ouwie">
+<h3>Comparison with R's OUwie<a class="headerlink" href="#comparison-with-r-s-ouwie" title="Link to this heading"></a></h3>
+<p>PhyKIT's OUwie implementation has been validated against R's OUwie
+package (v2.10). BM1 matches R exactly. OUMA and OUMVA agree within
+0.003-0.02 log-likelihood units. For OU1, OUM, and OUMV, PhyKIT's
+multi-interval optimizer finds better OU optima than R's default
+optimizer, which can get stuck at the BM boundary (alpha=0) on some
+datasets.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+</section>
+<section id="expected-artifacts">
+<h2>Expected artifacts<a class="headerlink" href="#expected-artifacts" title="Link to this heading"></a></h2>
+<p>Each step identifies its expected terminal output or generated files. Confirm
+that those artifacts exist before continuing to the next step; filenames are
+relative to the tutorial working directory unless an absolute path is shown.</p>
+</section>
+<section id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Run <code class="docutils literal notranslate"><span class="pre">phykit</span> <span class="pre">&lt;command&gt;</span> <span class="pre">--help</span></code> to compare an invocation with the live interface.</p></li>
+<li><p>Confirm that downloaded files are in the current working directory and retain
+the filenames shown in the tutorial.</p></li>
+<li><p>For parsing errors, compare taxon names exactly across alignments, trees, and
+trait tables, including capitalization and underscores.</p></li>
+<li><p>See <a class="reference internal" href="../../troubleshooting/index.html"><span class="doc">Troubleshooting</span></a> for installation, format,
+and error-reporting guidance.</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="15-comparing-continuous-trait-evolution-models.html" class="btn btn-neutral float-left" title="Tutorial 15: Comparing continuous trait evolution models" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="17-automatic-detection-of-adaptive-shifts-on-a-phylogeny.html" class="btn btn-neutral float-right" title="Tutorial 17: Automatic detection of adaptive shifts on a phylogeny" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020-2026 Jacob L. Steenwyk.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

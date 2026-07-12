@@ -1,0 +1,578 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tutorial 20: Gene tree discordance analysis pipeline &mdash; phykit 2.3.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=ae8b8648" />
+
+  
+    <link rel="shortcut icon" href="../../_static/flavicon.png"/>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=c3c8ae58"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Tutorial 21: Customizing phylogenetic plots" href="21-customizing-phylogenetic-plots.html" />
+    <link rel="prev" title="Tutorial 19: End-to-end comparative methods workflow" href="19-end-to-end-comparative-methods-workflow.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html">
+            
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../about/index.html">About</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/index.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">Command reference</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Tutorials</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#tutorial-index">Tutorial index</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="01-summarizing-information-content.html">Tutorial 1: Summarizing information content</a></li>
+<li class="toctree-l3"><a class="reference internal" href="02-evaluating-gene-gene-covariation.html">Tutorial 2: Evaluating gene-gene covariation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="03-identifying-signatures-of-rapid-radiations.html">Tutorial 3: Identifying signatures of rapid radiations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="04-evaluating-the-accuracy-of-a-multiple-sequence-alignment.html">Tutorial 4: Evaluating the accuracy of a multiple sequence alignment</a></li>
+<li class="toctree-l3"><a class="reference internal" href="05-mapping-the-evolutionary-history-of-discrete-traits.html">Tutorial 5: Mapping the evolutionary history of discrete traits</a></li>
+<li class="toctree-l3"><a class="reference internal" href="06-testing-for-phylogenetic-signal-in-continuous-traits.html">Tutorial 6: Testing for phylogenetic signal in continuous traits</a></li>
+<li class="toctree-l3"><a class="reference internal" href="07-phylogenetic-ordination-for-multivariate-trait-analysis.html">Tutorial 7: Phylogenetic ordination for multivariate trait analysis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="08-visualizing-trait-evolution-with-phylomorphospace.html">Tutorial 8: Visualizing trait evolution with phylomorphospace</a></li>
+<li class="toctree-l3"><a class="reference internal" href="09-phylogenetic-regression-pgls.html">Tutorial 9: Phylogenetic regression (PGLS)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="10-phylogenetic-glm-for-binary-and-count-data.html">Tutorial 10: Phylogenetic GLM for binary and count data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="11-reconstructing-ancestral-trait-values-and-mapping-them-onto-a-phylogeny.html">Tutorial 11: Reconstructing ancestral trait values and mapping them onto a phylogeny</a></li>
+<li class="toctree-l3"><a class="reference internal" href="12-spectral-discordance-decomposition.html">Tutorial 12: Spectral discordance decomposition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="13-testing-for-rate-heterogeneity-across-phylogenetic-regimes.html">Tutorial 13: Testing for rate heterogeneity across phylogenetic regimes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="14-visualization-commands.html">Tutorial 14: Visualization commands</a></li>
+<li class="toctree-l3"><a class="reference internal" href="15-comparing-continuous-trait-evolution-models.html">Tutorial 15: Comparing continuous trait evolution models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="16-multi-regime-ou-models-ouwie.html">Tutorial 16: Multi-regime OU models (OUwie)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="17-automatic-detection-of-adaptive-shifts-on-a-phylogeny.html">Tutorial 17: Automatic detection of adaptive shifts on a phylogeny</a></li>
+<li class="toctree-l3"><a class="reference internal" href="18-visualizing-conflicting-phylogenetic-signal-with-splits-networks.html">Tutorial 18: Visualizing conflicting phylogenetic signal with splits networks</a></li>
+<li class="toctree-l3"><a class="reference internal" href="19-end-to-end-comparative-methods-workflow.html">Tutorial 19: End-to-end comparative methods workflow</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Tutorial 20: Gene tree discordance analysis pipeline</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#objectives">Objectives</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#prerequisites-and-working-directory">Prerequisites and working directory</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#related-command-references">Related command references</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#workflow">Workflow</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#expected-artifacts">Expected artifacts</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#troubleshooting">Troubleshooting</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="21-customizing-phylogenetic-plots.html">Tutorial 21: Customizing phylogenetic plots</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#legacy-tutorial-anchors">Legacy tutorial anchors</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../troubleshooting/index.html">Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../change_log/index.html">Change log</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../other_software/index.html">Other software</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../frequently_asked_questions/index.html">FAQ</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">phykit</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Tutorials</a></li>
+      <li class="breadcrumb-item active">Tutorial 20: Gene tree discordance analysis pipeline</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="tutorial-20-gene-tree-discordance-analysis-pipeline">
+<span id="tutorial-gene-tree-discordance-analysis-pipeline"></span><span id="tutorial-20"></span><h1>Tutorial 20: Gene tree discordance analysis pipeline<a class="headerlink" href="#tutorial-20-gene-tree-discordance-analysis-pipeline" title="Link to this heading"></a></h1>
+<section id="objectives">
+<h2>Objectives<a class="headerlink" href="#objectives" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Complete the gene tree discordance analysis pipeline workflow.</p></li>
+<li><p>Interpret the reported values and generated artifacts in their scientific context.</p></li>
+<li><p>Identify the canonical command references for each analysis step.</p></li>
+</ul>
+</section>
+<section id="prerequisites-and-working-directory">
+<h2>Prerequisites and working directory<a class="headerlink" href="#prerequisites-and-working-directory" title="Link to this heading"></a></h2>
+<p>Install the current PhyKIT release and create a dedicated working directory.
+Download the data linked in this tutorial into that directory before running
+the commands. All paths below are relative to this directory.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>mkdir<span class="w"> </span>phykit-tutorial-20
+<span class="nb">cd</span><span class="w"> </span>phykit-tutorial-20
+</pre></div>
+</div>
+</section>
+<section id="related-command-references">
+<h2>Related command references<a class="headerlink" href="#related-command-references" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="../../reference/commands/consensus_network.html"><span class="doc">Consensus Network</span></a></p></li>
+<li><p><a class="reference internal" href="../../reference/commands/evo_tempo_map.html"><span class="doc">Evo Tempo Map</span></a></p></li>
+<li><p><a class="reference internal" href="../../reference/commands/discordance_asymmetry.html"><span class="doc">Discordance Asymmetry</span></a></p></li>
+<li><p><a class="reference internal" href="../../reference/commands/ltt.html"><span class="doc">Ltt</span></a></p></li>
+<li><p><a class="reference internal" href="../../reference/commands/concordance_asr.html"><span class="doc">Concordance Asr</span></a></p></li>
+<li><p><a class="reference internal" href="../../reference/commands/phylogenetic_signal.html"><span class="doc">Phylogenetic Signal</span></a></p></li>
+<li><p><a class="reference internal" href="../../reference/commands/phylogenetic_regression.html"><span class="doc">Phylogenetic Regression</span></a></p></li>
+<li><p><a class="reference internal" href="../../reference/commands/fit_continuous.html"><span class="doc">Fit Continuous</span></a></p></li>
+</ul>
+</section>
+<section id="workflow">
+<h2>Workflow<a class="headerlink" href="#workflow" title="Link to this heading"></a></h2>
+<p>Gene trees often disagree with the species tree due to incomplete
+lineage sorting (ILS), introgression, or gene duplication and loss.
+This tutorial demonstrates how to quantify and visualize gene tree
+discordance, reconstruct ancestral states that account for it, and
+incorporate it into comparative methods — all using PhyKIT.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<section id="scenario">
+<h3>Scenario<a class="headerlink" href="#scenario" title="Link to this heading"></a></h3>
+<p>Imagine you have sequenced 200 genes across a clade that underwent a
+rapid radiation — for example, a group of closely related yeast species
+or a recent adaptive radiation of cichlid fishes. You have already
+inferred a species tree (e.g., via ASTRAL or concatenation) and
+individual gene trees for each locus. You suspect that the rapid
+radiation produced substantial incomplete lineage sorting, and perhaps
+introgression between some lineages. Before running any downstream
+comparative analysis, you want to know: <em>how much gene tree conflict
+exists, and does it matter for my trait analyses?</em></p>
+<p>Specifically, you want to (1) visualize which bipartitions in the
+species tree are well-supported vs. contested across gene trees,
+(2) reconstruct the ancestral value of a continuous trait (e.g.,
+thermal tolerance) while accounting for the topological uncertainty
+from discordance, and (3) test whether a trait-trait relationship
+(e.g., thermal tolerance vs. metabolic rate) holds up when the
+variance-covariance matrix reflects the full landscape of gene tree
+histories rather than just the species tree.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="overview">
+<h3>Overview<a class="headerlink" href="#overview" title="Link to this heading"></a></h3>
+<p>We will:</p>
+<ol class="arabic simple">
+<li><p>Quantify gene tree conflict with a splits network (<code class="docutils literal notranslate"><span class="pre">consensus_network</span></code>)</p></li>
+<li><p>Test for rate-topology associations (<code class="docutils literal notranslate"><span class="pre">evo_tempo_map</span></code>)</p></li>
+<li><p>Test for asymmetric discordance / gene flow (<code class="docutils literal notranslate"><span class="pre">discordance_asymmetry</span></code>)</p></li>
+<li><p>Identify diversification patterns (<code class="docutils literal notranslate"><span class="pre">ltt</span></code>)</p></li>
+<li><p>Reconstruct ancestral states accounting for discordance (<code class="docutils literal notranslate"><span class="pre">concordance_asr</span></code>)</p></li>
+<li><p>Run comparative methods with discordance-aware variance-covariance
+matrices (<code class="docutils literal notranslate"><span class="pre">pgls</span></code>, <code class="docutils literal notranslate"><span class="pre">phylogenetic_signal</span></code>, <code class="docutils literal notranslate"><span class="pre">fit_continuous</span></code>)</p></li>
+</ol>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="data-files-used-in-this-tutorial">
+<h3>Data files used in this tutorial:<a class="headerlink" href="#data-files-used-in-this-tutorial" title="Link to this heading"></a></h3>
+<p class="centered">
+<strong>Download test data:
+<a class="reference download internal" download="" href="../../_downloads/97c38abccff78ac60aee3f25ca0b02f5/tree_simple.tre"><code class="xref download docutils literal notranslate"><span class="pre">Mammal</span> <span class="pre">phylogeny</span> <span class="pre">(species</span> <span class="pre">tree)</span></code></a>;
+<a class="reference download internal" download="" href="../../_downloads/2ad5ce93fa4158c0aa386911f0f004de/gene_trees_simple.nwk"><code class="xref download docutils literal notranslate"><span class="pre">Gene</span> <span class="pre">trees</span> <span class="pre">(10</span> <span class="pre">loci)</span></code></a>;
+<a class="reference download internal" download="" href="../../_downloads/b9b38de12b46a5f753d0fc77e586cea3/tree_simple_traits.tsv"><code class="xref download docutils literal notranslate"><span class="pre">Continuous</span> <span class="pre">trait</span> <span class="pre">data</span></code></a>;
+<a class="reference download internal" download="" href="../../_downloads/7d32036238e91ae254c5ef40edf727db/tree_simple_multi_traits.tsv"><code class="xref download docutils literal notranslate"><span class="pre">Multi-trait</span> <span class="pre">data</span></code></a></strong></p><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">tree_simple.tre</span></code> — an eight-taxon mammal species tree in Newick format</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">gene_trees_simple.nwk</span></code> — 10 gene trees (one per line), most concordant
+with the species tree but several with alternative topologies</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">tree_simple_traits.tsv</span></code> — body mass (log-transformed kg), tab-delimited</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">tree_simple_multi_traits.tsv</span></code> — body mass, brain size, and longevity,
+tab-delimited with a header row</p></li>
+</ul>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="step-1-visualize-gene-tree-conflict-with-a-splits-network">
+<h3>Step 1: Visualize gene tree conflict with a splits network<a class="headerlink" href="#step-1-visualize-gene-tree-conflict-with-a-splits-network" title="Link to this heading"></a></h3>
+<p>Start by understanding the landscape of gene tree disagreement. In our
+rapid-radiation scenario, we expect that some bipartitions in the species
+tree are supported by most gene trees while others are contested — the
+splits network will reveal exactly which relationships are robust and
+which are ambiguous.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>consensus_network<span class="w"> </span>-t<span class="w"> </span>gene_trees_simple.nwk
+</pre></div>
+</div>
+<p>Expected output:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Number of input trees: 10
+Number of taxa: 8
+Threshold: 0.1
+Total unique splits: 13
+Splits above threshold: 13
+---
+{cat, monkey}           10/10   1.0000
+{cat, monkey, weasel}    9/10   0.9000
+{sea_lion, seal}         9/10   0.9000
+{bear, raccoon}          7/10   0.7000
+{bear, dog, raccoon}     6/10   0.6000
+{bear, dog}              2/10   0.2000
+...
+</pre></div>
+</div>
+<p>The output shows that {cat, monkey} is supported by all 10 gene trees
+(fully concordant), while {bear, raccoon} is supported by only 7/10.
+The {bear, dog, raccoon} clade — which places dog with bear and raccoon
+rather than as an outgroup — is supported by only 6/10 gene trees.
+These lower-frequency splits indicate where gene tree conflict is
+concentrated.</p>
+<p>Generate a visual network:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>consnet<span class="w"> </span>-t<span class="w"> </span>gene_trees_simple.nwk<span class="w"> </span>--plot-output<span class="w"> </span>splits_network.png
+</pre></div>
+</div>
+<a class="reference internal image-reference" href="../../_images/tutorial19_splits_network.png"><img alt="PhyKIT tutorial19 splits network figure" class="align-center" src="../../_images/tutorial19_splits_network.png" style="width: 80%;" />
+</a>
+<p>Thick chords represent well-supported splits; thin chords represent
+rare alternatives. A clean star-like network suggests minimal conflict;
+box-like structures indicate competing topologies. If the network shows
+substantial conflict, the downstream discordance-aware analyses in
+Steps 5-6 become especially important.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="step-2-test-for-rate-topology-associations-with-evolutionary-tempo-mapping">
+<h3>Step 2: Test for rate-topology associations with evolutionary tempo mapping<a class="headerlink" href="#step-2-test-for-rate-topology-associations-with-evolutionary-tempo-mapping" title="Link to this heading"></a></h3>
+<p>The splits network shows <em>which</em> branches have discordance — but do the
+discordant gene trees also differ in branch lengths? Under the coalescent,
+discordant gene trees should have shorter internal branches at the
+discordant node (deeper coalescence). If discordant gene trees instead
+show anomalously <em>long</em> branches, that suggests substitution rate
+heterogeneity correlated with topology — potentially adaptive evolution
+or systematic error from model misspecification.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>evo_tempo_map<span class="w"> </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span>-g<span class="w"> </span>gene_trees_simple.nwk
+</pre></div>
+</div>
+<p>Expected output:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>branch                          n_conc  n_disc    med_conc    med_disc      U_pval   perm_pval       fdr_p
+----------------------------------------------------------------------------------------------------------
+bear,dog,raccoon                     6       1    3.875000    3.600000          NA          NA          NA
+bear,raccoon                         7       3    0.880000    0.700000    0.516667    0.077000    0.516667
+cat,monkey                          10       0   20.450000          NA          NA          NA          NA
+cat,monkey,weasel                    9       1    2.120000    2.800000          NA          NA          NA
+sea_lion,seal                        9       1    7.500000    7.200000          NA          NA          NA
+---
+Global treeness: concordant=0.126489 (n=6), discordant=0.119014 (n=4)
+Branches tested: 1, significant (FDR&lt;0.05): 0
+</pre></div>
+</div>
+<p>The {bear,raccoon} branch is the only one with enough discordant gene trees
+(3) for a statistical test. The median branch length is 0.88 in concordant
+gene trees vs. 0.70 in discordant ones — shorter internal branches in the
+discordant trees, consistent with the coalescent expectation. The difference
+is not significant (U p = 0.52), suggesting neutral sorting rather than
+rate heterogeneity at this branch.</p>
+<p>The global treeness comparison shows that concordant gene trees have slightly
+higher treeness (0.126 vs. 0.119), meaning they have proportionally more
+internal branch length. This is expected: concordant gene trees have resolved
+internodes, while discordant ones tend to have shorter internal branches
+from deeper coalescence.</p>
+<p>To visualize the concordant vs. discordant branch length distributions:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>etm<span class="w"> </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span>-g<span class="w"> </span>gene_trees_simple.nwk<span class="w"> </span>--plot<span class="w"> </span>tempo_map.png
+</pre></div>
+</div>
+<a class="reference internal image-reference" href="../../_images/tutorial_etm_plot.png"><img alt="PhyKIT tutorial etm plot figure" class="align-center" src="../../_images/tutorial_etm_plot.png" style="width: 80%;" />
+</a>
+<p>The box/strip plot shows concordant (blue) and discordant (orange) branch
+lengths at each species tree branch. Branches with significantly different
+distributions (FDR &lt; 0.05) would be marked with an asterisk — none are
+significant in this small dataset.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="step-3-test-for-asymmetric-discordance-gene-flow-detection">
+<h3>Step 3: Test for asymmetric discordance (gene flow detection)<a class="headerlink" href="#step-3-test-for-asymmetric-discordance-gene-flow-detection" title="Link to this heading"></a></h3>
+<p>Step 2 told us whether discordant gene trees differ in branch <em>lengths</em>
+from concordant ones. Now we ask a complementary question: are the two
+possible discordant topologies at each branch equally frequent?</p>
+<p>Under ILS alone, the two NNI alternative topologies (gDF1 and gDF2)
+should appear with equal probability. If one alternative is significantly
+more common, it suggests gene flow or introgression between specific
+lineages — because introgression biases gene tree topologies toward
+the alternative that groups the donor and recipient.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>discordance_asymmetry<span class="w"> </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span>-g<span class="w"> </span>gene_trees_simple.nwk
+</pre></div>
+</div>
+<p>Expected output:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>branch                          n_conc  n_alt1  n_alt2  asym_ratio     binom_p       fdr_p   gene_flow
+------------------------------------------------------------------------------------------------------
+bear,dog,raccoon                     6       0       1       1.000      1.0000      1.0000           -
+bear,raccoon                         7       1       2       0.667      1.0000      1.0000           -
+cat,monkey                          10       0       0          NA          NA          NA           -
+cat,monkey,weasel                    9       1       0       1.000      1.0000      1.0000           -
+sea_lion,seal                        9       1       0       1.000      1.0000      1.0000           -
+---
+Summary: 4 branches tested, 0 significant (FDR&lt;0.05)
+</pre></div>
+</div>
+<p>No branches show significant asymmetry in this small dataset, which is
+consistent with the ILS-only scenario. The {bear,raccoon} branch has
+the most discordant gene trees (3 total: 1 alt1 + 2 alt2), but the
+difference between 1 and 2 is far from significant (binomial p = 1.0).</p>
+<p>To visualize asymmetry on the phylogeny:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>da<span class="w"> </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span>-g<span class="w"> </span>gene_trees_simple.nwk<span class="w"> </span>--plot<span class="w"> </span>asymmetry.png
+</pre></div>
+</div>
+<a class="reference internal image-reference" href="../../_images/tutorial19_discordance_asymmetry.png"><img alt="PhyKIT tutorial19 discordance asymmetry figure" class="align-center" src="../../_images/tutorial19_discordance_asymmetry.png" style="width: 80%;" />
+</a>
+<p>Branches are colored by asymmetry ratio (blue = symmetric, red =
+asymmetric). All branches are blue here, confirming symmetric
+discordance consistent with ILS. In datasets with introgression,
+branches near hybridization events would appear red with significant
+p-values.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="step-4-identify-diversification-patterns-with-ltt">
+<h3>Step 4: Identify diversification patterns with LTT<a class="headerlink" href="#step-4-identify-diversification-patterns-with-ltt" title="Link to this heading"></a></h3>
+<p>Before diving into trait analyses, examine the tempo of diversification.
+For a suspected rapid radiation, the lineage-through-time (LTT) plot
+can confirm whether most speciation events were clustered early in the
+clade's history — which would also explain the high gene tree conflict
+observed in Step 1 (short internodes produce more ILS).</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>ltt<span class="w"> </span>-t<span class="w"> </span>&lt;your_rooted_tree.nwk&gt;<span class="w"> </span>--plot-output<span class="w"> </span>ltt_plot.png
+</pre></div>
+</div>
+<p>Note: the <code class="docutils literal notranslate"><span class="pre">ltt</span></code> command requires a rooted, fully bifurcating tree.
+The sample tree used in this tutorial has a trifurcation at the root,
+so substitute your own rooted tree for this step.</p>
+<p>The gamma statistic tests whether branching events are uniformly
+distributed over time (null: constant-rate pure-birth). A significantly
+negative gamma would confirm a rapid-radiation hypothesis — most
+lineages originated in a short burst, leaving little time for gene tree
+coalescence and producing the discordance observed in the splits
+network.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="step-5-concordance-aware-ancestral-state-reconstruction">
+<h3>Step 5: Concordance-aware ancestral state reconstruction<a class="headerlink" href="#step-5-concordance-aware-ancestral-state-reconstruction" title="Link to this heading"></a></h3>
+<p>Standard ASR operates on a single species tree, ignoring gene tree
+conflict. For our clade, the ancestral thermal tolerance at the base of
+the radiation is of particular interest — but if 40% of gene trees
+disagree about which species are sisters at that node, the standard
+ASR estimate may be overconfident. PhyKIT's <code class="docutils literal notranslate"><span class="pre">concordance_asr</span></code>
+propagates topological uncertainty from gene tree discordance into
+ancestral state estimates.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>concordance_asr<span class="w"> </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span>-g<span class="w"> </span>gene_trees_simple.nwk<span class="w"> </span>-d<span class="w"> </span>tree_simple_traits.tsv
+</pre></div>
+</div>
+<p>Expected output:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Concordance-Aware Ancestral State Reconstruction
+
+Method: weighted
+Number of tips: 8
+Number of gene trees: 10
+Sigma-squared (BM rate): 0.043893
+
+Ancestral estimates:
+  Node          Desc    Estimate     gCF    Var_topo   Var_param
+  N1 (root)        8      1.6447   1.000    0.000000    0.146822
+  N2               2      1.6881   0.700    0.000569    0.140151
+  N3               5      1.4878   0.857    0.005878    0.167045
+  N4               2      1.7682   0.900    0.015002    0.181806
+  N5               3      1.2674   0.900    0.001044    0.210295
+  N6               2      0.9895   1.000    0.000000    0.629294
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">gCF</span></code> column shows the gene concordance factor — the fraction of
+gene trees that agree with the species tree at each node. Node N2 (gCF
+= 0.70) has the most discordance: only 7 of 10 gene trees support this
+bipartition. The <code class="docutils literal notranslate"><span class="pre">Var_topo</span></code> column captures the additional variance
+introduced by topological uncertainty. Compare N2 (Var_topo = 0.0006)
+to the root N1 (Var_topo = 0.0000, since the root is shared by all
+trees). Nodes with higher Var_topo have less certain ancestral estimates.</p>
+<p>To visualize the reconstruction on the tree:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>concordance_asr<span class="w"> </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span>-g<span class="w"> </span>gene_trees_simple.nwk<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-d<span class="w"> </span>tree_simple_traits.tsv<span class="w"> </span>--plot<span class="w"> </span>asr_discordance.png
+</pre></div>
+</div>
+<a class="reference internal image-reference" href="../../_images/tutorial19_concordance_asr.png"><img alt="PhyKIT tutorial19 concordance asr figure" class="align-center" src="../../_images/tutorial19_concordance_asr.png" style="width: 80%;" />
+</a>
+<p>The plot shows the species tree with ancestral values painted along
+branches, similar to a contMap, but incorporating the concordance-weighted
+estimates at each node. Nodes with low gCF values have more uncertain
+reconstructions.</p>
+<p>For distribution-based reconstruction and confidence intervals:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>concordance_asr<span class="w"> </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span>-g<span class="w"> </span>gene_trees_simple.nwk<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-d<span class="w"> </span>tree_simple_traits.tsv<span class="w"> </span>-m<span class="w"> </span>distribution<span class="w"> </span>--ci<span class="w"> </span>--json
+</pre></div>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="step-6-discordance-aware-comparative-methods">
+<h3>Step 6: Discordance-aware comparative methods<a class="headerlink" href="#step-6-discordance-aware-comparative-methods" title="Link to this heading"></a></h3>
+<p>Now we return to our original question: <em>does thermal tolerance predict
+metabolic rate?</em> In a clade with substantial gene tree conflict, the
+species tree alone may not accurately represent how species are related
+across the genome. Two species that are sisters in the species tree but
+have discordant histories at many loci share less evolutionary history
+than the species tree implies. PhyKIT addresses this by computing a
+variance-covariance (VCV) matrix from each gene tree and averaging
+them, producing a genome-wide covariance structure that better reflects
+the true shared history.</p>
+<p><strong>Phylogenetic signal with discordance-aware VCV:</strong></p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>phylogenetic_signal<span class="w"> </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span>-d<span class="w"> </span>tree_simple_traits.tsv<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-g<span class="w"> </span>gene_trees_simple.nwk<span class="w"> </span>--json
+</pre></div>
+</div>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="nt">&quot;K&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.5819</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;p_value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.479</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;permutations&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1000</span><span class="p">,</span>
+<span class="w"> </span><span class="nt">&quot;r_squared_phylo&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.9511</span><span class="p">,</span>
+<span class="w"> </span><span class="nt">&quot;vcv_metadata&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;n_gene_trees&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;n_shared_taxa&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span>
+<span class="w">                  </span><span class="nt">&quot;psd_corrected&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">}}</span>
+</pre></div>
+</div>
+<p>Compare these results to the species-tree-only analysis in tutorial 18
+(K = 0.5842, R²_phylo = 0.9499). The discordance-aware values are very
+similar here because most gene trees are concordant with the species
+tree. In datasets with more discordance, the differences would be larger.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">vcv_metadata</span></code> field in the JSON output reports how many gene trees
+contributed to the averaged VCV and whether a positive-semidefinite
+correction was needed.</p>
+<p><strong>PGLS with discordance-aware VCV:</strong></p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>pgls<span class="w"> </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span>-d<span class="w"> </span>tree_simple_multi_traits.tsv<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-y<span class="w"> </span>brain_size<span class="w"> </span>-x<span class="w"> </span>body_mass<span class="w"> </span>-g<span class="w"> </span>gene_trees_simple.nwk<span class="w"> </span>--json
+</pre></div>
+</div>
+<p>The discordance-aware PGLS produces nearly identical results for this
+dataset (R² = 0.9749 vs. 0.9763 without gene trees), confirming that
+the brain-body allometry is robust to gene tree conflict. In datasets
+with substantial discordance, you may see changes in slope, standard
+errors, and p-values.</p>
+<p><strong>Model comparison with discordance-aware VCV:</strong></p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>fit_continuous<span class="w"> </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span>-d<span class="w"> </span>tree_simple_traits.tsv<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-g<span class="w"> </span>gene_trees_simple.nwk<span class="w"> </span>--json
+</pre></div>
+</div>
+<p>When the <code class="docutils literal notranslate"><span class="pre">-g/--gene-trees</span></code> flag is omitted, all commands behave
+exactly as before (species-tree-only VCV).</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="putting-it-all-together">
+<h3>Putting it all together<a class="headerlink" href="#putting-it-all-together" title="Link to this heading"></a></h3>
+<p>Returning to our rapid-radiation scenario, the workflow reveals a
+coherent story:</p>
+<ol class="arabic simple">
+<li><p><strong>Quantify conflict</strong> (<code class="docutils literal notranslate"><span class="pre">consensus_network</span></code>) — the splits network
+shows that several deep bipartitions are supported by only 40-60%
+of gene trees, confirming substantial discordance.</p></li>
+<li><p><strong>Rate-topology associations</strong> (<code class="docutils literal notranslate"><span class="pre">evo_tempo_map</span></code>) — discordant gene
+trees have shorter internal branches than concordant ones, consistent
+with the coalescent expectation. No significant rate heterogeneity
+is detected, suggesting neutral sorting rather than adaptive evolution.</p></li>
+<li><p><strong>Asymmetric discordance</strong> (<code class="docutils literal notranslate"><span class="pre">discordance_asymmetry</span></code>) — no significant
+asymmetry detected in any branch, consistent with neutral ILS and no
+gene flow between the sampled lineages.</p></li>
+<li><p><strong>Examine diversification</strong> (<code class="docutils literal notranslate"><span class="pre">ltt</span></code>) — a significantly negative
+gamma statistic confirms that most speciation events were clustered
+in a short burst, explaining the ILS-driven gene tree conflict.</p></li>
+<li><p><strong>Concordance-aware ASR</strong> (<code class="docutils literal notranslate"><span class="pre">concordance_asr</span></code>) — ancestral thermal
+tolerance estimates at the rapid-radiation node have wide confidence
+intervals, reflecting genuine uncertainty about which species were
+ancestrally sister to each other.</p></li>
+<li><p><strong>Discordance-aware comparative methods</strong> (<code class="docutils literal notranslate"><span class="pre">pgls</span></code>,
+<code class="docutils literal notranslate"><span class="pre">phylogenetic_signal</span></code>, <code class="docutils literal notranslate"><span class="pre">fit_continuous</span></code>) — using the genome-wide
+average VCV produces more conservative (and more accurate) p-values
+for the thermal tolerance–metabolic rate relationship.</p></li>
+</ol>
+<p>This workflow generalizes to any phylogenomic dataset where gene tree
+conflict is a concern: substitute your own species tree, gene trees,
+and trait data. When discordance is minimal, the discordance-aware
+results will closely match species-tree-only results, confirming that
+the standard analysis was adequate.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+</section>
+<section id="expected-artifacts">
+<h2>Expected artifacts<a class="headerlink" href="#expected-artifacts" title="Link to this heading"></a></h2>
+<p>Each step identifies its expected terminal output or generated files. Confirm
+that those artifacts exist before continuing to the next step; filenames are
+relative to the tutorial working directory unless an absolute path is shown.</p>
+</section>
+<section id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Run <code class="docutils literal notranslate"><span class="pre">phykit</span> <span class="pre">&lt;command&gt;</span> <span class="pre">--help</span></code> to compare an invocation with the live interface.</p></li>
+<li><p>Confirm that downloaded files are in the current working directory and retain
+the filenames shown in the tutorial.</p></li>
+<li><p>For parsing errors, compare taxon names exactly across alignments, trees, and
+trait tables, including capitalization and underscores.</p></li>
+<li><p>See <a class="reference internal" href="../../troubleshooting/index.html"><span class="doc">Troubleshooting</span></a> for installation, format,
+and error-reporting guidance.</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="19-end-to-end-comparative-methods-workflow.html" class="btn btn-neutral float-left" title="Tutorial 19: End-to-end comparative methods workflow" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="21-customizing-phylogenetic-plots.html" class="btn btn-neutral float-right" title="Tutorial 21: Customizing phylogenetic plots" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020-2026 Jacob L. Steenwyk.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

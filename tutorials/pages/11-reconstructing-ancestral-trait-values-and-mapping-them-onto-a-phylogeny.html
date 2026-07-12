@@ -1,0 +1,468 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tutorial 11: Reconstructing ancestral trait values and mapping them onto a phylogeny &mdash; phykit 2.3.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=ae8b8648" />
+
+  
+    <link rel="shortcut icon" href="../../_static/flavicon.png"/>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=c3c8ae58"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Tutorial 12: Spectral discordance decomposition" href="12-spectral-discordance-decomposition.html" />
+    <link rel="prev" title="Tutorial 10: Phylogenetic GLM for binary and count data" href="10-phylogenetic-glm-for-binary-and-count-data.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html">
+            
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../about/index.html">About</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/index.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">Command reference</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Tutorials</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#tutorial-index">Tutorial index</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="01-summarizing-information-content.html">Tutorial 1: Summarizing information content</a></li>
+<li class="toctree-l3"><a class="reference internal" href="02-evaluating-gene-gene-covariation.html">Tutorial 2: Evaluating gene-gene covariation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="03-identifying-signatures-of-rapid-radiations.html">Tutorial 3: Identifying signatures of rapid radiations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="04-evaluating-the-accuracy-of-a-multiple-sequence-alignment.html">Tutorial 4: Evaluating the accuracy of a multiple sequence alignment</a></li>
+<li class="toctree-l3"><a class="reference internal" href="05-mapping-the-evolutionary-history-of-discrete-traits.html">Tutorial 5: Mapping the evolutionary history of discrete traits</a></li>
+<li class="toctree-l3"><a class="reference internal" href="06-testing-for-phylogenetic-signal-in-continuous-traits.html">Tutorial 6: Testing for phylogenetic signal in continuous traits</a></li>
+<li class="toctree-l3"><a class="reference internal" href="07-phylogenetic-ordination-for-multivariate-trait-analysis.html">Tutorial 7: Phylogenetic ordination for multivariate trait analysis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="08-visualizing-trait-evolution-with-phylomorphospace.html">Tutorial 8: Visualizing trait evolution with phylomorphospace</a></li>
+<li class="toctree-l3"><a class="reference internal" href="09-phylogenetic-regression-pgls.html">Tutorial 9: Phylogenetic regression (PGLS)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="10-phylogenetic-glm-for-binary-and-count-data.html">Tutorial 10: Phylogenetic GLM for binary and count data</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Tutorial 11: Reconstructing ancestral trait values and mapping them onto a phylogeny</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#objectives">Objectives</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#prerequisites-and-working-directory">Prerequisites and working directory</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#related-command-references">Related command references</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#workflow">Workflow</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#expected-artifacts">Expected artifacts</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#troubleshooting">Troubleshooting</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="12-spectral-discordance-decomposition.html">Tutorial 12: Spectral discordance decomposition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="13-testing-for-rate-heterogeneity-across-phylogenetic-regimes.html">Tutorial 13: Testing for rate heterogeneity across phylogenetic regimes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="14-visualization-commands.html">Tutorial 14: Visualization commands</a></li>
+<li class="toctree-l3"><a class="reference internal" href="15-comparing-continuous-trait-evolution-models.html">Tutorial 15: Comparing continuous trait evolution models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="16-multi-regime-ou-models-ouwie.html">Tutorial 16: Multi-regime OU models (OUwie)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="17-automatic-detection-of-adaptive-shifts-on-a-phylogeny.html">Tutorial 17: Automatic detection of adaptive shifts on a phylogeny</a></li>
+<li class="toctree-l3"><a class="reference internal" href="18-visualizing-conflicting-phylogenetic-signal-with-splits-networks.html">Tutorial 18: Visualizing conflicting phylogenetic signal with splits networks</a></li>
+<li class="toctree-l3"><a class="reference internal" href="19-end-to-end-comparative-methods-workflow.html">Tutorial 19: End-to-end comparative methods workflow</a></li>
+<li class="toctree-l3"><a class="reference internal" href="20-gene-tree-discordance-analysis-pipeline.html">Tutorial 20: Gene tree discordance analysis pipeline</a></li>
+<li class="toctree-l3"><a class="reference internal" href="21-customizing-phylogenetic-plots.html">Tutorial 21: Customizing phylogenetic plots</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#legacy-tutorial-anchors">Legacy tutorial anchors</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../troubleshooting/index.html">Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../change_log/index.html">Change log</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../other_software/index.html">Other software</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../frequently_asked_questions/index.html">FAQ</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">phykit</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Tutorials</a></li>
+      <li class="breadcrumb-item active">Tutorial 11: Reconstructing ancestral trait values and mapping them onto a phylogeny</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="tutorial-11-reconstructing-ancestral-trait-values-and-mapping-them-onto-a-phylogeny">
+<span id="tutorial-reconstructing-ancestral-trait-values-and-mapping-them-onto-a-phylogeny"></span><span id="tutorial-11"></span><h1>Tutorial 11: Reconstructing ancestral trait values and mapping them onto a phylogeny<a class="headerlink" href="#tutorial-11-reconstructing-ancestral-trait-values-and-mapping-them-onto-a-phylogeny" title="Link to this heading"></a></h1>
+<section id="objectives">
+<h2>Objectives<a class="headerlink" href="#objectives" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Complete the reconstructing ancestral trait values and mapping them onto a phylogeny workflow.</p></li>
+<li><p>Interpret the reported values and generated artifacts in their scientific context.</p></li>
+<li><p>Identify the canonical command references for each analysis step.</p></li>
+</ul>
+</section>
+<section id="prerequisites-and-working-directory">
+<h2>Prerequisites and working directory<a class="headerlink" href="#prerequisites-and-working-directory" title="Link to this heading"></a></h2>
+<p>Install the current PhyKIT release and create a dedicated working directory.
+Download the data linked in this tutorial into that directory before running
+the commands. All paths below are relative to this directory.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>mkdir<span class="w"> </span>phykit-tutorial-11
+<span class="nb">cd</span><span class="w"> </span>phykit-tutorial-11
+</pre></div>
+</div>
+</section>
+<section id="related-command-references">
+<h2>Related command references<a class="headerlink" href="#related-command-references" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="../../reference/commands/ancestral_state_reconstruction.html"><span class="doc">Ancestral State Reconstruction</span></a></p></li>
+</ul>
+</section>
+<section id="workflow">
+<h2>Workflow<a class="headerlink" href="#workflow" title="Link to this heading"></a></h2>
+<p>A common question in comparative biology is: what were the trait values of
+ancestral species? Ancestral state reconstruction (ASR) uses the trait values
+observed at the tips of a phylogeny together with a model of trait evolution
+to estimate what trait values were at each internal node.</p>
+<p>PhyKIT's <code class="docutils literal notranslate"><span class="pre">ancestral_state_reconstruction</span></code> command (aliases: <code class="docutils literal notranslate"><span class="pre">asr</span></code>,
+<code class="docutils literal notranslate"><span class="pre">anc_recon</span></code>) supports both <strong>continuous</strong> and <strong>discrete</strong> traits:</p>
+<ul class="simple">
+<li><p><strong>Continuous</strong> (<code class="docutils literal notranslate"><span class="pre">--type</span> <span class="pre">continuous</span></code>, default): Brownian Motion model with
+two ML methods — <code class="docutils literal notranslate"><span class="pre">fast</span></code> (Felsenstein's pruning, analogous to
+<code class="docutils literal notranslate"><span class="pre">phytools::fastAnc()</span></code>) and <code class="docutils literal notranslate"><span class="pre">ml</span></code> (full VCV-based ML with exact CIs,
+analogous to <code class="docutils literal notranslate"><span class="pre">ape::ace(type=&quot;ML&quot;)</span></code>).</p></li>
+<li><p><strong>Discrete</strong> (<code class="docutils literal notranslate"><span class="pre">--type</span> <span class="pre">discrete</span></code>): Mk model with marginal posterior
+probabilities at each internal node, analogous to
+<code class="docutils literal notranslate"><span class="pre">ape::ace(type=&quot;discrete&quot;)</span></code>. Three models are available: <code class="docutils literal notranslate"><span class="pre">ER</span></code> (equal
+rates), <code class="docutils literal notranslate"><span class="pre">SYM</span></code> (symmetric), and <code class="docutils literal notranslate"><span class="pre">ARD</span></code> (all rates different).</p></li>
+</ul>
+<p><strong>Hypothetical study question.</strong> Given body mass data for 8 mammal species,
+what were the estimated body masses of their ancestors? And given dietary
+categories (carnivore, herbivore, omnivore), what were the most likely diets
+of ancestral species? <br /></p>
+<p class="centered">
+<strong>Download test data:
+<a class="reference download internal" download="" href="../../_downloads/97c38abccff78ac60aee3f25ca0b02f5/tree_simple.tre"><code class="xref download docutils literal notranslate"><span class="pre">Mammal</span> <span class="pre">phylogeny</span></code></a>;
+<a class="reference download internal" download="" href="../../_downloads/b9b38de12b46a5f753d0fc77e586cea3/tree_simple_traits.tsv"><code class="xref download docutils literal notranslate"><span class="pre">Trait</span> <span class="pre">data</span></code></a>;
+<a class="reference download internal" download="" href="../../_downloads/7d32036238e91ae254c5ef40edf727db/tree_simple_multi_traits.tsv"><code class="xref download docutils literal notranslate"><span class="pre">Multi-trait</span> <span class="pre">data</span></code></a>;
+<a class="reference download internal" download="" href="../../_downloads/eb1e1a4c08691d20c03a9f1889e028a3/tree_simple_discrete_traits.tsv"><code class="xref download docutils literal notranslate"><span class="pre">Discrete</span> <span class="pre">trait</span> <span class="pre">data</span></code></a></strong></p><div class="line-block">
+<div class="line"><br /></div>
+</div>
+<section id="step-0-prepare-data">
+<h3>Step 0: Prepare data<a class="headerlink" href="#step-0-prepare-data" title="Link to this heading"></a></h3>
+<p>Two input files are needed: a phylogenetic tree and a trait data file.
+The trait data can be either a two-column file (<code class="docutils literal notranslate"><span class="pre">taxon&lt;tab&gt;value</span></code>) or
+a multi-trait file with a header row (use <code class="docutils literal notranslate"><span class="pre">-c</span></code> to select a column).</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="step-1-run-fast-ancestral-reconstruction-with-confidence-intervals">
+<h3>Step 1: Run fast ancestral reconstruction with confidence intervals<a class="headerlink" href="#step-1-run-fast-ancestral-reconstruction-with-confidence-intervals" title="Link to this heading"></a></h3>
+<p>Estimate ancestral body masses using the fast (two-pass Felsenstein) method
+with 95% confidence intervals:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>ancestral_state_reconstruction<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-d<span class="w"> </span>tree_simple_traits.tsv<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--ci
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Ancestral State Reconstruction
+
+Method: fast (Felsenstein&#39;s contrasts)
+Trait: trait
+Number of tips: 8
+
+Log-likelihood: -11.6038
+Sigma-squared (BM rate): 0.043893
+
+Ancestral estimates:
+  Node         Descendants    Estimate                  95% CI
+  N1 (root)              8      1.6447        [0.8937, 2.3957]
+  N2                     2      1.7012        [0.9697, 2.4328]
+  N3                     5      1.4565        [0.6387, 2.2742]
+  N4                     2      1.8091        [0.9757, 2.6425]
+  N5                     3      1.2566        [0.3555, 2.1577]
+  N6                     2      0.9895       [-0.5654, 2.5443]
+</pre></div>
+</div>
+<p><strong>Interpretation.</strong> The root ancestor (N1) is estimated to have had a log body
+mass of 1.64 (95% CI: 0.89 -- 2.40). Node N6 (the ancestor of cat and monkey)
+has the widest confidence interval [-0.57, 2.54], reflecting the long branch
+lengths separating these taxa. Node N4 (sea_lion + seal ancestor) has the
+highest estimate (1.81), consistent with these being the largest-bodied members
+of that clade.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="step-2-use-the-vcv-based-ml-method">
+<h3>Step 2: Use the VCV-based ML method<a class="headerlink" href="#step-2-use-the-vcv-based-ml-method" title="Link to this heading"></a></h3>
+<p>For exact conditional confidence intervals computed from the full
+phylogenetic variance-covariance matrix, use the <code class="docutils literal notranslate"><span class="pre">ml</span></code> method:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>asr<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-d<span class="w"> </span>tree_simple_traits.tsv<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-m<span class="w"> </span>ml<span class="w"> </span>--ci
+</pre></div>
+</div>
+<p>Both methods produce identical point estimates. The <code class="docutils literal notranslate"><span class="pre">ml</span></code> method computes CIs
+from the conditional distribution of internal node values given the observed
+tips, while <code class="docutils literal notranslate"><span class="pre">fast</span></code> uses the pruning-based variance. For bifurcating trees
+the CIs are identical; for polytomies they may differ slightly.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="step-3-generate-a-contmap-plot">
+<h3>Step 3: Generate a contMap plot<a class="headerlink" href="#step-3-generate-a-contmap-plot" title="Link to this heading"></a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">--plot</span></code> option produces a contMap visualization analogous to R's
+<code class="docutils literal notranslate"><span class="pre">phytools::contMap()</span></code>. Branches are colored by a continuous gradient
+representing the interpolated trait value from the parent's estimate to the
+child's estimate:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>asr<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-d<span class="w"> </span>tree_simple_traits.tsv<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--plot<span class="w"> </span>contmap.png
+</pre></div>
+</div>
+<a class="reference internal image-reference" href="../../_images/asr_contmap.png"><img alt="PhyKIT asr contmap figure" class="align-center" src="../../_images/asr_contmap.png" style="width: 80%;" />
+</a>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>Interpretation.</strong> The contMap shows how log body mass varies across the
+phylogeny. Warm colors (red) indicate higher body mass values, while cool
+colors (blue) indicate lower values. The gradient along each branch reflects
+the linear interpolation between the parent and child ancestral estimates.
+The bear + raccoon clade (top) shows uniformly warm colors consistent with
+high body mass, while the weasel lineage transitions toward cooler colors
+reflecting its much lower body mass (-0.30). The cat + monkey clade shows
+moderate values transitioning from the ancestral estimate.</p>
+<p>The contMap can be combined with <code class="docutils literal notranslate"><span class="pre">--ci</span></code> and <code class="docutils literal notranslate"><span class="pre">-m</span> <span class="pre">ml</span></code> to use a specific
+method for the underlying reconstruction, or with <code class="docutils literal notranslate"><span class="pre">-c</span></code> to select a trait
+from a multi-trait file:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>asr<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-d<span class="w"> </span>tree_simple_multi_traits.tsv<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-c<span class="w"> </span>brain_size<span class="w"> </span>--plot<span class="w"> </span>brain_contmap.png<span class="w"> </span>--ci
+</pre></div>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="step-4-use-a-multi-trait-file">
+<h3>Step 4: Use a multi-trait file<a class="headerlink" href="#step-4-use-a-multi-trait-file" title="Link to this heading"></a></h3>
+<p>When your data file contains multiple traits with a header row, use
+<code class="docutils literal notranslate"><span class="pre">-c</span></code> to select a specific column:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>asr<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-d<span class="w"> </span>tree_simple_multi_traits.tsv<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-c<span class="w"> </span>body_mass<span class="w"> </span>--ci
+</pre></div>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="step-5-export-results-as-json">
+<h3>Step 5: Export results as JSON<a class="headerlink" href="#step-5-export-results-as-json" title="Link to this heading"></a></h3>
+<p>For downstream scripting, results can be exported as JSON:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>asr<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-d<span class="w"> </span>tree_simple_traits.tsv<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--json
+</pre></div>
+</div>
+<p>The JSON output includes the method used, trait name, number of tips,
+log-likelihood, sigma-squared (BM rate), ancestral estimates with
+optional CIs, and observed tip values.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="step-6-reconstruct-discrete-traits">
+<h3>Step 6: Reconstruct discrete traits<a class="headerlink" href="#step-6-reconstruct-discrete-traits" title="Link to this heading"></a></h3>
+<p>For discrete (categorical) traits, use <code class="docutils literal notranslate"><span class="pre">--type</span> <span class="pre">discrete</span></code>. This fits an
+Mk model and computes marginal posterior probabilities at each internal
+node using upward-downward belief propagation:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>asr<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-d<span class="w"> </span>tree_simple_discrete_traits.tsv<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-c<span class="w"> </span>diet<span class="w"> </span>--type<span class="w"> </span>discrete
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Ancestral State Reconstruction (Discrete)
+
+Model: Mk (ER)
+Trait: diet
+Number of tips: 8
+Number of states: 3
+States: carnivore, herbivore, omnivore
+
+Log-likelihood: -8.7874
+
+Rate matrix (Q):
+                 carnivore   herbivore    omnivore
+     carnivore   -0.113825    0.056912    0.056912
+     herbivore    0.056912   -0.113825    0.056912
+      omnivore    0.056912    0.056912   -0.113825
+
+Ancestral state posteriors:
+  Node          Desc        MAP  carnivore  herbivore   omnivore
+  N1 (root)        8  carnivore     0.5338     0.2294     0.2368
+  N2               2  carnivore     0.5662     0.2140     0.2199
+  N3               5  carnivore     0.4381     0.2806     0.2813
+  N4               2  carnivore     0.3988     0.3516     0.2496
+  N5               3  carnivore     0.3994     0.2906     0.3100
+  N6               2  carnivore     0.3352     0.3320     0.3329
+</pre></div>
+</div>
+<p><strong>Interpretation.</strong> The output shows the fitted rate matrix (Q) and marginal
+posterior probabilities for each state at every internal node. The MAP
+(maximum a posteriori) column gives the most likely state. Under the
+equal-rates model, the root (N1) is most likely carnivore (posterior 0.53).
+Node N6 (cat + monkey ancestor) shows nearly uniform posteriors across all
+three states, reflecting uncertainty.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="step-7-choose-a-discrete-model">
+<h3>Step 7: Choose a discrete model<a class="headerlink" href="#step-7-choose-a-discrete-model" title="Link to this heading"></a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">--model</span></code> flag selects the Mk model variant:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">ER</span></code> (default): all transition rates equal</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">SYM</span></code>: forward and reverse rates between each pair of states are equal</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ARD</span></code>: all rates differ (most parameter-rich)</p></li>
+</ul>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>asr<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-d<span class="w"> </span>tree_simple_discrete_traits.tsv<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-c<span class="w"> </span>diet<span class="w"> </span>--type<span class="w"> </span>discrete<span class="w"> </span>--model<span class="w"> </span>ARD
+</pre></div>
+</div>
+<p>Compare log-likelihoods across models to assess fit. With only 8 tips and
+3 states, the simpler <code class="docutils literal notranslate"><span class="pre">ER</span></code> model is often preferred to avoid overfitting.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="step-8-plot-discrete-ancestral-states">
+<h3>Step 8: Plot discrete ancestral states<a class="headerlink" href="#step-8-plot-discrete-ancestral-states" title="Link to this heading"></a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">--plot</span></code> option for discrete traits produces a phylogeny with pie
+charts at internal nodes showing the posterior probabilities for each state:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>asr<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-d<span class="w"> </span>tree_simple_discrete_traits.tsv<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-c<span class="w"> </span>diet<span class="w"> </span>--type<span class="w"> </span>discrete<span class="w"> </span>--plot<span class="w"> </span>discrete_asr.png
+</pre></div>
+</div>
+<p>Tip labels are colored by their observed state, and a legend maps colors to
+state names. This is analogous to the pie-chart plots commonly used in R
+with <code class="docutils literal notranslate"><span class="pre">ape::plot.phylo()</span></code> and <code class="docutils literal notranslate"><span class="pre">ape::nodelabels(pie=...)</span></code>.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="summary">
+<h3>Summary<a class="headerlink" href="#summary" title="Link to this heading"></a></h3>
+<p>In this tutorial, we used ancestral state reconstruction for both continuous
+and discrete traits. For <strong>continuous traits</strong>, the key steps were:
+(1) running the fast method with confidence intervals, (2) using the full
+ML method for exact conditional CIs, (3) generating contMap plots, (4)
+using multi-trait files, and (5) exporting to JSON. For <strong>discrete traits</strong>,
+we (6) reconstructed ancestral dietary categories with posterior
+probabilities, (7) compared different Mk model variants, and (8) generated
+pie-chart phylogeny plots.</p>
+<p>For continuous traits, the <code class="docutils literal notranslate"><span class="pre">fast</span></code> method is recommended for large trees
+due to its O(n) time complexity, while <code class="docutils literal notranslate"><span class="pre">ml</span></code> provides exact conditional
+confidence intervals at O(n^3) cost. Both produce identical point estimates
+matching R's <code class="docutils literal notranslate"><span class="pre">phytools::fastAnc()</span></code> to machine precision.</p>
+<p>For discrete traits, the <code class="docutils literal notranslate"><span class="pre">ER</span></code> model is a good default; use <code class="docutils literal notranslate"><span class="pre">SYM</span></code> or
+<code class="docutils literal notranslate"><span class="pre">ARD</span></code> when you have reason to expect asymmetric transition rates and
+sufficient tip data to estimate extra parameters.</p>
+<p>The R equivalents are <code class="docutils literal notranslate"><span class="pre">phytools::fastAnc()</span></code> for continuous fast,
+<code class="docutils literal notranslate"><span class="pre">ape::ace(type=&quot;ML&quot;)</span></code> for continuous ML, <code class="docutils literal notranslate"><span class="pre">phytools::contMap()</span></code> for
+contMap plots, and <code class="docutils literal notranslate"><span class="pre">ape::ace(type=&quot;discrete&quot;)</span></code> for discrete ASR.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+</section>
+<section id="expected-artifacts">
+<h2>Expected artifacts<a class="headerlink" href="#expected-artifacts" title="Link to this heading"></a></h2>
+<p>Each step identifies its expected terminal output or generated files. Confirm
+that those artifacts exist before continuing to the next step; filenames are
+relative to the tutorial working directory unless an absolute path is shown.</p>
+</section>
+<section id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Run <code class="docutils literal notranslate"><span class="pre">phykit</span> <span class="pre">&lt;command&gt;</span> <span class="pre">--help</span></code> to compare an invocation with the live interface.</p></li>
+<li><p>Confirm that downloaded files are in the current working directory and retain
+the filenames shown in the tutorial.</p></li>
+<li><p>For parsing errors, compare taxon names exactly across alignments, trees, and
+trait tables, including capitalization and underscores.</p></li>
+<li><p>See <a class="reference internal" href="../../troubleshooting/index.html"><span class="doc">Troubleshooting</span></a> for installation, format,
+and error-reporting guidance.</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="10-phylogenetic-glm-for-binary-and-count-data.html" class="btn btn-neutral float-left" title="Tutorial 10: Phylogenetic GLM for binary and count data" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="12-spectral-discordance-decomposition.html" class="btn btn-neutral float-right" title="Tutorial 12: Spectral discordance decomposition" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020-2026 Jacob L. Steenwyk.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

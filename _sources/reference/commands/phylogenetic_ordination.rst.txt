@@ -78,16 +78,19 @@ phytools across all method/mode combinations (BM+cov, BM+corr, lambda+cov,
 lambda+corr) within numerical tolerance (1e-4).
 
 .. image:: /_static/docs_img/phylogenetic_pca_plot.png
+   :alt: PhyKIT phylogenetic pca plot figure
    :align: center
 
 |
 
 .. image:: /_static/docs_img/phylogenetic_tsne_plot.png
+   :alt: PhyKIT phylogenetic tsne plot figure
    :align: center
 
 |
 
 .. image:: /_static/docs_img/phylogenetic_umap_plot.png
+   :alt: PhyKIT phylogenetic umap plot figure
    :align: center
 
 |
