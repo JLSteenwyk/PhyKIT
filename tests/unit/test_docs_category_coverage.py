@@ -1,48 +1,121 @@
+import json
 import re
+import subprocess
+import sys
 from pathlib import Path
 
-import pytest
+from phykit.cli_registry import COMMAND_IDENTITIES, PUBLIC_COMMAND_TO_HANDLER
 
 
-DOCS_PATH = Path(__file__).resolve().parents[2] / "docs" / "usage" / "index.rst"
+ROOT = Path(__file__).resolve().parents[2]
+DOCS = ROOT / "docs"
+COMMANDS_DIR = DOCS / "reference" / "commands"
+SPEC_PATH = DOCS / "_data" / "command_spec.json"
+CATALOG_PATH = DOCS / "_static" / "commands.json"
+USAGE_PATH = DOCS / "usage" / "index.rst"
 
 
-def _parse_docs():
-    """Return (labels, category_refs) from the usage docs."""
-    content = DOCS_PATH.read_text()
+def load_commands(path):
+    return json.loads(path.read_text())["commands"]
 
-    # Every function heading has a ``.. _cmd-<name>:`` label above it
-    labels = set(re.findall(r"\.\. _cmd-(\w+):", content))
 
-    # The analytical-category section sits between these two headings
-    cat_start = content.index("Functions by analytical category")
-    cat_end = content.index(
-        "Alignment-based functions\n-------------------------"
+def test_registry_spec_catalog_and_pages_have_identical_command_coverage():
+    registry = {identity.canonical for identity in COMMAND_IDENTITIES}
+    spec = {command["canonical"] for command in load_commands(SPEC_PATH)}
+    catalog = {command["canonical"] for command in load_commands(CATALOG_PATH)}
+    pages = {path.stem for path in COMMANDS_DIR.glob("*.rst")}
+    assert registry == spec == catalog == pages
+
+
+def test_every_command_has_one_canonical_page_and_generated_interface():
+    for identity in COMMAND_IDENTITIES:
+        page = COMMANDS_DIR / f"{identity.canonical}.rst"
+        content = page.read_text()
+        label = f".. _cmd-{identity.canonical}:"
+        include = f".. include:: /_generated/commands/{identity.canonical}.inc"
+        assert content.count(label) == 1
+        assert content.count(include) == 1
+        assert "Command identity\n----------------" in content
+        assert "Runtime interface\n-----------------" in content
+        assert "Guidance, interpretation, and examples" in content
+
+
+def test_spec_identity_and_entry_points_match_runtime_registry():
+    spec = {command["canonical"]: command for command in load_commands(SPEC_PATH)}
+    for identity in COMMAND_IDENTITIES:
+        command = spec[identity.canonical]
+        assert command["handler"] == identity.handler
+        assert command["aliases"] == list(identity.aliases)
+        assert command["entry_points"] == list(identity.entry_points)
+        for name in (identity.canonical, *identity.aliases):
+            assert PUBLIC_COMMAND_TO_HANDLER[name] == identity.handler
+
+
+def test_spec_contains_complete_documentation_contract():
+    required = {
+        "purpose",
+        "use_cases",
+        "input_formats",
+        "outputs",
+        "errors",
+        "limitations",
+        "scientific_interpretation",
+        "validation",
+        "citations",
+        "examples",
+        "related_commands",
+        "related_tutorials",
+    }
+    for command in load_commands(SPEC_PATH):
+        assert command["summary"].strip()
+        assert command["categories"]
+        assert set(command["documentation"]) == required
+
+
+def test_catalog_contains_runtime_argument_contracts():
+    checked_examples = 0
+    for command in load_commands(CATALOG_PATH):
+        assert "arguments" in command
+        for argument in command["arguments"]:
+            assert set(argument) == {
+                "name",
+                "flags",
+                "positional",
+                "required",
+                "type",
+                "nargs",
+                "default",
+                "choices",
+                "metavar",
+                "action",
+            }
+        output = command["output_contract"]
+        assert set(output) == {"stdout", "stderr", "file_options", "json"}
+        json_contract = output["json"]
+        if json_contract["available"]:
+            assert json_contract["schema"]["type"] == ["object", "array"]
+            assert all(
+                isinstance(example, (dict, list))
+                for example in json_contract["examples"]
+            )
+            checked_examples += len(json_contract["examples"])
+        else:
+            assert json_contract["schema"] is None
+            assert json_contract["examples"] == []
+    assert checked_examples >= 1
+
+
+def test_generated_catalog_is_current():
+    result = subprocess.run(
+        [sys.executable, "scripts/build_docs_catalog.py", "--check"],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
     )
-    category_section = content[cat_start:cat_end]
-    refs = set(re.findall(r":ref:.*?<cmd-(\w+)>", category_section))
-
-    return labels, refs
+    assert result.returncode == 0, result.stdout + result.stderr
 
 
-class TestDocsCategoryCoverage:
-    """Ensure every documented function appears in the analytical-category section."""
-
-    def test_every_function_has_a_category(self):
-        labels, refs = _parse_docs()
-        missing = sorted(labels - refs)
-        assert not missing, (
-            f"Functions missing from 'Functions by analytical category': {missing}"
-        )
-
-    def test_no_stale_category_refs(self):
-        labels, refs = _parse_docs()
-        stale = sorted(refs - labels)
-        assert not stale, (
-            f"Category refs pointing to non-existent function labels: {stale}"
-        )
-
-    def test_at_least_one_function_documented(self):
-        labels, refs = _parse_docs()
-        assert len(labels) > 0, "No function labels found in docs"
-        assert len(refs) > 0, "No category refs found in docs"
+def test_legacy_usage_fragments_are_preserved():
+    content = USAGE_PATH.read_text()
+    fragments = set(re.findall(r'<span id="cmd-([a-z0-9_]+)"></span>', content))
+    assert fragments == {identity.canonical for identity in COMMAND_IDENTITIES}

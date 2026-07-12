@@ -1,0 +1,3801 @@
+{
+  "schema_version": 1,
+  "commands": [
+    {
+      "canonical": "alignment_entropy",
+      "handler": "alignment_entropy",
+      "aliases": [
+        "aln_entropy",
+        "entropy"
+      ],
+      "entry_points": [
+        "pk_alignment_entropy",
+        "pk_aln_entropy",
+        "pk_entropy"
+      ],
+      "title": "Alignment entropy",
+      "summary": "Shannon entropy across alignment sites",
+      "categories": [
+        "Alignment quality & statistics"
+      ],
+      "page": "reference/commands/alignment_entropy.rst",
+      "documentation": {
+        "purpose": "Shannon entropy across alignment sites",
+        "use_cases": [
+          "Shannon entropy across alignment sites"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "alignment_length",
+      "handler": "alignment_length",
+      "aliases": [
+        "al",
+        "aln_len"
+      ],
+      "entry_points": [
+        "pk_alignment_length",
+        "pk_al",
+        "pk_aln_len"
+      ],
+      "title": "Alignment length",
+      "summary": "Length of an input alignment",
+      "categories": [
+        "Alignment quality & statistics"
+      ],
+      "page": "reference/commands/alignment_length.rst",
+      "documentation": {
+        "purpose": "Length of an input alignment",
+        "use_cases": [
+          "Length of an input alignment"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "alignment_length_no_gaps",
+      "handler": "alignment_length_no_gaps",
+      "aliases": [
+        "aln_len_no_gaps",
+        "alng"
+      ],
+      "entry_points": [
+        "pk_alignment_length_no_gaps",
+        "pk_aln_len_no_gaps",
+        "pk_alng"
+      ],
+      "title": "Alignment length no gaps",
+      "summary": "Alignment length excluding gapped sites",
+      "categories": [
+        "Alignment quality & statistics"
+      ],
+      "page": "reference/commands/alignment_length_no_gaps.rst",
+      "documentation": {
+        "purpose": "Alignment length excluding gapped sites",
+        "use_cases": [
+          "Alignment length excluding gapped sites"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "alignment_outlier_taxa",
+      "handler": "alignment_outlier_taxa",
+      "aliases": [
+        "aot",
+        "outlier_taxa"
+      ],
+      "entry_points": [
+        "pk_alignment_outlier_taxa",
+        "pk_aot",
+        "pk_outlier_taxa"
+      ],
+      "title": "Alignment outlier taxa",
+      "summary": "Identify outlier taxa in alignments",
+      "categories": [
+        "Alignment quality & statistics"
+      ],
+      "page": "reference/commands/alignment_outlier_taxa.rst",
+      "documentation": {
+        "purpose": "Identify outlier taxa in alignments",
+        "use_cases": [
+          "Identify outlier taxa in alignments"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "alignment_recoding",
+      "handler": "alignment_recoding",
+      "aliases": [
+        "aln_recoding",
+        "recode"
+      ],
+      "entry_points": [
+        "pk_alignment_recoding",
+        "pk_aln_recoding",
+        "pk_recode"
+      ],
+      "title": "Alignment recoding",
+      "summary": "Recode alignment into reduced alphabets",
+      "categories": [
+        "Alignment & dataset utilities"
+      ],
+      "page": "reference/commands/alignment_recoding.rst",
+      "documentation": {
+        "purpose": "Recode alignment into reduced alphabets",
+        "use_cases": [
+          "Recode alignment into reduced alphabets"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "alignment_subsample",
+      "handler": "alignment_subsample",
+      "aliases": [
+        "aln_subsample",
+        "subsample"
+      ],
+      "entry_points": [
+        "pk_alignment_subsample",
+        "pk_aln_subsample",
+        "pk_subsample"
+      ],
+      "title": "Alignment subsampling",
+      "summary": "Randomly subsample genes, partitions, or sites",
+      "categories": [
+        "Alignment & dataset utilities"
+      ],
+      "page": "reference/commands/alignment_subsample.rst",
+      "documentation": {
+        "purpose": "Randomly subsample genes, partitions, or sites",
+        "use_cases": [
+          "Randomly subsample genes, partitions, or sites"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "ancestral_state_reconstruction",
+      "handler": "ancestral_state_reconstruction",
+      "aliases": [
+        "anc_recon",
+        "asr"
+      ],
+      "entry_points": [
+        "pk_ancestral_state_reconstruction",
+        "pk_anc_recon",
+        "pk_asr"
+      ],
+      "title": "Ancestral state reconstruction",
+      "summary": "Reconstruct ancestral character states",
+      "categories": [
+        "Trait evolution"
+      ],
+      "page": "reference/commands/ancestral_state_reconstruction.rst",
+      "documentation": {
+        "purpose": "Reconstruct ancestral character states",
+        "use_cases": [
+          "Reconstruct ancestral character states"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "bipartition_support_stats",
+      "handler": "bipartition_support_stats",
+      "aliases": [
+        "bss"
+      ],
+      "entry_points": [
+        "pk_bipartition_support_stats",
+        "pk_bss"
+      ],
+      "title": "Bipartition support statistics",
+      "summary": "Summary statistics of bipartition support values",
+      "categories": [
+        "Tree summary statistics"
+      ],
+      "page": "reference/commands/bipartition_support_stats.rst",
+      "documentation": {
+        "purpose": "Summary statistics of bipartition support values",
+        "use_cases": [
+          "Summary statistics of bipartition support values"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "branch_length_multiplier",
+      "handler": "branch_length_multiplier",
+      "aliases": [
+        "blm"
+      ],
+      "entry_points": [
+        "pk_branch_length_multiplier",
+        "pk_blm"
+      ],
+      "title": "Branch length multiplier",
+      "summary": "Multiply branch lengths by a factor",
+      "categories": [
+        "Tree manipulation & utilities"
+      ],
+      "page": "reference/commands/branch_length_multiplier.rst",
+      "documentation": {
+        "purpose": "Multiply branch lengths by a factor",
+        "use_cases": [
+          "Multiply branch lengths by a factor"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "character_map",
+      "handler": "character_map",
+      "aliases": [
+        "charmap",
+        "synapomorphy_map"
+      ],
+      "entry_points": [
+        "pk_character_map",
+        "pk_charmap",
+        "pk_synapomorphy_map"
+      ],
+      "title": "Character map (synapomorphy/homoplasy mapping)",
+      "summary": "Map synapomorphies and homoplasies onto a phylogeny",
+      "categories": [
+        "Trait evolution"
+      ],
+      "page": "reference/commands/character_map.rst",
+      "documentation": {
+        "purpose": "Map synapomorphies and homoplasies onto a phylogeny",
+        "use_cases": [
+          "Map synapomorphies and homoplasies onto a phylogeny"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "chronogram",
+      "handler": "chronogram",
+      "aliases": [
+        "chrono",
+        "time_tree"
+      ],
+      "entry_points": [
+        "pk_chronogram",
+        "pk_chrono",
+        "pk_time_tree"
+      ],
+      "title": "Chronogram",
+      "summary": "Time-calibrated tree with geological timescale (rectangular or circular)",
+      "categories": [
+        "Tree manipulation & utilities"
+      ],
+      "page": "reference/commands/chronogram.rst",
+      "documentation": {
+        "purpose": "Time-calibrated tree with geological timescale (rectangular or circular)",
+        "use_cases": [
+          "Time-calibrated tree with geological timescale (rectangular or circular)"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "codon_dnds",
+      "handler": "codon_dnds",
+      "aliases": [
+        "dn_ds",
+        "dnds",
+        "kaks"
+      ],
+      "entry_points": [
+        "pk_codon_dnds",
+        "pk_dn_ds",
+        "pk_dnds",
+        "pk_kaks"
+      ],
+      "title": "Codon dN/dS",
+      "summary": "Pairwise synonymous and nonsynonymous substitution-rate estimates",
+      "categories": [
+        "Alignment quality & statistics",
+        "Evolutionary rate analysis"
+      ],
+      "page": "reference/commands/codon_dnds.rst",
+      "documentation": {
+        "purpose": "Pairwise synonymous and nonsynonymous substitution-rate estimates",
+        "use_cases": [
+          "Pairwise synonymous and nonsynonymous substitution-rate estimates"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "collapse_branches",
+      "handler": "collapse_branches",
+      "aliases": [
+        "cb",
+        "collapse"
+      ],
+      "entry_points": [
+        "pk_collapse_branches",
+        "pk_cb",
+        "pk_collapse"
+      ],
+      "title": "Collapse bipartitions",
+      "summary": "Collapse low-support bipartitions",
+      "categories": [
+        "Tree manipulation & utilities"
+      ],
+      "page": "reference/commands/collapse_branches.rst",
+      "documentation": {
+        "purpose": "Collapse low-support bipartitions",
+        "use_cases": [
+          "Collapse low-support bipartitions"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "column_score",
+      "handler": "column_score",
+      "aliases": [
+        "cs"
+      ],
+      "entry_points": [
+        "pk_column_score",
+        "pk_cs"
+      ],
+      "title": "Column score",
+      "summary": "Column score for alignment quality",
+      "categories": [
+        "Alignment quality & statistics"
+      ],
+      "page": "reference/commands/column_score.rst",
+      "documentation": {
+        "purpose": "Column score for alignment quality",
+        "use_cases": [
+          "Column score for alignment quality"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "composition_per_taxon",
+      "handler": "composition_per_taxon",
+      "aliases": [
+        "comp_tax",
+        "comp_taxon"
+      ],
+      "entry_points": [
+        "pk_composition_per_taxon",
+        "pk_comp_tax",
+        "pk_comp_taxon"
+      ],
+      "title": "Composition per taxon",
+      "summary": "Nucleotide or amino acid composition per taxon",
+      "categories": [
+        "Alignment quality & statistics"
+      ],
+      "page": "reference/commands/composition_per_taxon.rst",
+      "documentation": {
+        "purpose": "Nucleotide or amino acid composition per taxon",
+        "use_cases": [
+          "Nucleotide or amino acid composition per taxon"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "compositional_bias_per_site",
+      "handler": "compositional_bias_per_site",
+      "aliases": [
+        "cbps",
+        "comp_bias_per_site"
+      ],
+      "entry_points": [
+        "pk_compositional_bias_per_site",
+        "pk_cbps",
+        "pk_comp_bias_per_site"
+      ],
+      "title": "Compositional bias per site",
+      "summary": "Detect compositional bias across sites",
+      "categories": [
+        "Alignment quality & statistics"
+      ],
+      "page": "reference/commands/compositional_bias_per_site.rst",
+      "documentation": {
+        "purpose": "Detect compositional bias across sites",
+        "use_cases": [
+          "Detect compositional bias across sites"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "concordance_asr",
+      "handler": "concordance_asr",
+      "aliases": [
+        "casr",
+        "conc_asr"
+      ],
+      "entry_points": [
+        "pk_concordance_asr",
+        "pk_casr",
+        "pk_conc_asr"
+      ],
+      "title": "Concordance-aware ancestral state reconstruction",
+      "summary": "ASR incorporating gene tree discordance",
+      "categories": [
+        "Trait evolution"
+      ],
+      "page": "reference/commands/concordance_asr.rst",
+      "documentation": {
+        "purpose": "ASR incorporating gene tree discordance",
+        "use_cases": [
+          "ASR incorporating gene tree discordance"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "consensus_network",
+      "handler": "consensus_network",
+      "aliases": [
+        "consnet",
+        "splitnet",
+        "splits_network"
+      ],
+      "entry_points": [
+        "pk_consensus_network",
+        "pk_consnet",
+        "pk_splitnet",
+        "pk_splits_network"
+      ],
+      "title": "Consensus network",
+      "summary": "Consensus network from multiple trees",
+      "categories": [
+        "Tree comparison & consensus"
+      ],
+      "page": "reference/commands/consensus_network.rst",
+      "documentation": {
+        "purpose": "Consensus network from multiple trees",
+        "use_cases": [
+          "Consensus network from multiple trees"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "consensus_tree",
+      "handler": "consensus_tree",
+      "aliases": [
+        "consensus",
+        "ctree"
+      ],
+      "entry_points": [
+        "pk_consensus_tree",
+        "pk_consensus",
+        "pk_ctree"
+      ],
+      "title": "Consensus tree",
+      "summary": "Consensus tree from multiple trees",
+      "categories": [
+        "Tree comparison & consensus"
+      ],
+      "page": "reference/commands/consensus_tree.rst",
+      "documentation": {
+        "purpose": "Consensus tree from multiple trees",
+        "use_cases": [
+          "Consensus tree from multiple trees"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "cont_map",
+      "handler": "cont_map",
+      "aliases": [
+        "cmap",
+        "contmap"
+      ],
+      "entry_points": [
+        "pk_cont_map",
+        "pk_cmap",
+        "pk_contmap"
+      ],
+      "title": "Continuous trait mapping (contMap)",
+      "summary": "Map continuous traits onto a phylogeny",
+      "categories": [
+        "Trait evolution"
+      ],
+      "page": "reference/commands/cont_map.rst",
+      "documentation": {
+        "purpose": "Map continuous traits onto a phylogeny",
+        "use_cases": [
+          "Map continuous traits onto a phylogeny"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "cophylo",
+      "handler": "cophylo",
+      "aliases": [
+        "tangle",
+        "tanglegram"
+      ],
+      "entry_points": [
+        "pk_cophylo",
+        "pk_tangle",
+        "pk_tanglegram"
+      ],
+      "title": "Cophylogenetic plot (tanglegram)",
+      "summary": "Tanglegram for comparing two trees",
+      "categories": [
+        "Tree comparison & consensus"
+      ],
+      "page": "reference/commands/cophylo.rst",
+      "documentation": {
+        "purpose": "Tanglegram for comparing two trees",
+        "use_cases": [
+          "Tanglegram for comparing two trees"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "covarying_evolutionary_rates",
+      "handler": "covarying_evolutionary_rates",
+      "aliases": [
+        "cover"
+      ],
+      "entry_points": [
+        "pk_covarying_evolutionary_rates",
+        "pk_cover"
+      ],
+      "title": "Covarying evolutionary rates",
+      "summary": "Detect covariation in evolutionary rates",
+      "categories": [
+        "Evolutionary rate analysis"
+      ],
+      "page": "reference/commands/covarying_evolutionary_rates.rst",
+      "documentation": {
+        "purpose": "Detect covariation in evolutionary rates",
+        "use_cases": [
+          "Detect covariation in evolutionary rates"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "create_concatenation_matrix",
+      "handler": "create_concatenation_matrix",
+      "aliases": [
+        "cc",
+        "create_concat"
+      ],
+      "entry_points": [
+        "pk_create_concatenation_matrix",
+        "pk_cc",
+        "pk_create_concat"
+      ],
+      "title": "Create concatenation matrix",
+      "summary": "Concatenate multiple alignments into a supermatrix",
+      "categories": [
+        "Alignment & dataset utilities"
+      ],
+      "page": "reference/commands/create_concatenation_matrix.rst",
+      "documentation": {
+        "purpose": "Concatenate multiple alignments into a supermatrix",
+        "use_cases": [
+          "Concatenate multiple alignments into a supermatrix"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "degree_of_violation_of_a_molecular_clock",
+      "handler": "dvmc",
+      "aliases": [
+        "dvmc"
+      ],
+      "entry_points": [
+        "pk_degree_of_violation_of_a_molecular_clock",
+        "pk_dvmc"
+      ],
+      "title": "Degree of violation of the molecular clock",
+      "summary": "Measure molecular clock violation",
+      "categories": [
+        "Tree summary statistics"
+      ],
+      "page": "reference/commands/degree_of_violation_of_a_molecular_clock.rst",
+      "documentation": {
+        "purpose": "Measure molecular clock violation",
+        "use_cases": [
+          "Measure molecular clock violation"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "density_map",
+      "handler": "density_map",
+      "aliases": [
+        "densitymap",
+        "dmap"
+      ],
+      "entry_points": [
+        "pk_density_map",
+        "pk_densitymap",
+        "pk_dmap"
+      ],
+      "title": "Density map",
+      "summary": "Posterior density of stochastic character maps",
+      "categories": [
+        "Trait evolution"
+      ],
+      "page": "reference/commands/density_map.rst",
+      "documentation": {
+        "purpose": "Posterior density of stochastic character maps",
+        "use_cases": [
+          "Posterior density of stochastic character maps"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "dfoil",
+      "handler": "dfoil",
+      "aliases": [
+        "dfoil_test"
+      ],
+      "entry_points": [
+        "pk_dfoil",
+        "pk_dfoil_test"
+      ],
+      "title": "DFOIL test (Pease & Hahn 2015)",
+      "summary": "DFOIL test for detecting and polarizing introgression in a 5-taxon symmetric phylogeny",
+      "categories": [
+        "Introgression & gene flow"
+      ],
+      "page": "reference/commands/dfoil.rst",
+      "documentation": {
+        "purpose": "DFOIL test for detecting and polarizing introgression in a 5-taxon symmetric phylogeny",
+        "use_cases": [
+          "DFOIL test for detecting and polarizing introgression in a 5-taxon symmetric phylogeny"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "discordance_asymmetry",
+      "handler": "discordance_asymmetry",
+      "aliases": [
+        "da",
+        "disc_asym"
+      ],
+      "entry_points": [
+        "pk_discordance_asymmetry",
+        "pk_da",
+        "pk_disc_asym"
+      ],
+      "title": "Discordance asymmetry",
+      "summary": "Test for asymmetric discordance (gene flow detection)",
+      "categories": [
+        "Introgression & gene flow"
+      ],
+      "page": "reference/commands/discordance_asymmetry.rst",
+      "documentation": {
+        "purpose": "Test for asymmetric discordance (gene flow detection)",
+        "use_cases": [
+          "Test for asymmetric discordance (gene flow detection)"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "dstatistic",
+      "handler": "dstatistic",
+      "aliases": [
+        "abba_baba",
+        "dstat"
+      ],
+      "entry_points": [
+        "pk_dstatistic",
+        "pk_abba_baba",
+        "pk_dstat"
+      ],
+      "title": "D-statistic (ABBA-BABA test)",
+      "summary": "Patterson's D-statistic for detecting introgression",
+      "categories": [
+        "Introgression & gene flow"
+      ],
+      "page": "reference/commands/dstatistic.rst",
+      "documentation": {
+        "purpose": "Patterson's D-statistic for detecting introgression",
+        "use_cases": [
+          "Patterson's D-statistic for detecting introgression"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "dtt",
+      "handler": "dtt",
+      "aliases": [
+        "disparity_through_time"
+      ],
+      "entry_points": [
+        "pk_dtt",
+        "pk_disparity_through_time"
+      ],
+      "title": "Disparity through time (DTT)",
+      "summary": "Disparity-through-time analysis with MDI statistic (Harmon et al. 2003)",
+      "categories": [
+        "Trait evolution"
+      ],
+      "page": "reference/commands/dtt.rst",
+      "documentation": {
+        "purpose": "Disparity-through-time analysis with MDI statistic (Harmon et al. 2003)",
+        "use_cases": [
+          "Disparity-through-time analysis with MDI statistic (Harmon et al. 2003)"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "evo_tempo_map",
+      "handler": "evo_tempo_map",
+      "aliases": [
+        "etm"
+      ],
+      "entry_points": [
+        "pk_evo_tempo_map",
+        "pk_etm"
+      ],
+      "title": "Evolutionary tempo mapping",
+      "summary": "Detect rate-topology associations in gene trees",
+      "categories": [
+        "Tree comparison & consensus"
+      ],
+      "page": "reference/commands/evo_tempo_map.rst",
+      "documentation": {
+        "purpose": "Detect rate-topology associations in gene trees",
+        "use_cases": [
+          "Detect rate-topology associations in gene trees"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "evolutionary_rate",
+      "handler": "evolutionary_rate",
+      "aliases": [
+        "evo_rate"
+      ],
+      "entry_points": [
+        "pk_evolutionary_rate",
+        "pk_evo_rate"
+      ],
+      "title": "Evolutionary rate",
+      "summary": "Calculate tree-based evolutionary rate",
+      "categories": [
+        "Tree summary statistics"
+      ],
+      "page": "reference/commands/evolutionary_rate.rst",
+      "documentation": {
+        "purpose": "Calculate tree-based evolutionary rate",
+        "use_cases": [
+          "Calculate tree-based evolutionary rate"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "evolutionary_rate_per_site",
+      "handler": "evolutionary_rate_per_site",
+      "aliases": [
+        "erps",
+        "evo_rate_per_site"
+      ],
+      "entry_points": [
+        "pk_evolutionary_rate_per_site",
+        "pk_erps",
+        "pk_evo_rate_per_site"
+      ],
+      "title": "Evolutionary Rate per Site",
+      "summary": "Site-specific evolutionary rate estimation",
+      "categories": [
+        "Alignment quality & statistics"
+      ],
+      "page": "reference/commands/evolutionary_rate_per_site.rst",
+      "documentation": {
+        "purpose": "Site-specific evolutionary rate estimation",
+        "use_cases": [
+          "Site-specific evolutionary rate estimation"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "faidx",
+      "handler": "faidx",
+      "aliases": [
+        "ge",
+        "get_entry"
+      ],
+      "entry_points": [
+        "pk_faidx",
+        "pk_ge",
+        "pk_get_entry"
+      ],
+      "title": "Faidx",
+      "summary": "Extract entries from FASTA files",
+      "categories": [
+        "Alignment & dataset utilities"
+      ],
+      "page": "reference/commands/faidx.rst",
+      "documentation": {
+        "purpose": "Extract entries from FASTA files",
+        "use_cases": [
+          "Extract entries from FASTA files"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "faiths_pd",
+      "handler": "faiths_pd",
+      "aliases": [
+        "faith_pd",
+        "fpd",
+        "phylo_diversity"
+      ],
+      "entry_points": [
+        "pk_faiths_pd",
+        "pk_faith_pd",
+        "pk_fpd",
+        "pk_phylo_diversity"
+      ],
+      "title": "Faith's phylogenetic diversity",
+      "summary": "Sum of branch lengths spanning a community of tips",
+      "categories": [
+        "Tree summary statistics"
+      ],
+      "page": "reference/commands/faiths_pd.rst",
+      "documentation": {
+        "purpose": "Sum of branch lengths spanning a community of tips",
+        "use_cases": [
+          "Sum of branch lengths spanning a community of tips"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "fit_continuous",
+      "handler": "fit_continuous",
+      "aliases": [
+        "fc",
+        "fitcontinuous"
+      ],
+      "entry_points": [
+        "pk_fit_continuous",
+        "pk_fc",
+        "pk_fitcontinuous"
+      ],
+      "title": "Continuous trait evolution model comparison (fitContinuous)",
+      "summary": "Compare continuous trait evolution models (supports discordance-aware VCV with ``-g``)",
+      "categories": [
+        "Trait evolution"
+      ],
+      "page": "reference/commands/fit_continuous.rst",
+      "documentation": {
+        "purpose": "Compare continuous trait evolution models (supports discordance-aware VCV with ``-g``)",
+        "use_cases": [
+          "Compare continuous trait evolution models (supports discordance-aware VCV with ``-g``)"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "fit_discrete",
+      "handler": "fit_discrete",
+      "aliases": [
+        "fd",
+        "fitdiscrete"
+      ],
+      "entry_points": [
+        "pk_fit_discrete",
+        "pk_fd",
+        "pk_fitdiscrete"
+      ],
+      "title": "Discrete trait evolution model comparison (fitDiscrete)",
+      "summary": "Compare ER, SYM, ARD Mk models",
+      "categories": [
+        "Trait evolution"
+      ],
+      "page": "reference/commands/fit_discrete.rst",
+      "documentation": {
+        "purpose": "Compare ER, SYM, ARD Mk models",
+        "use_cases": [
+          "Compare ER, SYM, ARD Mk models"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "gc_content",
+      "handler": "gc_content",
+      "aliases": [
+        "gc"
+      ],
+      "entry_points": [
+        "pk_gc_content",
+        "pk_gc"
+      ],
+      "title": "Guanine-cytosine (GC) content",
+      "summary": "GC content of an alignment",
+      "categories": [
+        "Alignment quality & statistics"
+      ],
+      "page": "reference/commands/gc_content.rst",
+      "documentation": {
+        "purpose": "GC content of an alignment",
+        "use_cases": [
+          "GC content of an alignment"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "hidden_paralogy_check",
+      "handler": "hidden_paralogy_check",
+      "aliases": [
+        "clan_check"
+      ],
+      "entry_points": [
+        "pk_hidden_paralogy_check",
+        "pk_clan_check"
+      ],
+      "title": "Hidden paralogy check",
+      "summary": "Check for hidden paralogy in gene trees",
+      "categories": [
+        "Homology assessment"
+      ],
+      "page": "reference/commands/hidden_paralogy_check.rst",
+      "documentation": {
+        "purpose": "Check for hidden paralogy in gene trees",
+        "use_cases": [
+          "Check for hidden paralogy in gene trees"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "hybridization",
+      "handler": "hybridization",
+      "aliases": [
+        "hybrid",
+        "reticulation"
+      ],
+      "entry_points": [
+        "pk_hybridization",
+        "pk_hybrid",
+        "pk_reticulation"
+      ],
+      "title": "Hybridization analysis",
+      "summary": "Estimate reticulation events and localize hybridization on a species tree",
+      "categories": [
+        "Introgression & gene flow"
+      ],
+      "page": "reference/commands/hybridization.rst",
+      "documentation": {
+        "purpose": "Estimate reticulation events and localize hybridization on a species tree",
+        "use_cases": [
+          "Estimate reticulation events and localize hybridization on a species tree"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "identity_matrix",
+      "handler": "identity_matrix",
+      "aliases": [
+        "id_matrix",
+        "seqid"
+      ],
+      "entry_points": [
+        "pk_identity_matrix",
+        "pk_id_matrix",
+        "pk_seqid"
+      ],
+      "title": "Identity matrix",
+      "summary": "Pairwise sequence identity heatmap",
+      "categories": [
+        "Alignment quality & statistics"
+      ],
+      "page": "reference/commands/identity_matrix.rst",
+      "documentation": {
+        "purpose": "Pairwise sequence identity heatmap",
+        "use_cases": [
+          "Pairwise sequence identity heatmap"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "independent_contrasts",
+      "handler": "independent_contrasts",
+      "aliases": [
+        "phylo_contrasts",
+        "pic"
+      ],
+      "entry_points": [
+        "pk_independent_contrasts",
+        "pk_phylo_contrasts",
+        "pk_pic"
+      ],
+      "title": "Independent contrasts (PIC)",
+      "summary": "Felsenstein's phylogenetically independent contrasts",
+      "categories": [
+        "Trait evolution"
+      ],
+      "page": "reference/commands/independent_contrasts.rst",
+      "documentation": {
+        "purpose": "Felsenstein's phylogenetically independent contrasts",
+        "use_cases": [
+          "Felsenstein's phylogenetically independent contrasts"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "internal_branch_stats",
+      "handler": "internal_branch_stats",
+      "aliases": [
+        "ibs"
+      ],
+      "entry_points": [
+        "pk_internal_branch_stats",
+        "pk_ibs"
+      ],
+      "title": "Internal branch statistics",
+      "summary": "Summary statistics of internal branch lengths",
+      "categories": [
+        "Tree summary statistics"
+      ],
+      "page": "reference/commands/internal_branch_stats.rst",
+      "documentation": {
+        "purpose": "Summary statistics of internal branch lengths",
+        "use_cases": [
+          "Summary statistics of internal branch lengths"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "internode_labeler",
+      "handler": "internode_labeler",
+      "aliases": [
+        "il"
+      ],
+      "entry_points": [
+        "pk_internode_labeler",
+        "pk_il"
+      ],
+      "title": "Internode labeler",
+      "summary": "Label internal nodes of a tree",
+      "categories": [
+        "Tree manipulation & utilities"
+      ],
+      "page": "reference/commands/internode_labeler.rst",
+      "documentation": {
+        "purpose": "Label internal nodes of a tree",
+        "use_cases": [
+          "Label internal nodes of a tree"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "kf_distance",
+      "handler": "kf_distance",
+      "aliases": [
+        "kf",
+        "kf_dist",
+        "kuhner_felsenstein_distance"
+      ],
+      "entry_points": [
+        "pk_kf_distance",
+        "pk_kf",
+        "pk_kf_dist",
+        "pk_kuhner_felsenstein_distance"
+      ],
+      "title": "Kuhner-Felsenstein distance",
+      "summary": "Branch score distance between trees (topology + branch lengths)",
+      "categories": [
+        "Tree comparison & consensus"
+      ],
+      "page": "reference/commands/kf_distance.rst",
+      "documentation": {
+        "purpose": "Branch score distance between trees (topology + branch lengths)",
+        "use_cases": [
+          "Branch score distance between trees (topology + branch lengths)"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "last_common_ancestor_subtree",
+      "handler": "last_common_ancestor_subtree",
+      "aliases": [
+        "lca_subtree"
+      ],
+      "entry_points": [
+        "pk_last_common_ancestor_subtree",
+        "pk_lca_subtree"
+      ],
+      "title": "Last common ancestor subtree",
+      "summary": "Extract subtree from LCA of specified taxa",
+      "categories": [
+        "Tree manipulation & utilities"
+      ],
+      "page": "reference/commands/last_common_ancestor_subtree.rst",
+      "documentation": {
+        "purpose": "Extract subtree from LCA of specified taxa",
+        "use_cases": [
+          "Extract subtree from LCA of specified taxa"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "long_branch_score",
+      "handler": "lb_score",
+      "aliases": [
+        "lb_score",
+        "lbs"
+      ],
+      "entry_points": [
+        "pk_long_branch_score",
+        "pk_lb_score",
+        "pk_lbs"
+      ],
+      "title": "Long branch score",
+      "summary": "Identify long branches in a tree",
+      "categories": [
+        "Tree summary statistics"
+      ],
+      "page": "reference/commands/long_branch_score.rst",
+      "documentation": {
+        "purpose": "Identify long branches in a tree",
+        "use_cases": [
+          "Identify long branches in a tree"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "ltt",
+      "handler": "ltt",
+      "aliases": [
+        "gamma",
+        "gamma_stat"
+      ],
+      "entry_points": [
+        "pk_ltt",
+        "pk_gamma",
+        "pk_gamma_stat"
+      ],
+      "title": "Lineage-through-time plot and gamma statistic",
+      "summary": "Lineage-through-time analysis and gamma statistic",
+      "categories": [
+        "Tree summary statistics"
+      ],
+      "page": "reference/commands/ltt.rst",
+      "documentation": {
+        "purpose": "Lineage-through-time analysis and gamma statistic",
+        "use_cases": [
+          "Lineage-through-time analysis and gamma statistic"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "mask_alignment",
+      "handler": "mask_alignment",
+      "aliases": [
+        "mask",
+        "mask_aln"
+      ],
+      "entry_points": [
+        "pk_mask_alignment",
+        "pk_mask",
+        "pk_mask_aln"
+      ],
+      "title": "Mask alignment",
+      "summary": "Mask sites in an alignment",
+      "categories": [
+        "Alignment & dataset utilities"
+      ],
+      "page": "reference/commands/mask_alignment.rst",
+      "documentation": {
+        "purpose": "Mask sites in an alignment",
+        "use_cases": [
+          "Mask sites in an alignment"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "monophyly_check",
+      "handler": "monophyly_check",
+      "aliases": [
+        "is_monophyletic"
+      ],
+      "entry_points": [
+        "pk_monophyly_check",
+        "pk_is_monophyletic"
+      ],
+      "title": "Monophyly check",
+      "summary": "Test monophyly of a group of taxa",
+      "categories": [
+        "Tree manipulation & utilities"
+      ],
+      "page": "reference/commands/monophyly_check.rst",
+      "documentation": {
+        "purpose": "Test monophyly of a group of taxa",
+        "use_cases": [
+          "Test monophyly of a group of taxa"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "nearest_neighbor_interchange",
+      "handler": "nearest_neighbor_interchange",
+      "aliases": [
+        "nni"
+      ],
+      "entry_points": [
+        "pk_nearest_neighbor_interchange",
+        "pk_nni"
+      ],
+      "title": "Nearest neighbor interchange",
+      "summary": "Generate NNI tree rearrangements",
+      "categories": [
+        "Tree manipulation & utilities"
+      ],
+      "page": "reference/commands/nearest_neighbor_interchange.rst",
+      "documentation": {
+        "purpose": "Generate NNI tree rearrangements",
+        "use_cases": [
+          "Generate NNI tree rearrangements"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "neighbor_net",
+      "handler": "neighbor_net",
+      "aliases": [
+        "nnet"
+      ],
+      "entry_points": [
+        "pk_neighbor_net",
+        "pk_nnet"
+      ],
+      "title": "NeighborNet",
+      "summary": "NeighborNet phylogenetic network from distance matrix (Bryant & Moulton 2004)",
+      "categories": [
+        "Tree comparison & consensus"
+      ],
+      "page": "reference/commands/neighbor_net.rst",
+      "documentation": {
+        "purpose": "NeighborNet phylogenetic network from distance matrix (Bryant & Moulton 2004)",
+        "use_cases": [
+          "NeighborNet phylogenetic network from distance matrix (Bryant & Moulton 2004)"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "network_signal",
+      "handler": "network_signal",
+      "aliases": [
+        "net_signal",
+        "netsig"
+      ],
+      "entry_points": [
+        "pk_network_signal",
+        "pk_net_signal",
+        "pk_netsig"
+      ],
+      "title": "Network signal",
+      "summary": "Phylogenetic signal on networks",
+      "categories": [
+        "Phylogenetic signal"
+      ],
+      "page": "reference/commands/network_signal.rst",
+      "documentation": {
+        "purpose": "Phylogenetic signal on networks",
+        "use_cases": [
+          "Phylogenetic signal on networks"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "occupancy_filter",
+      "handler": "occupancy_filter",
+      "aliases": [
+        "filter_occupancy",
+        "occ_filter"
+      ],
+      "entry_points": [
+        "pk_occupancy_filter",
+        "pk_filter_occupancy",
+        "pk_occ_filter"
+      ],
+      "title": "Occupancy filter",
+      "summary": "Filter alignments or trees by cross-file taxon occupancy (works with both FASTA and Newick)",
+      "categories": [
+        "Alignment & dataset utilities"
+      ],
+      "page": "reference/commands/occupancy_filter.rst",
+      "documentation": {
+        "purpose": "Filter alignments or trees by cross-file taxon occupancy (works with both FASTA and Newick)",
+        "use_cases": [
+          "Filter alignments or trees by cross-file taxon occupancy (works with both FASTA and Newick)"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "occupancy_per_taxon",
+      "handler": "occupancy_per_taxon",
+      "aliases": [
+        "occ_tax",
+        "occupancy_taxon"
+      ],
+      "entry_points": [
+        "pk_occupancy_per_taxon",
+        "pk_occ_tax",
+        "pk_occupancy_taxon"
+      ],
+      "title": "Occupancy per taxon",
+      "summary": "Taxon occupancy in alignment columns",
+      "categories": [
+        "Alignment quality & statistics"
+      ],
+      "page": "reference/commands/occupancy_per_taxon.rst",
+      "documentation": {
+        "purpose": "Taxon occupancy in alignment columns",
+        "use_cases": [
+          "Taxon occupancy in alignment columns"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "ou_shift_detection",
+      "handler": "ou_shift_detection",
+      "aliases": [
+        "detect_shifts",
+        "l1ou",
+        "ou_shifts"
+      ],
+      "entry_points": [
+        "pk_ou_shift_detection",
+        "pk_detect_shifts",
+        "pk_l1ou",
+        "pk_ou_shifts"
+      ],
+      "title": "OU shift detection (l1ou)",
+      "summary": "Detect OU regime shifts on a phylogeny",
+      "categories": [
+        "Trait evolution"
+      ],
+      "page": "reference/commands/ou_shift_detection.rst",
+      "documentation": {
+        "purpose": "Detect OU regime shifts on a phylogeny",
+        "use_cases": [
+          "Detect OU regime shifts on a phylogeny"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "ouwie",
+      "handler": "ouwie",
+      "aliases": [
+        "fit_ouwie",
+        "multi_regime_ou"
+      ],
+      "entry_points": [
+        "pk_ouwie",
+        "pk_fit_ouwie",
+        "pk_multi_regime_ou"
+      ],
+      "title": "Multi-regime OU models (OUwie)",
+      "summary": "Multi-regime Ornstein-Uhlenbeck models",
+      "categories": [
+        "Trait evolution"
+      ],
+      "page": "reference/commands/ouwie.rst",
+      "documentation": {
+        "purpose": "Multi-regime Ornstein-Uhlenbeck models",
+        "use_cases": [
+          "Multi-regime Ornstein-Uhlenbeck models"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "pairwise_identity",
+      "handler": "pairwise_identity",
+      "aliases": [
+        "pairwise_id",
+        "pi"
+      ],
+      "entry_points": [
+        "pk_pairwise_identity",
+        "pk_pairwise_id",
+        "pk_pi"
+      ],
+      "title": "Pairwise identity",
+      "summary": "Pairwise sequence identity in an alignment",
+      "categories": [
+        "Alignment quality & statistics"
+      ],
+      "page": "reference/commands/pairwise_identity.rst",
+      "documentation": {
+        "purpose": "Pairwise sequence identity in an alignment",
+        "use_cases": [
+          "Pairwise sequence identity in an alignment"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "parsimony_informative_sites",
+      "handler": "parsimony_informative_sites",
+      "aliases": [
+        "pis"
+      ],
+      "entry_points": [
+        "pk_parsimony_informative_sites",
+        "pk_pis"
+      ],
+      "title": "Parsimony informative sites",
+      "summary": "Count parsimony informative sites",
+      "categories": [
+        "Alignment quality & statistics"
+      ],
+      "page": "reference/commands/parsimony_informative_sites.rst",
+      "documentation": {
+        "purpose": "Count parsimony informative sites",
+        "use_cases": [
+          "Count parsimony informative sites"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "parsimony_score",
+      "handler": "parsimony_score",
+      "aliases": [
+        "pars",
+        "parsimony"
+      ],
+      "entry_points": [
+        "pk_parsimony_score",
+        "pk_pars",
+        "pk_parsimony"
+      ],
+      "title": "Parsimony score",
+      "summary": "Fitch parsimony score of a tree given an alignment",
+      "categories": [
+        "Trait evolution"
+      ],
+      "page": "reference/commands/parsimony_score.rst",
+      "documentation": {
+        "purpose": "Fitch parsimony score of a tree given an alignment",
+        "use_cases": [
+          "Fitch parsimony score of a tree given an alignment"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "patristic_distances",
+      "handler": "patristic_distances",
+      "aliases": [
+        "pd"
+      ],
+      "entry_points": [
+        "pk_patristic_distances",
+        "pk_pd"
+      ],
+      "title": "Patristic distances",
+      "summary": "Pairwise patristic distances between taxa",
+      "categories": [
+        "Tree summary statistics"
+      ],
+      "page": "reference/commands/patristic_distances.rst",
+      "documentation": {
+        "purpose": "Pairwise patristic distances between taxa",
+        "use_cases": [
+          "Pairwise patristic distances between taxa"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "phenogram",
+      "handler": "phenogram",
+      "aliases": [
+        "tg",
+        "traitgram"
+      ],
+      "entry_points": [
+        "pk_phenogram",
+        "pk_tg",
+        "pk_traitgram"
+      ],
+      "title": "Phenogram (traitgram)",
+      "summary": "Phenogram visualizing trait evolution",
+      "categories": [
+        "Trait evolution"
+      ],
+      "page": "reference/commands/phenogram.rst",
+      "documentation": {
+        "purpose": "Phenogram visualizing trait evolution",
+        "use_cases": [
+          "Phenogram visualizing trait evolution"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "phylo_anova",
+      "handler": "phylo_anova",
+      "aliases": [
+        "panova",
+        "phylo_manova",
+        "pmanova"
+      ],
+      "entry_points": [
+        "pk_phylo_anova",
+        "pk_panova",
+        "pk_phylo_manova",
+        "pk_pmanova"
+      ],
+      "title": "Phylogenetic ANOVA / MANOVA",
+      "summary": "Phylogenetic ANOVA or MANOVA using RRPP (Adams & Collyer 2018)",
+      "categories": [
+        "Phylogenetic comparative methods"
+      ],
+      "page": "reference/commands/phylo_anova.rst",
+      "documentation": {
+        "purpose": "Phylogenetic ANOVA or MANOVA using RRPP (Adams & Collyer 2018)",
+        "use_cases": [
+          "Phylogenetic ANOVA or MANOVA using RRPP (Adams & Collyer 2018)"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "phylo_gwas",
+      "handler": "phylo_gwas",
+      "aliases": [
+        "pgwas"
+      ],
+      "entry_points": [
+        "pk_phylo_gwas",
+        "pk_pgwas"
+      ],
+      "title": "Phylo GWAS",
+      "summary": "Phylogenetic genome-wide association study",
+      "categories": [
+        "Phylogenetic comparative methods"
+      ],
+      "page": "reference/commands/phylo_gwas.rst",
+      "documentation": {
+        "purpose": "Phylogenetic genome-wide association study",
+        "use_cases": [
+          "Phylogenetic genome-wide association study"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "phylo_heatmap",
+      "handler": "phylo_heatmap",
+      "aliases": [
+        "ph",
+        "pheatmap"
+      ],
+      "entry_points": [
+        "pk_phylo_heatmap",
+        "pk_ph",
+        "pk_pheatmap"
+      ],
+      "title": "Phylogenetic heatmap",
+      "summary": "Phylogeny alongside a heatmap of numeric trait values",
+      "categories": [
+        "Trait evolution"
+      ],
+      "page": "reference/commands/phylo_heatmap.rst",
+      "documentation": {
+        "purpose": "Phylogeny alongside a heatmap of numeric trait values",
+        "use_cases": [
+          "Phylogeny alongside a heatmap of numeric trait values"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "phylo_impute",
+      "handler": "phylo_impute",
+      "aliases": [
+        "impute",
+        "phylo_imp"
+      ],
+      "entry_points": [
+        "pk_phylo_impute",
+        "pk_impute",
+        "pk_phylo_imp"
+      ],
+      "title": "Phylogenetic imputation",
+      "summary": "Impute missing trait values using phylogenetic relationships",
+      "categories": [
+        "Trait evolution"
+      ],
+      "page": "reference/commands/phylo_impute.rst",
+      "documentation": {
+        "purpose": "Impute missing trait values using phylogenetic relationships",
+        "use_cases": [
+          "Impute missing trait values using phylogenetic relationships"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "phylo_logistic",
+      "handler": "phylo_logistic",
+      "aliases": [
+        "phylo_logreg",
+        "plogreg"
+      ],
+      "entry_points": [
+        "pk_phylo_logistic",
+        "pk_phylo_logreg",
+        "pk_plogreg"
+      ],
+      "title": "Phylogenetic Logistic Regression",
+      "summary": "Phylogenetic logistic regression for binary traits (Ives & Garland 2010)",
+      "categories": [
+        "Phylogenetic comparative methods"
+      ],
+      "page": "reference/commands/phylo_logistic.rst",
+      "documentation": {
+        "purpose": "Phylogenetic logistic regression for binary traits (Ives & Garland 2010)",
+        "use_cases": [
+          "Phylogenetic logistic regression for binary traits (Ives & Garland 2010)"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "phylo_path",
+      "handler": "phylo_path",
+      "aliases": [
+        "phylopath",
+        "ppath"
+      ],
+      "entry_points": [
+        "pk_phylo_path",
+        "pk_phylopath",
+        "pk_ppath"
+      ],
+      "title": "Phylogenetic path analysis",
+      "summary": "Compare causal DAGs via d-separation + PGLS (von Hardenberg & Gonzalez-Voyer 2013)",
+      "categories": [
+        "Phylogenetic comparative methods"
+      ],
+      "page": "reference/commands/phylo_path.rst",
+      "documentation": {
+        "purpose": "Compare causal DAGs via d-separation + PGLS (von Hardenberg & Gonzalez-Voyer 2013)",
+        "use_cases": [
+          "Compare causal DAGs via d-separation + PGLS (von Hardenberg & Gonzalez-Voyer 2013)"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "phylogenetic_glm",
+      "handler": "phylogenetic_glm",
+      "aliases": [
+        "pglm",
+        "phylo_glm"
+      ],
+      "entry_points": [
+        "pk_phylogenetic_glm",
+        "pk_pglm",
+        "pk_phylo_glm"
+      ],
+      "title": "Phylogenetic GLM",
+      "summary": "Phylogenetic generalized linear model (supports discordance-aware VCV with ``-g``)",
+      "categories": [
+        "Phylogenetic comparative methods"
+      ],
+      "page": "reference/commands/phylogenetic_glm.rst",
+      "documentation": {
+        "purpose": "Phylogenetic generalized linear model (supports discordance-aware VCV with ``-g``)",
+        "use_cases": [
+          "Phylogenetic generalized linear model (supports discordance-aware VCV with ``-g``)"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "phylogenetic_ordination",
+      "handler": "phylogenetic_ordination",
+      "aliases": [
+        "dimreduce",
+        "ord",
+        "ordination",
+        "pdr",
+        "phyl_pca",
+        "phylo_dimreduce",
+        "phylo_ordination",
+        "phylo_pca",
+        "ppca"
+      ],
+      "entry_points": [
+        "pk_phylogenetic_ordination",
+        "pk_dimreduce",
+        "pk_ord",
+        "pk_ordination",
+        "pk_pdr",
+        "pk_phyl_pca",
+        "pk_phylo_dimreduce",
+        "pk_phylo_ordination",
+        "pk_phylo_pca",
+        "pk_ppca"
+      ],
+      "title": "Phylogenetic Ordination",
+      "summary": "Ordination incorporating phylogenetic structure (supports discordance-aware VCV with ``-g``)",
+      "categories": [
+        "Phylogenetic comparative methods"
+      ],
+      "page": "reference/commands/phylogenetic_ordination.rst",
+      "documentation": {
+        "purpose": "Ordination incorporating phylogenetic structure (supports discordance-aware VCV with ``-g``)",
+        "use_cases": [
+          "Ordination incorporating phylogenetic structure (supports discordance-aware VCV with ``-g``)"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "phylogenetic_regression",
+      "handler": "phylogenetic_regression",
+      "aliases": [
+        "pgls",
+        "phylo_regression"
+      ],
+      "entry_points": [
+        "pk_phylogenetic_regression",
+        "pk_pgls",
+        "pk_phylo_regression"
+      ],
+      "title": "Phylogenetic regression (PGLS)",
+      "summary": "Phylogenetic generalized least squares regression (supports discordance-aware VCV with ``-g``)",
+      "categories": [
+        "Phylogenetic comparative methods"
+      ],
+      "page": "reference/commands/phylogenetic_regression.rst",
+      "documentation": {
+        "purpose": "Phylogenetic generalized least squares regression (supports discordance-aware VCV with ``-g``)",
+        "use_cases": [
+          "Phylogenetic generalized least squares regression (supports discordance-aware VCV with ``-g``)"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "phylogenetic_signal",
+      "handler": "phylogenetic_signal",
+      "aliases": [
+        "phylo_signal",
+        "ps"
+      ],
+      "entry_points": [
+        "pk_phylogenetic_signal",
+        "pk_phylo_signal",
+        "pk_ps"
+      ],
+      "title": "Phylogenetic signal",
+      "summary": "Test for phylogenetic signal in traits (supports discordance-aware VCV with ``-g``)",
+      "categories": [
+        "Phylogenetic signal"
+      ],
+      "page": "reference/commands/phylogenetic_signal.rst",
+      "documentation": {
+        "purpose": "Test for phylogenetic signal in traits (supports discordance-aware VCV with ``-g``)",
+        "use_cases": [
+          "Test for phylogenetic signal in traits (supports discordance-aware VCV with ``-g``)"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "phylomorphospace",
+      "handler": "phylomorphospace",
+      "aliases": [
+        "phmo",
+        "phylomorpho"
+      ],
+      "entry_points": [
+        "pk_phylomorphospace",
+        "pk_phmo",
+        "pk_phylomorpho"
+      ],
+      "title": "Phylomorphospace",
+      "summary": "Phylomorphospace visualization",
+      "categories": [
+        "Phylogenetic comparative methods"
+      ],
+      "page": "reference/commands/phylomorphospace.rst",
+      "documentation": {
+        "purpose": "Phylomorphospace visualization",
+        "use_cases": [
+          "Phylomorphospace visualization"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "plot_alignment_qc",
+      "handler": "plot_alignment_qc",
+      "aliases": [
+        "paqc",
+        "plot_qc"
+      ],
+      "entry_points": [
+        "pk_plot_alignment_qc",
+        "pk_paqc",
+        "pk_plot_qc"
+      ],
+      "title": "Plot alignment QC",
+      "summary": "Visual quality control plots for alignments",
+      "categories": [
+        "Alignment quality & statistics"
+      ],
+      "page": "reference/commands/plot_alignment_qc.rst",
+      "documentation": {
+        "purpose": "Visual quality control plots for alignments",
+        "use_cases": [
+          "Visual quality control plots for alignments"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "polytomy_test",
+      "handler": "polytomy_test",
+      "aliases": [
+        "polyt",
+        "polyt_test",
+        "ptt"
+      ],
+      "entry_points": [
+        "pk_polytomy_test",
+        "pk_polyt",
+        "pk_polyt_test",
+        "pk_ptt"
+      ],
+      "title": "Polytomy testing",
+      "summary": "Test for polytomies in a tree",
+      "categories": [
+        "Tree comparison & consensus"
+      ],
+      "page": "reference/commands/polytomy_test.rst",
+      "documentation": {
+        "purpose": "Test for polytomies in a tree",
+        "use_cases": [
+          "Test for polytomies in a tree"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "print_tree",
+      "handler": "print_tree",
+      "aliases": [
+        "print",
+        "pt"
+      ],
+      "entry_points": [
+        "pk_print_tree",
+        "pk_print",
+        "pk_pt"
+      ],
+      "title": "Print tree",
+      "summary": "Print ASCII representation of a tree",
+      "categories": [
+        "Tree manipulation & utilities"
+      ],
+      "page": "reference/commands/print_tree.rst",
+      "documentation": {
+        "purpose": "Print ASCII representation of a tree",
+        "use_cases": [
+          "Print ASCII representation of a tree"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "prune_tree",
+      "handler": "prune_tree",
+      "aliases": [
+        "prune"
+      ],
+      "entry_points": [
+        "pk_prune_tree",
+        "pk_prune"
+      ],
+      "title": "Prune tree",
+      "summary": "Prune taxa from a tree",
+      "categories": [
+        "Tree manipulation & utilities"
+      ],
+      "page": "reference/commands/prune_tree.rst",
+      "documentation": {
+        "purpose": "Prune taxa from a tree",
+        "use_cases": [
+          "Prune taxa from a tree"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "quartet_network",
+      "handler": "quartet_network",
+      "aliases": [
+        "nanuq",
+        "qnet",
+        "quartet_net"
+      ],
+      "entry_points": [
+        "pk_quartet_network",
+        "pk_nanuq",
+        "pk_qnet",
+        "pk_quartet_net"
+      ],
+      "title": "Quartet network",
+      "summary": "Quartet-based network visualization",
+      "categories": [
+        "Tree comparison & consensus"
+      ],
+      "page": "reference/commands/quartet_network.rst",
+      "documentation": {
+        "purpose": "Quartet-based network visualization",
+        "use_cases": [
+          "Quartet-based network visualization"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "quartet_pie",
+      "handler": "quartet_pie",
+      "aliases": [
+        "qpie",
+        "quartet_pie_chart"
+      ],
+      "entry_points": [
+        "pk_quartet_pie",
+        "pk_qpie",
+        "pk_quartet_pie_chart"
+      ],
+      "title": "Quartet pie chart",
+      "summary": "Phylogram with quartet concordance pie charts at internal nodes",
+      "categories": [
+        "Tree comparison & consensus"
+      ],
+      "page": "reference/commands/quartet_pie.rst",
+      "documentation": {
+        "purpose": "Phylogram with quartet concordance pie charts at internal nodes",
+        "use_cases": [
+          "Phylogram with quartet concordance pie charts at internal nodes"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "rate_heterogeneity",
+      "handler": "rate_heterogeneity",
+      "aliases": [
+        "brownie",
+        "rh"
+      ],
+      "entry_points": [
+        "pk_rate_heterogeneity",
+        "pk_brownie",
+        "pk_rh"
+      ],
+      "title": "Rate heterogeneity test (multi-rate Brownian motion)",
+      "summary": "Test for rate heterogeneity in trait evolution",
+      "categories": [
+        "Trait evolution"
+      ],
+      "page": "reference/commands/rate_heterogeneity.rst",
+      "documentation": {
+        "purpose": "Test for rate heterogeneity in trait evolution",
+        "use_cases": [
+          "Test for rate heterogeneity in trait evolution"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "relative_composition_variability",
+      "handler": "rcv",
+      "aliases": [
+        "rcv",
+        "rel_comp_var"
+      ],
+      "entry_points": [
+        "pk_relative_composition_variability",
+        "pk_rcv",
+        "pk_rel_comp_var"
+      ],
+      "title": "Relative composition variability",
+      "summary": "Composition variability across taxa",
+      "categories": [
+        "Alignment quality & statistics"
+      ],
+      "page": "reference/commands/relative_composition_variability.rst",
+      "documentation": {
+        "purpose": "Composition variability across taxa",
+        "use_cases": [
+          "Composition variability across taxa"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "relative_composition_variability_taxon",
+      "handler": "rcvt",
+      "aliases": [
+        "rcvt",
+        "rel_comp_var_taxon"
+      ],
+      "entry_points": [
+        "pk_relative_composition_variability_taxon",
+        "pk_rcvt",
+        "pk_rel_comp_var_taxon"
+      ],
+      "title": "Relative composition variability, taxon",
+      "summary": "Per-taxon relative composition variability",
+      "categories": [
+        "Alignment quality & statistics"
+      ],
+      "page": "reference/commands/relative_composition_variability_taxon.rst",
+      "documentation": {
+        "purpose": "Per-taxon relative composition variability",
+        "use_cases": [
+          "Per-taxon relative composition variability"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "relative_rate_test",
+      "handler": "relative_rate_test",
+      "aliases": [
+        "rrt",
+        "tajima_rrt"
+      ],
+      "entry_points": [
+        "pk_relative_rate_test",
+        "pk_rrt",
+        "pk_tajima_rrt"
+      ],
+      "title": "Relative rate test",
+      "summary": "Relative rate test between lineages",
+      "categories": [
+        "Evolutionary rate analysis"
+      ],
+      "page": "reference/commands/relative_rate_test.rst",
+      "documentation": {
+        "purpose": "Relative rate test between lineages",
+        "use_cases": [
+          "Relative rate test between lineages"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "rename_fasta_entries",
+      "handler": "rename_fasta_entries",
+      "aliases": [
+        "rename_fasta"
+      ],
+      "entry_points": [
+        "pk_rename_fasta_entries",
+        "pk_rename_fasta"
+      ],
+      "title": "Rename FASTA entries",
+      "summary": "Rename entries in a FASTA file",
+      "categories": [
+        "Alignment & dataset utilities"
+      ],
+      "page": "reference/commands/rename_fasta_entries.rst",
+      "documentation": {
+        "purpose": "Rename entries in a FASTA file",
+        "use_cases": [
+          "Rename entries in a FASTA file"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "rename_tree_tips",
+      "handler": "rename_tree_tips",
+      "aliases": [
+        "rename_tips",
+        "rename_tree"
+      ],
+      "entry_points": [
+        "pk_rename_tree_tips",
+        "pk_rename_tips",
+        "pk_rename_tree"
+      ],
+      "title": "Rename tree tips",
+      "summary": "Rename tip labels in a tree",
+      "categories": [
+        "Tree manipulation & utilities"
+      ],
+      "page": "reference/commands/rename_tree_tips.rst",
+      "documentation": {
+        "purpose": "Rename tip labels in a tree",
+        "use_cases": [
+          "Rename tip labels in a tree"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "robinson_foulds_distance",
+      "handler": "rf_distance",
+      "aliases": [
+        "rf",
+        "rf_dist",
+        "rf_distance"
+      ],
+      "entry_points": [
+        "pk_robinson_foulds_distance",
+        "pk_rf",
+        "pk_rf_dist",
+        "pk_rf_distance"
+      ],
+      "title": "Robinson-Foulds distance",
+      "summary": "Topological distance between trees",
+      "categories": [
+        "Tree comparison & consensus"
+      ],
+      "page": "reference/commands/robinson_foulds_distance.rst",
+      "documentation": {
+        "purpose": "Topological distance between trees",
+        "use_cases": [
+          "Topological distance between trees"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "root_tree",
+      "handler": "root_tree",
+      "aliases": [
+        "root",
+        "rt"
+      ],
+      "entry_points": [
+        "pk_root_tree",
+        "pk_root",
+        "pk_rt"
+      ],
+      "title": "Root tree",
+      "summary": "Root or reroot a tree",
+      "categories": [
+        "Tree manipulation & utilities"
+      ],
+      "page": "reference/commands/root_tree.rst",
+      "documentation": {
+        "purpose": "Root or reroot a tree",
+        "use_cases": [
+          "Root or reroot a tree"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "saturation",
+      "handler": "saturation",
+      "aliases": [
+        "sat"
+      ],
+      "entry_points": [
+        "pk_saturation",
+        "pk_sat"
+      ],
+      "title": "Saturation",
+      "summary": "Test for substitution saturation",
+      "categories": [
+        "Saturation & model adequacy"
+      ],
+      "page": "reference/commands/saturation.rst",
+      "documentation": {
+        "purpose": "Test for substitution saturation",
+        "use_cases": [
+          "Test for substitution saturation"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "simmap_summary",
+      "handler": "simmap_summary",
+      "aliases": [
+        "describe_simmap",
+        "smsummary"
+      ],
+      "entry_points": [
+        "pk_simmap_summary",
+        "pk_describe_simmap",
+        "pk_smsummary"
+      ],
+      "title": "SIMMAP summary",
+      "summary": "Per-branch SIMMAP summary with node posteriors (describe.simmap)",
+      "categories": [
+        "Trait evolution"
+      ],
+      "page": "reference/commands/simmap_summary.rst",
+      "documentation": {
+        "purpose": "Per-branch SIMMAP summary with node posteriors (describe.simmap)",
+        "use_cases": [
+          "Per-branch SIMMAP summary with node posteriors (describe.simmap)"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "spectral_discordance",
+      "handler": "spectral_discordance",
+      "aliases": [
+        "sd",
+        "spec_disc"
+      ],
+      "entry_points": [
+        "pk_spectral_discordance",
+        "pk_sd",
+        "pk_spec_disc"
+      ],
+      "title": "Spectral discordance decomposition",
+      "summary": "PCA ordination and clustering of gene tree topologies",
+      "categories": [
+        "Tree comparison & consensus"
+      ],
+      "page": "reference/commands/spectral_discordance.rst",
+      "documentation": {
+        "purpose": "PCA ordination and clustering of gene tree topologies",
+        "use_cases": [
+          "PCA ordination and clustering of gene tree topologies"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "spurious_sequence",
+      "handler": "spurious_sequence",
+      "aliases": [
+        "spurious_seq",
+        "ss"
+      ],
+      "entry_points": [
+        "pk_spurious_sequence",
+        "pk_spurious_seq",
+        "pk_ss"
+      ],
+      "title": "Spurious homolog identification",
+      "summary": "Identify spurious sequences in alignments",
+      "categories": [
+        "Homology assessment"
+      ],
+      "page": "reference/commands/spurious_sequence.rst",
+      "documentation": {
+        "purpose": "Identify spurious sequences in alignments",
+        "use_cases": [
+          "Identify spurious sequences in alignments"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "stochastic_character_map",
+      "handler": "stochastic_character_map",
+      "aliases": [
+        "scm",
+        "simmap"
+      ],
+      "entry_points": [
+        "pk_stochastic_character_map",
+        "pk_scm",
+        "pk_simmap"
+      ],
+      "title": "Stochastic character mapping (SIMMAP)",
+      "summary": "Stochastic character mapping on a phylogeny",
+      "categories": [
+        "Trait evolution"
+      ],
+      "page": "reference/commands/stochastic_character_map.rst",
+      "documentation": {
+        "purpose": "Stochastic character mapping on a phylogeny",
+        "use_cases": [
+          "Stochastic character mapping on a phylogeny"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "subtree_prune_regraft",
+      "handler": "subtree_prune_regraft",
+      "aliases": [
+        "spr"
+      ],
+      "entry_points": [
+        "pk_subtree_prune_regraft",
+        "pk_spr"
+      ],
+      "title": "Subtree pruning and regrafting",
+      "summary": "Generate all SPR rearrangements for a specified subtree",
+      "categories": [
+        "Tree manipulation & utilities"
+      ],
+      "page": "reference/commands/subtree_prune_regraft.rst",
+      "documentation": {
+        "purpose": "Generate all SPR rearrangements for a specified subtree",
+        "use_cases": [
+          "Generate all SPR rearrangements for a specified subtree"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "sum_of_pairs_score",
+      "handler": "sum_of_pairs_score",
+      "aliases": [
+        "sop",
+        "sops"
+      ],
+      "entry_points": [
+        "pk_sum_of_pairs_score",
+        "pk_sop",
+        "pk_sops"
+      ],
+      "title": "Sum-of-pairs score",
+      "summary": "Sum-of-pairs alignment quality score",
+      "categories": [
+        "Alignment quality & statistics"
+      ],
+      "page": "reference/commands/sum_of_pairs_score.rst",
+      "documentation": {
+        "purpose": "Sum-of-pairs alignment quality score",
+        "use_cases": [
+          "Sum-of-pairs alignment quality score"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "taxon_groups",
+      "handler": "taxon_groups",
+      "aliases": [
+        "shared_taxa",
+        "tgroups"
+      ],
+      "entry_points": [
+        "pk_taxon_groups",
+        "pk_shared_taxa",
+        "pk_tgroups"
+      ],
+      "title": "Taxon groups",
+      "summary": "Group alignment or tree files by shared taxon sets (works with both FASTA and Newick)",
+      "categories": [
+        "Alignment & dataset utilities"
+      ],
+      "page": "reference/commands/taxon_groups.rst",
+      "documentation": {
+        "purpose": "Group alignment or tree files by shared taxon sets (works with both FASTA and Newick)",
+        "use_cases": [
+          "Group alignment or tree files by shared taxon sets (works with both FASTA and Newick)"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "terminal_branch_stats",
+      "handler": "terminal_branch_stats",
+      "aliases": [
+        "tbs"
+      ],
+      "entry_points": [
+        "pk_terminal_branch_stats",
+        "pk_tbs"
+      ],
+      "title": "Terminal branch statistics",
+      "summary": "Summary statistics of terminal branch lengths",
+      "categories": [
+        "Tree summary statistics"
+      ],
+      "page": "reference/commands/terminal_branch_stats.rst",
+      "documentation": {
+        "purpose": "Summary statistics of terminal branch lengths",
+        "use_cases": [
+          "Summary statistics of terminal branch lengths"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "thread_dna",
+      "handler": "thread_dna",
+      "aliases": [
+        "p2n",
+        "pal2nal"
+      ],
+      "entry_points": [
+        "pk_thread_dna",
+        "pk_p2n",
+        "pk_pal2nal"
+      ],
+      "title": "Protein-to-nucleotide alignment",
+      "summary": "Thread nucleotide onto protein alignment",
+      "categories": [
+        "Alignment & dataset utilities"
+      ],
+      "page": "reference/commands/thread_dna.rst",
+      "documentation": {
+        "purpose": "Thread nucleotide onto protein alignment",
+        "use_cases": [
+          "Thread nucleotide onto protein alignment"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "threshold_model",
+      "handler": "threshold_model",
+      "aliases": [
+        "thresh",
+        "thresh_bayes",
+        "threshbayes",
+        "threshold"
+      ],
+      "entry_points": [
+        "pk_threshold_model",
+        "pk_thresh",
+        "pk_thresh_bayes",
+        "pk_threshbayes",
+        "pk_threshold"
+      ],
+      "title": "Threshold model",
+      "summary": "Felsenstein threshold model for trait correlation",
+      "categories": [
+        "Trait evolution"
+      ],
+      "page": "reference/commands/threshold_model.rst",
+      "documentation": {
+        "purpose": "Felsenstein threshold model for trait correlation",
+        "use_cases": [
+          "Felsenstein threshold model for trait correlation"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "tip_labels",
+      "handler": "tip_labels",
+      "aliases": [
+        "labels",
+        "tl",
+        "tree_labels"
+      ],
+      "entry_points": [
+        "pk_tip_labels",
+        "pk_labels",
+        "pk_tl",
+        "pk_tree_labels"
+      ],
+      "title": "Tip labels",
+      "summary": "Print tip labels of a tree",
+      "categories": [
+        "Tree manipulation & utilities"
+      ],
+      "page": "reference/commands/tip_labels.rst",
+      "documentation": {
+        "purpose": "Print tip labels of a tree",
+        "use_cases": [
+          "Print tip labels of a tree"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "tip_to_tip_distance",
+      "handler": "tip_to_tip_distance",
+      "aliases": [
+        "t2t",
+        "t2t_dist"
+      ],
+      "entry_points": [
+        "pk_tip_to_tip_distance",
+        "pk_t2t",
+        "pk_t2t_dist"
+      ],
+      "title": "Tip-to-tip distance",
+      "summary": "Distance between two tips in a tree",
+      "categories": [
+        "Tree summary statistics"
+      ],
+      "page": "reference/commands/tip_to_tip_distance.rst",
+      "documentation": {
+        "purpose": "Distance between two tips in a tree",
+        "use_cases": [
+          "Distance between two tips in a tree"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "tip_to_tip_node_distance",
+      "handler": "tip_to_tip_node_distance",
+      "aliases": [
+        "t2t_nd",
+        "t2t_node_dist"
+      ],
+      "entry_points": [
+        "pk_tip_to_tip_node_distance",
+        "pk_t2t_nd",
+        "pk_t2t_node_dist"
+      ],
+      "title": "Tip-to-tip node distance",
+      "summary": "Node distance between two tips",
+      "categories": [
+        "Tree summary statistics"
+      ],
+      "page": "reference/commands/tip_to_tip_node_distance.rst",
+      "documentation": {
+        "purpose": "Node distance between two tips",
+        "use_cases": [
+          "Node distance between two tips"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "total_tree_length",
+      "handler": "total_tree_length",
+      "aliases": [
+        "tree_len"
+      ],
+      "entry_points": [
+        "pk_total_tree_length",
+        "pk_tree_len"
+      ],
+      "title": "Total tree length",
+      "summary": "Sum of all branch lengths",
+      "categories": [
+        "Tree summary statistics"
+      ],
+      "page": "reference/commands/total_tree_length.rst",
+      "documentation": {
+        "purpose": "Sum of all branch lengths",
+        "use_cases": [
+          "Sum of all branch lengths"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "trait_correlation",
+      "handler": "trait_correlation",
+      "aliases": [
+        "phylo_corr",
+        "trait_corr"
+      ],
+      "entry_points": [
+        "pk_trait_correlation",
+        "pk_phylo_corr",
+        "pk_trait_corr"
+      ],
+      "title": "Trait correlation",
+      "summary": "Phylogenetic correlations between all pairs of traits with heatmap visualization",
+      "categories": [
+        "Phylogenetic signal"
+      ],
+      "page": "reference/commands/trait_correlation.rst",
+      "documentation": {
+        "purpose": "Phylogenetic correlations between all pairs of traits with heatmap visualization",
+        "use_cases": [
+          "Phylogenetic correlations between all pairs of traits with heatmap visualization"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "trait_rate_map",
+      "handler": "trait_rate_map",
+      "aliases": [
+        "branch_rates",
+        "rate_map"
+      ],
+      "entry_points": [
+        "pk_trait_rate_map",
+        "pk_branch_rates",
+        "pk_rate_map"
+      ],
+      "title": "Trait rate map",
+      "summary": "Per-branch evolutionary rate map for a continuous trait",
+      "categories": [
+        "Trait evolution"
+      ],
+      "page": "reference/commands/trait_rate_map.rst",
+      "documentation": {
+        "purpose": "Per-branch evolutionary rate map for a continuous trait",
+        "use_cases": [
+          "Per-branch evolutionary rate map for a continuous trait"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "transfer_annotations",
+      "handler": "transfer_annotations",
+      "aliases": [
+        "annotate_tree",
+        "transfer_annot"
+      ],
+      "entry_points": [
+        "pk_transfer_annotations",
+        "pk_annotate_tree",
+        "pk_transfer_annot"
+      ],
+      "title": "Transfer annotations",
+      "summary": "Transfer node annotations between trees (e.g., wASTRAL to RAxML/IQ-TREE)",
+      "categories": [
+        "Tree manipulation & utilities"
+      ],
+      "page": "reference/commands/transfer_annotations.rst",
+      "documentation": {
+        "purpose": "Transfer node annotations between trees (e.g., wASTRAL to RAxML/IQ-TREE)",
+        "use_cases": [
+          "Transfer node annotations between trees (e.g., wASTRAL to RAxML/IQ-TREE)"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "tree_space",
+      "handler": "tree_space",
+      "aliases": [
+        "tree_landscape",
+        "tspace"
+      ],
+      "entry_points": [
+        "pk_tree_space",
+        "pk_tree_landscape",
+        "pk_tspace"
+      ],
+      "title": "Tree space visualization",
+      "summary": "Visualize gene tree topology space via MDS, t-SNE, UMAP, or clustered distance heatmap",
+      "categories": [
+        "Tree comparison & consensus"
+      ],
+      "page": "reference/commands/tree_space.rst",
+      "documentation": {
+        "purpose": "Visualize gene tree topology space via MDS, t-SNE, UMAP, or clustered distance heatmap",
+        "use_cases": [
+          "Visualize gene tree topology space via MDS, t-SNE, UMAP, or clustered distance heatmap"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "treeness",
+      "handler": "treeness",
+      "aliases": [
+        "tness"
+      ],
+      "entry_points": [
+        "pk_treeness",
+        "pk_tness"
+      ],
+      "title": "Treeness",
+      "summary": "Ratio of internal to total branch lengths",
+      "categories": [
+        "Tree summary statistics"
+      ],
+      "page": "reference/commands/treeness.rst",
+      "documentation": {
+        "purpose": "Ratio of internal to total branch lengths",
+        "use_cases": [
+          "Ratio of internal to total branch lengths"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "treeness_over_rcv",
+      "handler": "treeness_over_rcv",
+      "aliases": [
+        "tor",
+        "toverr"
+      ],
+      "entry_points": [
+        "pk_treeness_over_rcv",
+        "pk_tor",
+        "pk_toverr"
+      ],
+      "title": "Treeness over RCV",
+      "summary": "Treeness over relative composition variability",
+      "categories": [
+        "Saturation & model adequacy"
+      ],
+      "page": "reference/commands/treeness_over_rcv.rst",
+      "documentation": {
+        "purpose": "Treeness over relative composition variability",
+        "use_cases": [
+          "Treeness over relative composition variability"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "variable_sites",
+      "handler": "variable_sites",
+      "aliases": [
+        "vs"
+      ],
+      "entry_points": [
+        "pk_variable_sites",
+        "pk_vs"
+      ],
+      "title": "Variable sites",
+      "summary": "Count variable sites in an alignment",
+      "categories": [
+        "Alignment quality & statistics"
+      ],
+      "page": "reference/commands/variable_sites.rst",
+      "documentation": {
+        "purpose": "Count variable sites in an alignment",
+        "use_cases": [
+          "Count variable sites in an alignment"
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    },
+    {
+      "canonical": "version",
+      "handler": "version",
+      "aliases": [
+        "v"
+      ],
+      "entry_points": [
+        "pk_version",
+        "pk_v"
+      ],
+      "title": "Version",
+      "summary": "Run the Version analysis or utility.",
+      "categories": [
+        "Other utilities"
+      ],
+      "page": "reference/commands/version.rst",
+      "documentation": {
+        "purpose": "Run the Version analysis or utility.",
+        "use_cases": [
+          "Run the Version analysis or utility."
+        ],
+        "input_formats": [],
+        "outputs": [],
+        "errors": [],
+        "limitations": [],
+        "scientific_interpretation": "See the canonical command page.",
+        "validation": [],
+        "citations": [],
+        "examples": [],
+        "related_commands": [],
+        "related_tutorials": []
+      }
+    }
+  ]
+}

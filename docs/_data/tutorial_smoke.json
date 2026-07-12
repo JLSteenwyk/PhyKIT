@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "tutorials": [
+    {"number": 1, "command": ["aln_len", "Steenwyk_etal_mBio_2019_EOG091N44MS.aln.fa"]},
+    {"number": 2, "cwd": "gene_gene_covariation_tutorial", "command": ["root", "Shen_etal_SciAdv_2020_NUF2.constrained.tre", "-r", "Shen_etal_SciAdv_2020_NUF2_taxa_for_rooting.txt", "-o", "NUF2.rooted.tre"], "artifacts": ["NUF2.rooted.tre"]},
+    {"number": 3, "cwd": "polytomy_tutorial", "command": ["ptt", "-t", "filamentous_fungi_250_trees.txt", "-g", "groups_file0.txt"]},
+    {"number": 4, "cwd": "msa_accuracy", "command": ["aln_len", "BBA0001_reference.faa"]},
+    {"number": 5, "command": ["simmap", "-t", "tree_simple.tre", "-d", "tree_simple_discrete_traits.tsv", "-c", "diet", "-n", "5", "--seed", "42"]},
+    {"number": 6, "command": ["phylogenetic_signal", "-t", "tree_simple.tre", "-d", "tree_simple_traits.tsv", "-p", "10"]},
+    {"number": 7, "command": ["phylogenetic_ordination", "-t", "tree_simple.tre", "-d", "tree_simple_multi_traits.tsv", "--json"]},
+    {"number": 8, "command": ["phylomorphospace", "-t", "tree_simple.tre", "-d", "tree_simple_multi_traits.tsv", "--trait-x", "body_mass", "--trait-y", "brain_size"], "artifacts": ["phylomorphospace_plot.png"]},
+    {"number": 9, "command": ["pgls", "-t", "tree_simple.tre", "-d", "tree_simple_multi_traits.tsv", "-y", "body_mass", "-x", "brain_size"]},
+    {"number": 10, "command": ["pglm", "-t", "tree_simple.tre", "-d", "tree_simple_glm_traits.tsv", "-y", "count_trait", "-x", "body_mass", "--family", "poisson"]},
+    {"number": 11, "command": ["asr", "-t", "tree_simple.tre", "-d", "tree_simple_traits.tsv", "--ci"]},
+    {"number": 12, "command": ["spectral_discordance", "-g", "gene_trees_simple.nwk", "-t", "tree_simple.tre", "--json"]},
+    {"number": 13, "command": ["rh", "-t", "tree_simple.tre", "-d", "tree_simple_traits.tsv", "-r", "tree_simple_regimes.tsv", "--json"]},
+    {"number": 14, "command": ["cont_map", "-t", "tree_simple.tre", "-d", "tree_simple_traits.tsv", "-o", "contmap.png"], "artifacts": ["contmap.png"]},
+    {"number": 15, "command": ["fit_continuous", "-t", "tree_simple.tre", "-d", "tree_simple_traits.tsv", "--models", "BM"]},
+    {"number": 16, "command": ["ouwie", "-t", "tree_simple.tre", "-d", "tree_simple_traits.tsv", "-r", "tree_simple_regimes.tsv", "--models", "BM1"]},
+    {"number": 17, "command": ["l1ou", "-t", "tree_simple.tre", "-d", "tree_simple_traits.tsv", "--max-shifts", "2"]},
+    {"number": 18, "command": ["consnet", "-t", "consensus_network_tutorial.nwk", "--json"]},
+    {"number": 19, "command": ["phylogenetic_signal", "-t", "tree_simple.tre", "-d", "tree_simple_traits.tsv", "-p", "10", "--json"]},
+    {"number": 20, "command": ["consensus_network", "-t", "gene_trees_simple.nwk", "--json"]},
+    {"number": 21, "command": ["quartet_pie", "-t", "tree_simple.tre", "-g", "gene_trees_simple.nwk", "-o", "qpie_default.png"], "artifacts": ["qpie_default.png"]}
+  ]
+}

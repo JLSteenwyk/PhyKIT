@@ -6973,9 +6973,9 @@ class Phykit:
                                            (Default: majority)
 
                 --missing-taxa             how to handle mismatched
-                                           taxa across trees:
-                                           error or shared
-                                           (Default: error)
+                                           taxa across trees: allow,
+                                           error, or shared
+                                           (Default: allow)
 
                 --json                     optional argument to output
                                            results as JSON
@@ -10046,7 +10046,15 @@ class Phykit:
                 """
             ),
         )
-        parser.add_argument("-a", "--alignment_list", type=str, help=SUPPRESS)
+        parser.add_argument(
+            "-a",
+            "--alignment",
+            "--alignment-list",
+            "--alignment_list",
+            dest="alignment_list",
+            type=str,
+            help=SUPPRESS,
+        )
         parser.add_argument("-p", "--prefix", type=str, help=SUPPRESS)
         parser.add_argument("--threshold", type=float, required=False, default=0, help=SUPPRESS)
         parser.add_argument("--plot-occupancy", action="store_true", required=False, help=SUPPRESS)
@@ -10087,7 +10095,7 @@ class Phykit:
                   pk_thread_dna, pk_pal2nal, pk_p2n
 
                 Usage:
-                phykit thread_dna -p <file> -n <file> [-c/--clipkit_log_file
+                phykit thread_dna -p <file> -n <file> [-c/--clipkit-log-file
                   <clipkit outputted log file> -s] [--json]
 
                 Options
@@ -10096,7 +10104,7 @@ class Phykit:
 
                 -n/--nucleotide             nucleotide sequence file
 
-                -c/--clipkit_log            clipkit outputted log file
+                -c/--clipkit-log-file       ClipKIT output log file
 
                 -s/--stop                   boolean for whether or not
                                             stop codons should be kept. 
@@ -10112,6 +10120,7 @@ class Phykit:
         parser.add_argument("-n", "--nucleotide", type=str, help=SUPPRESS)
         parser.add_argument(
             "-c",
+            "--clipkit-log-file",
             "--clipkit_log_file",
             type=str,
             required=False,

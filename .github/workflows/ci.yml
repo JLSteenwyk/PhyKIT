@@ -58,18 +58,37 @@ jobs:
         with:
           persist-credentials: false
       - name: Setup Python
-        uses: actions/setup-python@master
+        uses: actions/setup-python@v5
         with:
           python-version: "3.10"
-      - name: Install pipenv
-        uses: dschep/install-pipenv-action@v1
-      - name: Build docs
+      - name: Install documentation dependencies
         run: |
-          cd docs
-          pipenv install
-          pipenv run make html
-          cd ..
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt -r tests/requirements.txt
+          python -m pip install build sphinx sphinx-rtd-theme
+          python -m pip install .
+      - name: Check generated documentation
+        run: python scripts/build_docs_catalog.py --check
+      - name: Check documentation contracts and retrieval benchmark
+        run: |
+          python -m pytest \
+            tests/unit/test_cli_registry.py \
+            tests/unit/test_docs_category_coverage.py \
+            tests/unit/test_docs_navigation.py \
+            tests/unit/test_llm_docs.py \
+            tests/unit/test_tutorial_docs.py
+      - name: Build documentation with strict references
+        run: sphinx-build -q -n -W --keep-going -b html docs docs/_build/html
+      - name: Build wheel and run portable tutorial smoke tests
+        run: |
+          python -m build --wheel
+          python scripts/check_wheel_entry_points.py dist/*.whl
+          python -m venv tutorial-wheel
+          tutorial-wheel/bin/python -m pip install --upgrade pip
+          tutorial-wheel/bin/python -m pip install dist/*.whl
+          python scripts/smoke_tutorials.py --python tutorial-wheel/bin/python
       - name: Deploy
+        if: ${{ github.ref == 'refs/heads/master' }}
         uses: JamesIves/github-pages-deploy-action@releases/v3
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

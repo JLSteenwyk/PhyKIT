@@ -1,4 +1,6 @@
-"""Declarative CLI alias registry."""
+"""Declarative registry for PhyKIT commands and aliases."""
+
+from dataclasses import dataclass
 
 
 # Map user-facing aliases (and a few long-form synonyms) to Phykit handler names.
@@ -239,4 +241,62 @@ ALIAS_TO_HANDLER: dict[str, str] = {
     "cc": "create_concatenation_matrix",
     "pal2nal": "thread_dna",
     "p2n": "thread_dna",
+}
+
+
+# Most canonical command names are also handler names. These five retain their
+# established descriptive command names while dispatching to legacy handlers.
+_CANONICAL_NAME_BY_HANDLER = {
+    "dvmc": "degree_of_violation_of_a_molecular_clock",
+    "lb_score": "long_branch_score",
+    "rcv": "relative_composition_variability",
+    "rcvt": "relative_composition_variability_taxon",
+    "rf_distance": "robinson_foulds_distance",
+}
+
+
+@dataclass(frozen=True)
+class CommandIdentity:
+    """Stable public identity for one command implementation."""
+
+    canonical: str
+    handler: str
+    aliases: tuple[str, ...]
+
+    @property
+    def entry_points(self) -> tuple[str, ...]:
+        """Return every standalone ``pk_*`` executable for the command."""
+
+        return tuple(f"pk_{name}" for name in (self.canonical, *self.aliases))
+
+
+def _build_command_identities() -> tuple[CommandIdentity, ...]:
+    handlers = sorted(set(ALIAS_TO_HANDLER.values()))
+    identities = []
+    for handler in handlers:
+        canonical = _CANONICAL_NAME_BY_HANDLER.get(handler, handler)
+        public_names = {
+            name for name, mapped_handler in ALIAS_TO_HANDLER.items()
+            if mapped_handler == handler
+        }
+        public_names.add(handler)
+        public_names.discard(canonical)
+        identities.append(
+            CommandIdentity(
+                canonical=canonical,
+                handler=handler,
+                aliases=tuple(sorted(public_names)),
+            )
+        )
+    return tuple(identities)
+
+
+COMMAND_IDENTITIES = _build_command_identities()
+
+# Complete command surface used by packaging and documentation. Keep
+# ALIAS_TO_HANDLER as the dispatch-only compatibility mapping.
+PUBLIC_COMMAND_TO_HANDLER = {
+    name: identity.handler
+    for identity in COMMAND_IDENTITIES
+    for name in (identity.canonical, *identity.aliases)
 }

@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jlsteenwyk.github.io/PhyKIT/schemas/command-spec.schema.json",
+  "title": "PhyKIT command documentation specification",
+  "type": "object",
+  "required": ["schema_version", "commands"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "commands": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "canonical", "handler", "aliases", "entry_points", "title",
+          "summary", "categories", "page", "documentation"
+        ],
+        "properties": {
+          "canonical": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+          "handler": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+          "aliases": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+          "entry_points": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+          "title": {"type": "string", "minLength": 1},
+          "summary": {"type": "string", "minLength": 1},
+          "categories": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+          "page": {"type": "string"},
+          "documentation": {
+            "type": "object",
+            "required": [
+              "purpose", "use_cases", "input_formats", "outputs", "errors",
+              "limitations", "scientific_interpretation", "validation",
+              "citations", "examples", "related_commands", "related_tutorials"
+            ]
+          }
+        }
+      }
+    }
+  }
+}
