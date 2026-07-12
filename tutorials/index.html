@@ -2710,15 +2710,17 @@ related mammals tend to have similar body sizes.</p>
 </div>
 <p>col1: Blomberg's K <br/>
 col2: p-value (from permutation test) <br/>
-col3: Pagel's lambda</p>
-<p>Here, K = 0.58 (moderate signal) and lambda = 0.95 (strong signal, close
-to 1). The p-value of 0.474 is non-significant with these 8 taxa, but
-the high lambda suggests phylogenetic structure is present — with more
-taxa, this would likely become significant.</p>
-<p><em>What if signal is weak?</em> If lambda ≈ 0 and K ≈ 0 with non-significant
-p-values, ordinary (non-phylogenetic) regression may be adequate. Strong
-signal — as we expect for body mass — means phylogenetic methods like PGLS
-are essential to avoid inflated type I error rates.</p>
+col3: R²_phylo, the relative reduction in fitted variance under Brownian
+motion compared with a white-noise model</p>
+<p>Here, K = 0.58 and the permutation p-value of 0.474 is non-significant
+with these 8 taxa. R²_phylo = 0.95 indicates that the Brownian-motion
+model has substantially lower fitted variance than the white-noise model.
+It is not an estimate of Pagel's lambda; calculate lambda explicitly with
+<code class="docutils literal notranslate"><span class="pre">-m</span> <span class="pre">lambda</span></code> as shown in Tutorial 6.</p>
+<p><em>What if signal is weak?</em> A K near 0 with a non-significant permutation
+test provides little evidence for phylogenetic signal in this analysis.
+Model choice should consider the signal estimate, uncertainty, sample size,
+and assumptions of the downstream analysis.</p>
 <p>For JSON output including the effect size (R² phylo):</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>phylogenetic_signal<span class="w"> </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span>-d<span class="w"> </span>tree_simple_traits.tsv<span class="w"> </span>--json
 </pre></div>
@@ -2726,9 +2728,9 @@ are essential to avoid inflated type I error rates.</p>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="nt">&quot;K&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.5842</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;p_value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.474</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;permutations&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1000</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;r_squared_phylo&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.9499</span><span class="p">}</span>
 </pre></div>
 </div>
-<p>The <code class="docutils literal notranslate"><span class="pre">r_squared_phylo</span></code> of 0.95 means that 95% of the trait variance is
-attributable to phylogenetic relatedness, confirming that body mass is
-strongly structured by evolutionary history.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">r_squared_phylo</span></code> value compares the fitted Brownian-motion variance
+with the white-noise variance. It should not be interpreted as the literal
+percentage of trait variance caused by phylogenetic relatedness.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
