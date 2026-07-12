@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Quick Start &mdash; phykit 2.3.0 documentation</title>
+  <title>PhyKIT &mdash; phykit 2.3.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/custom.css?v=ae8b8648" />
@@ -21,7 +21,7 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="About" href="about/index.html" /> 
+    <link rel="next" title="Installation and first analysis" href="getting_started/index.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -45,14 +45,17 @@
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul>
-<li class="toctree-l1"><a class="reference internal" href="about/index.html">About</a></li>
-<li class="toctree-l1"><a class="reference internal" href="usage/index.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting_started/index.html">Installation and first analysis</a></li>
 <li class="toctree-l1"><a class="reference internal" href="reference/index.html">Command reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="formats/index.html">Input formats and shared conventions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="glossary/index.html">Glossary</a></li>
 <li class="toctree-l1"><a class="reference internal" href="troubleshooting/index.html">Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="frequently_asked_questions/index.html">Frequently asked questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/index.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="about/index.html">About</a></li>
 <li class="toctree-l1"><a class="reference internal" href="change_log/index.html">Change log</a></li>
 <li class="toctree-l1"><a class="reference internal" href="other_software/index.html">Other software</a></li>
-<li class="toctree-l1"><a class="reference internal" href="frequently_asked_questions/index.html">FAQ</a></li>
 </ul>
 
         </div>
@@ -69,7 +72,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="#" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Quick Start</li>
+      <li class="breadcrumb-item active">PhyKIT</li>
       <li class="wy-breadcrumbs-aside">
       </li>
   </ul>
@@ -78,82 +81,92 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <a class="reference external image-reference" href="https://jlsteenwyk.com/PhyKIT"><img alt="PhyKIT logo figure" class="align-center" src="_images/logo.png" style="width: 55%;" />
+  <a class="reference external image-reference" href="https://jlsteenwyk.com/PhyKIT"><img alt="PhyKIT logo" class="align-center" src="_images/logo.png" style="width: 55%;" />
 </a>
-<p>PhyKIT, a toolkit for the UNIX shell environment with numerous functions that process multiple
-sequence alignments and phylogenies for broad applications</p>
-<p>If you found PhyKIT useful, please cite <em>PhyKIT: a broadly applicable UNIX shell toolkit for processing
-and analyzing phylogenomic data</em>. Bioinformatics. doi: <a class="reference external" href="https://academic.oup.com/bioinformatics/advance-article-abstract/doi/10.1093/bioinformatics/btab096/6131675?redirectedFrom=fulltext">10.1093/bioinformatics/btab096</a>.</p>
-<section id="quick-start">
-<h1>Quick Start<a class="headerlink" href="#quick-start" title="Link to this heading"></a></h1>
-<p>These two lines represent the simplest method to rapidly install and run PhyKIT.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># install</span>
-pip<span class="w"> </span>install<span class="w"> </span>phykit
-<span class="c1"># run</span>
-phykit<span class="w"> </span>-h
+<section id="phykit">
+<h1>PhyKIT<a class="headerlink" href="#phykit" title="Link to this heading"></a></h1>
+<p>PhyKIT is a command-line toolkit for processing and analyzing multiple
+sequence alignments, phylogenetic trees, and comparative trait data.</p>
+<section id="start-here">
+<h2>Start here<a class="headerlink" href="#start-here" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="getting_started/index.html"><span class="doc">Installation and first analysis</span></a></p></li>
+<li><p><a class="reference internal" href="reference/index.html"><span class="doc">Choose a command by analytical task</span></a></p></li>
+<li><p><a class="reference internal" href="tutorials/index.html"><span class="doc">Follow a complete workflow</span></a></p></li>
+<li><p><a class="reference internal" href="formats/index.html"><span class="doc">Prepare input files</span></a></p></li>
+<li><p><a class="reference internal" href="troubleshooting/index.html"><span class="doc">Troubleshoot an error</span></a></p></li>
+</ul>
+</section>
+<section id="first-analysis">
+<h2>First analysis<a class="headerlink" href="#first-analysis" title="Link to this heading"></a></h2>
+<p>Install PhyKIT with Python 3.10 or newer, download the example alignment,
+and calculate its length:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">pip</span> <span class="n">install</span> <span class="n">phykit</span>
+<span class="n">curl</span> <span class="o">-</span><span class="n">LO</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">jlsteenwyk</span><span class="o">.</span><span class="n">github</span><span class="o">.</span><span class="n">io</span><span class="o">/</span><span class="n">PhyKIT</span><span class="o">/</span><span class="n">data</span><span class="o">/</span><span class="n">Steenwyk_etal_mBio_2019_EOG091N44MS</span><span class="o">.</span><span class="n">aln</span><span class="o">.</span><span class="n">fa</span>
+<span class="n">phykit</span> <span class="n">alignment_length</span> <span class="n">Steenwyk_etal_mBio_2019_EOG091N44MS</span><span class="o">.</span><span class="n">aln</span><span class="o">.</span><span class="n">fa</span>
 </pre></div>
 </div>
-<p><strong>1) Installation</strong></p>
-<p>To install using <em>pip</em>, we strongly recommend building a virtual environment to avoid
-software dependency issues. To do so, execute the following commands:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># create virtual environment</span>
-python<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>venv
-<span class="c1"># activate virtual environment</span>
-<span class="nb">source</span><span class="w"> </span>venv/bin/activate
-<span class="c1"># install phykit</span>
-pip<span class="w"> </span>install<span class="w"> </span>phykit
+<p>Expected output:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">624</span>
 </pre></div>
 </div>
-<p><strong>Note, the virtual environment must be activated to use PhyKIT.</strong></p>
-<p>After using PhyKIT, you may wish to deactivate your virtual environment and can do so using the following command:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># deactivate virtual environment</span>
-deactivate
-</pre></div>
-</div>
-<div class="line-block">
-<div class="line"><br /></div>
-</div>
-<p>Similarly, to install from source, we strongly recommend using a virtual environment. To do so, use the
-following commands:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># download</span>
-git<span class="w"> </span>clone<span class="w"> </span>https://github.com/JLSteenwyk/PhyKIT.git
-<span class="nb">cd</span><span class="w"> </span>PhyKIT/
-<span class="c1"># create virtual environment</span>
-python<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>venv
-<span class="c1"># activate virtual environment</span>
-<span class="nb">source</span><span class="w"> </span>venv/bin/activate
-<span class="c1"># install</span>
-make<span class="w"> </span>install
-</pre></div>
-</div>
-<p>To deactivate your virtual environment, use the following command:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># deactivate virtual environment</span>
-deactivate
-</pre></div>
-</div>
-<p><strong>Note, the virtual environment must be activated to use PhyKIT.</strong></p>
-<div class="line-block">
-<div class="line"><br /></div>
-</div>
-<p>To install via anaconda, execute the following command:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>install<span class="w"> </span>bioconda::phykit
-</pre></div>
-</div>
-<p>Visit here for more information:
-<a class="reference external" href="https://anaconda.org/bioconda/phykit">https://anaconda.org/bioconda/phykit</a></p>
-<p><strong>2) Usage</strong></p>
-<p>Get the help message from PhyKIT:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>-h
-</pre></div>
-</div>
-<div class="line-block">
-<div class="line"><br /></div>
-</div>
+<p>The value is the number of aligned sites. Continue with
+<a class="reference internal" href="tutorials/pages/01-summarizing-information-content.html"><span class="doc">Tutorial 1</span></a> to
+measure additional information-content and tree-quality statistics.</p>
+</section>
+<section id="citation">
+<h2>Citation<a class="headerlink" href="#citation" title="Link to this heading"></a></h2>
+<p>If you use PhyKIT, cite <em>PhyKIT: a broadly applicable UNIX shell toolkit for
+processing and analyzing phylogenomic data</em>, Bioinformatics,
+<a class="reference external" href="https://doi.org/10.1093/bioinformatics/btab096">doi:10.1093/bioinformatics/btab096</a>.</p>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="about/index.html">About</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="about/index.html#the-developers">The Developers</a></li>
-<li class="toctree-l2"><a class="reference internal" href="about/index.html#more-team-members">More Team Members</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting_started/index.html">Installation and first analysis</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="getting_started/index.html#requirements">Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getting_started/index.html#install-from-pypi">Install from PyPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getting_started/index.html#install-with-conda">Install with conda</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getting_started/index.html#run-a-first-analysis">Run a first analysis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getting_started/index.html#find-the-next-command">Find the next command</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="reference/index.html">Command reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="reference/index.html#choose-by-task">Choose by task</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/index.html#all-commands">All commands</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/index.html">Tutorials</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/index.html#tutorial-index">Tutorial index</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/index.html#legacy-tutorial-anchors">Legacy tutorial anchors</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="formats/index.html">Input formats and shared conventions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="formats/index.html#multiple-sequence-alignments">Multiple sequence alignments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="formats/index.html#phylogenetic-trees">Phylogenetic trees</a></li>
+<li class="toctree-l2"><a class="reference internal" href="formats/index.html#taxon-names">Taxon names</a></li>
+<li class="toctree-l2"><a class="reference internal" href="formats/index.html#single-trait-tables">Single-trait tables</a></li>
+<li class="toctree-l2"><a class="reference internal" href="formats/index.html#multi-trait-tables">Multi-trait tables</a></li>
+<li class="toctree-l2"><a class="reference internal" href="formats/index.html#discrete-traits-and-grouping-files">Discrete traits and grouping files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="formats/index.html#missing-values-and-missing-taxa">Missing values and missing taxa</a></li>
+<li class="toctree-l2"><a class="reference internal" href="formats/index.html#paths-and-list-files">Paths and list files</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="glossary/index.html">Glossary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting/index.html">Troubleshooting</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="troubleshooting/index.html#installation-and-command-discovery">Installation and command discovery</a></li>
+<li class="toctree-l2"><a class="reference internal" href="troubleshooting/index.html#input-and-parsing-errors">Input and parsing errors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="troubleshooting/index.html#unexpected-or-empty-results">Unexpected or empty results</a></li>
+<li class="toctree-l2"><a class="reference internal" href="troubleshooting/index.html#reproducibility">Reproducibility</a></li>
+<li class="toctree-l2"><a class="reference internal" href="troubleshooting/index.html#reporting-a-problem">Reporting a problem</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="frequently_asked_questions/index.html">Frequently asked questions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="frequently_asked_questions/index.html#how-do-i-choose-a-command">How do I choose a command?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="frequently_asked_questions/index.html#how-do-i-see-the-options-for-my-installed-version">How do I see the options for my installed version?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="frequently_asked_questions/index.html#can-phykit-produce-machine-readable-output">Can PhyKIT produce machine-readable output?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="frequently_asked_questions/index.html#why-are-taxa-being-dropped-or-reported-as-missing">Why are taxa being dropped or reported as missing?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="frequently_asked_questions/index.html#what-alignment-and-tree-formats-are-supported">What alignment and tree formats are supported?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="frequently_asked_questions/index.html#how-do-i-make-an-analysis-reproducible">How do I make an analysis reproducible?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="frequently_asked_questions/index.html#how-do-i-report-a-bug-or-request-a-feature">How do I report a bug or request a feature?</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="usage/index.html">Usage</a><ul>
@@ -170,36 +183,23 @@ deactivate
 </li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="reference/index.html">Command reference</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="reference/index.html#choose-by-task">Choose by task</a></li>
-<li class="toctree-l2"><a class="reference internal" href="reference/index.html#all-commands">All commands</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials/index.html">Tutorials</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="tutorials/index.html#tutorial-index">Tutorial index</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tutorials/index.html#legacy-tutorial-anchors">Legacy tutorial anchors</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="troubleshooting/index.html">Troubleshooting</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="troubleshooting/index.html#installation-and-command-discovery">Installation and command discovery</a></li>
-<li class="toctree-l2"><a class="reference internal" href="troubleshooting/index.html#input-and-parsing-errors">Input and parsing errors</a></li>
-<li class="toctree-l2"><a class="reference internal" href="troubleshooting/index.html#unexpected-or-empty-results">Unexpected or empty results</a></li>
-<li class="toctree-l2"><a class="reference internal" href="troubleshooting/index.html#reproducibility">Reproducibility</a></li>
-<li class="toctree-l2"><a class="reference internal" href="troubleshooting/index.html#reporting-a-problem">Reporting a problem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="about/index.html">About</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="about/index.html#the-developers">The Developers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="about/index.html#more-team-members">More Team Members</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="change_log/index.html">Change log</a></li>
 <li class="toctree-l1"><a class="reference internal" href="other_software/index.html">Other software</a></li>
-<li class="toctree-l1"><a class="reference internal" href="frequently_asked_questions/index.html">FAQ</a></li>
 </ul>
 </div>
+</section>
 </section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="about/index.html" class="btn btn-neutral float-right" title="About" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="getting_started/index.html" class="btn btn-neutral float-right" title="Installation and first analysis" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

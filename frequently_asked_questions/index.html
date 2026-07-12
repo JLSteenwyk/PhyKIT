@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FAQ &mdash; phykit 2.3.0 documentation</title>
+  <title>Frequently asked questions &mdash; phykit 2.3.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=ae8b8648" />
@@ -21,7 +21,8 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="prev" title="Other software" href="../other_software/index.html" /> 
+    <link rel="next" title="Usage" href="../usage/index.html" />
+    <link rel="prev" title="Troubleshooting" href="../troubleshooting/index.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -45,14 +46,26 @@
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="../about/index.html">About</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../usage/index.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/index.html">Installation and first analysis</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../reference/index.html">Command reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../formats/index.html">Input formats and shared conventions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../glossary/index.html">Glossary</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../troubleshooting/index.html">Troubleshooting</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Frequently asked questions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#how-do-i-choose-a-command">How do I choose a command?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#how-do-i-see-the-options-for-my-installed-version">How do I see the options for my installed version?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#can-phykit-produce-machine-readable-output">Can PhyKIT produce machine-readable output?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#why-are-taxa-being-dropped-or-reported-as-missing">Why are taxa being dropped or reported as missing?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#what-alignment-and-tree-formats-are-supported">What alignment and tree formats are supported?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#how-do-i-make-an-analysis-reproducible">How do I make an analysis reproducible?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#how-do-i-report-a-bug-or-request-a-feature">How do I report a bug or request a feature?</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../usage/index.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../about/index.html">About</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../change_log/index.html">Change log</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../other_software/index.html">Other software</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">FAQ</a></li>
 </ul>
 
         </div>
@@ -69,7 +82,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">FAQ</li>
+      <li class="breadcrumb-item active">Frequently asked questions</li>
       <li class="wy-breadcrumbs-aside">
       </li>
   </ul>
@@ -78,27 +91,57 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="faq">
-<span id="id1"></span><h1>FAQ<a class="headerlink" href="#faq" title="Link to this heading"></a></h1>
-<hr class="docutils" />
-<p><strong>I would like to request a feature in PhyKIT, how do I do so?</strong></p>
-<p>Please contact the main software developer via <a class="reference external" href="https://jlsteenwyk.com/contact.html">email</a> or
-<a class="reference external" href="https://twitter.com/jlsteenwyk">twitter</a>.</p>
-<div class="line-block">
-<div class="line"><br /></div>
-</div>
-<p><strong>I am having trouble installing PhyKIT, what should I do?</strong></p>
-<p>Please try installing PhyKIT using a virtual environment as directed in the installation instructions.
-If you are still running into issues after installing in a virtual environment, please contact
-the main software developer via <a class="reference external" href="https://jlsteenwyk.com/contact.html">email</a> or
-<a class="reference external" href="https://twitter.com/jlsteenwyk">twitter</a>.</p>
+  <section id="frequently-asked-questions">
+<span id="faq"></span><h1>Frequently asked questions<a class="headerlink" href="#frequently-asked-questions" title="Link to this heading"></a></h1>
+<section id="how-do-i-choose-a-command">
+<h2>How do I choose a command?<a class="headerlink" href="#how-do-i-choose-a-command" title="Link to this heading"></a></h2>
+<p>Start with the <a class="reference internal" href="../reference/index.html"><span class="doc">task-oriented command reference</span></a>. Each
+canonical page lists aliases, accepted arguments, defaults, output behavior,
+scientific interpretation, examples, limitations, validation, and citations.</p>
+</section>
+<section id="how-do-i-see-the-options-for-my-installed-version">
+<h2>How do I see the options for my installed version?<a class="headerlink" href="#how-do-i-see-the-options-for-my-installed-version" title="Link to this heading"></a></h2>
+<p>Run <code class="docutils literal notranslate"><span class="pre">phykit</span> <span class="pre">&lt;command&gt;</span> <span class="pre">--help</span></code>. The website documents the current release, while
+the local help reflects the version active in your environment.</p>
+</section>
+<section id="can-phykit-produce-machine-readable-output">
+<h2>Can PhyKIT produce machine-readable output?<a class="headerlink" href="#can-phykit-produce-machine-readable-output" title="Link to this heading"></a></h2>
+<p>Most analytical commands expose <code class="docutils literal notranslate"><span class="pre">--json</span></code>. Check the generated runtime table on
+the canonical command page. The full command and argument catalog is available as
+<a class="reference download internal" download="" href="../_downloads/3ab6a10dce717e8910d5120f3343baf6/commands.json"><code class="xref download docutils literal notranslate"><span class="pre">commands.json</span></code></a>.</p>
+</section>
+<section id="why-are-taxa-being-dropped-or-reported-as-missing">
+<h2>Why are taxa being dropped or reported as missing?<a class="headerlink" href="#why-are-taxa-being-dropped-or-reported-as-missing" title="Link to this heading"></a></h2>
+<p>Taxon names must match exactly across inputs. Commands differ in whether they
+reject mismatches, use the shared intersection, or allow partial taxon sets. Read
+the command's missing-taxa option and the <a class="reference internal" href="../formats/index.html"><span class="doc">format conventions</span></a>.</p>
+</section>
+<section id="what-alignment-and-tree-formats-are-supported">
+<h2>What alignment and tree formats are supported?<a class="headerlink" href="#what-alignment-and-tree-formats-are-supported" title="Link to this heading"></a></h2>
+<p>See <a class="reference internal" href="../formats/index.html"><span class="doc">Input formats and shared conventions</span></a>. Alignment format
+is detected from content; tree inputs are normally Newick.</p>
+</section>
+<section id="how-do-i-make-an-analysis-reproducible">
+<h2>How do I make an analysis reproducible?<a class="headerlink" href="#how-do-i-make-an-analysis-reproducible" title="Link to this heading"></a></h2>
+<p>Record the PhyKIT version, complete command, input checksums, and explicit random
+seed. Keep structured JSON output when available and cite the methods identified
+on the command page.</p>
+</section>
+<section id="how-do-i-report-a-bug-or-request-a-feature">
+<h2>How do I report a bug or request a feature?<a class="headerlink" href="#how-do-i-report-a-bug-or-request-a-feature" title="Link to this heading"></a></h2>
+<p>Open a <a class="reference external" href="https://github.com/JLSteenwyk/PhyKIT/issues">GitHub issue</a>. For bugs,
+include a minimal reproducible example, complete error text, PhyKIT and Python
+versions, and operating system. See <a class="reference internal" href="../troubleshooting/index.html"><span class="doc">Troubleshooting</span></a>
+before posting installation or input-format problems.</p>
+</section>
 </section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="../other_software/index.html" class="btn btn-neutral float-left" title="Other software" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../troubleshooting/index.html" class="btn btn-neutral float-left" title="Troubleshooting" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../usage/index.html" class="btn btn-neutral float-right" title="Usage" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

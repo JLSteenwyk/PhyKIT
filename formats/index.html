@@ -1,0 +1,214 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Input formats and shared conventions &mdash; phykit 2.3.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=ae8b8648" />
+
+  
+    <link rel="shortcut icon" href="../_static/flavicon.png"/>
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=c3c8ae58"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Glossary" href="../glossary/index.html" />
+    <link rel="prev" title="Tutorial 21: Customizing phylogenetic plots" href="../tutorials/pages/21-customizing-phylogenetic-plots.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/index.html">Installation and first analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../reference/index.html">Command reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Input formats and shared conventions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#multiple-sequence-alignments">Multiple sequence alignments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#phylogenetic-trees">Phylogenetic trees</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#taxon-names">Taxon names</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#single-trait-tables">Single-trait tables</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#multi-trait-tables">Multi-trait tables</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#discrete-traits-and-grouping-files">Discrete traits and grouping files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#missing-values-and-missing-taxa">Missing values and missing taxa</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#paths-and-list-files">Paths and list files</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../glossary/index.html">Glossary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../troubleshooting/index.html">Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../frequently_asked_questions/index.html">Frequently asked questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage/index.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../about/index.html">About</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../change_log/index.html">Change log</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../other_software/index.html">Other software</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">phykit</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Input formats and shared conventions</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="input-formats-and-shared-conventions">
+<span id="input-formats"></span><h1>Input formats and shared conventions<a class="headerlink" href="#input-formats-and-shared-conventions" title="Link to this heading"></a></h1>
+<p>The canonical command page is authoritative when a command has stricter
+requirements than the shared conventions below.</p>
+<section id="multiple-sequence-alignments">
+<h2>Multiple sequence alignments<a class="headerlink" href="#multiple-sequence-alignments" title="Link to this heading"></a></h2>
+<p>PhyKIT detects alignment format from file content. Supported formats are FASTA,
+Clustal, MAF, Mauve, PHYLIP (interleaved, sequential, and relaxed), and
+Stockholm. Aligned sequences must have equal lengths.</p>
+<p>FASTA records use the first whitespace-delimited token after <code class="docutils literal notranslate"><span class="pre">&gt;</span></code> as the taxon
+identifier:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&gt;</span><span class="n">species_A</span> <span class="n">optional</span> <span class="n">description</span>
+<span class="n">ACGTACGT</span>
+<span class="o">&gt;</span><span class="n">species_B</span>
+<span class="n">ACGT</span><span class="o">-</span><span class="n">CGT</span>
+</pre></div>
+</div>
+<p>Use unique identifiers. Gap characters are normally <code class="docutils literal notranslate"><span class="pre">-</span></code>; the handling of
+ambiguous characters depends on the statistic being calculated.</p>
+</section>
+<section id="phylogenetic-trees">
+<h2>Phylogenetic trees<a class="headerlink" href="#phylogenetic-trees" title="Link to this heading"></a></h2>
+<p>Tree inputs use Newick unless a command page states otherwise:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">((</span><span class="n">species_A</span><span class="p">:</span><span class="mf">0.1</span><span class="p">,</span><span class="n">species_B</span><span class="p">:</span><span class="mf">0.1</span><span class="p">):</span><span class="mf">0.2</span><span class="p">,</span><span class="n">species_C</span><span class="p">:</span><span class="mf">0.3</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>Terminate each tree with a semicolon. Branch lengths and internal support values
+are required only by commands that use them. Some multi-tree commands accept
+either one Newick tree per line or one tree-file path per line.</p>
+</section>
+<section id="taxon-names">
+<h2>Taxon names<a class="headerlink" href="#taxon-names" title="Link to this heading"></a></h2>
+<p>Taxon matching is exact and case-sensitive. <code class="docutils literal notranslate"><span class="pre">species_A</span></code>, <code class="docutils literal notranslate"><span class="pre">Species_A</span></code>, and
+<code class="docutils literal notranslate"><span class="pre">species</span> <span class="pre">A</span></code> are different identifiers. Use the same spelling in alignments,
+tree tips, trait tables, grouping files, and mapping files. Avoid whitespace in
+identifiers when possible.</p>
+</section>
+<section id="single-trait-tables">
+<h2>Single-trait tables<a class="headerlink" href="#single-trait-tables" title="Link to this heading"></a></h2>
+<p>Commands such as <code class="docutils literal notranslate"><span class="pre">phylogenetic_signal</span></code> accept two tab-separated columns with
+no header. Blank lines and lines beginning with <code class="docutils literal notranslate"><span class="pre">#</span></code> are ignored:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># taxon&lt;TAB&gt;continuous_value</span>
+<span class="n">species_A</span>    <span class="mf">1.25</span>
+<span class="n">species_B</span>    <span class="mf">0.80</span>
+</pre></div>
+</div>
+</section>
+<section id="multi-trait-tables">
+<h2>Multi-trait tables<a class="headerlink" href="#multi-trait-tables" title="Link to this heading"></a></h2>
+<p>Regression, ordination, and other multi-trait commands use a header. The first
+column contains taxa and subsequent columns contain named traits:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">taxon</span>        <span class="n">body_mass</span>       <span class="n">brain_size</span>
+<span class="n">species_A</span>    <span class="mf">1.25</span>    <span class="mf">0.90</span>
+<span class="n">species_B</span>    <span class="mf">0.80</span>    <span class="mf">0.72</span>
+</pre></div>
+</div>
+<p>Use literal tab characters, not aligned runs of spaces. Numeric analyses reject
+non-numeric trait values unless the command explicitly supports categorical data.</p>
+</section>
+<section id="discrete-traits-and-grouping-files">
+<h2>Discrete traits and grouping files<a class="headerlink" href="#discrete-traits-and-grouping-files" title="Link to this heading"></a></h2>
+<p>Discrete-trait commands commonly use a header so <code class="docutils literal notranslate"><span class="pre">--trait</span></code> can identify the
+selected column:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">taxon</span>        <span class="n">diet</span>
+<span class="n">species_A</span>    <span class="n">carnivore</span>
+<span class="n">species_B</span>    <span class="n">herbivore</span>
+</pre></div>
+</div>
+<p>Other two-column files, such as rename maps, usually contain an existing name and
+its replacement. Consult the command page for column order and header rules.</p>
+</section>
+<section id="missing-values-and-missing-taxa">
+<h2>Missing values and missing taxa<a class="headerlink" href="#missing-values-and-missing-taxa" title="Link to this heading"></a></h2>
+<p>PhyKIT does not define one missing-value token for every command. Do not assume
+that <code class="docutils literal notranslate"><span class="pre">NA</span></code>, <code class="docutils literal notranslate"><span class="pre">NaN</span></code>, an empty field, or <code class="docutils literal notranslate"><span class="pre">?</span></code> is accepted. Check the command's
+input section and runtime interface. Missing taxa are also command-specific:
+some commands use shared taxa, some expose <code class="docutils literal notranslate"><span class="pre">--missing-taxa</span></code>, and others reject
+nonmatching sets.</p>
+</section>
+<section id="paths-and-list-files">
+<h2>Paths and list files<a class="headerlink" href="#paths-and-list-files" title="Link to this heading"></a></h2>
+<p>Paths passed directly on the command line are resolved from the current working
+directory. For files containing lists of other file paths, consult the command
+page to determine whether relative paths are resolved from the working directory
+or the list file's directory. Absolute paths remove that ambiguity.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../tutorials/pages/21-customizing-phylogenetic-plots.html" class="btn btn-neutral float-left" title="Tutorial 21: Customizing phylogenetic plots" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../glossary/index.html" class="btn btn-neutral float-right" title="Glossary" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020-2026 Jacob L. Steenwyk.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
