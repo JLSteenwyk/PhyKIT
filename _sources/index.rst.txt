@@ -97,11 +97,12 @@ Get the help message from PhyKIT:
 |
 
 .. toctree::
-	:maxdepth: 4
+   :maxdepth: 4
 
-	about/index
-	usage/index
-	tutorials/index
-	change_log/index
-	other_software/index
-	frequently_asked_questions/index
+   about/index
+   usage/index
+   reference/index
+   tutorials/index
+   change_log/index
+   other_software/index
+   frequently_asked_questions/index

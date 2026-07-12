@@ -1,0 +1,180 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alignment quality &amp; statistics &mdash; phykit 2.3.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=b745eb55" />
+
+  
+    <link rel="shortcut icon" href="../../_static/flavicon.png"/>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=c3c8ae58"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Alignment entropy" href="../commands/alignment_entropy.html" />
+    <link rel="prev" title="Protein-to-nucleotide alignment" href="../commands/thread_dna.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html">
+            
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../about/index.html">About</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/index.html">Usage</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Command reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../index.html#choose-by-task">Choose by task</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#all-commands">All commands</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="alignment-dataset-utilities.html">Alignment &amp; dataset utilities</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Alignment quality &amp; statistics</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../commands/alignment_entropy.html">Alignment entropy</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../commands/alignment_length.html">Alignment length</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../commands/alignment_length_no_gaps.html">Alignment length no gaps</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../commands/alignment_outlier_taxa.html">Alignment outlier taxa</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../commands/codon_dnds.html">Codon dN/dS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../commands/column_score.html">Column score</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../commands/composition_per_taxon.html">Composition per taxon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../commands/compositional_bias_per_site.html">Compositional bias per site</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../commands/evolutionary_rate_per_site.html">Evolutionary Rate per Site</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../commands/gc_content.html">Guanine-cytosine (GC) content</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../commands/identity_matrix.html">Identity matrix</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../commands/occupancy_per_taxon.html">Occupancy per taxon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../commands/pairwise_identity.html">Pairwise identity</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../commands/parsimony_informative_sites.html">Parsimony informative sites</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../commands/plot_alignment_qc.html">Plot alignment QC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../commands/relative_composition_variability.html">Relative composition variability</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../commands/relative_composition_variability_taxon.html">Relative composition variability, taxon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../commands/sum_of_pairs_score.html">Sum-of-pairs score</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../commands/variable_sites.html">Variable sites</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="evolutionary-rate-analysis.html">Evolutionary rate analysis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="homology-assessment.html">Homology assessment</a></li>
+<li class="toctree-l3"><a class="reference internal" href="introgression-gene-flow.html">Introgression &amp; gene flow</a></li>
+<li class="toctree-l3"><a class="reference internal" href="other-utilities.html">Other utilities</a></li>
+<li class="toctree-l3"><a class="reference internal" href="phylogenetic-comparative-methods.html">Phylogenetic comparative methods</a></li>
+<li class="toctree-l3"><a class="reference internal" href="phylogenetic-signal.html">Phylogenetic signal</a></li>
+<li class="toctree-l3"><a class="reference internal" href="saturation-model-adequacy.html">Saturation &amp; model adequacy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="trait-evolution.html">Trait evolution</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tree-comparison-consensus.html">Tree comparison &amp; consensus</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tree-manipulation-utilities.html">Tree manipulation &amp; utilities</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tree-summary-statistics.html">Tree summary statistics</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../change_log/index.html">Change log</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../other_software/index.html">Other software</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../frequently_asked_questions/index.html">FAQ</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">phykit</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Command reference</a></li>
+      <li class="breadcrumb-item active">Alignment quality &amp; statistics</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="alignment-quality-statistics">
+<h1>Alignment quality &amp; statistics<a class="headerlink" href="#alignment-quality-statistics" title="Link to this heading"></a></h1>
+<ul class="simple">
+<li><p><a class="reference internal" href="../commands/alignment_entropy.html"><span class="doc">Alignment entropy</span></a> - Shannon entropy across alignment sites</p></li>
+<li><p><a class="reference internal" href="../commands/alignment_length.html"><span class="doc">Alignment length</span></a> - Length of an input alignment</p></li>
+<li><p><a class="reference internal" href="../commands/alignment_length_no_gaps.html"><span class="doc">Alignment length no gaps</span></a> - Alignment length excluding gapped sites</p></li>
+<li><p><a class="reference internal" href="../commands/alignment_outlier_taxa.html"><span class="doc">Alignment outlier taxa</span></a> - Identify outlier taxa in alignments</p></li>
+<li><p><a class="reference internal" href="../commands/codon_dnds.html"><span class="doc">Codon dN/dS</span></a> - Pairwise synonymous and nonsynonymous substitution-rate estimates</p></li>
+<li><p><a class="reference internal" href="../commands/column_score.html"><span class="doc">Column score</span></a> - Column score for alignment quality</p></li>
+<li><p><a class="reference internal" href="../commands/composition_per_taxon.html"><span class="doc">Composition per taxon</span></a> - Nucleotide or amino acid composition per taxon</p></li>
+<li><p><a class="reference internal" href="../commands/compositional_bias_per_site.html"><span class="doc">Compositional bias per site</span></a> - Detect compositional bias across sites</p></li>
+<li><p><a class="reference internal" href="../commands/evolutionary_rate_per_site.html"><span class="doc">Evolutionary Rate per Site</span></a> - Site-specific evolutionary rate estimation</p></li>
+<li><p><a class="reference internal" href="../commands/gc_content.html"><span class="doc">Guanine-cytosine (GC) content</span></a> - GC content of an alignment</p></li>
+<li><p><a class="reference internal" href="../commands/identity_matrix.html"><span class="doc">Identity matrix</span></a> - Pairwise sequence identity heatmap</p></li>
+<li><p><a class="reference internal" href="../commands/occupancy_per_taxon.html"><span class="doc">Occupancy per taxon</span></a> - Taxon occupancy in alignment columns</p></li>
+<li><p><a class="reference internal" href="../commands/pairwise_identity.html"><span class="doc">Pairwise identity</span></a> - Pairwise sequence identity in an alignment</p></li>
+<li><p><a class="reference internal" href="../commands/parsimony_informative_sites.html"><span class="doc">Parsimony informative sites</span></a> - Count parsimony informative sites</p></li>
+<li><p><a class="reference internal" href="../commands/plot_alignment_qc.html"><span class="doc">Plot alignment QC</span></a> - Visual quality control plots for alignments</p></li>
+<li><p><a class="reference internal" href="../commands/relative_composition_variability.html"><span class="doc">Relative composition variability</span></a> - Composition variability across taxa</p></li>
+<li><p><a class="reference internal" href="../commands/relative_composition_variability_taxon.html"><span class="doc">Relative composition variability, taxon</span></a> - Per-taxon relative composition variability</p></li>
+<li><p><a class="reference internal" href="../commands/sum_of_pairs_score.html"><span class="doc">Sum-of-pairs score</span></a> - Sum-of-pairs alignment quality score</p></li>
+<li><p><a class="reference internal" href="../commands/variable_sites.html"><span class="doc">Variable sites</span></a> - Count variable sites in an alignment</p></li>
+</ul>
+<div class="toctree-wrapper compound">
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../commands/thread_dna.html" class="btn btn-neutral float-left" title="Protein-to-nucleotide alignment" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../commands/alignment_entropy.html" class="btn btn-neutral float-right" title="Alignment entropy" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020-2026 Jacob L. Steenwyk.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

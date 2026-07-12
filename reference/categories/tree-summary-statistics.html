@@ -1,0 +1,168 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tree summary statistics &mdash; phykit 2.3.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=b745eb55" />
+
+  
+    <link rel="shortcut icon" href="../../_static/flavicon.png"/>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=c3c8ae58"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Bipartition support statistics" href="../commands/bipartition_support_stats.html" />
+    <link rel="prev" title="Transfer annotations" href="../commands/transfer_annotations.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html">
+            
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../about/index.html">About</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/index.html">Usage</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Command reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../index.html#choose-by-task">Choose by task</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#all-commands">All commands</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="alignment-dataset-utilities.html">Alignment &amp; dataset utilities</a></li>
+<li class="toctree-l3"><a class="reference internal" href="alignment-quality-statistics.html">Alignment quality &amp; statistics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="evolutionary-rate-analysis.html">Evolutionary rate analysis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="homology-assessment.html">Homology assessment</a></li>
+<li class="toctree-l3"><a class="reference internal" href="introgression-gene-flow.html">Introgression &amp; gene flow</a></li>
+<li class="toctree-l3"><a class="reference internal" href="other-utilities.html">Other utilities</a></li>
+<li class="toctree-l3"><a class="reference internal" href="phylogenetic-comparative-methods.html">Phylogenetic comparative methods</a></li>
+<li class="toctree-l3"><a class="reference internal" href="phylogenetic-signal.html">Phylogenetic signal</a></li>
+<li class="toctree-l3"><a class="reference internal" href="saturation-model-adequacy.html">Saturation &amp; model adequacy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="trait-evolution.html">Trait evolution</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tree-comparison-consensus.html">Tree comparison &amp; consensus</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tree-manipulation-utilities.html">Tree manipulation &amp; utilities</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Tree summary statistics</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../commands/bipartition_support_stats.html">Bipartition support statistics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../commands/degree_of_violation_of_a_molecular_clock.html">Degree of violation of the molecular clock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../commands/evolutionary_rate.html">Evolutionary rate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../commands/faiths_pd.html">Faith's phylogenetic diversity</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../commands/internal_branch_stats.html">Internal branch statistics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../commands/long_branch_score.html">Long branch score</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../commands/ltt.html">Lineage-through-time plot and gamma statistic</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../commands/patristic_distances.html">Patristic distances</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../commands/terminal_branch_stats.html">Terminal branch statistics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../commands/tip_to_tip_distance.html">Tip-to-tip distance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../commands/tip_to_tip_node_distance.html">Tip-to-tip node distance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../commands/total_tree_length.html">Total tree length</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../commands/treeness.html">Treeness</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../change_log/index.html">Change log</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../other_software/index.html">Other software</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../frequently_asked_questions/index.html">FAQ</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">phykit</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Command reference</a></li>
+      <li class="breadcrumb-item active">Tree summary statistics</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="tree-summary-statistics">
+<h1>Tree summary statistics<a class="headerlink" href="#tree-summary-statistics" title="Link to this heading"></a></h1>
+<ul class="simple">
+<li><p><a class="reference internal" href="../commands/bipartition_support_stats.html"><span class="doc">Bipartition support statistics</span></a> - Summary statistics of bipartition support values</p></li>
+<li><p><a class="reference internal" href="../commands/degree_of_violation_of_a_molecular_clock.html"><span class="doc">Degree of violation of the molecular clock</span></a> - Measure molecular clock violation</p></li>
+<li><p><a class="reference internal" href="../commands/evolutionary_rate.html"><span class="doc">Evolutionary rate</span></a> - Calculate tree-based evolutionary rate</p></li>
+<li><p><a class="reference internal" href="../commands/faiths_pd.html"><span class="doc">Faith's phylogenetic diversity</span></a> - Sum of branch lengths spanning a community of tips</p></li>
+<li><p><a class="reference internal" href="../commands/internal_branch_stats.html"><span class="doc">Internal branch statistics</span></a> - Summary statistics of internal branch lengths</p></li>
+<li><p><a class="reference internal" href="../commands/ltt.html"><span class="doc">Lineage-through-time plot and gamma statistic</span></a> - Lineage-through-time analysis and gamma statistic</p></li>
+<li><p><a class="reference internal" href="../commands/long_branch_score.html"><span class="doc">Long branch score</span></a> - Identify long branches in a tree</p></li>
+<li><p><a class="reference internal" href="../commands/patristic_distances.html"><span class="doc">Patristic distances</span></a> - Pairwise patristic distances between taxa</p></li>
+<li><p><a class="reference internal" href="../commands/terminal_branch_stats.html"><span class="doc">Terminal branch statistics</span></a> - Summary statistics of terminal branch lengths</p></li>
+<li><p><a class="reference internal" href="../commands/tip_to_tip_distance.html"><span class="doc">Tip-to-tip distance</span></a> - Distance between two tips in a tree</p></li>
+<li><p><a class="reference internal" href="../commands/tip_to_tip_node_distance.html"><span class="doc">Tip-to-tip node distance</span></a> - Node distance between two tips</p></li>
+<li><p><a class="reference internal" href="../commands/total_tree_length.html"><span class="doc">Total tree length</span></a> - Sum of all branch lengths</p></li>
+<li><p><a class="reference internal" href="../commands/treeness.html"><span class="doc">Treeness</span></a> - Ratio of internal to total branch lengths</p></li>
+</ul>
+<div class="toctree-wrapper compound">
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../commands/transfer_annotations.html" class="btn btn-neutral float-left" title="Transfer annotations" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../commands/bipartition_support_stats.html" class="btn btn-neutral float-right" title="Bipartition support statistics" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020-2026 Jacob L. Steenwyk.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

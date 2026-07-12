@@ -1,0 +1,166 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tree comparison &amp; consensus &mdash; phykit 2.3.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=b745eb55" />
+
+  
+    <link rel="shortcut icon" href="../../_static/flavicon.png"/>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=c3c8ae58"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Consensus network" href="../commands/consensus_network.html" />
+    <link rel="prev" title="Trait rate map" href="../commands/trait_rate_map.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html">
+            
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../about/index.html">About</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/index.html">Usage</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Command reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../index.html#choose-by-task">Choose by task</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#all-commands">All commands</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="alignment-dataset-utilities.html">Alignment &amp; dataset utilities</a></li>
+<li class="toctree-l3"><a class="reference internal" href="alignment-quality-statistics.html">Alignment quality &amp; statistics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="evolutionary-rate-analysis.html">Evolutionary rate analysis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="homology-assessment.html">Homology assessment</a></li>
+<li class="toctree-l3"><a class="reference internal" href="introgression-gene-flow.html">Introgression &amp; gene flow</a></li>
+<li class="toctree-l3"><a class="reference internal" href="other-utilities.html">Other utilities</a></li>
+<li class="toctree-l3"><a class="reference internal" href="phylogenetic-comparative-methods.html">Phylogenetic comparative methods</a></li>
+<li class="toctree-l3"><a class="reference internal" href="phylogenetic-signal.html">Phylogenetic signal</a></li>
+<li class="toctree-l3"><a class="reference internal" href="saturation-model-adequacy.html">Saturation &amp; model adequacy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="trait-evolution.html">Trait evolution</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Tree comparison &amp; consensus</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../commands/consensus_network.html">Consensus network</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../commands/consensus_tree.html">Consensus tree</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../commands/cophylo.html">Cophylogenetic plot (tanglegram)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../commands/evo_tempo_map.html">Evolutionary tempo mapping</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../commands/kf_distance.html">Kuhner-Felsenstein distance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../commands/neighbor_net.html">NeighborNet</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../commands/polytomy_test.html">Polytomy testing</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../commands/quartet_network.html">Quartet network</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../commands/quartet_pie.html">Quartet pie chart</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../commands/robinson_foulds_distance.html">Robinson-Foulds distance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../commands/spectral_discordance.html">Spectral discordance decomposition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../commands/tree_space.html">Tree space visualization</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="tree-manipulation-utilities.html">Tree manipulation &amp; utilities</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tree-summary-statistics.html">Tree summary statistics</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../change_log/index.html">Change log</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../other_software/index.html">Other software</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../frequently_asked_questions/index.html">FAQ</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">phykit</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Command reference</a></li>
+      <li class="breadcrumb-item active">Tree comparison &amp; consensus</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="tree-comparison-consensus">
+<h1>Tree comparison &amp; consensus<a class="headerlink" href="#tree-comparison-consensus" title="Link to this heading"></a></h1>
+<ul class="simple">
+<li><p><a class="reference internal" href="../commands/consensus_network.html"><span class="doc">Consensus network</span></a> - Consensus network from multiple trees</p></li>
+<li><p><a class="reference internal" href="../commands/consensus_tree.html"><span class="doc">Consensus tree</span></a> - Consensus tree from multiple trees</p></li>
+<li><p><a class="reference internal" href="../commands/cophylo.html"><span class="doc">Cophylogenetic plot (tanglegram)</span></a> - Tanglegram for comparing two trees</p></li>
+<li><p><a class="reference internal" href="../commands/evo_tempo_map.html"><span class="doc">Evolutionary tempo mapping</span></a> - Detect rate-topology associations in gene trees</p></li>
+<li><p><a class="reference internal" href="../commands/kf_distance.html"><span class="doc">Kuhner-Felsenstein distance</span></a> - Branch score distance between trees (topology + branch lengths)</p></li>
+<li><p><a class="reference internal" href="../commands/neighbor_net.html"><span class="doc">NeighborNet</span></a> - NeighborNet phylogenetic network from distance matrix (Bryant &amp; Moulton 2004)</p></li>
+<li><p><a class="reference internal" href="../commands/polytomy_test.html"><span class="doc">Polytomy testing</span></a> - Test for polytomies in a tree</p></li>
+<li><p><a class="reference internal" href="../commands/quartet_network.html"><span class="doc">Quartet network</span></a> - Quartet-based network visualization</p></li>
+<li><p><a class="reference internal" href="../commands/quartet_pie.html"><span class="doc">Quartet pie chart</span></a> - Phylogram with quartet concordance pie charts at internal nodes</p></li>
+<li><p><a class="reference internal" href="../commands/robinson_foulds_distance.html"><span class="doc">Robinson-Foulds distance</span></a> - Topological distance between trees</p></li>
+<li><p><a class="reference internal" href="../commands/spectral_discordance.html"><span class="doc">Spectral discordance decomposition</span></a> - PCA ordination and clustering of gene tree topologies</p></li>
+<li><p><a class="reference internal" href="../commands/tree_space.html"><span class="doc">Tree space visualization</span></a> - Visualize gene tree topology space via MDS, t-SNE, UMAP, or clustered distance heatmap</p></li>
+</ul>
+<div class="toctree-wrapper compound">
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../commands/trait_rate_map.html" class="btn btn-neutral float-left" title="Trait rate map" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../commands/consensus_network.html" class="btn btn-neutral float-right" title="Consensus network" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020-2026 Jacob L. Steenwyk.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

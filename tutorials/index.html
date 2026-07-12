@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tutorials &mdash; phykit  documentation</title>
+  <title>Tutorials &mdash; phykit 2.3.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=b745eb55" />
@@ -15,14 +15,14 @@
     <link rel="shortcut icon" href="../_static/flavicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/documentation_options.js?v=c3c8ae58"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Change log" href="../change_log/index.html" />
-    <link rel="prev" title="Usage" href="../usage/index.html" /> 
+    <link rel="prev" title="Treeness" href="../reference/commands/treeness.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -48,6 +48,7 @@
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../about/index.html">About</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../usage/index.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../reference/index.html">Command reference</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Tutorials</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#summarizing-information-content">1. Summarizing information content</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#alignment-length">Alignment length</a></li>
@@ -295,7 +296,7 @@ some of the metrics have been modified following newer insights).</p>
 <a class="reference internal image-reference" href="../_images/subsampling_pipeline.png"><img alt="../_images/subsampling_pipeline.png" class="align-center" src="../_images/subsampling_pipeline.png" style="width: 80%;" />
 </a>
 <p>In this tutorial, we will use the following test multiple sequence alignment and phylogenetic tree, which came
-from <a class="reference external" href="https://mbio.asm.org/content/10/4/e00925-19">Steenwyk et al. 2019</a>. <br/></p>
+from <a class="reference external" href="https://mbio.asm.org/content/10/4/e00925-19">Steenwyk et al. 2019</a>. <br /></p>
 <p class="centered">
 <strong>Download test data:
 <a class="reference download internal" download="" href="../_downloads/b3b8b32d2254e806d4a91204bf0614ce/Steenwyk_etal_mBio_2019_EOG091N44MS.aln.fa"><code class="xref download docutils literal notranslate"><span class="pre">Multiple</span> <span class="pre">sequence</span> <span class="pre">alignment</span></code></a>;
@@ -317,8 +318,8 @@ Calculate alignment length with the following command:</p>
 <span class="m">321</span><span class="w">     </span><span class="m">624</span><span class="w">     </span><span class="m">51</span>.4423
 </pre></div>
 </div>
-<p>col1: number of sites without gaps <br/>
-col2: total number of sites <br/>
+<p>col1: number of sites without gaps <br />
+col2: total number of sites <br />
 col3: percentage of sites without gaps</p>
 <div class="line-block">
 <div class="line"><br /></div>
@@ -392,8 +393,8 @@ Calculate the number of parsimony informative sites in an alignment with the fol
 <span class="m">517</span><span class="w">     </span><span class="m">624</span><span class="w">     </span><span class="m">82</span>.8526
 </pre></div>
 </div>
-<p>col1: number of parsimony informative sites <br/>
-col2: total number of sites <br/>
+<p>col1: number of parsimony informative sites <br />
+col2: total number of sites <br />
 col3: percentage of parsimony informative sites</p>
 <div class="line-block">
 <div class="line"><br /></div>
@@ -428,8 +429,8 @@ Calculate treeness/RCV using the following command:</p>
 <span class="m">5</span>.0727<span class="w">  </span><span class="m">0</span>.5136<span class="w">  </span><span class="m">0</span>.1013
 </pre></div>
 </div>
-<p>col1: treeness/RCV <br/>
-col2: treeness <br/>
+<p>col1: treeness/RCV <br />
+col2: treeness <br />
 col3: RCV</p>
 <p>To individually calculate treeness, a measure of signal-to-noise among branch lengths
 (<a class="reference external" href="https://academic.oup.com/auk/article-abstract/105/3/565/5193152?redirectedFrom=fulltext">Lanyon 1988</a>;
@@ -458,8 +459,8 @@ Calculate the number of variable sites with the following command:</p>
 <span class="m">555</span><span class="w">     </span><span class="m">624</span><span class="w">     </span><span class="m">88</span>.9423
 </pre></div>
 </div>
-<p>col1: number of variable sites <br/>
-col2: total number of sites <br/>
+<p>col1: number of variable sites <br />
+col2: total number of sites <br />
 col3: percentage of variable sites</p>
 <div class="line-block">
 <div class="line"><br /></div>
@@ -733,7 +734,7 @@ been spent in each dietary state? (3) How many transitions between states occurr
 <p>PhyKIT's <code class="docutils literal notranslate"><span class="pre">stochastic_character_map</span></code> command (alias: <code class="docutils literal notranslate"><span class="pre">simmap</span></code>) lets us answer these
 questions directly from the command line.</p>
 <p>In this tutorial, we will use test data included with PhyKIT: an eight-taxon mammal phylogeny
-and a tab-delimited file assigning each species to a dietary category. <br/></p>
+and a tab-delimited file assigning each species to a dietary category. <br /></p>
 <p class="centered">
 <strong>Download test data:
 <a class="reference download internal" download="" href="../_downloads/97c38abccff78ac60aee3f25ca0b02f5/tree_simple.tre"><code class="xref download docutils literal notranslate"><span class="pre">Mammal</span> <span class="pre">phylogeny</span></code></a>;
@@ -934,7 +935,7 @@ species drawn at random from the tree?</p>
 <p>PhyKIT's <code class="docutils literal notranslate"><span class="pre">phylogenetic_signal</span></code> command (aliases: <code class="docutils literal notranslate"><span class="pre">phylo_signal</span></code>, <code class="docutils literal notranslate"><span class="pre">ps</span></code>) implements two
 widely used measures: Blomberg's K and Pagel's lambda.</p>
 <p>In this tutorial, we will use the test data included with PhyKIT: an eight-taxon mammal
-phylogeny and a tab-delimited trait file containing log-transformed body mass values. <br/></p>
+phylogeny and a tab-delimited trait file containing log-transformed body mass values. <br /></p>
 <p class="centered">
 <strong>Download test data:
 <a class="reference download internal" download="" href="../_downloads/97c38abccff78ac60aee3f25ca0b02f5/tree_simple.tre"><code class="xref download docutils literal notranslate"><span class="pre">Mammal</span> <span class="pre">phylogeny</span></code></a>;
@@ -980,7 +981,7 @@ tips.</p>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>0.5842       0.474
 </pre></div>
 </div>
-<p>col1: Blomberg's K statistic <br/>
+<p>col1: Blomberg's K statistic <br />
 col2: p-value (permutation test, 1000 permutations)</p>
 <p><strong>Interpretation.</strong> K = 0.58 (&lt; 1), suggesting that body mass shows <em>less</em> phylogenetic
 signal than expected under pure Brownian motion in this clade. The p-value of 0.47 is
@@ -1007,8 +1008,8 @@ a model with lambda fixed at 0.</p>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>1.0  -11.5697        0.7165
 </pre></div>
 </div>
-<p>col1: estimated lambda <br/>
-col2: log-likelihood of the fitted model <br/>
+<p>col1: estimated lambda <br />
+col2: log-likelihood of the fitted model <br />
 col3: p-value (likelihood ratio test)</p>
 <p><strong>Interpretation.</strong> Lambda = 1.0 indicates a maximum-likelihood estimate consistent with
 Brownian motion. However, the LRT p-value of 0.72 is non-significant, meaning the fitted
@@ -1292,7 +1293,7 @@ have coevolved across our eight mammal species. Do closely related species clust
 in trait space? Have any lineages converged on similar body mass–brain size combinations
 despite being distantly related?</p>
 <p>PhyKIT's <code class="docutils literal notranslate"><span class="pre">phylomorphospace</span></code> command (aliases: <code class="docutils literal notranslate"><span class="pre">phylomorpho</span></code>, <code class="docutils literal notranslate"><span class="pre">phmo</span></code>) generates these
-plots directly from the command line. <br/></p>
+plots directly from the command line. <br /></p>
 <p class="centered">
 <strong>Download test data:
 <a class="reference download internal" download="" href="../_downloads/97c38abccff78ac60aee3f25ca0b02f5/tree_simple.tre"><code class="xref download docutils literal notranslate"><span class="pre">Mammal</span> <span class="pre">phylogeny</span></code></a>;
@@ -1387,7 +1388,7 @@ relationship between brain size and body mass across species. Specifically: does
 size predict body mass after accounting for the phylogenetic non-independence among
 species? Is the relationship significant, and how much variance does it explain?</p>
 <p>PhyKIT's <code class="docutils literal notranslate"><span class="pre">phylogenetic_regression</span></code> command (aliases: <code class="docutils literal notranslate"><span class="pre">phylo_regression</span></code>, <code class="docutils literal notranslate"><span class="pre">pgls</span></code>)
-fits PGLS regressions under a Brownian motion model. <br/></p>
+fits PGLS regressions under a Brownian motion model. <br /></p>
 <p class="centered">
 <strong>Download test data:
 <a class="reference download internal" download="" href="../_downloads/97c38abccff78ac60aee3f25ca0b02f5/tree_simple.tre"><code class="xref download docutils literal notranslate"><span class="pre">Mammal</span> <span class="pre">phylogeny</span></code></a>;
@@ -1525,7 +1526,7 @@ non-independence among species.</p>
 trait (e.g., dietary specialization) or a count trait (e.g., litter size) after
 accounting for phylogenetic relationships?</p>
 <p>PhyKIT's <code class="docutils literal notranslate"><span class="pre">phylogenetic_glm</span></code> command (aliases: <code class="docutils literal notranslate"><span class="pre">phylo_glm</span></code>, <code class="docutils literal notranslate"><span class="pre">pglm</span></code>) supports
-two families: binomial (logistic MPLE) and Poisson (GEE). <br/></p>
+two families: binomial (logistic MPLE) and Poisson (GEE). <br /></p>
 <p class="centered">
 <strong>Download test data:
 <a class="reference external" href="https://raw.githubusercontent.com/JLSteenwyk/PhyKIT/master/tests/sample_files/tree_simple.tre">tree</a> and
@@ -1646,7 +1647,7 @@ rates), <code class="docutils literal notranslate"><span class="pre">SYM</span><
 <p><strong>Hypothetical study question.</strong> Given body mass data for 8 mammal species,
 what were the estimated body masses of their ancestors? And given dietary
 categories (carnivore, herbivore, omnivore), what were the most likely diets
-of ancestral species? <br/></p>
+of ancestral species? <br /></p>
 <p class="centered">
 <strong>Download test data:
 <a class="reference download internal" download="" href="../_downloads/97c38abccff78ac60aee3f25ca0b02f5/tree_simple.tre"><code class="xref download docutils literal notranslate"><span class="pre">Mammal</span> <span class="pre">phylogeny</span></code></a>;
@@ -1987,7 +1988,7 @@ this test, analogous to R's <code class="docutils literal notranslate"><span cla
 <li><p>A tab-delimited regime file (<code class="docutils literal notranslate"><span class="pre">taxon&lt;tab&gt;regime_label</span></code>)</p></li>
 </ol>
 <p>We will use the test data included with PhyKIT: an eight-taxon mammal phylogeny,
-log-transformed body mass values, and regime assignments (aquatic vs. terrestrial). <br/></p>
+log-transformed body mass values, and regime assignments (aquatic vs. terrestrial). <br /></p>
 <p class="centered">
 <strong>Download test data:
 <a class="reference download internal" download="" href="../_downloads/97c38abccff78ac60aee3f25ca0b02f5/tree_simple.tre"><code class="xref download docutils literal notranslate"><span class="pre">Mammal</span> <span class="pre">phylogeny</span></code></a>;
@@ -2708,8 +2709,8 @@ related mammals tend to have similar body sizes.</p>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>0.5842       0.474   0.9499
 </pre></div>
 </div>
-<p>col1: Blomberg's K <br/>
-col2: p-value (from permutation test) <br/>
+<p>col1: Blomberg's K <br />
+col2: p-value (from permutation test) <br />
 col3: R²_phylo, the relative reduction in fitted variance under Brownian
 motion compared with a white-noise model</p>
 <p>Here, K = 0.58 and the permutation p-value of 0.474 is non-significant
@@ -3511,14 +3512,14 @@ specific dimensions or resolutions are required.</p>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="../usage/index.html" class="btn btn-neutral float-left" title="Usage" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../reference/commands/treeness.html" class="btn btn-neutral float-left" title="Treeness" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="../change_log/index.html" class="btn btn-neutral float-right" title="Change log" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2020 Jacob L. Steenwyk.</p>
+    <p>&#169; Copyright 2020-2026 Jacob L. Steenwyk.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
@@ -3535,18 +3536,7 @@ specific dimensions or resolutions are required.</p>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-    <!-- Theme Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-104875636-1"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-
-      gtag('config', 'UA-104875636-1', {
-          'anonymize_ip': false,
-      });
-    </script> 
+  </script> 
 
 </body>
 </html>

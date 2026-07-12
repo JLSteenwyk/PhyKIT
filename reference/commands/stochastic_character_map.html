@@ -1,0 +1,416 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stochastic character mapping (SIMMAP) &mdash; phykit 2.3.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=b745eb55" />
+
+  
+    <link rel="shortcut icon" href="../../_static/flavicon.png"/>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=c3c8ae58"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Threshold model" href="threshold_model.html" />
+    <link rel="prev" title="SIMMAP summary" href="simmap_summary.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html">
+            
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../about/index.html">About</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/index.html">Usage</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Command reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../index.html#choose-by-task">Choose by task</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#all-commands">All commands</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../categories/alignment-dataset-utilities.html">Alignment &amp; dataset utilities</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../categories/alignment-quality-statistics.html">Alignment quality &amp; statistics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../categories/evolutionary-rate-analysis.html">Evolutionary rate analysis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../categories/homology-assessment.html">Homology assessment</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../categories/introgression-gene-flow.html">Introgression &amp; gene flow</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../categories/other-utilities.html">Other utilities</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../categories/phylogenetic-comparative-methods.html">Phylogenetic comparative methods</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../categories/phylogenetic-signal.html">Phylogenetic signal</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../categories/saturation-model-adequacy.html">Saturation &amp; model adequacy</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../categories/trait-evolution.html">Trait evolution</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="ancestral_state_reconstruction.html">Ancestral state reconstruction</a></li>
+<li class="toctree-l4"><a class="reference internal" href="character_map.html">Character map (synapomorphy/homoplasy mapping)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="concordance_asr.html">Concordance-aware ancestral state reconstruction</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cont_map.html">Continuous trait mapping (contMap)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="density_map.html">Density map</a></li>
+<li class="toctree-l4"><a class="reference internal" href="dtt.html">Disparity through time (DTT)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="fit_continuous.html">Continuous trait evolution model comparison (fitContinuous)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="fit_discrete.html">Discrete trait evolution model comparison (fitDiscrete)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="independent_contrasts.html">Independent contrasts (PIC)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="ou_shift_detection.html">OU shift detection (l1ou)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="ouwie.html">Multi-regime OU models (OUwie)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="parsimony_score.html">Parsimony score</a></li>
+<li class="toctree-l4"><a class="reference internal" href="phenogram.html">Phenogram (traitgram)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="phylo_heatmap.html">Phylogenetic heatmap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="phylo_impute.html">Phylogenetic imputation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="rate_heterogeneity.html">Rate heterogeneity test (multi-rate Brownian motion)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="simmap_summary.html">SIMMAP summary</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Stochastic character mapping (SIMMAP)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="threshold_model.html">Threshold model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="trait_rate_map.html">Trait rate map</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../categories/tree-comparison-consensus.html">Tree comparison &amp; consensus</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../categories/tree-manipulation-utilities.html">Tree manipulation &amp; utilities</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../categories/tree-summary-statistics.html">Tree summary statistics</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../change_log/index.html">Change log</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../other_software/index.html">Other software</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../frequently_asked_questions/index.html">FAQ</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">phykit</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Command reference</a></li>
+          <li class="breadcrumb-item"><a href="../categories/trait-evolution.html">Trait evolution</a></li>
+      <li class="breadcrumb-item active">Stochastic character mapping (SIMMAP)</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="stochastic-character-mapping-simmap">
+<span id="command-stochastic-character-map"></span><span id="cmd-stochastic-character-map"></span><h1>Stochastic character mapping (SIMMAP)<a class="headerlink" href="#stochastic-character-mapping-simmap" title="Link to this heading"></a></h1>
+<p>Stochastic character mapping on a phylogeny</p>
+<section id="command-identity">
+<h2>Command identity<a class="headerlink" href="#command-identity" title="Link to this heading"></a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">Canonical command<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">stochastic_character_map</span></code></p>
+</dd>
+<dt class="field-even">Handler<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">stochastic_character_map</span></code></p>
+</dd>
+<dt class="field-odd">Aliases<span class="colon">:</span></dt>
+<dd class="field-odd"><p>scm, simmap</p>
+</dd>
+<dt class="field-even">Standalone executables<span class="colon">:</span></dt>
+<dd class="field-even"><p>pk_stochastic_character_map, pk_scm, pk_simmap</p>
+</dd>
+<dt class="field-odd">Categories<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Trait evolution</p>
+</dd>
+</dl>
+</section>
+<section id="runtime-interface">
+<h2>Runtime interface<a class="headerlink" href="#runtime-interface" title="Link to this heading"></a></h2>
+<section id="synopsis">
+<h3>Synopsis<a class="headerlink" href="#synopsis" title="Link to this heading"></a></h3>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>phykit stochastic_character_map --tree &lt;tree&gt; --trait_data &lt;trait_data&gt; --trait &lt;trait&gt; [--model &lt;model&gt;] [--nsim &lt;nsim&gt;] [--seed &lt;seed&gt;] [--plot &lt;plot&gt;] [--fig-width &lt;fig_width&gt;] [--fig-height &lt;fig_height&gt;] [--dpi &lt;dpi&gt;] [--no-title] [--title &lt;title&gt;] [--legend-position &lt;legend_position&gt;] [--ylabel-fontsize &lt;ylabel_fontsize&gt;] [--xlabel-fontsize &lt;xlabel_fontsize&gt;] [--title-fontsize &lt;title_fontsize&gt;] [--axis-fontsize &lt;axis_fontsize&gt;] [--colors &lt;colors&gt;] [--ladderize] [--cladogram] [--circular] [--color-file &lt;color_file&gt;] [--json]
+</pre></div>
+</div>
+</section>
+<section id="arguments">
+<h3>Arguments<a class="headerlink" href="#arguments" title="Link to this heading"></a></h3>
+<p>This table is generated from the live command parser. It is the authoritative
+source for accepted spellings, required arguments, types, defaults, and choices.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 31.8%" />
+<col style="width: 11.4%" />
+<col style="width: 13.6%" />
+<col style="width: 20.5%" />
+<col style="width: 22.7%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Argument</p></th>
+<th class="head"><p>Required</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Default</p></th>
+<th class="head"><p>Choices</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">-t,</span> <span class="pre">--tree</span></code></p></td>
+<td><p>true</p></td>
+<td><p>str</p></td>
+<td><p>required</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">-d,</span> <span class="pre">--trait_data</span></code></p></td>
+<td><p>true</p></td>
+<td><p>str</p></td>
+<td><p>required</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">-c,</span> <span class="pre">--trait</span></code></p></td>
+<td><p>true</p></td>
+<td><p>str</p></td>
+<td><p>required</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">-m,</span> <span class="pre">--model</span></code></p></td>
+<td><p>false</p></td>
+<td><p>str</p></td>
+<td><p>ER</p></td>
+<td><p>ER, SYM, ARD</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">-n,</span> <span class="pre">--nsim</span></code></p></td>
+<td><p>false</p></td>
+<td><p>int</p></td>
+<td><p>100</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--seed</span></code></p></td>
+<td><p>false</p></td>
+<td><p>int</p></td>
+<td><p>none</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--plot</span></code></p></td>
+<td><p>false</p></td>
+<td><p>str</p></td>
+<td><p>none</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--fig-width</span></code></p></td>
+<td><p>false</p></td>
+<td><p>float</p></td>
+<td><p>none</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--fig-height</span></code></p></td>
+<td><p>false</p></td>
+<td><p>float</p></td>
+<td><p>none</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--dpi</span></code></p></td>
+<td><p>false</p></td>
+<td><p>int</p></td>
+<td><p>300</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--no-title</span></code></p></td>
+<td><p>false</p></td>
+<td><p>boolean</p></td>
+<td><p>false</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--title</span></code></p></td>
+<td><p>false</p></td>
+<td><p>str</p></td>
+<td><p>none</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--legend-position</span></code></p></td>
+<td><p>false</p></td>
+<td><p>str</p></td>
+<td><p>none</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--ylabel-fontsize</span></code></p></td>
+<td><p>false</p></td>
+<td><p>float</p></td>
+<td><p>none</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--xlabel-fontsize</span></code></p></td>
+<td><p>false</p></td>
+<td><p>float</p></td>
+<td><p>none</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--title-fontsize</span></code></p></td>
+<td><p>false</p></td>
+<td><p>float</p></td>
+<td><p>none</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--axis-fontsize</span></code></p></td>
+<td><p>false</p></td>
+<td><p>float</p></td>
+<td><p>none</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--colors</span></code></p></td>
+<td><p>false</p></td>
+<td><p>str</p></td>
+<td><p>none</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--ladderize</span></code></p></td>
+<td><p>false</p></td>
+<td><p>boolean</p></td>
+<td><p>false</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--cladogram</span></code></p></td>
+<td><p>false</p></td>
+<td><p>boolean</p></td>
+<td><p>false</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--circular</span></code></p></td>
+<td><p>false</p></td>
+<td><p>boolean</p></td>
+<td><p>false</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--color-file</span></code></p></td>
+<td><p>false</p></td>
+<td><p>str</p></td>
+<td><p>none</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--json</span></code></p></td>
+<td><p>false</p></td>
+<td><p>boolean</p></td>
+<td><p>false</p></td>
+<td><p>any</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="output-and-errors">
+<h3>Output and errors<a class="headerlink" href="#output-and-errors" title="Link to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">--json</span></code> provides the command's structured JSON representation. Unless the guidance below states otherwise, results are emitted as command output. Invalid command syntax exits with status 2. Input
+validation and scientific limitations are described in the guidance below.</p>
+</section>
+</section>
+<section id="guidance-interpretation-and-examples">
+<h2>Guidance, interpretation, and examples<a class="headerlink" href="#guidance-interpretation-and-examples" title="Link to this heading"></a></h2>
+<p>Perform Stochastic Character Mapping (SIMMAP) of discrete traits onto a
+phylogeny (Huelsenbeck et al. 2003; Bollback 2006), analogous to R's
+<code class="docutils literal notranslate"><span class="pre">phytools::make.simmap()</span></code>.</p>
+<p>Fits a continuous-time Markov chain (CTMC) rate matrix Q via maximum
+likelihood using Felsenstein's pruning algorithm. Three substitution models
+are available:</p>
+<ul class="simple">
+<li><p><strong>ER</strong> (equal rates): 1 free parameter</p></li>
+<li><p><strong>SYM</strong> (symmetric rates): k(k-1)/2 free parameters</p></li>
+<li><p><strong>ARD</strong> (all rates differ): k(k-1) free parameters</p></li>
+</ul>
+<p>The input trait file should be tab-delimited with a header row:
+<code class="docutils literal notranslate"><span class="pre">taxon&lt;tab&gt;trait_column&lt;tab&gt;...</span></code>
+Lines starting with '#' are treated as comments. If the tree and trait file
+have different taxa, the intersection is used and warnings are printed to
+stderr.</p>
+<p>Output includes the fitted Q matrix, log-likelihood, mean dwelling times,
+mean transition counts, and posterior probabilities at internal nodes.</p>
+<p>Optionally, a horizontal phylogram plot with branches colored by mapped
+character state can be generated using the <code class="docutils literal notranslate"><span class="pre">--plot</span></code> argument.</p>
+<p>All results have been validated against R 4.4.0 using <code class="docutils literal notranslate"><span class="pre">phytools::fitMk</span></code>
+and <code class="docutils literal notranslate"><span class="pre">phytools::make.simmap</span></code>. ER log-likelihoods match R to within 0.002
+(both optimizers converge to the same flat plateau). For the ARD model,
+PhyKIT's multi-start optimizer finds a slightly better local optimum
+than R (loglik -8.38 vs -8.43). Dwelling times sum to total tree length
+exactly, and Q matrix structural properties (rows sum to zero, model
+nesting) are verified.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>stochastic_character_map<span class="w"> </span>-t<span class="w"> </span>&lt;tree&gt;<span class="w"> </span>-d<span class="w"> </span>&lt;trait_data&gt;<span class="w"> </span>-c<span class="w"> </span>&lt;trait_column&gt;<span class="w"> </span><span class="o">[</span>-m<span class="w"> </span>&lt;model&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>-n<span class="w"> </span>&lt;nsim&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--seed<span class="w"> </span>&lt;seed&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot<span class="w"> </span>&lt;output.png&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--fig-width<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--fig-height<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--dpi<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--no-title<span class="o">]</span><span class="w"> </span><span class="o">[</span>--title<span class="w"> </span>&lt;str&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--legend-position<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ylabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--xlabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span>
+<span class="w">    </span><span class="o">[</span>--title-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--axis-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--colors<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ladderize<span class="o">]</span><span class="w"> </span><span class="o">[</span>--cladogram<span class="o">]</span><span class="w"> </span><span class="o">[</span>--circular<span class="o">]</span><span class="w"> </span><span class="o">[</span>--color-file<span class="w"> </span>&lt;file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br />
+<em>-t/--tree</em>: a tree file in Newick format <br />
+<em>-d/--trait_data</em>: tab-delimited trait file with header row <br />
+<em>-c/--trait</em>: column name for discrete character trait <br />
+<em>-m/--model</em>: substitution model: ER, SYM, or ARD (default: ER) <br />
+<em>-n/--nsim</em>: number of stochastic mapping simulations (default: 100) <br />
+<em>--seed</em>: random seed for reproducibility <br />
+<em>--plot</em>: output plot file path for phylogram with colored branches <br />
+<em>--fig-width</em>: figure width in inches (auto-scaled if omitted) <br />
+<em>--fig-height</em>: figure height in inches (auto-scaled if omitted) <br />
+<em>--dpi</em>: resolution in DPI (default: 300) <br />
+<em>--no-title</em>: hide the plot title <br />
+<em>--title</em>: custom title text <br />
+<em>--legend-position</em>: legend location (e.g., &quot;upper right&quot;, &quot;none&quot; to hide) <br />
+<em>--ylabel-fontsize</em>: font size for y-axis labels; 0 to hide <br />
+<em>--xlabel-fontsize</em>: font size for x-axis labels; 0 to hide <br />
+<em>--title-fontsize</em>: font size for the title <br />
+<em>--axis-fontsize</em>: font size for axis labels <br />
+<em>--colors</em>: comma-separated colors (hex or named) <br />
+<em>--ladderize</em>: ladderize (sort) the tree before plotting <br />
+<em>--cladogram</em>: draw cladogram (equal branch lengths, tips aligned) instead of phylogram <br />
+<em>--circular</em>: draw circular (radial/fan) phylogram instead of rectangular <br />
+<em>--color-file</em>: color annotation file for tip labels, clade ranges, and branch colors (iTOL-inspired TSV format) <br />
+<em>--json</em>: optional argument to print results as JSON</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="simmap_summary.html" class="btn btn-neutral float-left" title="SIMMAP summary" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="threshold_model.html" class="btn btn-neutral float-right" title="Threshold model" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020-2026 Jacob L. Steenwyk.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

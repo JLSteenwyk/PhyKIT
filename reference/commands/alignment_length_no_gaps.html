@@ -1,0 +1,251 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alignment length no gaps &mdash; phykit 2.3.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=b745eb55" />
+
+  
+    <link rel="shortcut icon" href="../../_static/flavicon.png"/>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=c3c8ae58"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Alignment outlier taxa" href="alignment_outlier_taxa.html" />
+    <link rel="prev" title="Alignment length" href="alignment_length.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html">
+            
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../about/index.html">About</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/index.html">Usage</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Command reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../index.html#choose-by-task">Choose by task</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#all-commands">All commands</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../categories/alignment-dataset-utilities.html">Alignment &amp; dataset utilities</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../categories/alignment-quality-statistics.html">Alignment quality &amp; statistics</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="alignment_entropy.html">Alignment entropy</a></li>
+<li class="toctree-l4"><a class="reference internal" href="alignment_length.html">Alignment length</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Alignment length no gaps</a></li>
+<li class="toctree-l4"><a class="reference internal" href="alignment_outlier_taxa.html">Alignment outlier taxa</a></li>
+<li class="toctree-l4"><a class="reference internal" href="codon_dnds.html">Codon dN/dS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="column_score.html">Column score</a></li>
+<li class="toctree-l4"><a class="reference internal" href="composition_per_taxon.html">Composition per taxon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="compositional_bias_per_site.html">Compositional bias per site</a></li>
+<li class="toctree-l4"><a class="reference internal" href="evolutionary_rate_per_site.html">Evolutionary Rate per Site</a></li>
+<li class="toctree-l4"><a class="reference internal" href="gc_content.html">Guanine-cytosine (GC) content</a></li>
+<li class="toctree-l4"><a class="reference internal" href="identity_matrix.html">Identity matrix</a></li>
+<li class="toctree-l4"><a class="reference internal" href="occupancy_per_taxon.html">Occupancy per taxon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pairwise_identity.html">Pairwise identity</a></li>
+<li class="toctree-l4"><a class="reference internal" href="parsimony_informative_sites.html">Parsimony informative sites</a></li>
+<li class="toctree-l4"><a class="reference internal" href="plot_alignment_qc.html">Plot alignment QC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="relative_composition_variability.html">Relative composition variability</a></li>
+<li class="toctree-l4"><a class="reference internal" href="relative_composition_variability_taxon.html">Relative composition variability, taxon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="sum_of_pairs_score.html">Sum-of-pairs score</a></li>
+<li class="toctree-l4"><a class="reference internal" href="variable_sites.html">Variable sites</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../categories/evolutionary-rate-analysis.html">Evolutionary rate analysis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../categories/homology-assessment.html">Homology assessment</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../categories/introgression-gene-flow.html">Introgression &amp; gene flow</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../categories/other-utilities.html">Other utilities</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../categories/phylogenetic-comparative-methods.html">Phylogenetic comparative methods</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../categories/phylogenetic-signal.html">Phylogenetic signal</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../categories/saturation-model-adequacy.html">Saturation &amp; model adequacy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../categories/trait-evolution.html">Trait evolution</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../categories/tree-comparison-consensus.html">Tree comparison &amp; consensus</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../categories/tree-manipulation-utilities.html">Tree manipulation &amp; utilities</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../categories/tree-summary-statistics.html">Tree summary statistics</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../change_log/index.html">Change log</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../other_software/index.html">Other software</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../frequently_asked_questions/index.html">FAQ</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">phykit</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Command reference</a></li>
+          <li class="breadcrumb-item"><a href="../categories/alignment-quality-statistics.html">Alignment quality &amp; statistics</a></li>
+      <li class="breadcrumb-item active">Alignment length no gaps</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="alignment-length-no-gaps">
+<span id="command-alignment-length-no-gaps"></span><span id="cmd-alignment-length-no-gaps"></span><h1>Alignment length no gaps<a class="headerlink" href="#alignment-length-no-gaps" title="Link to this heading"></a></h1>
+<p>Alignment length excluding gapped sites</p>
+<section id="command-identity">
+<h2>Command identity<a class="headerlink" href="#command-identity" title="Link to this heading"></a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">Canonical command<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">alignment_length_no_gaps</span></code></p>
+</dd>
+<dt class="field-even">Handler<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">alignment_length_no_gaps</span></code></p>
+</dd>
+<dt class="field-odd">Aliases<span class="colon">:</span></dt>
+<dd class="field-odd"><p>aln_len_no_gaps, alng</p>
+</dd>
+<dt class="field-even">Standalone executables<span class="colon">:</span></dt>
+<dd class="field-even"><p>pk_alignment_length_no_gaps, pk_aln_len_no_gaps, pk_alng</p>
+</dd>
+<dt class="field-odd">Categories<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Alignment quality &amp; statistics</p>
+</dd>
+</dl>
+</section>
+<section id="runtime-interface">
+<h2>Runtime interface<a class="headerlink" href="#runtime-interface" title="Link to this heading"></a></h2>
+<section id="synopsis">
+<h3>Synopsis<a class="headerlink" href="#synopsis" title="Link to this heading"></a></h3>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>phykit alignment_length_no_gaps &lt;alignment&gt; [--json]
+</pre></div>
+</div>
+</section>
+<section id="arguments">
+<h3>Arguments<a class="headerlink" href="#arguments" title="Link to this heading"></a></h3>
+<p>This table is generated from the live command parser. It is the authoritative
+source for accepted spellings, required arguments, types, defaults, and choices.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 31.8%" />
+<col style="width: 11.4%" />
+<col style="width: 13.6%" />
+<col style="width: 20.5%" />
+<col style="width: 22.7%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Argument</p></th>
+<th class="head"><p>Required</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Default</p></th>
+<th class="head"><p>Choices</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">alignment</span></code></p></td>
+<td><p>true</p></td>
+<td><p>str</p></td>
+<td><p>required</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--json</span></code></p></td>
+<td><p>false</p></td>
+<td><p>boolean</p></td>
+<td><p>false</p></td>
+<td><p>any</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="output-and-errors">
+<h3>Output and errors<a class="headerlink" href="#output-and-errors" title="Link to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">--json</span></code> provides the command's structured JSON representation. Unless the guidance below states otherwise, results are emitted as command output. Invalid command syntax exits with status 2. Input
+validation and scientific limitations are described in the guidance below.</p>
+</section>
+</section>
+<section id="guidance-interpretation-and-examples">
+<h2>Guidance, interpretation, and examples<a class="headerlink" href="#guidance-interpretation-and-examples" title="Link to this heading"></a></h2>
+<a class="reference internal image-reference" href="../../_images/aln_len_no_gaps.png"><img alt="../../_images/aln_len_no_gaps.png" class="align-center" src="../../_images/aln_len_no_gaps.png" style="width: 75%;" />
+</a>
+<p>Calculate alignment length excluding sites with gaps.</p>
+<p>Longer alignments when excluding sites with gaps are
+associated with a strong phylogenetic signal.</p>
+<p>PhyKIT reports three tab delimited values:
+col1: number of sites without gaps
+col2: total number of sites
+col3: percentage of sites without gaps</p>
+<p>The association between alignment length when excluding sites
+with gaps and phylogenetic signal was determined by Shen
+et al., Genome Biology and Evolution (2016),
+doi: 10.1093/gbe/evw179.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>aln_len_no_gaps<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br />
+<em>&lt;alignment&gt;</em>: first argument after function name should be an alignment file <br />
+<em>--json</em>: optional argument to print results as JSON</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="alignment_length.html" class="btn btn-neutral float-left" title="Alignment length" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="alignment_outlier_taxa.html" class="btn btn-neutral float-right" title="Alignment outlier taxa" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020-2026 Jacob L. Steenwyk.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

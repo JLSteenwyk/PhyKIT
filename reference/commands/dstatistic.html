@@ -1,0 +1,304 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>D-statistic (ABBA-BABA test) &mdash; phykit 2.3.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=b745eb55" />
+
+  
+    <link rel="shortcut icon" href="../../_static/flavicon.png"/>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=c3c8ae58"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Hybridization analysis" href="hybridization.html" />
+    <link rel="prev" title="Discordance asymmetry" href="discordance_asymmetry.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html">
+            
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../about/index.html">About</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/index.html">Usage</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Command reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../index.html#choose-by-task">Choose by task</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#all-commands">All commands</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../categories/alignment-dataset-utilities.html">Alignment &amp; dataset utilities</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../categories/alignment-quality-statistics.html">Alignment quality &amp; statistics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../categories/evolutionary-rate-analysis.html">Evolutionary rate analysis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../categories/homology-assessment.html">Homology assessment</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../categories/introgression-gene-flow.html">Introgression &amp; gene flow</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="dfoil.html">DFOIL test (Pease &amp; Hahn 2015)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="discordance_asymmetry.html">Discordance asymmetry</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">D-statistic (ABBA-BABA test)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hybridization.html">Hybridization analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../categories/other-utilities.html">Other utilities</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../categories/phylogenetic-comparative-methods.html">Phylogenetic comparative methods</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../categories/phylogenetic-signal.html">Phylogenetic signal</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../categories/saturation-model-adequacy.html">Saturation &amp; model adequacy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../categories/trait-evolution.html">Trait evolution</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../categories/tree-comparison-consensus.html">Tree comparison &amp; consensus</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../categories/tree-manipulation-utilities.html">Tree manipulation &amp; utilities</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../categories/tree-summary-statistics.html">Tree summary statistics</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../change_log/index.html">Change log</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../other_software/index.html">Other software</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../frequently_asked_questions/index.html">FAQ</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">phykit</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Command reference</a></li>
+          <li class="breadcrumb-item"><a href="../categories/introgression-gene-flow.html">Introgression &amp; gene flow</a></li>
+      <li class="breadcrumb-item active">D-statistic (ABBA-BABA test)</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="d-statistic-abba-baba-test">
+<span id="command-dstatistic"></span><span id="cmd-dstatistic"></span><h1>D-statistic (ABBA-BABA test)<a class="headerlink" href="#d-statistic-abba-baba-test" title="Link to this heading"></a></h1>
+<p>Patterson's D-statistic for detecting introgression</p>
+<section id="command-identity">
+<h2>Command identity<a class="headerlink" href="#command-identity" title="Link to this heading"></a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">Canonical command<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">dstatistic</span></code></p>
+</dd>
+<dt class="field-even">Handler<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">dstatistic</span></code></p>
+</dd>
+<dt class="field-odd">Aliases<span class="colon">:</span></dt>
+<dd class="field-odd"><p>abba_baba, dstat</p>
+</dd>
+<dt class="field-even">Standalone executables<span class="colon">:</span></dt>
+<dd class="field-even"><p>pk_dstatistic, pk_abba_baba, pk_dstat</p>
+</dd>
+<dt class="field-odd">Categories<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Introgression &amp; gene flow</p>
+</dd>
+</dl>
+</section>
+<section id="runtime-interface">
+<h2>Runtime interface<a class="headerlink" href="#runtime-interface" title="Link to this heading"></a></h2>
+<section id="synopsis">
+<h3>Synopsis<a class="headerlink" href="#synopsis" title="Link to this heading"></a></h3>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>phykit dstatistic [--alignment &lt;alignment&gt;] [--gene-trees &lt;gene_trees&gt;] --p1 &lt;p1&gt; --p2 &lt;p2&gt; --p3 &lt;p3&gt; --outgroup &lt;outgroup&gt; [--block-size &lt;block_size&gt;] [--support &lt;support&gt;] [--json]
+</pre></div>
+</div>
+</section>
+<section id="arguments">
+<h3>Arguments<a class="headerlink" href="#arguments" title="Link to this heading"></a></h3>
+<p>This table is generated from the live command parser. It is the authoritative
+source for accepted spellings, required arguments, types, defaults, and choices.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 31.8%" />
+<col style="width: 11.4%" />
+<col style="width: 13.6%" />
+<col style="width: 20.5%" />
+<col style="width: 22.7%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Argument</p></th>
+<th class="head"><p>Required</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Default</p></th>
+<th class="head"><p>Choices</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">-a,</span> <span class="pre">--alignment</span></code></p></td>
+<td><p>false</p></td>
+<td><p>str</p></td>
+<td><p>none</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">-g,</span> <span class="pre">--gene-trees</span></code></p></td>
+<td><p>false</p></td>
+<td><p>str</p></td>
+<td><p>none</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--p1</span></code></p></td>
+<td><p>true</p></td>
+<td><p>str</p></td>
+<td><p>required</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--p2</span></code></p></td>
+<td><p>true</p></td>
+<td><p>str</p></td>
+<td><p>required</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--p3</span></code></p></td>
+<td><p>true</p></td>
+<td><p>str</p></td>
+<td><p>required</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--outgroup</span></code></p></td>
+<td><p>true</p></td>
+<td><p>str</p></td>
+<td><p>required</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--block-size</span></code></p></td>
+<td><p>false</p></td>
+<td><p>int</p></td>
+<td><p>100</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--support</span></code></p></td>
+<td><p>false</p></td>
+<td><p>float</p></td>
+<td><p>none</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--json</span></code></p></td>
+<td><p>false</p></td>
+<td><p>boolean</p></td>
+<td><p>false</p></td>
+<td><p>any</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="output-and-errors">
+<h3>Output and errors<a class="headerlink" href="#output-and-errors" title="Link to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">--json</span></code> provides the command's structured JSON representation. Unless the guidance below states otherwise, results are emitted as command output. Invalid command syntax exits with status 2. Input
+validation and scientific limitations are described in the guidance below.</p>
+</section>
+</section>
+<section id="guidance-interpretation-and-examples">
+<h2>Guidance, interpretation, and examples<a class="headerlink" href="#guidance-interpretation-and-examples" title="Link to this heading"></a></h2>
+<p>Compute Patterson's D-statistic (ABBA-BABA test) for detecting
+introgression or gene flow between taxa. Given a four-taxon alignment
+with topology <code class="docutils literal notranslate"><span class="pre">(((P1,</span> <span class="pre">P2),</span> <span class="pre">P3),</span> <span class="pre">Outgroup)</span></code>, the test counts ABBA
+and BABA site patterns:</p>
+<ul class="simple">
+<li><p><strong>ABBA</strong>: P1 has the ancestral allele, P2 and P3 share the derived
+allele — suggests introgression between P2 and P3</p></li>
+<li><p><strong>BABA</strong>: P2 has the ancestral allele, P1 and P3 share the derived
+allele — suggests introgression between P1 and P3</p></li>
+<li><p><strong>D = (ABBA - BABA) / (ABBA + BABA)</strong>: D = 0 under ILS alone;
+D significantly different from 0 indicates introgression</p></li>
+</ul>
+<p>Note: the D-statistic identifies which pair of lineages exchanged
+genetic material but cannot determine the direction of gene flow
+within that pair.</p>
+<p>Significance is assessed via block jackknife (Green et al. 2010),
+producing a Z-score and p-value.</p>
+<p>Two input modes are supported:</p>
+<ol class="arabic simple">
+<li><p><strong>Site patterns</strong> (<code class="docutils literal notranslate"><span class="pre">-a</span></code>): counts ABBA/BABA from a FASTA alignment.
+Only biallelic sites with no gaps or ambiguous characters are considered.
+Significance via block jackknife.</p></li>
+<li><p><strong>Gene trees</strong> (<code class="docutils literal notranslate"><span class="pre">-g</span></code>): counts discordant quartet topologies from gene
+trees. Gene trees can have any number of taxa; only the quartet induced
+by the four specified taxa is evaluated. Significance via chi-squared test.</p></li>
+</ol>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># Site-pattern mode</span>
+phykit<span class="w"> </span>dstatistic<span class="w"> </span>-a<span class="w"> </span>&lt;alignment&gt;<span class="w"> </span>--p1<span class="w"> </span>&lt;taxon&gt;<span class="w"> </span>--p2<span class="w"> </span>&lt;taxon&gt;<span class="w"> </span>--p3<span class="w"> </span>&lt;taxon&gt;<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--outgroup<span class="w"> </span>&lt;taxon&gt;<span class="w"> </span><span class="o">[</span>--block-size<span class="w"> </span><span class="m">100</span><span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+
+<span class="c1"># Gene-tree mode</span>
+phykit<span class="w"> </span>dstatistic<span class="w"> </span>-g<span class="w"> </span>&lt;gene_trees&gt;<span class="w"> </span>--p1<span class="w"> </span>&lt;taxon&gt;<span class="w"> </span>--p2<span class="w"> </span>&lt;taxon&gt;<span class="w"> </span>--p3<span class="w"> </span>&lt;taxon&gt;<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--outgroup<span class="w"> </span>&lt;taxon&gt;<span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+</pre></div>
+</div>
+<p>Options: <br />
+<em>-a/--alignment</em>: FASTA alignment file (site-pattern mode) <br />
+<em>-g/--gene-trees</em>: gene trees file, one Newick per line (gene-tree mode; trees can have any number of taxa) <br />
+<em>--p1</em>: taxon name for P1, sister to P2 (required) <br />
+<em>--p2</em>: taxon name for P2, sister to P1, potential recipient of gene flow from P3 (required) <br />
+<em>--p3</em>: taxon name for P3, donor lineage (required) <br />
+<em>--outgroup</em>: outgroup taxon name, determines ancestral allele (required) <br />
+<em>--block-size</em>: block size in sites for jackknife standard error estimation (default: 100; alignment mode only) <br />
+<em>--support</em>: minimum branch support threshold; gene tree branches below this value are collapsed and treated as unresolved (gene-tree mode only) <br />
+<em>--json</em>: optional argument to print results as JSON</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="discordance_asymmetry.html" class="btn btn-neutral float-left" title="Discordance asymmetry" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="hybridization.html" class="btn btn-neutral float-right" title="Hybridization analysis" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020-2026 Jacob L. Steenwyk.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
