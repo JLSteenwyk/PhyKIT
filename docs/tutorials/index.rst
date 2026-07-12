@@ -281,7 +281,7 @@ Estimate the gene tree branch lengths using the following commands:
    iqtree2 -s Shen_etal_SciAdv_2020_SEC7.fa -te Shen_etal_SciAdv_2020_SEC7.constrained.tre -pre Shen_etal_SciAdv_2020_SEC7 -m LG+G4 -keep-ident
 
 Step 2: Root constrained trees
-****************************
+******************************
 To ensure PhyKIT traverses each tree the same, root each tree using the outgroup taxa. PhyKIT has
 a function for rooting and takes as input a single column file with the names of the outgroup taxa.
 For sake of simplicity, I have provided the necessary input files.
@@ -3640,7 +3640,3 @@ These are useful for preparing figures for publication where
 specific dimensions or resolutions are required.
 
 |
-
-.. |br| raw:: html
-
-  <br/>

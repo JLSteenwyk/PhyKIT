@@ -11,6 +11,10 @@ import sys
 
 from collections import OrderedDict
 
+sys.path.insert(0, os.path.abspath(".."))
+
+from phykit.version import __version__
+
 try:
     import sphinx_rtd_theme
 except ModuleNotFoundError:
@@ -28,13 +32,13 @@ sys.path.append(os.path.abspath("./_ext"))
 # -- Project information -----------------------------------------------------
 
 project = "phykit"
-copyright = "2020 Jacob L. Steenwyk"
+copyright = "2020-2026 Jacob L. Steenwyk"
 author = "Jacob L. Steenwyk <jlsteenwyk@gmail.com>"
 
 # The short X.Y version
-# version = "0.0.1"
+version = __version__
 # The full version, including alpha/beta/rc tags
-# release = "0.0.1-alpha"
+release = __version__
 
 
 # -- General configuration ---------------------------------------------------
@@ -55,7 +59,7 @@ templates_path = ["_templates"]
 # You can specify multiple suffix as a list of string:
 #
 # source_suffix = ['.rst', '.md']
-source_suffix = ".rst"
+source_suffix = {".rst": "restructuredtext"}
 
 # The master toctree document.
 master_doc = "index"
@@ -67,6 +71,11 @@ master_doc = "index"
 # Usually you set "language" from the command line for these cases.
 language = "en"
 smartquotes = False
+rst_prolog = """
+.. |br| raw:: html
+
+   <br />
+"""
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -93,7 +102,6 @@ html_theme = "sphinx_rtd_theme" if sphinx_rtd_theme is not None else "alabaster"
 html_theme_options = {
     "body_max_width": "900px",
     'logo_only': True,
-    'analytics_id': 'UA-104875636-1'
 } if sphinx_rtd_theme is not None else {}
 html_logo = '_static/img/logo.png'
 html_show_sourcelink = False
@@ -177,7 +185,7 @@ texinfo_documents = [
         "phykit Documentation",
         author,
         "phykit",
-        "A data transformation engine.",
+        "A toolkit for processing and analyzing phylogenomic data.",
         "Miscellaneous",
     ),
 ]
