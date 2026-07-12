@@ -1,110 +1,60 @@
 .. image:: _static/img/logo.png
-   :alt: PhyKIT logo figure
+   :alt: PhyKIT logo
    :width: 55%
    :align: center
    :target: https://jlsteenwyk.com/PhyKIT
 
-PhyKIT, a toolkit for the UNIX shell environment with numerous functions that process multiple
-sequence alignments and phylogenies for broad applications
+PhyKIT
+======
 
-If you found PhyKIT useful, please cite *PhyKIT: a broadly applicable UNIX shell toolkit for processing
-and analyzing phylogenomic data*. Bioinformatics. doi: |doiLink|_.
+PhyKIT is a command-line toolkit for processing and analyzing multiple
+sequence alignments, phylogenetic trees, and comparative trait data.
 
-.. _doiLink: https://academic.oup.com/bioinformatics/advance-article-abstract/doi/10.1093/bioinformatics/btab096/6131675?redirectedFrom=fulltext
-.. |doiLink| replace:: 10.1093/bioinformatics/btab096
+Start here
+----------
 
-Quick Start
------------
+- :doc:`Installation and first analysis <getting_started/index>`
+- :doc:`Choose a command by analytical task <reference/index>`
+- :doc:`Follow a complete workflow <tutorials/index>`
+- :doc:`Prepare input files <formats/index>`
+- :doc:`Troubleshoot an error <troubleshooting/index>`
 
-These two lines represent the simplest method to rapidly install and run PhyKIT.
+First analysis
+--------------
 
-.. code-block:: shell
+Install PhyKIT with Python 3.10 or newer, download the example alignment,
+and calculate its length::
 
-	# install
-	pip install phykit
-	# run
-	phykit -h
+   python -m pip install phykit
+   curl -LO https://jlsteenwyk.github.io/PhyKIT/data/Steenwyk_etal_mBio_2019_EOG091N44MS.aln.fa
+   phykit alignment_length Steenwyk_etal_mBio_2019_EOG091N44MS.aln.fa
 
+Expected output::
 
+   624
 
-**1) Installation**
+The value is the number of aligned sites. Continue with
+:doc:`Tutorial 1 <tutorials/pages/01-summarizing-information-content>` to
+measure additional information-content and tree-quality statistics.
 
-To install using *pip*, we strongly recommend building a virtual environment to avoid 
-software dependency issues. To do so, execute the following commands:
+Citation
+--------
 
-.. code-block:: shell
-
-	# create virtual environment
-	python -m venv venv
-	# activate virtual environment
-	source venv/bin/activate
-	# install phykit
-	pip install phykit
-
-**Note, the virtual environment must be activated to use PhyKIT.**
-
-After using PhyKIT, you may wish to deactivate your virtual environment and can do so using the following command:
-
-.. code-block:: shell
-
-	# deactivate virtual environment
-	deactivate
-
-|
-
-Similarly, to install from source, we strongly recommend using a virtual environment. To do so, use the
-following commands:
-
-.. code-block:: shell
-
-	# download
-	git clone https://github.com/JLSteenwyk/PhyKIT.git
-	cd PhyKIT/
-	# create virtual environment
-	python -m venv venv
-	# activate virtual environment
-	source venv/bin/activate
-	# install
-	make install
-
-To deactivate your virtual environment, use the following command:
-
-.. code-block:: shell
-
-	# deactivate virtual environment
-	deactivate
-
-**Note, the virtual environment must be activated to use PhyKIT.**
-
-|
-
-To install via anaconda, execute the following command:
-
-.. code-block:: shell
-
-	conda install bioconda::phykit
-
-Visit here for more information:
-https://anaconda.org/bioconda/phykit
-
-**2) Usage**
-
-Get the help message from PhyKIT:
-
-.. code-block:: shell
-
-	phykit -h
-
-|
+If you use PhyKIT, cite *PhyKIT: a broadly applicable UNIX shell toolkit for
+processing and analyzing phylogenomic data*, Bioinformatics,
+`doi:10.1093/bioinformatics/btab096 <https://doi.org/10.1093/bioinformatics/btab096>`_.
 
 .. toctree::
    :maxdepth: 4
 
-   about/index
-   usage/index
+   getting_started/index
    reference/index
    tutorials/index
+   formats/index
+   glossary/index
    troubleshooting/index
+   frequently_asked_questions/index
+   usage/index
+   about/index
    change_log/index
    other_software/index
-   frequently_asked_questions/index

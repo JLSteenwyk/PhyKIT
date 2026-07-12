@@ -29,17 +29,21 @@ through diverse avenues of community engagement. Find out more information at hi
 `Steenwyk website <http://jlsteenwyk.github.io/>`_.
 
 .. |JLSteenwyk| image:: ../_static/img/Steenwyk.jpg 
+   :alt: J L Steenwyk
    :width: 35%
 
 .. |GoogleScholarSteenwyk| image:: ../_static/img/GoogleScholar.png
+   :alt: Google Scholar Steenwyk
    :target: https://scholar.google.com/citations?user=VXV2j6gAAAAJ&hl=en
    :width: 4.5%
 
 .. |TwitterSteenwyk| image:: ../_static/img/Twitter.png
+   :alt: Twitter Steenwyk
    :target: https://twitter.com/jlsteenwyk
    :width: 4.5%
 
 .. |GitHubSteenwyk| image:: ../_static/img/Github.png
+   :alt: Git Hub Steenwyk
    :target: https://github.com/JLSteenwyk
    :width: 4.5%
 
@@ -61,13 +65,16 @@ color extracted from a flexible source to the Hue light color. Find out more inf
 
 
 .. |TJBuida| image:: ../_static/img/Buida.jpeg  
+   :alt: T J Buida
    :width: 35%
 
 .. |TwitterBuida| image:: ../_static/img/Twitter.png
+   :alt: Twitter Buida
    :target: https://twitter.com/thomasbuida
    :width: 4.5%
 
 .. |GitHubBuida| image:: ../_static/img/Github.png
+   :alt: Git Hub Buida
    :target: https://github.com/TJBIII
    :width: 4.5% 
 
@@ -95,13 +102,16 @@ tree of life, and the evolution of human pregnancy. Find out more information at
 `laboratory’s website <https://as.vanderbilt.edu/rokaslab/>`_.
 
 .. |ARokas| image:: ../_static/img/Rokas.jpeg
+   :alt: A Rokas
    :width: 35%
 
 .. |GoogleScholarRokas| image:: ../_static/img/GoogleScholar.png
+   :alt: Google Scholar Rokas
    :target: https://scholar.google.com/citations?user=OvAV_eoAAAAJ&hl=en
    :width: 4.5%
 
 .. |TwitterRokas| image:: ../_static/img/Twitter.png
+   :alt: Twitter Rokas
    :target: https://twitter.com/RokasLab
    :width: 4.5%
 
@@ -118,17 +128,21 @@ codon positions in yeasts. During her research career she has worked with fungi,
 limpets, clams, and lizards! For more information visit her `LaBella website <https://www.abigailleavittlabella.com/>`_.
 
 .. |ALLabella| image:: ../_static/img/Labella.jpg
+   :alt: A L Labella
    :width: 35%
 
 .. |GoogleScholarLabella| image:: ../_static/img/GoogleScholar.png
+   :alt: Google Scholar Labella
    :target: https://scholar.google.com/citations?user=rxdDvjEAAAAJ&hl=en&oi=ao
    :width: 4.5%
 
 .. |TwitterLabella| image:: ../_static/img/Twitter.png
+   :alt: Twitter Labella
    :target: https://twitter.com/AbbeAtSea
    :width: 4.5%
 
 .. |GitHubLabella| image:: ../_static/img/Github.png
+   :alt: Git Hub Labella
    :target: https://github.com/alabella19
    :width: 4.5%
 
@@ -147,17 +161,21 @@ and 3) exploring insect species and ecological diversity. Find out more informat
 `laboratory's website <https://xingxingshen.github.io/>`_.
 
 .. |XXShen| image:: ../_static/img/Shen.jpg
+   :alt: X X Shen
    :width: 35%
 
 .. |GoogleScholarShen| image:: ../_static/img/GoogleScholar.png
+   :alt: Google Scholar Shen
    :target: https://scholar.google.com/citations?user=aNqPBsEAAAAJ&hl=en
    :width: 4.5%
 
 .. |TwitterShen| image:: ../_static/img/Twitter.png
+   :alt: Twitter Shen
    :target: https://twitter.com/shenxingxing1
    :width: 4.5%
 
 .. |GitHubShen| image:: ../_static/img/Github.png
+   :alt: Git Hub Shen
    :target: https://github.com/xingxingshen
    :width: 4.5%
 
