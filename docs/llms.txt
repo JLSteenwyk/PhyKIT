@@ -1,0 +1,144 @@
+# PhyKIT
+
+> Command-line tools for processing and analyzing multiple sequence alignments, phylogenetic trees, and comparative trait data.
+
+Documentation version: 2.3.0
+
+## Start
+
+- [Installation and first analysis](https://jlsteenwyk.github.io/PhyKIT/getting_started/index.html)
+- [Input formats and shared conventions](https://jlsteenwyk.github.io/PhyKIT/formats/index.html)
+- [Tutorials](https://jlsteenwyk.github.io/PhyKIT/tutorials/index.html)
+- [Troubleshooting](https://jlsteenwyk.github.io/PhyKIT/troubleshooting/index.html)
+- [Glossary](https://jlsteenwyk.github.io/PhyKIT/glossary/index.html)
+
+## Machine-readable resources
+
+- [Command catalog](https://jlsteenwyk.github.io/PhyKIT/_static/commands.json): canonical names, aliases, arguments, defaults, choices, and documentation URLs
+- [Complete documentation corpus](https://jlsteenwyk.github.io/PhyKIT/llms-full.txt): deterministic text corpus for retrieval and offline use
+
+## Commands by analytical task
+
+### Alignment & dataset utilities
+- [alignment_recoding](https://jlsteenwyk.github.io/PhyKIT/reference/commands/alignment_recoding.html): Recode alignment into reduced alphabets
+- [alignment_subsample](https://jlsteenwyk.github.io/PhyKIT/reference/commands/alignment_subsample.html): Randomly subsample genes, partitions, or sites
+- [create_concatenation_matrix](https://jlsteenwyk.github.io/PhyKIT/reference/commands/create_concatenation_matrix.html): Concatenate multiple alignments into a supermatrix
+- [faidx](https://jlsteenwyk.github.io/PhyKIT/reference/commands/faidx.html): Extract entries from FASTA files
+- [mask_alignment](https://jlsteenwyk.github.io/PhyKIT/reference/commands/mask_alignment.html): Mask sites in an alignment
+- [occupancy_filter](https://jlsteenwyk.github.io/PhyKIT/reference/commands/occupancy_filter.html): Filter alignments or trees by cross-file taxon occupancy (works with both FASTA and Newick)
+- [rename_fasta_entries](https://jlsteenwyk.github.io/PhyKIT/reference/commands/rename_fasta_entries.html): Rename entries in a FASTA file
+- [taxon_groups](https://jlsteenwyk.github.io/PhyKIT/reference/commands/taxon_groups.html): Group alignment or tree files by shared taxon sets (works with both FASTA and Newick)
+- [thread_dna](https://jlsteenwyk.github.io/PhyKIT/reference/commands/thread_dna.html): Thread nucleotide onto protein alignment
+### Alignment quality & statistics
+- [alignment_entropy](https://jlsteenwyk.github.io/PhyKIT/reference/commands/alignment_entropy.html): Shannon entropy across alignment sites
+- [alignment_length](https://jlsteenwyk.github.io/PhyKIT/reference/commands/alignment_length.html): Length of an input alignment
+- [alignment_length_no_gaps](https://jlsteenwyk.github.io/PhyKIT/reference/commands/alignment_length_no_gaps.html): Alignment length excluding gapped sites
+- [alignment_outlier_taxa](https://jlsteenwyk.github.io/PhyKIT/reference/commands/alignment_outlier_taxa.html): Identify outlier taxa in alignments
+- [codon_dnds](https://jlsteenwyk.github.io/PhyKIT/reference/commands/codon_dnds.html): Pairwise synonymous and nonsynonymous substitution-rate estimates
+- [column_score](https://jlsteenwyk.github.io/PhyKIT/reference/commands/column_score.html): Column score for alignment quality
+- [composition_per_taxon](https://jlsteenwyk.github.io/PhyKIT/reference/commands/composition_per_taxon.html): Nucleotide or amino acid composition per taxon
+- [compositional_bias_per_site](https://jlsteenwyk.github.io/PhyKIT/reference/commands/compositional_bias_per_site.html): Detect compositional bias across sites
+- [evolutionary_rate_per_site](https://jlsteenwyk.github.io/PhyKIT/reference/commands/evolutionary_rate_per_site.html): Site-specific evolutionary rate estimation
+- [gc_content](https://jlsteenwyk.github.io/PhyKIT/reference/commands/gc_content.html): GC content of an alignment
+- [identity_matrix](https://jlsteenwyk.github.io/PhyKIT/reference/commands/identity_matrix.html): Pairwise sequence identity heatmap
+- [occupancy_per_taxon](https://jlsteenwyk.github.io/PhyKIT/reference/commands/occupancy_per_taxon.html): Taxon occupancy in alignment columns
+- [pairwise_identity](https://jlsteenwyk.github.io/PhyKIT/reference/commands/pairwise_identity.html): Pairwise sequence identity in an alignment
+- [parsimony_informative_sites](https://jlsteenwyk.github.io/PhyKIT/reference/commands/parsimony_informative_sites.html): Count parsimony informative sites
+- [plot_alignment_qc](https://jlsteenwyk.github.io/PhyKIT/reference/commands/plot_alignment_qc.html): Visual quality control plots for alignments
+- [relative_composition_variability](https://jlsteenwyk.github.io/PhyKIT/reference/commands/relative_composition_variability.html): Composition variability across taxa
+- [relative_composition_variability_taxon](https://jlsteenwyk.github.io/PhyKIT/reference/commands/relative_composition_variability_taxon.html): Per-taxon relative composition variability
+- [sum_of_pairs_score](https://jlsteenwyk.github.io/PhyKIT/reference/commands/sum_of_pairs_score.html): Sum-of-pairs alignment quality score
+- [variable_sites](https://jlsteenwyk.github.io/PhyKIT/reference/commands/variable_sites.html): Count variable sites in an alignment
+### Evolutionary rate analysis
+- [codon_dnds](https://jlsteenwyk.github.io/PhyKIT/reference/commands/codon_dnds.html): Pairwise synonymous and nonsynonymous substitution-rate estimates
+- [covarying_evolutionary_rates](https://jlsteenwyk.github.io/PhyKIT/reference/commands/covarying_evolutionary_rates.html): Detect covariation in evolutionary rates
+- [relative_rate_test](https://jlsteenwyk.github.io/PhyKIT/reference/commands/relative_rate_test.html): Relative rate test between lineages
+### Homology assessment
+- [hidden_paralogy_check](https://jlsteenwyk.github.io/PhyKIT/reference/commands/hidden_paralogy_check.html): Check for hidden paralogy in gene trees
+- [spurious_sequence](https://jlsteenwyk.github.io/PhyKIT/reference/commands/spurious_sequence.html): Identify spurious sequences in alignments
+### Introgression & gene flow
+- [dfoil](https://jlsteenwyk.github.io/PhyKIT/reference/commands/dfoil.html): DFOIL test for detecting and polarizing introgression in a 5-taxon symmetric phylogeny
+- [discordance_asymmetry](https://jlsteenwyk.github.io/PhyKIT/reference/commands/discordance_asymmetry.html): Test for asymmetric discordance (gene flow detection)
+- [dstatistic](https://jlsteenwyk.github.io/PhyKIT/reference/commands/dstatistic.html): Patterson's D-statistic for detecting introgression
+- [hybridization](https://jlsteenwyk.github.io/PhyKIT/reference/commands/hybridization.html): Estimate reticulation events and localize hybridization on a species tree
+### Other utilities
+- [version](https://jlsteenwyk.github.io/PhyKIT/reference/commands/version.html): Run the Version analysis or utility.
+### Phylogenetic comparative methods
+- [phylo_anova](https://jlsteenwyk.github.io/PhyKIT/reference/commands/phylo_anova.html): Phylogenetic ANOVA or MANOVA using RRPP (Adams & Collyer 2018)
+- [phylo_gwas](https://jlsteenwyk.github.io/PhyKIT/reference/commands/phylo_gwas.html): Phylogenetic genome-wide association study
+- [phylo_logistic](https://jlsteenwyk.github.io/PhyKIT/reference/commands/phylo_logistic.html): Phylogenetic logistic regression for binary traits (Ives & Garland 2010)
+- [phylo_path](https://jlsteenwyk.github.io/PhyKIT/reference/commands/phylo_path.html): Compare causal DAGs via d-separation + PGLS (von Hardenberg & Gonzalez-Voyer 2013)
+- [phylogenetic_glm](https://jlsteenwyk.github.io/PhyKIT/reference/commands/phylogenetic_glm.html): Phylogenetic generalized linear model (supports discordance-aware VCV with ``-g``)
+- [phylogenetic_ordination](https://jlsteenwyk.github.io/PhyKIT/reference/commands/phylogenetic_ordination.html): Ordination incorporating phylogenetic structure (supports discordance-aware VCV with ``-g``)
+- [phylogenetic_regression](https://jlsteenwyk.github.io/PhyKIT/reference/commands/phylogenetic_regression.html): Phylogenetic generalized least squares regression (supports discordance-aware VCV with ``-g``)
+- [phylomorphospace](https://jlsteenwyk.github.io/PhyKIT/reference/commands/phylomorphospace.html): Phylomorphospace visualization
+### Phylogenetic signal
+- [network_signal](https://jlsteenwyk.github.io/PhyKIT/reference/commands/network_signal.html): Phylogenetic signal on networks
+- [phylogenetic_signal](https://jlsteenwyk.github.io/PhyKIT/reference/commands/phylogenetic_signal.html): Test for phylogenetic signal in traits (supports discordance-aware VCV with ``-g``)
+- [trait_correlation](https://jlsteenwyk.github.io/PhyKIT/reference/commands/trait_correlation.html): Phylogenetic correlations between all pairs of traits with heatmap visualization
+### Saturation & model adequacy
+- [saturation](https://jlsteenwyk.github.io/PhyKIT/reference/commands/saturation.html): Test for substitution saturation
+- [treeness_over_rcv](https://jlsteenwyk.github.io/PhyKIT/reference/commands/treeness_over_rcv.html): Treeness over relative composition variability
+### Trait evolution
+- [ancestral_state_reconstruction](https://jlsteenwyk.github.io/PhyKIT/reference/commands/ancestral_state_reconstruction.html): Reconstruct ancestral character states
+- [character_map](https://jlsteenwyk.github.io/PhyKIT/reference/commands/character_map.html): Map synapomorphies and homoplasies onto a phylogeny
+- [concordance_asr](https://jlsteenwyk.github.io/PhyKIT/reference/commands/concordance_asr.html): ASR incorporating gene tree discordance
+- [cont_map](https://jlsteenwyk.github.io/PhyKIT/reference/commands/cont_map.html): Map continuous traits onto a phylogeny
+- [density_map](https://jlsteenwyk.github.io/PhyKIT/reference/commands/density_map.html): Posterior density of stochastic character maps
+- [dtt](https://jlsteenwyk.github.io/PhyKIT/reference/commands/dtt.html): Disparity-through-time analysis with MDI statistic (Harmon et al. 2003)
+- [fit_continuous](https://jlsteenwyk.github.io/PhyKIT/reference/commands/fit_continuous.html): Compare continuous trait evolution models (supports discordance-aware VCV with ``-g``)
+- [fit_discrete](https://jlsteenwyk.github.io/PhyKIT/reference/commands/fit_discrete.html): Compare ER, SYM, ARD Mk models
+- [independent_contrasts](https://jlsteenwyk.github.io/PhyKIT/reference/commands/independent_contrasts.html): Felsenstein's phylogenetically independent contrasts
+- [ou_shift_detection](https://jlsteenwyk.github.io/PhyKIT/reference/commands/ou_shift_detection.html): Detect OU regime shifts on a phylogeny
+- [ouwie](https://jlsteenwyk.github.io/PhyKIT/reference/commands/ouwie.html): Multi-regime Ornstein-Uhlenbeck models
+- [parsimony_score](https://jlsteenwyk.github.io/PhyKIT/reference/commands/parsimony_score.html): Fitch parsimony score of a tree given an alignment
+- [phenogram](https://jlsteenwyk.github.io/PhyKIT/reference/commands/phenogram.html): Phenogram visualizing trait evolution
+- [phylo_heatmap](https://jlsteenwyk.github.io/PhyKIT/reference/commands/phylo_heatmap.html): Phylogeny alongside a heatmap of numeric trait values
+- [phylo_impute](https://jlsteenwyk.github.io/PhyKIT/reference/commands/phylo_impute.html): Impute missing trait values using phylogenetic relationships
+- [rate_heterogeneity](https://jlsteenwyk.github.io/PhyKIT/reference/commands/rate_heterogeneity.html): Test for rate heterogeneity in trait evolution
+- [simmap_summary](https://jlsteenwyk.github.io/PhyKIT/reference/commands/simmap_summary.html): Per-branch SIMMAP summary with node posteriors (describe.simmap)
+- [stochastic_character_map](https://jlsteenwyk.github.io/PhyKIT/reference/commands/stochastic_character_map.html): Stochastic character mapping on a phylogeny
+- [threshold_model](https://jlsteenwyk.github.io/PhyKIT/reference/commands/threshold_model.html): Felsenstein threshold model for trait correlation
+- [trait_rate_map](https://jlsteenwyk.github.io/PhyKIT/reference/commands/trait_rate_map.html): Per-branch evolutionary rate map for a continuous trait
+### Tree comparison & consensus
+- [consensus_network](https://jlsteenwyk.github.io/PhyKIT/reference/commands/consensus_network.html): Consensus network from multiple trees
+- [consensus_tree](https://jlsteenwyk.github.io/PhyKIT/reference/commands/consensus_tree.html): Consensus tree from multiple trees
+- [cophylo](https://jlsteenwyk.github.io/PhyKIT/reference/commands/cophylo.html): Tanglegram for comparing two trees
+- [evo_tempo_map](https://jlsteenwyk.github.io/PhyKIT/reference/commands/evo_tempo_map.html): Detect rate-topology associations in gene trees
+- [kf_distance](https://jlsteenwyk.github.io/PhyKIT/reference/commands/kf_distance.html): Branch score distance between trees (topology + branch lengths)
+- [neighbor_net](https://jlsteenwyk.github.io/PhyKIT/reference/commands/neighbor_net.html): NeighborNet phylogenetic network from distance matrix (Bryant & Moulton 2004)
+- [polytomy_test](https://jlsteenwyk.github.io/PhyKIT/reference/commands/polytomy_test.html): Test for polytomies in a tree
+- [quartet_network](https://jlsteenwyk.github.io/PhyKIT/reference/commands/quartet_network.html): Quartet-based network visualization
+- [quartet_pie](https://jlsteenwyk.github.io/PhyKIT/reference/commands/quartet_pie.html): Phylogram with quartet concordance pie charts at internal nodes
+- [robinson_foulds_distance](https://jlsteenwyk.github.io/PhyKIT/reference/commands/robinson_foulds_distance.html): Topological distance between trees
+- [spectral_discordance](https://jlsteenwyk.github.io/PhyKIT/reference/commands/spectral_discordance.html): PCA ordination and clustering of gene tree topologies
+- [tree_space](https://jlsteenwyk.github.io/PhyKIT/reference/commands/tree_space.html): Visualize gene tree topology space via MDS, t-SNE, UMAP, or clustered distance heatmap
+### Tree manipulation & utilities
+- [branch_length_multiplier](https://jlsteenwyk.github.io/PhyKIT/reference/commands/branch_length_multiplier.html): Multiply branch lengths by a factor
+- [chronogram](https://jlsteenwyk.github.io/PhyKIT/reference/commands/chronogram.html): Time-calibrated tree with geological timescale (rectangular or circular)
+- [collapse_branches](https://jlsteenwyk.github.io/PhyKIT/reference/commands/collapse_branches.html): Collapse low-support bipartitions
+- [internode_labeler](https://jlsteenwyk.github.io/PhyKIT/reference/commands/internode_labeler.html): Label internal nodes of a tree
+- [last_common_ancestor_subtree](https://jlsteenwyk.github.io/PhyKIT/reference/commands/last_common_ancestor_subtree.html): Extract subtree from LCA of specified taxa
+- [monophyly_check](https://jlsteenwyk.github.io/PhyKIT/reference/commands/monophyly_check.html): Test monophyly of a group of taxa
+- [nearest_neighbor_interchange](https://jlsteenwyk.github.io/PhyKIT/reference/commands/nearest_neighbor_interchange.html): Generate NNI tree rearrangements
+- [print_tree](https://jlsteenwyk.github.io/PhyKIT/reference/commands/print_tree.html): Print ASCII representation of a tree
+- [prune_tree](https://jlsteenwyk.github.io/PhyKIT/reference/commands/prune_tree.html): Prune taxa from a tree
+- [rename_tree_tips](https://jlsteenwyk.github.io/PhyKIT/reference/commands/rename_tree_tips.html): Rename tip labels in a tree
+- [root_tree](https://jlsteenwyk.github.io/PhyKIT/reference/commands/root_tree.html): Root or reroot a tree
+- [subtree_prune_regraft](https://jlsteenwyk.github.io/PhyKIT/reference/commands/subtree_prune_regraft.html): Generate all SPR rearrangements for a specified subtree
+- [tip_labels](https://jlsteenwyk.github.io/PhyKIT/reference/commands/tip_labels.html): Print tip labels of a tree
+- [transfer_annotations](https://jlsteenwyk.github.io/PhyKIT/reference/commands/transfer_annotations.html): Transfer node annotations between trees (e.g., wASTRAL to RAxML/IQ-TREE)
+### Tree summary statistics
+- [bipartition_support_stats](https://jlsteenwyk.github.io/PhyKIT/reference/commands/bipartition_support_stats.html): Summary statistics of bipartition support values
+- [degree_of_violation_of_a_molecular_clock](https://jlsteenwyk.github.io/PhyKIT/reference/commands/degree_of_violation_of_a_molecular_clock.html): Measure molecular clock violation
+- [evolutionary_rate](https://jlsteenwyk.github.io/PhyKIT/reference/commands/evolutionary_rate.html): Calculate tree-based evolutionary rate
+- [faiths_pd](https://jlsteenwyk.github.io/PhyKIT/reference/commands/faiths_pd.html): Sum of branch lengths spanning a community of tips
+- [internal_branch_stats](https://jlsteenwyk.github.io/PhyKIT/reference/commands/internal_branch_stats.html): Summary statistics of internal branch lengths
+- [long_branch_score](https://jlsteenwyk.github.io/PhyKIT/reference/commands/long_branch_score.html): Identify long branches in a tree
+- [ltt](https://jlsteenwyk.github.io/PhyKIT/reference/commands/ltt.html): Lineage-through-time analysis and gamma statistic
+- [patristic_distances](https://jlsteenwyk.github.io/PhyKIT/reference/commands/patristic_distances.html): Pairwise patristic distances between taxa
+- [terminal_branch_stats](https://jlsteenwyk.github.io/PhyKIT/reference/commands/terminal_branch_stats.html): Summary statistics of terminal branch lengths
+- [tip_to_tip_distance](https://jlsteenwyk.github.io/PhyKIT/reference/commands/tip_to_tip_distance.html): Distance between two tips in a tree
+- [tip_to_tip_node_distance](https://jlsteenwyk.github.io/PhyKIT/reference/commands/tip_to_tip_node_distance.html): Node distance between two tips
+- [total_tree_length](https://jlsteenwyk.github.io/PhyKIT/reference/commands/total_tree_length.html): Sum of all branch lengths
+- [treeness](https://jlsteenwyk.github.io/PhyKIT/reference/commands/treeness.html): Ratio of internal to total branch lengths

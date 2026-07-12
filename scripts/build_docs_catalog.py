@@ -20,6 +20,8 @@ DOCS = ROOT / "docs"
 SOURCE_SPEC = DOCS / "_data" / "command_spec.json"
 GENERATED = DOCS / "_generated" / "commands"
 CATALOG = DOCS / "_static" / "commands.json"
+LLMS = DOCS / "llms.txt"
+LLMS_FULL = DOCS / "llms-full.txt"
 
 
 def json_value(value: Any) -> Any:
@@ -178,7 +180,95 @@ validation and scientific limitations are described in the guidance below.
 """
 
 
-def build() -> tuple[dict[str, str], str]:
+def llms_index(commands: list[dict[str, Any]]) -> str:
+    categories: dict[str, list[dict[str, Any]]] = {}
+    for command in commands:
+        for category in command["categories"]:
+            categories.setdefault(category, []).append(command)
+    category_lines = []
+    for category, members in sorted(categories.items()):
+        category_lines.append(f"### {category}")
+        for command in sorted(members, key=lambda item: item["canonical"]):
+            category_lines.append(
+                f"- [{command['canonical']}](https://jlsteenwyk.github.io/PhyKIT/"
+                f"reference/commands/{command['canonical']}.html): {command['summary']}"
+            )
+    return "\n".join(
+        [
+            "# PhyKIT",
+            "",
+            "> Command-line tools for processing and analyzing multiple sequence alignments, phylogenetic trees, and comparative trait data.",
+            "",
+            f"Documentation version: {__version__}",
+            "",
+            "## Start",
+            "",
+            "- [Installation and first analysis](https://jlsteenwyk.github.io/PhyKIT/getting_started/index.html)",
+            "- [Input formats and shared conventions](https://jlsteenwyk.github.io/PhyKIT/formats/index.html)",
+            "- [Tutorials](https://jlsteenwyk.github.io/PhyKIT/tutorials/index.html)",
+            "- [Troubleshooting](https://jlsteenwyk.github.io/PhyKIT/troubleshooting/index.html)",
+            "- [Glossary](https://jlsteenwyk.github.io/PhyKIT/glossary/index.html)",
+            "",
+            "## Machine-readable resources",
+            "",
+            "- [Command catalog](https://jlsteenwyk.github.io/PhyKIT/_static/commands.json): canonical names, aliases, arguments, defaults, choices, and documentation URLs",
+            "- [Complete documentation corpus](https://jlsteenwyk.github.io/PhyKIT/llms-full.txt): deterministic text corpus for retrieval and offline use",
+            "",
+            "## Commands by analytical task",
+            "",
+            *category_lines,
+            "",
+        ]
+    )
+
+
+def llms_full(commands: list[dict[str, Any]]) -> str:
+    sections = [
+        "# PhyKIT complete documentation corpus",
+        "",
+        f"Version: {__version__}",
+        "Generated from canonical documentation and live command parsers.",
+        "",
+    ]
+    overview_paths = [
+        DOCS / "getting_started" / "index.rst",
+        DOCS / "formats" / "index.rst",
+        DOCS / "glossary" / "index.rst",
+        DOCS / "troubleshooting" / "index.rst",
+        DOCS / "frequently_asked_questions" / "index.rst",
+    ]
+    for path in overview_paths:
+        sections.extend([f"## Source: {path.relative_to(DOCS)}", "", path.read_text().strip(), ""])
+    sections.extend(["# Command reference", ""])
+    for command in commands:
+        sections.extend(
+            [
+                f"## {command['canonical']}",
+                "",
+                f"Summary: {command['summary']}",
+                f"Handler: {command['handler']}",
+                f"Aliases: {', '.join(command['aliases']) or 'none'}",
+                f"Categories: {', '.join(command['categories'])}",
+                "",
+                "### Runtime arguments",
+                "",
+            ]
+        )
+        for argument in command["arguments"]:
+            names = argument["name"] if argument["positional"] else ", ".join(argument["flags"])
+            sections.append(
+                f"- {names}: type={argument['type']}; required={argument['required']}; "
+                f"default={argument['default']}; choices={argument['choices']}"
+            )
+        page = DOCS / command["page"]
+        sections.extend(["", "### Canonical guidance", "", page.read_text().strip(), ""])
+    sections.extend(["# Tutorials", ""])
+    for path in sorted((DOCS / "tutorials" / "pages").glob("*.rst")):
+        sections.extend([f"## Source: {path.relative_to(DOCS)}", "", path.read_text().strip(), ""])
+    return "\n".join(sections).rstrip() + "\n"
+
+
+def build() -> tuple[dict[str, str], str, str, str]:
     source = json.loads(SOURCE_SPEC.read_text())
     records = {item["canonical"]: item for item in source["commands"]}
     identities = {item.canonical: item for item in COMMAND_IDENTITIES}
@@ -204,11 +294,12 @@ def build() -> tuple[dict[str, str], str]:
         "generated_from": ["phykit/cli_registry.py", "live argparse parsers", "docs/_data/command_spec.json"],
         "commands": catalog_commands,
     }
-    return includes, json.dumps(catalog, indent=2) + "\n"
+    catalog_text = json.dumps(catalog, indent=2) + "\n"
+    return includes, catalog_text, llms_index(catalog_commands), llms_full(catalog_commands)
 
 
 def write_or_check(check: bool) -> int:
-    includes, catalog = build()
+    includes, catalog, llms, full = build()
     mismatches = []
     for canonical, content in includes.items():
         path = GENERATED / f"{canonical}.inc"
@@ -221,6 +312,10 @@ def write_or_check(check: bool) -> int:
     if check:
         if not CATALOG.exists() or CATALOG.read_text() != catalog:
             mismatches.append(str(CATALOG.relative_to(ROOT)))
+        if not LLMS.exists() or LLMS.read_text() != llms:
+            mismatches.append(str(LLMS.relative_to(ROOT)))
+        if not LLMS_FULL.exists() or LLMS_FULL.read_text() != full:
+            mismatches.append(str(LLMS_FULL.relative_to(ROOT)))
         if mismatches:
             print("Generated documentation is stale:")
             print("\n".join(f"- {path}" for path in mismatches))
@@ -228,6 +323,8 @@ def write_or_check(check: bool) -> int:
     else:
         CATALOG.parent.mkdir(parents=True, exist_ok=True)
         CATALOG.write_text(catalog)
+        LLMS.write_text(llms)
+        LLMS_FULL.write_text(full)
     return 0
 
 
