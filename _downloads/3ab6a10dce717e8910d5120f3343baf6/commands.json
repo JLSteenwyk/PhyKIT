@@ -322,7 +322,26 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/alignment_entropy.html"
+      "documentation_url": "reference/commands/alignment_entropy.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [
+          "--plot-output"
+        ],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "alignment_length",
@@ -386,7 +405,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/alignment_length.html"
+      "documentation_url": "reference/commands/alignment_length.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "alignment_length_no_gaps",
@@ -450,7 +486,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/alignment_length_no_gaps.html"
+      "documentation_url": "reference/commands/alignment_length_no_gaps.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "alignment_outlier_taxa",
@@ -598,7 +651,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/alignment_outlier_taxa.html"
+      "documentation_url": "reference/commands/alignment_outlier_taxa.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "alignment_recoding",
@@ -677,7 +747,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/alignment_recoding.html"
+      "documentation_url": "reference/commands/alignment_recoding.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "alignment_subsample",
@@ -863,7 +950,26 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/alignment_subsample.html"
+      "documentation_url": "reference/commands/alignment_subsample.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [
+          "--output"
+        ],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "ancestral_state_reconstruction",
@@ -1279,7 +1385,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/ancestral_state_reconstruction.html"
+      "documentation_url": "reference/commands/ancestral_state_reconstruction.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "bipartition_support_stats",
@@ -1370,7 +1493,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/bipartition_support_stats.html"
+      "documentation_url": "reference/commands/bipartition_support_stats.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "branch_length_multiplier",
@@ -1462,7 +1602,26 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/branch_length_multiplier.html"
+      "documentation_url": "reference/commands/branch_length_multiplier.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [
+          "--output"
+        ],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "character_map",
@@ -1867,7 +2026,26 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/character_map.html"
+      "documentation_url": "reference/commands/character_map.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [
+          "--output"
+        ],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "chronogram",
@@ -2205,7 +2383,26 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/chronogram.html"
+      "documentation_url": "reference/commands/chronogram.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [
+          "--plot-output"
+        ],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "codon_dnds",
@@ -2383,7 +2580,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/codon_dnds.html"
+      "documentation_url": "reference/commands/codon_dnds.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "collapse_branches",
@@ -2477,7 +2691,26 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/collapse_branches.html"
+      "documentation_url": "reference/commands/collapse_branches.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [
+          "--output"
+        ],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "column_score",
@@ -2554,7 +2787,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/column_score.html"
+      "documentation_url": "reference/commands/column_score.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "composition_per_taxon",
@@ -2618,7 +2868,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/composition_per_taxon.html"
+      "documentation_url": "reference/commands/composition_per_taxon.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "compositional_bias_per_site",
@@ -2920,7 +3187,26 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/compositional_bias_per_site.html"
+      "documentation_url": "reference/commands/compositional_bias_per_site.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [
+          "--plot-output"
+        ],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "concordance_asr",
@@ -3319,7 +3605,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/concordance_asr.html"
+      "documentation_url": "reference/commands/concordance_asr.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "consensus_network",
@@ -3672,7 +3975,26 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/consensus_network.html"
+      "documentation_url": "reference/commands/consensus_network.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [
+          "--plot-output"
+        ],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "consensus_tree",
@@ -3774,7 +4096,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/consensus_tree.html"
+      "documentation_url": "reference/commands/consensus_tree.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "cont_map",
@@ -4081,7 +4420,26 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/cont_map.html"
+      "documentation_url": "reference/commands/cont_map.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [
+          "--output"
+        ],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "cophylo",
@@ -4403,7 +4761,26 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/cophylo.html"
+      "documentation_url": "reference/commands/cophylo.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [
+          "--output"
+        ],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "covarying_evolutionary_rates",
@@ -4745,7 +5122,26 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/covarying_evolutionary_rates.html"
+      "documentation_url": "reference/commands/covarying_evolutionary_rates.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [
+          "--plot-output"
+        ],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "create_concatenation_matrix",
@@ -5081,7 +5477,26 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/create_concatenation_matrix.html"
+      "documentation_url": "reference/commands/create_concatenation_matrix.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [
+          "--plot-output"
+        ],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "degree_of_violation_of_a_molecular_clock",
@@ -5143,7 +5558,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/degree_of_violation_of_a_molecular_clock.html"
+      "documentation_url": "reference/commands/degree_of_violation_of_a_molecular_clock.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "density_map",
@@ -5494,7 +5926,26 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/density_map.html"
+      "documentation_url": "reference/commands/density_map.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [
+          "--output"
+        ],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "dfoil",
@@ -5629,7 +6080,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/dfoil.html"
+      "documentation_url": "reference/commands/dfoil.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "discordance_asymmetry",
@@ -5964,7 +6432,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/discordance_asymmetry.html"
+      "documentation_url": "reference/commands/discordance_asymmetry.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "dstatistic",
@@ -6130,7 +6615,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/dstatistic.html"
+      "documentation_url": "reference/commands/dstatistic.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "dtt",
@@ -6492,7 +6994,26 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/dtt.html"
+      "documentation_url": "reference/commands/dtt.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [
+          "--plot-output"
+        ],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "evo_tempo_map",
@@ -6811,7 +7332,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/evo_tempo_map.html"
+      "documentation_url": "reference/commands/evo_tempo_map.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "evolutionary_rate",
@@ -6873,7 +7411,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/evolutionary_rate.html"
+      "documentation_url": "reference/commands/evolutionary_rate.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "evolutionary_rate_per_site",
@@ -7175,7 +7730,26 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/evolutionary_rate_per_site.html"
+      "documentation_url": "reference/commands/evolutionary_rate_per_site.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [
+          "--plot-output"
+        ],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "faidx",
@@ -7254,7 +7828,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/faidx.html"
+      "documentation_url": "reference/commands/faidx.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "faiths_pd",
@@ -7349,7 +7940,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/faiths_pd.html"
+      "documentation_url": "reference/commands/faiths_pd.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "fit_continuous",
@@ -7460,7 +8068,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/fit_continuous.html"
+      "documentation_url": "reference/commands/fit_continuous.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "fit_discrete",
@@ -7571,7 +8196,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/fit_discrete.html"
+      "documentation_url": "reference/commands/fit_discrete.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "gc_content",
@@ -7648,7 +8290,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/gc_content.html"
+      "documentation_url": "reference/commands/gc_content.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "hidden_paralogy_check",
@@ -7725,7 +8384,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/hidden_paralogy_check.html"
+      "documentation_url": "reference/commands/hidden_paralogy_check.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "hybridization",
@@ -8059,7 +8735,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/hybridization.html"
+      "documentation_url": "reference/commands/hybridization.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "identity_matrix",
@@ -8414,7 +9107,26 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/identity_matrix.html"
+      "documentation_url": "reference/commands/identity_matrix.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [
+          "--output"
+        ],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "independent_contrasts",
@@ -8496,7 +9208,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/independent_contrasts.html"
+      "documentation_url": "reference/commands/independent_contrasts.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "internal_branch_stats",
@@ -8573,7 +9302,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/internal_branch_stats.html"
+      "documentation_url": "reference/commands/internal_branch_stats.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "internode_labeler",
@@ -8650,7 +9396,26 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/internode_labeler.html"
+      "documentation_url": "reference/commands/internode_labeler.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [
+          "--output"
+        ],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "kf_distance",
@@ -8728,7 +9493,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/kf_distance.html"
+      "documentation_url": "reference/commands/kf_distance.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "last_common_ancestor_subtree",
@@ -8817,7 +9599,26 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/last_common_ancestor_subtree.html"
+      "documentation_url": "reference/commands/last_common_ancestor_subtree.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [
+          "--output"
+        ],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "long_branch_score",
@@ -8896,7 +9697,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/long_branch_score.html"
+      "documentation_url": "reference/commands/long_branch_score.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "ltt",
@@ -9202,7 +10020,26 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/ltt.html"
+      "documentation_url": "reference/commands/ltt.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [
+          "--plot-output"
+        ],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "mask_alignment",
@@ -9311,7 +10148,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/mask_alignment.html"
+      "documentation_url": "reference/commands/mask_alignment.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "monophyly_check",
@@ -9385,7 +10239,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/monophyly_check.html"
+      "documentation_url": "reference/commands/monophyly_check.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "nearest_neighbor_interchange",
@@ -9504,7 +10375,26 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/nearest_neighbor_interchange.html"
+      "documentation_url": "reference/commands/nearest_neighbor_interchange.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [
+          "--output"
+        ],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "neighbor_net",
@@ -9840,7 +10730,26 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/neighbor_net.html"
+      "documentation_url": "reference/commands/neighbor_net.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [
+          "--output"
+        ],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "network_signal",
@@ -9997,7 +10906,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/network_signal.html"
+      "documentation_url": "reference/commands/network_signal.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "occupancy_filter",
@@ -10126,7 +11052,26 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/occupancy_filter.html"
+      "documentation_url": "reference/commands/occupancy_filter.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [
+          "--output-dir"
+        ],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "occupancy_per_taxon",
@@ -10190,7 +11135,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/occupancy_per_taxon.html"
+      "documentation_url": "reference/commands/occupancy_per_taxon.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "ou_shift_detection",
@@ -10302,7 +11264,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/ou_shift_detection.html"
+      "documentation_url": "reference/commands/ou_shift_detection.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "ouwie",
@@ -10413,7 +11392,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/ouwie.html"
+      "documentation_url": "reference/commands/ouwie.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "pairwise_identity",
@@ -10745,7 +11741,26 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/pairwise_identity.html"
+      "documentation_url": "reference/commands/pairwise_identity.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [
+          "--plot-output"
+        ],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "parsimony_informative_sites",
@@ -10807,7 +11822,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/parsimony_informative_sites.html"
+      "documentation_url": "reference/commands/parsimony_informative_sites.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "parsimony_score",
@@ -10904,7 +11936,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/parsimony_score.html"
+      "documentation_url": "reference/commands/parsimony_score.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "patristic_distances",
@@ -10981,7 +12030,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/patristic_distances.html"
+      "documentation_url": "reference/commands/patristic_distances.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "phenogram",
@@ -11288,7 +12354,26 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/phenogram.html"
+      "documentation_url": "reference/commands/phenogram.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [
+          "--output"
+        ],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "phylo_anova",
@@ -11687,7 +12772,26 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/phylo_anova.html"
+      "documentation_url": "reference/commands/phylo_anova.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [
+          "--plot-output"
+        ],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "phylo_gwas",
@@ -12078,7 +13182,26 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/phylo_gwas.html"
+      "documentation_url": "reference/commands/phylo_gwas.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [
+          "--output"
+        ],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "phylo_heatmap",
@@ -12441,7 +13564,26 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/phylo_heatmap.html"
+      "documentation_url": "reference/commands/phylo_heatmap.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [
+          "--output"
+        ],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "phylo_impute",
@@ -12553,7 +13695,26 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/phylo_impute.html"
+      "documentation_url": "reference/commands/phylo_impute.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [
+          "--output"
+        ],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "phylo_logistic",
@@ -12680,7 +13841,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/phylo_logistic.html"
+      "documentation_url": "reference/commands/phylo_logistic.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "phylo_path",
@@ -13027,7 +14205,26 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/phylo_path.html"
+      "documentation_url": "reference/commands/phylo_path.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [
+          "--plot-output"
+        ],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "phylogenetic_glm",
@@ -13216,7 +14413,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/phylogenetic_glm.html"
+      "documentation_url": "reference/commands/phylogenetic_glm.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "phylogenetic_ordination",
@@ -13743,7 +14957,26 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/phylogenetic_ordination.html"
+      "documentation_url": "reference/commands/phylogenetic_ordination.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [
+          "--plot-output"
+        ],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "phylogenetic_regression",
@@ -13888,7 +15121,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/phylogenetic_regression.html"
+      "documentation_url": "reference/commands/phylogenetic_regression.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "phylogenetic_signal",
@@ -14032,7 +15282,54 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/phylogenetic_signal.html"
+      "documentation_url": "reference/commands/phylogenetic_signal.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": [
+            {
+              "K": 0.584216001752301,
+              "p_value": 0.474,
+              "permutations": 1000,
+              "r_squared_phylo": 0.9499081827368852
+            },
+            {
+              "lambda": 0.9999933893038647,
+              "log_likelihood": -11.569678737014614,
+              "p_value": 0.7165426341460481,
+              "r_squared_phylo": 0.9499081827368852
+            },
+            {
+              "K": 0.5842,
+              "p_value": 0.474,
+              "permutations": 1000,
+              "r_squared_phylo": 0.9499
+            },
+            {
+              "K": 0.5819,
+              "p_value": 0.479,
+              "permutations": 1000,
+              "r_squared_phylo": 0.9511,
+              "vcv_metadata": {
+                "n_gene_trees": 10,
+                "n_shared_taxa": 8,
+                "psd_corrected": false
+              }
+            }
+          ]
+        }
+      }
     },
     {
       "canonical": "phylomorphospace",
@@ -14380,7 +15677,26 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/phylomorphospace.html"
+      "documentation_url": "reference/commands/phylomorphospace.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [
+          "--plot-output"
+        ],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "plot_alignment_qc",
@@ -14585,7 +15901,26 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/plot_alignment_qc.html"
+      "documentation_url": "reference/commands/plot_alignment_qc.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [
+          "--output"
+        ],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "polytomy_test",
@@ -14669,7 +16004,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/polytomy_test.html"
+      "documentation_url": "reference/commands/polytomy_test.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "print_tree",
@@ -14748,7 +16100,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/print_tree.html"
+      "documentation_url": "reference/commands/print_tree.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "prune_tree",
@@ -14866,7 +16235,26 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/prune_tree.html"
+      "documentation_url": "reference/commands/prune_tree.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [
+          "--output"
+        ],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "quartet_network",
@@ -15204,7 +16592,26 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/quartet_network.html"
+      "documentation_url": "reference/commands/quartet_network.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [
+          "--plot-output"
+        ],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "quartet_pie",
@@ -15567,7 +16974,26 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/quartet_pie.html"
+      "documentation_url": "reference/commands/quartet_pie.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [
+          "--output"
+        ],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "rate_heterogeneity",
@@ -15917,7 +17343,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/rate_heterogeneity.html"
+      "documentation_url": "reference/commands/rate_heterogeneity.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "relative_composition_variability",
@@ -15981,7 +17424,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/relative_composition_variability.html"
+      "documentation_url": "reference/commands/relative_composition_variability.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "relative_composition_variability_taxon",
@@ -16283,7 +17743,26 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/relative_composition_variability_taxon.html"
+      "documentation_url": "reference/commands/relative_composition_variability_taxon.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [
+          "--plot-output"
+        ],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "relative_rate_test",
@@ -16619,7 +18098,26 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/relative_rate_test.html"
+      "documentation_url": "reference/commands/relative_rate_test.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [
+          "--plot-output"
+        ],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "rename_fasta_entries",
@@ -16711,7 +18209,26 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/rename_fasta_entries.html"
+      "documentation_url": "reference/commands/rename_fasta_entries.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [
+          "--output"
+        ],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "rename_tree_tips",
@@ -16805,7 +18322,26 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/rename_tree_tips.html"
+      "documentation_url": "reference/commands/rename_tree_tips.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [
+          "--output"
+        ],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "robinson_foulds_distance",
@@ -16883,7 +18419,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/robinson_foulds_distance.html"
+      "documentation_url": "reference/commands/robinson_foulds_distance.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "root_tree",
@@ -16977,7 +18530,26 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/root_tree.html"
+      "documentation_url": "reference/commands/root_tree.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [
+          "--output"
+        ],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "saturation",
@@ -17325,7 +18897,26 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/saturation.html"
+      "documentation_url": "reference/commands/saturation.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [
+          "--plot-output"
+        ],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "simmap_summary",
@@ -17704,7 +19295,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/simmap_summary.html"
+      "documentation_url": "reference/commands/simmap_summary.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "spectral_discordance",
@@ -18069,7 +19677,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/spectral_discordance.html"
+      "documentation_url": "reference/commands/spectral_discordance.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "spurious_sequence",
@@ -18148,7 +19773,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/spurious_sequence.html"
+      "documentation_url": "reference/commands/spurious_sequence.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "stochastic_character_map",
@@ -18517,7 +20159,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/stochastic_character_map.html"
+      "documentation_url": "reference/commands/stochastic_character_map.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "subtree_prune_regraft",
@@ -18611,7 +20270,26 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/subtree_prune_regraft.html"
+      "documentation_url": "reference/commands/subtree_prune_regraft.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [
+          "--output"
+        ],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "sum_of_pairs_score",
@@ -18690,7 +20368,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/sum_of_pairs_score.html"
+      "documentation_url": "reference/commands/sum_of_pairs_score.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "taxon_groups",
@@ -18775,7 +20470,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/taxon_groups.html"
+      "documentation_url": "reference/commands/taxon_groups.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "terminal_branch_stats",
@@ -18852,7 +20564,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/terminal_branch_stats.html"
+      "documentation_url": "reference/commands/terminal_branch_stats.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "thread_dna",
@@ -18965,7 +20694,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/thread_dna.html"
+      "documentation_url": "reference/commands/thread_dna.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "threshold_model",
@@ -19359,7 +21105,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/threshold_model.html"
+      "documentation_url": "reference/commands/threshold_model.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "tip_labels",
@@ -19425,7 +21188,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/tip_labels.html"
+      "documentation_url": "reference/commands/tip_labels.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "tip_to_tip_distance",
@@ -19765,7 +21545,26 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/tip_to_tip_distance.html"
+      "documentation_url": "reference/commands/tip_to_tip_distance.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [
+          "--plot-output"
+        ],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "tip_to_tip_node_distance",
@@ -19853,7 +21652,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/tip_to_tip_node_distance.html"
+      "documentation_url": "reference/commands/tip_to_tip_node_distance.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "total_tree_length",
@@ -19915,7 +21731,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/total_tree_length.html"
+      "documentation_url": "reference/commands/total_tree_length.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "trait_correlation",
@@ -20265,7 +22098,26 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/trait_correlation.html"
+      "documentation_url": "reference/commands/trait_correlation.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [
+          "--output"
+        ],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "trait_rate_map",
@@ -20586,7 +22438,26 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/trait_rate_map.html"
+      "documentation_url": "reference/commands/trait_rate_map.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [
+          "--output"
+        ],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "transfer_annotations",
@@ -20681,7 +22552,26 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/transfer_annotations.html"
+      "documentation_url": "reference/commands/transfer_annotations.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [
+          "--output"
+        ],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "tree_space",
@@ -21078,7 +22968,26 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/tree_space.html"
+      "documentation_url": "reference/commands/tree_space.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [
+          "--output"
+        ],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "treeness",
@@ -21140,7 +23049,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/treeness.html"
+      "documentation_url": "reference/commands/treeness.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "treeness_over_rcv",
@@ -21222,7 +23148,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/treeness_over_rcv.html"
+      "documentation_url": "reference/commands/treeness_over_rcv.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "variable_sites",
@@ -21284,7 +23227,24 @@
           "action": "_StoreTrueAction"
         }
       ],
-      "documentation_url": "reference/commands/variable_sites.html"
+      "documentation_url": "reference/commands/variable_sites.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
     },
     {
       "canonical": "version",
@@ -21319,7 +23279,17 @@
         "related_tutorials": []
       },
       "arguments": [],
-      "documentation_url": "reference/commands/version.html"
+      "documentation_url": "reference/commands/version.html",
+      "output_contract": {
+        "stdout": "Command-specific text or data; see the canonical page.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [],
+        "json": {
+          "available": false,
+          "schema": null,
+          "examples": []
+        }
+      }
     }
   ]
 }
