@@ -2718,17 +2718,19 @@ Expected output:
 
 col1: Blomberg's K |br|
 col2: p-value (from permutation test) |br|
-col3: Pagel's lambda
+col3: R²_phylo, the relative reduction in fitted variance under Brownian
+motion compared with a white-noise model
 
-Here, K = 0.58 (moderate signal) and lambda = 0.95 (strong signal, close
-to 1). The p-value of 0.474 is non-significant with these 8 taxa, but
-the high lambda suggests phylogenetic structure is present — with more
-taxa, this would likely become significant.
+Here, K = 0.58 and the permutation p-value of 0.474 is non-significant
+with these 8 taxa. R²_phylo = 0.95 indicates that the Brownian-motion
+model has substantially lower fitted variance than the white-noise model.
+It is not an estimate of Pagel's lambda; calculate lambda explicitly with
+``-m lambda`` as shown in Tutorial 6.
 
-*What if signal is weak?* If lambda ≈ 0 and K ≈ 0 with non-significant
-p-values, ordinary (non-phylogenetic) regression may be adequate. Strong
-signal — as we expect for body mass — means phylogenetic methods like PGLS
-are essential to avoid inflated type I error rates.
+*What if signal is weak?* A K near 0 with a non-significant permutation
+test provides little evidence for phylogenetic signal in this analysis.
+Model choice should consider the signal estimate, uncertainty, sample size,
+and assumptions of the downstream analysis.
 
 For JSON output including the effect size (R² phylo):
 
@@ -2740,9 +2742,9 @@ For JSON output including the effect size (R² phylo):
 
    {"K": 0.5842, "p_value": 0.474, "permutations": 1000, "r_squared_phylo": 0.9499}
 
-The ``r_squared_phylo`` of 0.95 means that 95% of the trait variance is
-attributable to phylogenetic relatedness, confirming that body mass is
-strongly structured by evolutionary history.
+The ``r_squared_phylo`` value compares the fitted Brownian-motion variance
+with the white-noise variance. It should not be interpreted as the literal
+percentage of trait variance caused by phylogenetic relatedness.
 
 |
 

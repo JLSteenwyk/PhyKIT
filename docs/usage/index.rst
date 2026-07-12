@@ -742,7 +742,8 @@ PhyKIT will output three files:
 		[--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>] [--json]
 
 Options: |br|
-*-a/--alignment*: alignment list file. File should contain a single column list of alignment
+*-a/--alignment*: alignment list file. ``--alignment-list`` and the legacy
+``--alignment_list`` spelling are also accepted. The file should contain a single column list of alignment
 sequence files to concatenate into a single matrix. Provide path to files relative to
 working directory or provide absolute path. |br|
 *-p/--prefix*: prefix of output files |br|
@@ -1343,12 +1344,13 @@ should be provided in the -p/--protein argument.
 
 .. code-block:: shell
 
-   phykit thread_dna -p <file> -n <file> [-s] [--json]
+   phykit thread_dna -p <file> -n <file> [-c/--clipkit-log-file <file>] [-s] [--json]
 
 Options: |br|
 *-p/--protein*: protein alignment file |br|
 *-n/--nucleotide*: nucleotide sequence file |br|
-*-c/--clipkit_log*: clipkit outputted log file |br|
+*-c/--clipkit-log-file*: ClipKIT output log file. The legacy
+``--clipkit_log_file`` spelling is also accepted. |br|
 *-s/--stop*: if used, stop codons will be removed from the output |br|
 *--json*: optional argument to print results as JSON
 
@@ -2045,7 +2047,8 @@ Input can be either:
 
 .. code-block:: shell
 
-   phykit consensus_network -t/--trees <trees> [--threshold 0.1] [--missing-taxa error|shared] [--plot-output <file>]
+   phykit consensus_network -t/--trees <trees> [--threshold 0.1] [--missing-taxa allow|error|shared] [--plot-output <file>]
+       [--max-splits <int>] [--histogram <file>]
        [--fig-width <float>] [--fig-height <float>] [--dpi <int>] [--no-title] [--title <str>]
        [--legend-position <str>] [--ylabel-fontsize <float>] [--xlabel-fontsize <float>]
        [--title-fontsize <float>] [--axis-fontsize <float>] [--colors <str>] [--ladderize] [--cladogram] [--circular] [--color-file <file>] [--json]
@@ -2053,8 +2056,13 @@ Input can be either:
 Options: |br|
 *-t/--trees*: file containing trees (one Newick per line) or tree-file paths (one per line) |br|
 *--threshold*: minimum split frequency to include, between 0 and 1 (default: ``0.1``) |br|
-*--missing-taxa*: handling strategy for mismatched taxa (``error`` or ``shared``; default: ``error``) |br|
+*--missing-taxa*: handling strategy for mismatched taxa: ``allow`` keeps each
+tree's available taxa, ``shared`` prunes to the intersection, and ``error``
+rejects mismatched sets (default: ``allow``) |br|
 *--plot-output*: output filename for the circular splits network plot (optional) |br|
+*--max-splits*: maximum number of splits drawn in the network graph; all
+qualifying splits remain in text and JSON output (default: ``30``) |br|
+*--histogram*: optional output filename for a split-frequency histogram |br|
 *--fig-width*: figure width in inches (auto-scaled if omitted) |br|
 *--fig-height*: figure height in inches (auto-scaled if omitted) |br|
 *--dpi*: resolution in DPI (default: 300) |br|

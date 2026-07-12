@@ -2,7 +2,7 @@ from os import path
 from setuptools import setup, find_packages
 
 from phykit.version import __version__
-from phykit.cli_registry import ALIAS_TO_HANDLER
+from phykit.cli_registry import PUBLIC_COMMAND_TO_HANDLER
 
 here = path.abspath(path.dirname(__file__))
 
@@ -30,11 +30,12 @@ REQUIRES = [
     "tqdm>=4.65.0"
 ]
 
-# Auto-generate console_scripts from the CLI alias registry.
-# Each alias "foo" maps to handler "bar", producing "pk_foo = phykit.phykit:bar".
+# Auto-generate console_scripts for every canonical command and alias.
+# Each public name "foo" maps to handler "bar", producing
+# "pk_foo = phykit.phykit:bar".
 _console_scripts = ["phykit = phykit.phykit:main"]
-for alias, handler in sorted(ALIAS_TO_HANDLER.items()):
-    _console_scripts.append(f"pk_{alias} = phykit.phykit:{handler}")
+for command, handler in sorted(PUBLIC_COMMAND_TO_HANDLER.items()):
+    _console_scripts.append(f"pk_{command} = phykit.phykit:{handler}")
 
 setup(
     name="phykit",
