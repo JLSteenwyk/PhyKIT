@@ -24,6 +24,7 @@ Guidance, interpretation, and examples
 --------------------------------------
 
 .. image:: /_static/docs_img/create_concat_matrix.png 
+   :alt: PhyKIT create concat matrix figure
    :align: center
    :width: 75%
 

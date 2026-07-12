@@ -1,0 +1,10 @@
+# Regime assignments for tree_simple.tre
+# Two regimes: aquatic vs terrestrial
+raccoon	terrestrial
+bear	terrestrial
+sea_lion	aquatic
+seal	aquatic
+monkey	terrestrial
+cat	terrestrial
+weasel	terrestrial
+dog	terrestrial

@@ -107,6 +107,7 @@ Most branching events occur near the root, then the curve plateaus.
 The significantly negative gamma (p < 0.001) rejects constant-rate birth.
 
 .. image:: /_static/img/ltt_example_early_burst.png
+   :alt: PhyKIT ltt example early burst figure
    :align: center
    :width: 80%
 
@@ -118,6 +119,7 @@ Lineage accumulation is concentrated near the present.
 The significantly positive gamma (p = 0.022) indicates late diversification.
 
 .. image:: /_static/img/ltt_example_recent_burst.png
+   :alt: PhyKIT ltt example recent burst figure
    :align: center
    :width: 80%
 

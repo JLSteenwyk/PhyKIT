@@ -24,6 +24,7 @@ Guidance, interpretation, and examples
 --------------------------------------
 
 .. image:: /_static/docs_img/aln_len.png 
+   :alt: PhyKIT aln len figure
    :align: center
    :width: 75%
 

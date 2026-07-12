@@ -24,6 +24,7 @@ Guidance, interpretation, and examples
 --------------------------------------
 
 .. image:: /_static/docs_img/column_score.png 
+   :alt: PhyKIT column score figure
    :align: center
    :width: 75%
 

@@ -92,5 +92,6 @@ Example contMap plot generated with the ``--plot`` option. Branches are colored
 by interpolated ancestral trait values:
 
 .. image:: /_static/img/asr_example.png
+   :alt: PhyKIT asr example figure
    :align: center
    :width: 80%

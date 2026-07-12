@@ -48,6 +48,7 @@ particular character* underwent that transition across the tree, not the
 state values themselves.
 
 .. image:: /_static/img/character_map_example.png
+   :alt: PhyKIT character map example figure
    :align: center
    :width: 90%
 

@@ -97,6 +97,7 @@ NeighborNet pipeline.
 is a clean unrooted tree:
 
 .. image:: /_static/img/quartet_network_tree.png
+   :alt: PhyKIT quartet network tree figure
    :align: center
    :width: 80%
 
@@ -107,5 +108,6 @@ splits that appear as boxes in the network, indicating reticulation among
 C, D, E, and F:
 
 .. image:: /_static/img/quartet_network_hybrid.png
+   :alt: PhyKIT quartet network hybrid figure
    :align: center
    :width: 80%

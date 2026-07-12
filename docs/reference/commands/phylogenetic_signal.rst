@@ -62,6 +62,7 @@ across 95 simulated datasets spanning diverse tree sizes (5-50 tips), topologies
 and branch length scales. All metrics show Pearson r > 0.999 with phytools.
 
 .. image:: /_static/docs_img/phylogenetic_signal_validation.png
+   :alt: PhyKIT phylogenetic signal validation figure
    :align: center
 
 |

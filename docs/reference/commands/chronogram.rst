@@ -47,6 +47,7 @@ The ``--timescale`` option controls the level of detail:
 - **era**: Cenozoic, Mesozoic, Paleozoic
 
 .. image:: /_static/chronogram_ultrametric.png
+   :alt: PhyKIT chronogram ultrametric figure
    :align: center
    :width: 90%
 
@@ -54,6 +55,7 @@ The ``--timescale`` option controls the level of detail:
 geological timescale bar.*
 
 .. image:: /_static/chronogram_ultrametric_circular.png
+   :alt: PhyKIT chronogram ultrametric circular figure
    :align: center
    :width: 60%
 

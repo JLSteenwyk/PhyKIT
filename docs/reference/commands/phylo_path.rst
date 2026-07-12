@@ -55,6 +55,7 @@ d-separation test combined with PGLS.
   overlapping zero indicate significance.
 
 .. image:: /_static/phylo_path_dag.png
+   :alt: PhyKIT phylo path dag figure
    :align: center
    :width: 60%
 

@@ -57,5 +57,6 @@ Options: |br|
 *--json*: optional argument to print results as JSON
 
 .. image:: /_static/img/contmap_example.png
+   :alt: PhyKIT contmap example figure
    :align: center
    :width: 80%

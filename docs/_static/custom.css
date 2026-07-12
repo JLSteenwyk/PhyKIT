@@ -213,11 +213,13 @@ div input[type="submit"]:active, #searchbox input[type="submit"]:active {
 }
 
 div input[type="submit"]:focus {
-    outline: none;
+    outline: 2px solid #0b81d5;
+    outline-offset: 2px;
 }
 
 input[type=text]:focus {
-    outline: 1px solid #999;
+    outline: 2px solid #0b81d5;
+    outline-offset: 2px;
 }
 
 /* Togglable code blocks */

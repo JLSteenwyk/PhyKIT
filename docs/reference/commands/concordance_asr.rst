@@ -100,6 +100,7 @@ Example plot generated with the ``--plot`` option. Internal nodes are sized
 and colored by gene concordance factor (gCF):
 
 .. image:: /_static/img/concordance_asr_example.png
+   :alt: PhyKIT concordance asr example figure
    :align: center
    :width: 80%
 
@@ -114,5 +115,6 @@ across gene trees, suggesting that gene tree conflict propagates into
 trait estimates at that node.
 
 .. image:: /_static/asr_uncertainty.png
+   :alt: PhyKIT asr uncertainty figure
    :align: center
    :width: 90%

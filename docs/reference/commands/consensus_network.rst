@@ -80,5 +80,6 @@ thickness and opacity scale with split frequency — thicker, darker lines indic
 splits supported by more gene trees.
 
 .. image:: /_static/img/consensus_network_example.png
+   :alt: PhyKIT consensus network example figure
    :align: center
    :width: 80%

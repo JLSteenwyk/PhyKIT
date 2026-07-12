@@ -51,6 +51,7 @@ For each internal node, reports:
   suggest rapid trait evolution.
 
 .. image:: /_static/simmap_summary_posteriors.png
+   :alt: PhyKIT simmap summary posteriors figure
    :align: center
    :width: 90%
 

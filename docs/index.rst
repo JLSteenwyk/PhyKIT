@@ -1,4 +1,5 @@
 .. image:: _static/img/logo.png
+   :alt: PhyKIT logo figure
    :width: 55%
    :align: center
    :target: https://jlsteenwyk.com/PhyKIT
@@ -103,6 +104,7 @@ Get the help message from PhyKIT:
    usage/index
    reference/index
    tutorials/index
+   troubleshooting/index
    change_log/index
    other_software/index
    frequently_asked_questions/index

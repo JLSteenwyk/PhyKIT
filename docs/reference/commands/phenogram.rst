@@ -57,5 +57,6 @@ Options: |br|
 *--json*: optional argument to print results as JSON
 
 .. image:: /_static/img/phenogram_example.png
+   :alt: PhyKIT phenogram example figure
    :align: center
    :width: 80%

@@ -98,12 +98,14 @@ difference in body mass among diet groups after accounting for phylogeny.
    phykit phylo_manova -t species.tre --traits multi_traits.tsv --pairwise --permutations 999
 
 .. image:: /_static/phylo_anova_boxplot.png
+   :alt: PhyKIT phylo anova boxplot figure
    :align: center
    :width: 90%
 
 *Violin + boxplot showing trait values by group for phylogenetic ANOVA.*
 
 .. image:: /_static/phylo_manova_morphospace.png
+   :alt: PhyKIT phylo manova morphospace figure
    :align: center
    :width: 90%
 
