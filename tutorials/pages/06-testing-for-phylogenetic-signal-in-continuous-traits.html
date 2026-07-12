@@ -203,16 +203,19 @@ tips.</p>
 <span class="w">    </span>-d<span class="w"> </span>tree_simple_traits.tsv
 </pre></div>
 </div>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>0.5842       0.474
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>0.5842       0.474   0.9499
 </pre></div>
 </div>
 <p>col1: Blomberg's K statistic <br />
-col2: p-value (permutation test, 1000 permutations)</p>
+col2: p-value (permutation test, 1000 permutations) <br />
+col3: R²_phylo, the relative reduction in fitted variance under Brownian
+motion compared with a white-noise model</p>
 <p><strong>Interpretation.</strong> K = 0.58 (&lt; 1), suggesting that body mass shows <em>less</em> phylogenetic
 signal than expected under pure Brownian motion in this clade. The p-value of 0.47 is
 non-significant, meaning we cannot reject the null hypothesis that there is no phylogenetic
 signal. With only 8 taxa, statistical power is limited, so this result should be interpreted
-cautiously.</p>
+cautiously. R²_phylo = 0.95 describes the variance-model comparison; it is not
+an estimate of Pagel's lambda or a literal percentage of variance caused by phylogeny.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -230,12 +233,13 @@ a model with lambda fixed at 0.</p>
 <span class="w">    </span>-m<span class="w"> </span>lambda
 </pre></div>
 </div>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>1.0  -11.5697        0.7165
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>1.0  -11.5697        0.7165  0.9499
 </pre></div>
 </div>
 <p>col1: estimated lambda <br />
 col2: log-likelihood of the fitted model <br />
-col3: p-value (likelihood ratio test)</p>
+col3: p-value (likelihood ratio test) <br />
+col4: R²_phylo</p>
 <p><strong>Interpretation.</strong> Lambda = 1.0 indicates a maximum-likelihood estimate consistent with
 Brownian motion. However, the LRT p-value of 0.72 is non-significant, meaning the fitted
 model does not significantly improve over the null (lambda = 0). Again, with 8 taxa, power
@@ -253,7 +257,7 @@ is limited.</p>
 <span class="w">    </span>--json
 </pre></div>
 </div>
-<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="nt">&quot;K&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.5842</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;p_value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.474</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;permutations&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1000</span><span class="p">}</span>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="nt">&quot;K&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.584216001752301</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;p_value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.474</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;permutations&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1000</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;r_squared_phylo&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.9499081827368852</span><span class="p">}</span>
 </pre></div>
 </div>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>phylogenetic_signal<span class="w"> </span><span class="se">\</span>
@@ -263,7 +267,7 @@ is limited.</p>
 <span class="w">    </span>--json
 </pre></div>
 </div>
-<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="nt">&quot;lambda&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;log_likelihood&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">-11.5697</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;p_value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.7165</span><span class="p">}</span>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="nt">&quot;lambda&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.9999933893038647</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;log_likelihood&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">-11.569678737014614</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;p_value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.7165426341460481</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;r_squared_phylo&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.9499081827368852</span><span class="p">}</span>
 </pre></div>
 </div>
 <div class="line-block">

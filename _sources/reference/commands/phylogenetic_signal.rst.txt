@@ -52,9 +52,11 @@ Output for Blomberg's K: K_value<tab>p_value<tab>R2_phylo |br|
 Output for Pagel's lambda: lambda_value<tab>log_likelihood<tab>p_value<tab>R2_phylo |br|
 Output for K_mult: K_mult<tab>p_value<tab>n_traits<tab>permutations
 
-R²_phylo reports the fraction of trait variance explained by phylogenetic structure:
-``R²_phylo = 1 - (σ²_BM / σ²_WN)``. Values near 1 indicate strong phylogenetic signal;
-values near 0 indicate phylogeny explains little trait variance.
+R²_phylo compares the fitted trait variance under Brownian motion with the
+variance under a white-noise model: ``R²_phylo = 1 - (σ²_BM / σ²_WN)``.
+Values near 1 indicate a large relative reduction in fitted variance under the
+Brownian-motion model. This statistic is not a literal percentage of trait
+variance caused by phylogenetic relatedness and is not Pagel's lambda.
 
 Results have been validated against the R package phytools (``phylosig`` function)
 across 95 simulated datasets spanning diverse tree sizes (5-50 tips), topologies

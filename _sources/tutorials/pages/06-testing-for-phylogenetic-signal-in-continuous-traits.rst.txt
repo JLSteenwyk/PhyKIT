@@ -101,16 +101,19 @@ tips.
 
 .. code-block:: text
 
-   0.5842	0.474
+   0.5842	0.474	0.9499
 
 col1: Blomberg's K statistic |br|
-col2: p-value (permutation test, 1000 permutations)
+col2: p-value (permutation test, 1000 permutations) |br|
+col3: R²_phylo, the relative reduction in fitted variance under Brownian
+motion compared with a white-noise model
 
 **Interpretation.** K = 0.58 (< 1), suggesting that body mass shows *less* phylogenetic
 signal than expected under pure Brownian motion in this clade. The p-value of 0.47 is
 non-significant, meaning we cannot reject the null hypothesis that there is no phylogenetic
 signal. With only 8 taxa, statistical power is limited, so this result should be interpreted
-cautiously.
+cautiously. R²_phylo = 0.95 describes the variance-model comparison; it is not
+an estimate of Pagel's lambda or a literal percentage of variance caused by phylogeny.
 
 |
 
@@ -132,11 +135,12 @@ a model with lambda fixed at 0.
 
 .. code-block:: text
 
-   1.0	-11.5697	0.7165
+   1.0	-11.5697	0.7165	0.9499
 
 col1: estimated lambda |br|
 col2: log-likelihood of the fitted model |br|
-col3: p-value (likelihood ratio test)
+col3: p-value (likelihood ratio test) |br|
+col4: R²_phylo
 
 **Interpretation.** Lambda = 1.0 indicates a maximum-likelihood estimate consistent with
 Brownian motion. However, the LRT p-value of 0.72 is non-significant, meaning the fitted
@@ -159,7 +163,7 @@ For scripting or downstream analysis, use ``--json``:
 
 .. code-block:: json
 
-   {"K": 0.5842, "p_value": 0.474, "permutations": 1000}
+   {"K": 0.584216001752301, "p_value": 0.474, "permutations": 1000, "r_squared_phylo": 0.9499081827368852}
 
 .. code-block:: shell
 
@@ -171,7 +175,7 @@ For scripting or downstream analysis, use ``--json``:
 
 .. code-block:: json
 
-   {"lambda": 1.0, "log_likelihood": -11.5697, "p_value": 0.7165}
+   {"lambda": 0.9999933893038647, "log_likelihood": -11.569678737014614, "p_value": 0.7165426341460481, "r_squared_phylo": 0.9499081827368852}
 
 |
 

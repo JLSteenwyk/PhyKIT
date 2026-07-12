@@ -238,9 +238,11 @@ with <code class="docutils literal notranslate"><span class="pre">--method</span
 <p>Output for Blomberg's K: K_value&lt;tab&gt;p_value&lt;tab&gt;R2_phylo <br />
 Output for Pagel's lambda: lambda_value&lt;tab&gt;log_likelihood&lt;tab&gt;p_value&lt;tab&gt;R2_phylo <br />
 Output for K_mult: K_mult&lt;tab&gt;p_value&lt;tab&gt;n_traits&lt;tab&gt;permutations</p>
-<p>R²_phylo reports the fraction of trait variance explained by phylogenetic structure:
-<code class="docutils literal notranslate"><span class="pre">R²_phylo</span> <span class="pre">=</span> <span class="pre">1</span> <span class="pre">-</span> <span class="pre">(σ²_BM</span> <span class="pre">/</span> <span class="pre">σ²_WN)</span></code>. Values near 1 indicate strong phylogenetic signal;
-values near 0 indicate phylogeny explains little trait variance.</p>
+<p>R²_phylo compares the fitted trait variance under Brownian motion with the
+variance under a white-noise model: <code class="docutils literal notranslate"><span class="pre">R²_phylo</span> <span class="pre">=</span> <span class="pre">1</span> <span class="pre">-</span> <span class="pre">(σ²_BM</span> <span class="pre">/</span> <span class="pre">σ²_WN)</span></code>.
+Values near 1 indicate a large relative reduction in fitted variance under the
+Brownian-motion model. This statistic is not a literal percentage of trait
+variance caused by phylogenetic relatedness and is not Pagel's lambda.</p>
 <p>Results have been validated against the R package phytools (<code class="docutils literal notranslate"><span class="pre">phylosig</span></code> function)
 across 95 simulated datasets spanning diverse tree sizes (5-50 tips), topologies
 (pure-birth, coalescent), trait models (random, Brownian motion, known lambda),
