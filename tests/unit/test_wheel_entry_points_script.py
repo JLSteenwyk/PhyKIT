@@ -1,9 +1,25 @@
 from pathlib import Path
+import subprocess
+import sys
 from types import SimpleNamespace
 
 import pytest
 
 from scripts import check_wheel_entry_points
+
+
+def test_script_loads_registry_from_checkout_outside_working_directory(tmp_path):
+    script = Path(check_wheel_entry_points.__file__).resolve()
+
+    completed = subprocess.run(
+        [sys.executable, "-S", str(script), "--help"],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    assert "wheel file or containing directory" in completed.stdout
 
 
 def test_resolve_wheel_accepts_file_and_single_wheel_directory(tmp_path):

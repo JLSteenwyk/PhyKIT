@@ -15,7 +15,15 @@ import sys
 import tempfile
 from zipfile import ZipFile
 
-from phykit.cli_registry import COMMAND_IDENTITIES, PUBLIC_COMMAND_TO_HANDLER
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from phykit.cli_registry import (  # noqa: E402
+    COMMAND_IDENTITIES,
+    PUBLIC_COMMAND_TO_HANDLER,
+)
 
 
 INSTALLED_TARGET_CHECK = """
