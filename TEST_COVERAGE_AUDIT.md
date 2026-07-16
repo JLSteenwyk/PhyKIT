@@ -83,8 +83,10 @@ serialization contract. This avoids treating filenames as proof of a gap.
 5. **Completed:** coverage targets now measure only `phykit`, collect branch
    coverage for unit and integration selections, and enforce an 80% package
    threshold on the unit suite.
-6. The supported Python matrix runs only on macOS despite the OS-independent
-   package classifier; installed-wheel smoke should include Linux and Windows.
+6. **Completed:** the full supported-Python matrix remains on macOS, while a
+   dedicated CI matrix builds and installs the wheel on Linux and Windows,
+   loads all 318 entry points, and runs all 109 canonical help commands outside
+   the source checkout.
 
 ## Deliberate non-gaps
 

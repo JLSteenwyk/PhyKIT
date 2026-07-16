@@ -11,6 +11,7 @@ import json
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 import tempfile
 from zipfile import ZipFile
 
@@ -57,12 +58,14 @@ def target_load_errors(entry_points: dict[str, str]) -> dict[str, str]:
 
 def installed_target_load_errors(python: Path) -> dict[str, str]:
     """Load console-script targets from the interpreter's installed wheel."""
-    completed = subprocess.run(
-        [str(python), "-c", INSTALLED_TARGET_CHECK],
-        check=False,
-        capture_output=True,
-        text=True,
-    )
+    with tempfile.TemporaryDirectory() as working_directory:
+        completed = subprocess.run(
+            [str(python), "-c", INSTALLED_TARGET_CHECK],
+            check=False,
+            capture_output=True,
+            cwd=working_directory,
+            text=True,
+        )
     if completed.returncode:
         return {
             "<metadata>": completed.stderr.strip() or completed.stdout.strip()
@@ -97,16 +100,77 @@ def canonical_help_errors(python: Path) -> dict[str, str]:
     return errors
 
 
+def resolve_wheel(path: Path) -> Path:
+    """Resolve a wheel path or a directory containing exactly one wheel."""
+    if path.is_file() and path.suffix == ".whl":
+        return path
+    if path.is_dir():
+        wheels = sorted(path.glob("*.whl"))
+        if len(wheels) == 1:
+            return wheels[0]
+        raise ValueError(f"expected one wheel in {path}, found {len(wheels)}")
+    raise ValueError(f"wheel does not exist: {path}")
+
+
+def create_installed_wheel_environment(wheel: Path, environment: Path) -> Path:
+    """Install a wheel into a new environment and return its interpreter."""
+    subprocess.run(
+        [sys.executable, "-m", "venv", str(environment)],
+        check=True,
+    )
+    if sys.platform == "win32":
+        python = environment / "Scripts" / "python.exe"
+    else:
+        python = environment / "bin" / "python"
+    subprocess.run(
+        [
+            str(python),
+            "-m",
+            "pip",
+            "install",
+            "--disable-pip-version-check",
+            str(wheel.resolve()),
+        ],
+        check=True,
+    )
+    return python
+
+
+def smoke_installed_targets(python: Path) -> dict[str, str]:
+    """Return all metadata-load and canonical-help smoke failures."""
+    errors = {
+        f"installed target {name}": error
+        for name, error in installed_target_load_errors(python).items()
+    }
+    errors.update(
+        {
+            f"installed help {name}": error
+            for name, error in canonical_help_errors(python).items()
+        }
+    )
+    return errors
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("wheel", type=Path)
-    parser.add_argument(
+    parser.add_argument("wheel", type=Path, help="wheel file or containing directory")
+    smoke_group = parser.add_mutually_exclusive_group()
+    smoke_group.add_argument(
         "--smoke-python",
         type=Path,
         help="interpreter from an environment where the wheel is installed",
     )
+    smoke_group.add_argument(
+        "--install-smoke",
+        action="store_true",
+        help="install the wheel in a temporary environment before smoke testing",
+    )
     args = parser.parse_args()
-    with ZipFile(args.wheel) as archive:
+    try:
+        wheel = resolve_wheel(args.wheel)
+    except ValueError as error:
+        parser.error(str(error))
+    with ZipFile(wheel) as archive:
         entry_points_path = next(
             name for name in archive.namelist() if name.endswith("entry_points.txt")
         )
@@ -137,22 +201,31 @@ def main() -> int:
         for name, error in sorted(load_errors.items()):
             print(f"unloadable entry point {name}: {error}")
         return 1
-    if args.smoke_python:
-        installed_errors = installed_target_load_errors(args.smoke_python)
-        if installed_errors:
-            for name, error in sorted(installed_errors.items()):
-                print(f"unloadable installed entry point {name}: {error}")
+    smoke_python = args.smoke_python
+    temporary_environment = None
+    if args.install_smoke:
+        temporary_environment = tempfile.TemporaryDirectory()
+        try:
+            smoke_python = create_installed_wheel_environment(
+                wheel, Path(temporary_environment.name) / "wheel-smoke"
+            )
+        except subprocess.CalledProcessError as error:
+            temporary_environment.cleanup()
+            print(f"failed to install wheel for smoke test: {error}")
             return 1
-        help_errors = canonical_help_errors(args.smoke_python)
-        if help_errors:
-            for name, error in sorted(help_errors.items()):
-                print(f"failed installed help smoke {name}: {error}")
+    if smoke_python:
+        smoke_errors = smoke_installed_targets(smoke_python)
+        if temporary_environment is not None:
+            temporary_environment.cleanup()
+        if smoke_errors:
+            for name, error in sorted(smoke_errors.items()):
+                print(f"failed {name}: {error}")
             return 1
     print(
         f"verified {len(actual)} loadable console entry points "
-        f"in {args.wheel.name}"
+        f"in {wheel.name}"
     )
-    if args.smoke_python:
+    if smoke_python:
         print(
             f"verified installed targets and {len(COMMAND_IDENTITIES)} "
             "canonical help commands"
