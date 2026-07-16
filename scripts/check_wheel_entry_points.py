@@ -196,11 +196,12 @@ def main() -> int:
         print(f"unexpected entry points: {unexpected}")
         print(f"incorrect handlers: {wrong}")
         return 1
-    load_errors = target_load_errors(actual)
-    if load_errors:
-        for name, error in sorted(load_errors.items()):
-            print(f"unloadable entry point {name}: {error}")
-        return 1
+    if not args.smoke_python and not args.install_smoke:
+        load_errors = target_load_errors(actual)
+        if load_errors:
+            for name, error in sorted(load_errors.items()):
+                print(f"unloadable entry point {name}: {error}")
+            return 1
     smoke_python = args.smoke_python
     temporary_environment = None
     if args.install_smoke:
