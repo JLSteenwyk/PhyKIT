@@ -1,5 +1,6 @@
 import json
 import shutil
+import subprocess
 import sys
 
 import pytest
@@ -24,6 +25,58 @@ def _output(mocked_print):
 
 @pytest.mark.integration
 class TestNetworkSignalIntegration:
+    @pytest.mark.parametrize(
+        ("contents", "expected_message"),
+        [
+            pytest.param("{not-json", "valid JSON", id="malformed-json"),
+            pytest.param("[]", "top-level object", id="root-list"),
+            pytest.param(
+                '{"quartets": [1]}',
+                "record 1 must be an object",
+                id="scalar-record",
+            ),
+        ],
+    )
+    def test_invalid_quartet_json_exits_without_result(
+        self,
+        tmp_path,
+        contents,
+        expected_message,
+    ):
+        tree = tmp_path / "tree.tre"
+        tree.write_text(FIVE_TAXON_TREE)
+        traits = tmp_path / "traits.tsv"
+        traits.write_text(FIVE_TAXON_TRAITS)
+        quartet_file = tmp_path / "invalid-quartets.json"
+        quartet_file.write_text(contents)
+
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "phykit",
+                "network_signal",
+                "-t",
+                str(tree),
+                "-d",
+                str(traits),
+                "--quartet-json",
+                str(quartet_file),
+                "--json",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+
+        assert result.returncode == 2
+        assert str(quartet_file) in result.stdout
+        assert expected_message in result.stdout
+        assert not result.stdout.lstrip().startswith("{")
+        assert "Blomberg" not in result.stdout
+        assert "Pagel" not in result.stdout
+        assert "traceback" not in result.stderr.lower()
+
     @patch("builtins.print")
     def test_explicit_hybrid(self, mocked_print, tmp_path):
         tree = tmp_path / "tree.tre"

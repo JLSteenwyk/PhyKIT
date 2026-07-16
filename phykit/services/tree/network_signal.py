@@ -356,6 +356,95 @@ class NetworkSignal(Tree):
         return (parse_set(parts[0]), parse_set(parts[1]))
 
     @staticmethod
+    def _validate_quartet_json(quartet_data, file_path: str) -> None:
+        prefix = f"Invalid quartet JSON {file_path}:"
+
+        def fail(message):
+            raise PhykitUserError([f"{prefix} {message}"], code=2)
+
+        if not isinstance(quartet_data, dict):
+            fail("top-level object is required.")
+
+        quartets = quartet_data.get("quartets")
+        if not isinstance(quartets, list):
+            fail("top-level object must contain a 'quartets' list.")
+
+        seen_quartets = set()
+        valid_classifications = {"tree", "hybrid", "unresolved"}
+        for record_number, record in enumerate(quartets, start=1):
+            if not isinstance(record, dict):
+                fail(f"quartet record {record_number} must be an object.")
+
+            taxa = record.get("taxa")
+            if not isinstance(taxa, list) or len(taxa) != 4:
+                fail(
+                    f"quartet record {record_number} must contain exactly four taxa."
+                )
+            if any(
+                not isinstance(taxon, str) or not taxon.strip()
+                for taxon in taxa
+            ) or len(set(taxa)) != 4:
+                fail(
+                    f"quartet record {record_number} taxa must be unique, "
+                    "non-empty strings."
+                )
+
+            quartet_key = tuple(sorted(taxa))
+            if quartet_key in seen_quartets:
+                fail(f"duplicate quartet record {record_number} for taxa {taxa!r}.")
+            seen_quartets.add(quartet_key)
+
+            counts = record.get("counts")
+            if not isinstance(counts, list) or len(counts) != 3:
+                fail(
+                    f"quartet record {record_number} must contain exactly three counts."
+                )
+            if any(
+                type(count) not in (int, float)
+                or not math.isfinite(count)
+                or count < 0
+                for count in counts
+            ):
+                fail(
+                    f"quartet record {record_number} counts must be finite "
+                    "nonnegative numbers."
+                )
+
+            classification = record.get("classification")
+            if (
+                not isinstance(classification, str)
+                or classification not in valid_classifications
+            ):
+                fail(
+                    f"quartet record {record_number} classification must be "
+                    "tree, hybrid, or unresolved."
+                )
+
+            topology = record.get("dominant_topology")
+            if not isinstance(topology, str) or not topology.strip():
+                fail(
+                    f"quartet record {record_number} must contain a "
+                    "dominant_topology string."
+                )
+            try:
+                left, right = NetworkSignal._parse_topology_string(topology)
+            except PhykitUserError:
+                fail(
+                    f"quartet record {record_number} has an invalid "
+                    "dominant_topology string."
+                )
+            if (
+                len(left) != 2
+                or len(right) != 2
+                or left & right
+                or (left | right) != set(taxa)
+            ):
+                fail(
+                    f"quartet record {record_number} topology must contain "
+                    "the same four taxa exactly once."
+                )
+
+    @staticmethod
     def _identify_swap_pair(dominant, minor):
         """Identify the 2 taxa that switch sides between dominant and minor topologies.
 
@@ -828,6 +917,15 @@ class NetworkSignal(Tree):
                     ],
                     code=2,
                 )
+            except (UnicodeError, ValueError) as error:
+                raise PhykitUserError(
+                    [
+                        f"Invalid quartet JSON {self.quartet_json}: file is "
+                        f"not valid JSON ({error})."
+                    ],
+                    code=2,
+                ) from None
+            self._validate_quartet_json(quartet_data, self.quartet_json)
             edges = self._infer_hybrid_edges(quartet_data)
             if edges:
                 name_to_id = {v: k for k, v in tip_map.items()}
