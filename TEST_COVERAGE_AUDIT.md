@@ -70,12 +70,12 @@ serialization contract. This avoids treating filenames as proof of a gap.
 
 ## Test infrastructure gaps
 
-1. `tests/integration/tree/test_hybridization_integration.py` lacks the
-   integration marker, placing seven integration tests in the unit selection.
-2. External validation tests have no marker and therefore run under
-   `not integration`; they need an explicit `validation` target.
-3. The threshold/phytools stdout parser is brittle and repeats the same expensive
-   seeded calculations for every assertion.
+1. **Completed:** `tests/integration/tree/test_hybridization_integration.py` is
+   explicitly marked, so its seven tests run only in the integration selection.
+2. **Completed:** optional external comparisons use a `validation` marker and
+   dedicated `make test.validation` target, outside ordinary unit coverage.
+3. **Completed:** threshold/phytools parsing ignores unrelated R output, checks
+   required keys, and shares each seeded 100,000-generation run across assertions.
 4. Broken-pipe integration tests use `producer | head` through `os.system`, so
    they assert the consumer's pipeline status rather than PhyKIT's process status.
 5. Coverage targets include tests and repository tooling, omit branch coverage,

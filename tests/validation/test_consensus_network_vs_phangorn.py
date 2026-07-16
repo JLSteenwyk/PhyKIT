@@ -16,6 +16,9 @@ import pytest
 from phykit.services.tree.consensus_network import ConsensusNetwork
 
 
+pytestmark = pytest.mark.validation
+
+
 R_SCRIPT = r"""
 suppressPackageStartupMessages({library(ape); library(phangorn)})
 
@@ -56,6 +59,12 @@ def _has_r_phangorn():
         return result.returncode == 0
     except Exception:
         return False
+
+
+@pytest.fixture(scope="module")
+def r_phangorn():
+    if not _has_r_phangorn():
+        pytest.skip("R with phangorn not available")
 
 
 def _run_r_splits(tree_file_path):
@@ -113,7 +122,7 @@ def _run_phykit_splits(tree_file_path, threshold=0.0):
     return splits
 
 
-@pytest.mark.skipif(not _has_r_phangorn(), reason="R with phangorn not available")
+@pytest.mark.usefixtures("r_phangorn")
 class TestConsensusNetworkVsPhangorn:
     def test_sample_gene_trees(self):
         tree_file = "tests/sample_files/gene_trees_for_network.nwk"
