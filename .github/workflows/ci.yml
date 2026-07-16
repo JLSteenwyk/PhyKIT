@@ -86,6 +86,8 @@ jobs:
           python -m venv tutorial-wheel
           tutorial-wheel/bin/python -m pip install --upgrade pip
           tutorial-wheel/bin/python -m pip install dist/*.whl
+          python scripts/check_wheel_entry_points.py dist/*.whl \
+            --smoke-python tutorial-wheel/bin/python
           python scripts/smoke_tutorials.py --python tutorial-wheel/bin/python
       - name: Deploy
         if: ${{ github.ref == 'refs/heads/master' }}
