@@ -42,6 +42,23 @@ assert "numpy" not in sys.modules
     subprocess.run([sys.executable, "-c", code], check=True)
 
 
+def test_cli_rejects_malformed_tree_without_result_or_traceback(tmp_path):
+    tree_path = tmp_path / "malformed.tre"
+    tree_path.write_text("(a:1,b:1); trailing")
+
+    result = subprocess.run(
+        [sys.executable, "-m", "phykit", "tip_labels", str(tree_path)],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 2
+    assert "trailing" in result.stdout.lower()
+    assert "a\nb" not in result.stdout
+    assert "traceback" not in result.stderr.lower()
+
+
 class TestTipLabels:
     def test_init_sets_expected_attrs(self, args):
         service = TipLabels(args)

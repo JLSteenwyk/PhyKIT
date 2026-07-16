@@ -576,6 +576,61 @@ class TestTreeBase:
 
         assert out is source_tree
 
+    @pytest.mark.parametrize(
+        ("newick", "expected_message"),
+        [
+            pytest.param("", "empty", id="empty-file"),
+            pytest.param("((a:1,b:1);", "parentheses", id="unmatched-parenthesis"),
+            pytest.param("(a:1,b:1); garbage", "trailing", id="trailing-garbage"),
+            pytest.param(
+                "(a:1,b:1);\n(c:1,d:1);",
+                "exactly one",
+                id="multiple-trees",
+            ),
+            pytest.param("(a:1,:1);", "blank tip", id="blank-tip"),
+            pytest.param("(a:1,a:2);", "duplicate tip", id="duplicate-tip"),
+            pytest.param("(a:nan,b:1);", "finite", id="nan-branch-length"),
+            pytest.param("(a:inf,b:1);", "finite", id="infinite-branch-length"),
+        ],
+    )
+    def test_read_tree_file_rejects_invalid_newick_boundaries(
+        self,
+        tmp_path,
+        newick,
+        expected_message,
+    ):
+        tree_path = tmp_path / "invalid.tre"
+        tree_path.write_text(newick)
+        Tree._cached_tree_read.cache_clear()
+
+        with pytest.raises(PhykitUserError) as exc:
+            Tree(tree_file_path=str(tree_path)).read_tree_file_unmodified()
+
+        assert exc.value.code == 2
+        assert str(tree_path) in exc.value.messages[0]
+        assert expected_message in exc.value.messages[0].lower()
+
+    @pytest.mark.parametrize(
+        "newick",
+        [
+            pytest.param("('a b':1,b:2);", id="quoted-tip"),
+            pytest.param("(a[comment]:1,b:2);", id="comment"),
+            pytest.param("(a:1e-6,b:2E+3)root:0;", id="scientific-notation"),
+        ],
+    )
+    def test_read_tree_file_accepts_valid_biophylo_newick(self, tmp_path, newick):
+        tree_path = tmp_path / "valid.tre"
+        tree_path.write_text(newick)
+        Tree._cached_tree_read.cache_clear()
+
+        expected = Phylo.read(StringIO(newick), "newick")
+        observed = Tree(tree_file_path=str(tree_path)).read_tree_file_unmodified()
+
+        assert [tip.name for tip in observed.get_terminals()] == [
+            tip.name for tip in expected.get_terminals()
+        ]
+        assert observed.total_branch_length() == expected.total_branch_length()
+
     def test_get_simple_newick_summary_uses_cached_file_hash(self, tmp_path):
         tree_path = tmp_path / "tree.tre"
         tree_path.write_text("(a:1,b:2);")
