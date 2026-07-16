@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import itertools
 import math
 import statistics
@@ -14,6 +15,13 @@ _CALCULATE_DN_DS = None
 _BIO_ALIGNMENT = None
 _BIO_SEQ = None
 _CODON_TABLES = None
+
+
+class _ListKeysDict(dict):
+    """Dictionary compatible with Biopython ML releases expecting list keys."""
+
+    def keys(self):
+        return list(super().keys())
 
 
 def print_json(*args, **kwargs):
@@ -276,6 +284,11 @@ class CodonDnDs(Alignment):
         }
         if not clean_a:
             return result
+        if clean_a == clean_b:
+            result["dN"] = 0.0
+            result["dS"] = 0.0
+            result["status"] = "zero_synonymous_distance"
+            return result
 
         calculate_dn_ds, bio_alignment, bio_seq, _ = _load_codon_api()
         pair_alignment = bio_alignment([bio_seq(clean_a), bio_seq(clean_b)])
@@ -287,12 +300,23 @@ class CodonDnDs(Alignment):
             kwargs["k"] = self.kappa
         elif self.method == "ML":
             kwargs["cfreq"] = self.codon_frequency
+            keys = codon_table.forward_table.keys()
+            if not isinstance(keys, list):
+                codon_table = copy.copy(codon_table)
+                codon_table.forward_table = _ListKeysDict(codon_table.forward_table)
+                kwargs["codon_table"] = codon_table
 
         try:
             d_n, d_s = calculate_dn_ds(pair_alignment, **kwargs)
             d_n = float(d_n)
             d_s = float(d_s)
-        except (ArithmeticError, FloatingPointError, RuntimeError, ValueError) as err:
+        except (
+            ArithmeticError,
+            FloatingPointError,
+            RuntimeError,
+            TypeError,
+            ValueError,
+        ) as err:
             result["status"] = "estimation_failed"
             result["message"] = str(err) or err.__class__.__name__
             return result

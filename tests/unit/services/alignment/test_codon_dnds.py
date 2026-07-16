@@ -81,6 +81,30 @@ def test_reference_estimates_match_biopython_documentation(
     assert result["status"] == "ok"
 
 
+@pytest.mark.slow
+@pytest.mark.parametrize(
+    ("codon_frequency", "expected_d_n", "expected_d_s"),
+    [
+        ("F1x4", 0.0676240167, 0.2157606386),
+        ("F3x4", 0.0694755814, 0.2057544514),
+        ("F61", 0.1197127478, 0.1264495179),
+    ],
+)
+def test_real_ml_frequency_models(codon_frequency, expected_d_n, expected_d_s):
+    service = CodonDnDs(
+        _make_args(method="ML", codon_frequency=codon_frequency)
+    )
+
+    result = _single_result(service)
+
+    assert result["dN"] == pytest.approx(expected_d_n, rel=5e-3)
+    assert result["dS"] == pytest.approx(expected_d_s, rel=5e-3)
+    assert result["omega"] == pytest.approx(result["dN"] / result["dS"])
+    assert result["codons_used"] == 23
+    assert result["codons_skipped"] == 0
+    assert result["status"] == "ok"
+
+
 def test_run_prints_pairwise_tsv(capsys):
     CodonDnDs(_make_args(verbose=True)).run()
 
@@ -153,6 +177,67 @@ def test_identical_sequences_report_zero_synonymous_distance(tmp_path):
     assert result["dS"] == pytest.approx(0.0)
     assert result["omega"] is None
     assert result["status"] == "zero_synonymous_distance"
+
+
+@pytest.mark.parametrize("codon_frequency", ["F1x4", "F3x4", "F61"])
+def test_ml_identical_sequences_report_exact_zeros(tmp_path, codon_frequency):
+    sequence = "ATGGCTGAA" * 10
+    path = _write_alignment(tmp_path, [("a", sequence), ("b", sequence)])
+    service = CodonDnDs(
+        _make_args(
+            alignment=str(path),
+            method="ML",
+            codon_frequency=codon_frequency,
+        )
+    )
+
+    result = _single_result(service)
+
+    assert result["dN"] == 0.0
+    assert result["dS"] == 0.0
+    assert result["omega"] is None
+    assert result["status"] == "zero_synonymous_distance"
+
+
+@pytest.mark.slow
+def test_real_ml_uses_selected_alternate_genetic_code(tmp_path):
+    sequences = [
+        line
+        for line in REFERENCE_ALIGNMENT.read_text().splitlines()
+        if line and not line.startswith(">")
+    ]
+    path = _write_alignment(
+        tmp_path,
+        [("a", f"TGA{sequences[0]}"), ("b", f"TGG{sequences[1]}")],
+    )
+
+    standard = _single_result(
+        CodonDnDs(
+            _make_args(
+                alignment=str(path),
+                method="ML",
+                genetic_code=1,
+                stop_policy="skip",
+            )
+        )
+    )
+    mold_mitochondrial = _single_result(
+        CodonDnDs(
+            _make_args(
+                alignment=str(path),
+                method="ML",
+                genetic_code=4,
+                stop_policy="skip",
+            )
+        )
+    )
+
+    assert standard["codons_used"] == 23
+    assert standard["codons_skipped"] == 1
+    assert mold_mitochondrial["codons_used"] == 24
+    assert mold_mitochondrial["codons_skipped"] == 0
+    assert standard["status"] == mold_mitochondrial["status"] == "ok"
+    assert mold_mitochondrial["dS"] != pytest.approx(standard["dS"])
 
 
 def test_alignment_length_must_preserve_frame(tmp_path):
@@ -268,3 +353,26 @@ def test_ml_codon_frequency_is_forwarded(monkeypatch):
     assert captured["cfreq"] == "F61"
     assert "k" not in captured
     assert result["omega"] == pytest.approx(0.5)
+
+
+@pytest.mark.parametrize(
+    "estimator_error",
+    [RuntimeError("optimizer failed"), TypeError("invalid estimator state")],
+)
+def test_estimator_failures_are_reported(monkeypatch, estimator_error):
+    def fail_estimation(alignment, **kwargs):
+        raise estimator_error
+
+    monkeypatch.setattr(codon_dnds_module, "_CALCULATE_DN_DS", fail_estimation)
+    monkeypatch.setattr(
+        codon_dnds_module, "_BIO_ALIGNMENT", lambda sequences: sequences
+    )
+    monkeypatch.setattr(codon_dnds_module, "_BIO_SEQ", lambda sequence: sequence)
+
+    result = _single_result(CodonDnDs(_make_args(method="ML")))
+
+    assert result["dN"] is None
+    assert result["dS"] is None
+    assert result["omega"] is None
+    assert result["status"] == "estimation_failed"
+    assert result["message"] == str(estimator_error)

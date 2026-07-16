@@ -48,6 +48,30 @@ class TestCodonDnDs:
         assert payload["summary"]["pairs_total"] == 1
         assert payload["summary"]["mean_dN"] == pytest.approx(0.0687284919)
 
+    @pytest.mark.slow
+    def test_ml_f61_json(self, capsys):
+        testargs = [
+            "phykit",
+            "codon_dnds",
+            str(REFERENCE_ALIGNMENT),
+            "--method",
+            "ML",
+            "--codon-frequency",
+            "F61",
+            "--verbose",
+            "--json",
+        ]
+
+        with patch.object(sys, "argv", testargs):
+            Phykit()
+
+        payload = json.loads(capsys.readouterr().out)
+        assert payload["method"] == "ML"
+        assert payload["codon_frequency"] == "F61"
+        assert payload["pairs"][0]["status"] == "ok"
+        assert payload["pairs"][0]["dN"] == pytest.approx(0.1197127478, rel=5e-3)
+        assert payload["pairs"][0]["dS"] == pytest.approx(0.1264495179, rel=5e-3)
+
     def test_invalid_frame_reports_user_error(self, tmp_path, capsys):
         alignment = tmp_path / "invalid_frame.fa"
         alignment.write_text(">a\nATGG\n>b\nATGG\n")
