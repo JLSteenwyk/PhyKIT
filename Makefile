@@ -128,9 +128,9 @@ test.fast:
 test.coverage: coverage.unit coverage.integration
 
 coverage.unit:
-	python -m pytest --cov=./ -m "not (integration or validation)" --cov-report=xml:unit.coverage.xml
+	python -m pytest --cov=phykit --cov-branch --cov-fail-under=80 -m "not (integration or validation)" --cov-report=xml:unit.coverage.xml
 
 coverage.integration:
 	rm -rf output/
 	mkdir output/
-	python -m pytest --basetemp=output --cov=./ -m "integration" --cov-report=xml:integration.coverage.xml
+	python -m pytest --basetemp=output --cov=phykit --cov-branch -m "integration" --cov-report=xml:integration.coverage.xml

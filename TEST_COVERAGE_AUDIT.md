@@ -80,8 +80,9 @@ serialization contract. This avoids treating filenames as proof of a gap.
    producer's stdout directly and assert PhyKIT's own return code and stderr;
    this exposed and fixed uncaught completion output in concatenation and
    variable-sites services.
-5. Coverage targets include tests and repository tooling, omit branch coverage,
-   and do not provide a package-level threshold.
+5. **Completed:** coverage targets now measure only `phykit`, collect branch
+   coverage for unit and integration selections, and enforce an 80% package
+   threshold on the unit suite.
 6. The supported Python matrix runs only on macOS despite the OS-independent
    package classifier; installed-wheel smoke should include Linux and Windows.
 
