@@ -195,6 +195,73 @@ def test_parse_multi_trait_file_reports_non_numeric_third_trait(tmp_path):
     ) in excinfo.value.messages
 
 
+def test_parse_multi_trait_file_rejects_duplicate_taxa(tmp_path):
+    trait_file = tmp_path / "duplicate_taxa.tsv"
+    trait_file.write_text(
+        "taxon\tmass\nA\t1.0\nB\t2.0\nA\t3.0\nC\t4.0\n"
+    )
+
+    with pytest.raises(PhykitUserError) as excinfo:
+        parse_multi_trait_file(str(trait_file), ["A", "B", "C"])
+
+    assert (
+        "Duplicate taxon 'A' on line 4; first seen on line 2."
+        in excinfo.value.messages
+    )
+
+
+def test_parse_multi_trait_file_rejects_blank_taxon(tmp_path):
+    trait_file = tmp_path / "blank_taxon.tsv"
+    trait_file.write_text("taxon\tmass\n\t1.0\nB\t2.0\nC\t3.0\n")
+
+    with pytest.raises(PhykitUserError) as excinfo:
+        parse_multi_trait_file(str(trait_file), ["A", "B", "C"])
+
+    assert "Taxon name is blank on line 2." in excinfo.value.messages
+
+
+@pytest.mark.parametrize(
+    ("header", "message"),
+    [
+        (
+            "taxon\tmass\t\n",
+            "Trait header is blank in column 3 on line 1.",
+        ),
+        (
+            "taxon\tmass\tmass\n",
+            "Duplicate trait header 'mass' in columns 2 and 3 on line 1.",
+        ),
+    ],
+)
+def test_parse_multi_trait_file_rejects_invalid_trait_headers(
+    tmp_path, header, message
+):
+    trait_file = tmp_path / "bad_header.tsv"
+    trait_file.write_text(f"{header}A\t1.0\t2.0\n")
+
+    with pytest.raises(PhykitUserError) as excinfo:
+        parse_multi_trait_file(str(trait_file), ["A"], min_shared=1)
+
+    assert message in excinfo.value.messages
+
+
+@pytest.mark.parametrize("raw_value", ["nan", "NaN", "inf", "+inf", "-inf"])
+def test_parse_multi_trait_file_rejects_non_finite_values(tmp_path, raw_value):
+    trait_file = tmp_path / "non_finite.tsv"
+    trait_file.write_text(
+        f"taxon\tmass\tlength\nA\t1.0\t10.0\n"
+        f"B\t{raw_value}\t20.0\nC\t3.0\t30.0\n"
+    )
+
+    with pytest.raises(PhykitUserError) as excinfo:
+        parse_multi_trait_file(str(trait_file), ["A", "B", "C"])
+
+    assert (
+        f"Non-finite trait value '{raw_value}' for taxon 'B' "
+        "(trait 'mass') on line 3."
+    ) in excinfo.value.messages
+
+
 def test_trait_matrix_from_rows_preserves_requested_order_and_numeric_dtype():
     import numpy as np
 

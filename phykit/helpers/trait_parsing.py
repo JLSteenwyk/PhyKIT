@@ -5,9 +5,14 @@ Provides a single implementation for parsing tab-delimited multi-trait
 files with a header row, used across phylogenetic regression, signal,
 ordination, path analysis, ANOVA, and other comparative methods.
 """
+from math import isfinite
 import sys
 
 from ..errors import PhykitUserError
+
+
+def _split_tsv_line(line: str) -> list[str]:
+    return [part.strip() for part in line.rstrip("\r\n").split("\t")]
 
 
 def _parse_float_values_detailed(
@@ -61,7 +66,7 @@ def parse_multi_trait_file(
                 stripped = line.strip()
                 if not stripped or stripped[0] == "#":
                     continue
-                header_parts = stripped.split("\t")
+                header_parts = _split_tsv_line(line)
                 break
 
             if header_parts is None:
@@ -81,8 +86,27 @@ def parse_multi_trait_file(
                 )
             trait_names = header_parts[1:]
             trait_count = len(trait_names)
+            trait_columns = {}
+            for column, trait_name in enumerate(trait_names, start=2):
+                if not trait_name:
+                    raise PhykitUserError(
+                        [
+                            f"Trait header is blank in column {column} on line 1."
+                        ],
+                        code=2,
+                    )
+                if trait_name in trait_columns:
+                    raise PhykitUserError(
+                        [
+                            f"Duplicate trait header '{trait_name}' in columns "
+                            f"{trait_columns[trait_name]} and {column} on line 1."
+                        ],
+                        code=2,
+                    )
+                trait_columns[trait_name] = column
 
             traits = {}
+            taxon_lines = {}
             saw_data = False
             data_line_idx = 2
             to_float = float
@@ -91,7 +115,7 @@ def parse_multi_trait_file(
                 if not stripped or stripped[0] == "#":
                     continue
                 saw_data = True
-                parts = stripped.split("\t")
+                parts = _split_tsv_line(line)
                 if len(parts) != n_cols:
                     raise PhykitUserError(
                         [
@@ -102,6 +126,19 @@ def parse_multi_trait_file(
                         code=2,
                     )
                 taxon = parts[0]
+                if not taxon:
+                    raise PhykitUserError(
+                        [f"Taxon name is blank on line {data_line_idx}."],
+                        code=2,
+                    )
+                if taxon in taxon_lines:
+                    raise PhykitUserError(
+                        [
+                            f"Duplicate taxon '{taxon}' on line {data_line_idx}; "
+                            f"first seen on line {taxon_lines[taxon]}."
+                        ],
+                        code=2,
+                    )
                 try:
                     if trait_count == 1:
                         values = [to_float(parts[1])]
@@ -129,7 +166,20 @@ def parse_multi_trait_file(
                         taxon,
                         data_line_idx,
                     )
+                for trait_name, raw_value, value in zip(
+                    trait_names, parts[1:], values
+                ):
+                    if not isfinite(value):
+                        raise PhykitUserError(
+                            [
+                                f"Non-finite trait value '{raw_value}' for taxon "
+                                f"'{taxon}' (trait '{trait_name}') on line "
+                                f"{data_line_idx}."
+                            ],
+                            code=2,
+                        )
                 traits[taxon] = values
+                taxon_lines[taxon] = data_line_idx
                 data_line_idx += 1
 
             if not saw_data:
