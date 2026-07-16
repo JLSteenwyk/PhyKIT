@@ -33,6 +33,31 @@ def _read_fasta(path):
 
 @pytest.mark.integration
 class TestAlignmentSubsampleIntegration:
+    def test_partition_bounds_error_exits_without_outputs(self, tmp_path, capsys):
+        alignment = tmp_path / "alignment.fa"
+        alignment.write_text(">A\nAAAAAA\n>B\nCCCCCC\n")
+        partition = tmp_path / "bad.partition"
+        partition.write_text("AUTO, gene1=1-7\n")
+        prefix = str(tmp_path / "out")
+        testargs = [
+            "phykit",
+            "alignment_subsample",
+            "--mode", "partitions",
+            "-a", str(alignment),
+            "-p", str(partition),
+            "--number", "1",
+            "-o", prefix,
+        ]
+
+        with patch.object(sys, "argv", testargs), pytest.raises(SystemExit) as error:
+            Phykit()
+
+        assert error.value.code == 2
+        assert capsys.readouterr().out == (
+            "Partition 'gene1' ends at 7, beyond alignment length 6.\n"
+        )
+        assert not Path(f"{prefix}.fa").exists()
+        assert not Path(f"{prefix}.partition").exists()
 
     @patch("builtins.print")
     def test_basic_genes(self, mocked_print, tmp_path):
