@@ -3,6 +3,7 @@ from phykit.cli_registry import (
     COMMAND_IDENTITIES,
     PUBLIC_COMMAND_TO_HANDLER,
 )
+import phykit.phykit as cli
 
 
 def test_every_handler_has_one_command_identity():
@@ -35,3 +36,12 @@ def test_canonical_entry_points_include_descriptive_legacy_commands():
 def test_every_canonical_command_has_a_standalone_entry_point():
     for identity in COMMAND_IDENTITIES:
         assert f"pk_{identity.canonical}" in identity.entry_points
+
+
+def test_every_registered_handler_has_a_module_entry_point_callable():
+    missing = [
+        identity.handler
+        for identity in COMMAND_IDENTITIES
+        if not callable(getattr(cli, identity.handler, None))
+    ]
+    assert missing == []

@@ -121,7 +121,7 @@
         "recode"
       ],
       "canonical": "alignment_recoding",
-      "disposition": "Registered console entry-point target is not callable.",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
       "entry_points": [
         "pk_alignment_recoding",
         "pk_aln_recoding",
@@ -132,10 +132,10 @@
       "integration_tests": [
         "tests/integration/alignment/test_alignment_recoding.py"
       ],
-      "module_wrapper_callable": false,
+      "module_wrapper_callable": true,
       "parser_contract": "tests/unit/test_docs_category_coverage.py",
       "service_module": "phykit/services/alignment/alignment_recoding.py",
-      "status": "defect",
+      "status": "unit_and_workflow",
       "tutorial_smoke": [],
       "unit_tests": [
         "tests/unit/services/alignment/test_alignment_recoding_service.py"
@@ -4305,6 +4305,6 @@
     "commands_with_unit_tests": 109,
     "public_command_names": 317,
     "service_modules": 113,
-    "uncallable_module_wrappers": 1
+    "uncallable_module_wrappers": 0
   }
 }

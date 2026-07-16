@@ -10155,6 +10155,10 @@ def alignment_entropy(argv=None):
     Phykit.alignment_entropy(sys.argv[1:])
 
 
+def alignment_recoding(argv=None):
+    Phykit.alignment_recoding(sys.argv[1:])
+
+
 def alignment_outlier_taxa(argv=None):
     Phykit.alignment_outlier_taxa(sys.argv[1:])
 
