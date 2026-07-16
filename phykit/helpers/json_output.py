@@ -1,10 +1,18 @@
+from math import isfinite
+
+
 _JSON_SCALAR_TYPES = (str, int, float, bool)
 _LARGE_DICT_COPY_THRESHOLD = 50_000
 _JSON_DUMPS = None
 
 
 def to_builtin_json_types(value):
-    if value is None or type(value) in _JSON_SCALAR_TYPES:
+    value_type = type(value)
+    if value is None:
+        return value
+    if value_type is float:
+        return value if isfinite(value) else None
+    if value_type in _JSON_SCALAR_TYPES:
         return value
     if isinstance(value, dict):
         converted = None
@@ -12,7 +20,12 @@ def to_builtin_json_types(value):
             type(value) is dict and len(value) >= _LARGE_DICT_COPY_THRESHOLD
         )
         for key, sub_value in value.items():
-            if sub_value is None or type(sub_value) in _JSON_SCALAR_TYPES:
+            sub_value_type = type(sub_value)
+            if sub_value_type is float:
+                converted_value = (
+                    sub_value if isfinite(sub_value) else None
+                )
+            elif sub_value is None or sub_value_type in _JSON_SCALAR_TYPES:
                 converted_value = sub_value
             else:
                 converted_value = to_builtin_json_types(sub_value)
@@ -32,7 +45,12 @@ def to_builtin_json_types(value):
     if isinstance(value, list):
         converted = None
         for index, sub_value in enumerate(value):
-            if sub_value is None or type(sub_value) in _JSON_SCALAR_TYPES:
+            sub_value_type = type(sub_value)
+            if sub_value_type is float:
+                converted_value = (
+                    sub_value if isfinite(sub_value) else None
+                )
+            elif sub_value is None or sub_value_type in _JSON_SCALAR_TYPES:
                 converted_value = sub_value
             else:
                 converted_value = to_builtin_json_types(sub_value)
@@ -45,7 +63,12 @@ def to_builtin_json_types(value):
     if isinstance(value, tuple):
         converted = None
         for index, sub_value in enumerate(value):
-            if sub_value is None or type(sub_value) in _JSON_SCALAR_TYPES:
+            sub_value_type = type(sub_value)
+            if sub_value_type is float:
+                converted_value = (
+                    sub_value if isfinite(sub_value) else None
+                )
+            elif sub_value is None or sub_value_type in _JSON_SCALAR_TYPES:
                 converted_value = sub_value
             else:
                 converted_value = to_builtin_json_types(sub_value)
@@ -61,7 +84,7 @@ def to_builtin_json_types(value):
         if hasattr(value, "tolist"):
             return to_builtin_json_types(value.tolist())
         if hasattr(value, "item"):
-            return value.item()
+            return to_builtin_json_types(value.item())
     if hasattr(value, "tolist") and value.__class__.__name__ == "ndarray":
         return [to_builtin_json_types(sub_value) for sub_value in value.tolist()]
     return value
@@ -91,11 +114,22 @@ def print_json(payload, sort_keys=True):
         _JSON_DUMPS = dumps
 
     try:
-        output = dumps(
-            payload,
-            sort_keys=sort_keys,
-            default=_json_default,
-        )
+        try:
+            output = dumps(
+                payload,
+                sort_keys=sort_keys,
+                default=_json_default,
+                allow_nan=False,
+            )
+        except ValueError as error:
+            if "Out of range float values" not in str(error):
+                raise
+            output = dumps(
+                to_builtin_json_types(payload),
+                sort_keys=sort_keys,
+                default=_json_default,
+                allow_nan=False,
+            )
         print(output)
     except BrokenPipeError:
         pass
