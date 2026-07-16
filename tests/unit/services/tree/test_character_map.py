@@ -134,6 +134,55 @@ class TestParseCharacterMatrix:
         assert exc.value.code == 2
         assert "duplicate taxon label 'A'" in exc.value.messages[0]
 
+    @pytest.mark.parametrize(
+        ("header", "expected_message"),
+        [
+            pytest.param("taxon\t\n", "empty character name", id="blank-character"),
+            pytest.param(
+                "taxon\tc0\tc0\n",
+                "duplicate character name 'c0'",
+                id="duplicate-character",
+            ),
+            pytest.param(
+                "\tc0\n",
+                "empty taxon-column name",
+                id="blank-taxon-column",
+            ),
+            pytest.param("taxon\n", "at least one character", id="no-characters"),
+        ],
+    )
+    def test_invalid_character_headers_raise(
+        self,
+        tmp_path,
+        header,
+        expected_message,
+    ):
+        matrix_path = tmp_path / "invalid-header.tsv"
+        values = "A\t0\n" if "\t" in header else "A\n"
+        matrix_path.write_text(header + values)
+
+        with pytest.raises(SystemExit) as exc:
+            CharacterMap._parse_character_matrix(str(matrix_path))
+
+        assert exc.value.code == 2
+        assert expected_message in exc.value.messages[0]
+
+    @pytest.mark.parametrize("state", ["", "   "])
+    def test_blank_character_state_raises(self, tmp_path, state):
+        matrix_path = tmp_path / "blank-state.tsv"
+        matrix_path.write_text(
+            "taxon\tc0\tc1\n"
+            f"A\t{state}\t1\n"
+        )
+
+        with pytest.raises(SystemExit) as exc:
+            CharacterMap._parse_character_matrix(str(matrix_path))
+
+        assert exc.value.code == 2
+        assert "Row 2" in exc.value.messages[0]
+        assert "character 'c0'" in exc.value.messages[0]
+        assert "blank state" in exc.value.messages[0]
+
     def test_parse_character_matrix_streams_nonblank_rows(self, monkeypatch, tmp_path):
         class StreamingOnlyFile:
             def __init__(self):
@@ -309,6 +358,26 @@ class TestCharacterMapInit:
         args = _make_args(tmp_path, characters="0,1,3")
         cm = CharacterMap(args)
         assert cm.characters_filter == [0, 1, 3]
+
+    @pytest.mark.parametrize(
+        "characters",
+        ["text", "0,,1", "-1", "0,0"],
+    )
+    def test_invalid_character_filter_raises(self, tmp_path, characters):
+        args = _make_args(tmp_path, characters=characters)
+
+        with pytest.raises(SystemExit) as exc:
+            CharacterMap(args)
+
+        assert exc.value.code == 2
+        assert "--characters" in exc.value.messages[0]
+
+    def test_invalid_optimization_raises_for_programmatic_callers(self, tmp_path):
+        with pytest.raises(SystemExit) as exc:
+            CharacterMap(_make_args(tmp_path, optimization="deltain"))
+
+        assert exc.value.code == 2
+        assert "--optimization" in exc.value.messages[0]
 
     def test_change_plot_controls_are_stored(self, tmp_path):
         args = _make_args(

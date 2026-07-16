@@ -91,11 +91,40 @@ class CharacterMap(Tree):
     def process_args(self, args) -> dict:
         from ...helpers.plot_config import PlotConfig
 
-        # Parse characters filter: "0,1,3" -> [0, 1, 3]
+        optimization = getattr(args, "optimization", "acctran")
+        if optimization not in ("acctran", "deltran"):
+            raise PhykitUserError(
+                ["--optimization must be either acctran or deltran."],
+                code=2,
+            )
+
         chars_str = getattr(args, "characters", None)
         characters_filter = None
         if chars_str is not None:
-            characters_filter = [int(c.strip()) for c in chars_str.split(",")]
+            tokens = [token.strip() for token in chars_str.split(",")]
+            try:
+                characters_filter = [int(token) for token in tokens]
+            except ValueError:
+                raise PhykitUserError(
+                    [
+                        "--characters must be a comma-separated list of "
+                        "nonnegative integer indices."
+                    ],
+                    code=2,
+                ) from None
+            if (
+                not tokens
+                or any(not token for token in tokens)
+                or any(index < 0 for index in characters_filter)
+                or len(set(characters_filter)) != len(characters_filter)
+            ):
+                raise PhykitUserError(
+                    [
+                        "--characters must contain unique, nonnegative "
+                        "integer indices."
+                    ],
+                    code=2,
+                )
 
         change_marker_size = getattr(args, "change_marker_size", None)
         change_fontsize = getattr(args, "change_fontsize", None)
@@ -113,7 +142,7 @@ class CharacterMap(Tree):
             tree_file_path=args.tree,
             data_path=args.data,
             output_path=args.output,
-            optimization=getattr(args, "optimization", "acctran"),
+            optimization=optimization,
             phylogram=getattr(args, "phylogram", False),
             characters_filter=characters_filter,
             allow_taxon_mismatch=getattr(args, "allow_taxon_mismatch", False),
@@ -129,6 +158,23 @@ class CharacterMap(Tree):
 
         char_names, tip_states = self._parse_character_matrix(self.data_path)
         n_chars = len(char_names)
+        if self.characters_filter:
+            out_of_range = [
+                index
+                for index in self.characters_filter
+                if index >= n_chars
+            ]
+            if out_of_range:
+                plural = "index" if len(out_of_range) == 1 else "indices"
+                values = ", ".join(str(index) for index in out_of_range)
+                raise PhykitUserError(
+                    [
+                        f"--characters {plural} {values} out of range for "
+                        f"a matrix with {n_chars} characters; valid indices "
+                        f"are 0-{n_chars - 1}."
+                    ],
+                    code=2,
+                )
 
         tree_tip_names = self.get_tip_names_from_tree(tree)
         shared_count, tips_to_prune, tip_states = self._shared_character_taxa_setup(
@@ -620,6 +666,32 @@ class CharacterMap(Tree):
 
                 char_names = header[1:]  # first column is taxon label
                 n_expected = len(char_names)
+                if not header[0].strip():
+                    raise PhykitUserError(
+                        ["Character matrix header has an empty taxon-column name."],
+                        code=2,
+                    )
+                if not char_names:
+                    raise PhykitUserError(
+                        ["Character matrix must contain at least one character."],
+                        code=2,
+                    )
+                seen_character_names = set()
+                for column, name in enumerate(char_names, start=2):
+                    if not name.strip():
+                        raise PhykitUserError(
+                            [
+                                f"Character matrix header column {column} has "
+                                "an empty character name."
+                            ],
+                            code=2,
+                        )
+                    if name in seen_character_names:
+                        raise PhykitUserError(
+                            [f"Character matrix has duplicate character name {name!r}."],
+                            code=2,
+                        )
+                    seen_character_names.add(name)
 
                 tip_states: dict[str, list[str]] = {}
                 row_num = 2
@@ -650,6 +722,15 @@ class CharacterMap(Tree):
                             ],
                             code=2,
                         )
+                    for character_name, state in zip(char_names, states):
+                        if not state.strip():
+                            raise PhykitUserError(
+                                [
+                                    f"Row {row_num} (taxon '{taxon}') has a "
+                                    f"blank state for character {character_name!r}."
+                                ],
+                                code=2,
+                            )
                     tip_states[taxon] = states
                     row_num += 1
         except FileNotFoundError:

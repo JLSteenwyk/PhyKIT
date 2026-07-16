@@ -3211,7 +3211,8 @@ class Phykit:
         )
         parser.add_argument(
             "--optimization", type=str, default="acctran",
-            required=False, help=SUPPRESS, metavar=""
+            choices=("acctran", "deltran"), required=False,
+            help=SUPPRESS, metavar=""
         )
         parser.add_argument(
             "--phylogram", action="store_true", required=False, help=SUPPRESS
