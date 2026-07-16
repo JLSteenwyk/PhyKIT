@@ -73,7 +73,8 @@ serialization contract. This avoids treating filenames as proof of a gap.
 1. **Completed:** `tests/integration/tree/test_hybridization_integration.py` is
    explicitly marked, so its seven tests run only in the integration selection.
 2. **Completed:** optional external comparisons use a `validation` marker and
-   dedicated `make test.validation` target, outside ordinary unit coverage.
+   dedicated `make test.validation` target, outside ordinary unit coverage;
+   primary test targets use the active `python` environment consistently.
 3. **Completed:** threshold/phytools parsing ignores unrelated R output, checks
    required keys, and shares each seeded 100,000-generation run across assertions.
 4. **Completed:** broken-pipe integration tests now close an unbuffered

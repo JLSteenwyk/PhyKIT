@@ -106,16 +106,16 @@ develop:
 test: test.unit test.integration
 
 test.unit:
-	python3 -m pytest -m "not (integration or validation)"
+	python -m pytest -m "not (integration or validation)"
 
 test.integration:
 	rm -rf output/
 	mkdir output/
-	python3 -m pytest --basetemp=output -m "integration"
+	python -m pytest --basetemp=output -m "integration"
 	rm test.fa test.occupancy test.partition
 
 test.validation:
-	python3 -m pytest -m "validation" tests/validation
+	python -m pytest -m "validation" tests/validation
 
 test.fast:
 	python -m pytest -m "not (integration or slow or validation)"
