@@ -1282,17 +1282,29 @@ class Tree(BaseService):
                 code=2,
             )
 
-        if assign_default_branch_length is not None:
+        if assign_default_branch_length is not None or require_branch_lengths:
+            missing_branch_length_clades = []
             for clade in tree.find_clades():
-                if clade.branch_length is None and clade != tree.root:
-                    clade.branch_length = assign_default_branch_length
-        elif require_branch_lengths:
-            for clade in tree.find_clades():
-                if clade.branch_length is None and clade != tree.root:
-                    raise PhykitUserError(
-                        [f"All branches in the tree must have lengths{ctx}."],
-                        code=2,
+                if clade == tree.root:
+                    continue
+                if clade.branch_length is None:
+                    missing_branch_length_clades.append(clade)
+                elif not self._is_valid_analysis_branch_length(
+                    clade.branch_length
+                ):
+                    self._raise_invalid_analysis_branch_length(
+                        clade,
+                        clade.branch_length,
+                        ctx,
                     )
+            if assign_default_branch_length is not None:
+                for clade in missing_branch_length_clades:
+                    clade.branch_length = assign_default_branch_length
+            elif missing_branch_length_clades:
+                raise PhykitUserError(
+                    [f"All branches in the tree must have lengths{ctx}."],
+                    code=2,
+                )
 
     @staticmethod
     def _has_minimum_terminals(tree, min_tips: int) -> bool:
@@ -1345,6 +1357,7 @@ class Tree(BaseService):
 
         tip_count = 0
         missing_branch_length_clades = []
+        invalid_branch_length = None
         stack = [root]
         try:
             pop = stack.pop
@@ -1358,8 +1371,14 @@ class Tree(BaseService):
                 else:
                     tip_count += 1
 
-                if clade is not root and clade.branch_length is None:
-                    missing_append(clade)
+                if clade is not root:
+                    branch_length = clade.branch_length
+                    if branch_length is None:
+                        missing_append(clade)
+                    elif not Tree._is_valid_analysis_branch_length(
+                        branch_length
+                    ):
+                        invalid_branch_length = (clade, branch_length)
         except AttributeError:
             return False
 
@@ -1367,6 +1386,13 @@ class Tree(BaseService):
             raise PhykitUserError(
                 [f"Tree must have at least {min_tips} tips{ctx}."],
                 code=2,
+            )
+
+        if invalid_branch_length is not None:
+            Tree._raise_invalid_analysis_branch_length(
+                invalid_branch_length[0],
+                invalid_branch_length[1],
+                ctx,
             )
 
         if assign_default_branch_length is not None:
@@ -1379,6 +1405,29 @@ class Tree(BaseService):
             )
 
         return True
+
+    @staticmethod
+    def _is_valid_analysis_branch_length(branch_length) -> bool:
+        try:
+            return isfinite(branch_length) and branch_length >= 0.0
+        except TypeError:
+            return False
+
+    @staticmethod
+    def _raise_invalid_analysis_branch_length(
+        clade,
+        branch_length,
+        ctx: str,
+    ) -> None:
+        name = getattr(clade, "name", None)
+        branch = f"branch {name!r}" if name else "an internal branch"
+        raise PhykitUserError(
+            [
+                f"Branch length for {branch} must be finite and nonnegative"
+                f"{ctx}; got {branch_length!r}."
+            ],
+            code=2,
+        )
 
     def shared_tips(self, a, b):
         """
