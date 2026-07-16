@@ -10,6 +10,7 @@ from ._fasta import (
     read_fasta_first_token_set,
 )
 from .base import Alignment
+from ...errors import PhykitUserError
 
 
 _OCCUPANCY_INVALID_CHARS = {"-", "?", "*", "X", "x", "N", "n"}
@@ -19,6 +20,45 @@ _FASTA_WRITE_CHUNK_ROWS = 4096
 _OCCUPANCY_INVALID_SCAN_BYTES = 4096
 _PARALLEL_MIN_ALIGNMENT_FILES = 512
 _PARALLEL_MIN_ALIGNMENT_BYTES = 64 * 1024 * 1024
+
+
+def _store_validated_alignment_record(
+    alignment_path: str,
+    record_sequences: dict[str, str],
+    record_numbers: dict[str, int],
+    record_id: str,
+    sequence: str,
+    record_number: int,
+    first_taxon: str | None,
+    expected_length: int | None,
+) -> tuple[str, int]:
+    if record_id in record_sequences:
+        raise PhykitUserError(
+            [
+                f"Alignment '{alignment_path}' contains duplicate taxon "
+                f"'{record_id}' (records {record_numbers[record_id]} and "
+                f"{record_number})."
+            ],
+            code=2,
+        )
+
+    sequence_length = len(sequence)
+    if expected_length is None:
+        first_taxon = record_id
+        expected_length = sequence_length
+    elif sequence_length != expected_length:
+        raise PhykitUserError(
+            [
+                f"Alignment '{alignment_path}' has unequal sequence lengths: "
+                f"taxon '{record_id}' has {sequence_length} sites; expected "
+                f"{expected_length} sites from taxon '{first_taxon}'."
+            ],
+            code=2,
+        )
+
+    record_sequences[record_id] = sequence
+    record_numbers[record_id] = record_number
+    return first_taxon, expected_length
 
 
 class _LazyNumpy:
@@ -488,9 +528,37 @@ class CreateConcatenationMatrix(Alignment):
         alignment_data = []
         for alignment_path in alignment_paths:
             present_taxa, records = self.get_list_of_taxa_and_records(alignment_path)
+            self._validate_alignment_records(alignment_path, records)
             taxa.update(present_taxa)
             alignment_data.append((alignment_path, present_taxa, records))
         return sorted(taxa), alignment_data
+
+    @staticmethod
+    def _validate_alignment_records(
+        alignment_path: str,
+        records: list[object],
+    ) -> int:
+        record_sequences = {}
+        record_numbers = {}
+        first_taxon = None
+        expected_length = None
+        for record_number, record in enumerate(records, start=1):
+            first_taxon, expected_length = _store_validated_alignment_record(
+                alignment_path,
+                record_sequences,
+                record_numbers,
+                record.id,
+                str(record.seq),
+                record_number,
+                first_taxon,
+                expected_length,
+            )
+        if expected_length is None:
+            raise PhykitUserError(
+                [f"Alignment '{alignment_path}' contains no sequence records."],
+                code=2,
+            )
+        return expected_length
 
     def create_missing_seq_str(self, records: list[object]) -> tuple[str, int]:
         """Create a placeholder string for sequences with missing taxa."""
@@ -635,8 +703,10 @@ class CreateConcatenationMatrix(Alignment):
     def _process_alignment_file(alignment_path: str, taxa: list[str]) -> tuple[str, dict[str, str], set, int]:
         """Process a single alignment file and return its data."""
         record_sequences = {}
-        present_taxa = set()
-        og_len = 0
+        record_numbers = {}
+        first_taxon = None
+        og_len = None
+        record_number = 0
         with open(alignment_path) as handle:
             record_id = None
             sequence_parts = []
@@ -644,25 +714,43 @@ class CreateConcatenationMatrix(Alignment):
                 if line[0] == ">":
                     if record_id is not None:
                         sequence = _clean_sequence(sequence_parts)
-                        if not og_len:
-                            og_len = len(sequence)
-                        if record_id not in record_sequences:
-                            record_sequences[record_id] = sequence
+                        record_number += 1
+                        first_taxon, og_len = _store_validated_alignment_record(
+                            alignment_path,
+                            record_sequences,
+                            record_numbers,
+                            record_id,
+                            sequence,
+                            record_number,
+                            first_taxon,
+                            og_len,
+                        )
                     record_id = line[1:].split(None, 1)[0]
-                    present_taxa.add(record_id)
                     sequence_parts = []
                 elif record_id is not None:
                     sequence_parts.append(line.rstrip())
 
             if record_id is not None:
                 sequence = _clean_sequence(sequence_parts)
-                if not og_len:
-                    og_len = len(sequence)
-                if record_id not in record_sequences:
-                    record_sequences[record_id] = sequence
+                record_number += 1
+                first_taxon, og_len = _store_validated_alignment_record(
+                    alignment_path,
+                    record_sequences,
+                    record_numbers,
+                    record_id,
+                    sequence,
+                    record_number,
+                    first_taxon,
+                    og_len,
+                )
 
         if not record_sequences:
-            return alignment_path, {}, present_taxa, 0
+            raise PhykitUserError(
+                [f"Alignment '{alignment_path}' contains no sequence records."],
+                code=2,
+            )
+
+        present_taxa = set(record_sequences)
 
         if len(present_taxa) == len(taxa):
             return alignment_path, record_sequences, present_taxa, og_len
