@@ -173,47 +173,7 @@ class DNAThreader(Alignment):
         p_seq_str = str(p_seq)
         n_seq_str = str(n_seq)
 
-        if len(n_seq_str) % 3:
-            normalized_p_seq = self.normalize_p_seq(p_seq_str)
-            normalized_n_seq = self.normalize_n_seq(n_seq_str, normalized_p_seq)
-
-            limit = min(
-                len(normalized_p_seq) * 3,
-                len(keep_mask),
-                len(normalized_n_seq),
-            )
-            keep_mask_trimmed = keep_mask[:limit]
-            result = []
-
-            for idx in range(limit):
-                if (
-                    keep_mask_trimmed[idx]
-                    and normalized_p_seq[idx // 3] not in gap_chars
-                ):
-                    result.append(normalized_n_seq[idx])
-                else:
-                    result.append('-')
-
-            if self.remove_stop_codon and p_seq_str[-1] == "*":
-                kept_indices = [
-                    idx
-                    for idx, should_keep in enumerate(keep_mask_trimmed)
-                    if should_keep
-                ]
-                if len(kept_indices) >= 3:
-                    for idx in kept_indices[-3:]:
-                        if idx < len(result) and idx < len(normalized_n_seq):
-                            result[idx] = normalized_n_seq[idx]
-
-            return ''.join(
-                result[idx]
-                for idx, should_keep in enumerate(keep_mask_trimmed)
-                if should_keep
-            )
-
-        limit = min(len(p_seq_str) * 9, len(keep_mask))
-        normalized_p_chars = (limit + 2) // 3
-        full_repeats, extra = divmod(normalized_p_chars, 3)
+        limit = min(len(p_seq_str) * 3, len(keep_mask))
         if keep_mask_plan is not None and keep_mask_plan[0] == limit:
             all_sites_kept = keep_mask_all_true or keep_mask_plan[1]
             chunk_keep_bits = keep_mask_plan[2]
@@ -226,9 +186,13 @@ class DNAThreader(Alignment):
             chunk_keep_bits = None
             grouped_keep_bits = None
             group_emitters = None
-        inspected_aa_count = full_repeats + (1 if extra else 0)
+        inspected_aa_count = (limit + 2) // 3
         inspected_p_seq = p_seq_str[:inspected_aa_count]
         has_gap_chars = self._has_gap_char(inspected_p_seq)
+        restore_stop = self.remove_stop_codon and p_seq_str and p_seq_str[-1] == "*"
+        if restore_stop and inspected_p_seq.endswith("*"):
+            has_gap_chars = self._has_gap_char(inspected_p_seq[:-1])
+            p_seq_str = f"{p_seq_str[:-1]}!"
         if (
             p_seq_str
             and all_sites_kept
@@ -237,7 +201,6 @@ class DNAThreader(Alignment):
         ):
             return n_seq_str[:limit]
 
-        restore_stop = self.remove_stop_codon and p_seq_str and p_seq_str[-1] == "*"
         if not restore_stop:
             if len(n_seq_str) >= limit and not has_gap_chars:
                 return ''.join(compress(n_seq_str[:limit], keep_mask))
@@ -252,7 +215,6 @@ class DNAThreader(Alignment):
             threaded = []
             append = threaded.append
             codon_idx = 0
-            codon_count = len(n_seq_str) // 3
             reachable_chunks = (limit + 2) // 3
             if group_emitters is not None:
                 uniform_selectors = getattr(
@@ -297,12 +259,9 @@ class DNAThreader(Alignment):
                                 append('-')
                     else:
                         for bits in bit_group:
-                            if codon_idx >= codon_count:
-                                c0 = c1 = c2 = '-'
-                            else:
-                                start = codon_idx * 3
-                                c0, c1, c2 = n_seq_str[start:start + 3]
-                                codon_idx += 1
+                            start = codon_idx * 3
+                            c0, c1, c2 = n_seq_str[start:start + 3].ljust(3, '-')
+                            codon_idx += 1
                             if bits & 1:
                                 append(c0)
                             if bits & 2:
@@ -312,12 +271,12 @@ class DNAThreader(Alignment):
             else:
                 idx = 0
                 for chunk_idx in range(reachable_chunks):
-                    aa = p_seq_str[chunk_idx // 3]
-                    if aa in gap_chars or codon_idx >= codon_count:
+                    aa = p_seq_str[chunk_idx]
+                    if aa in gap_chars:
                         c0 = c1 = c2 = '-'
                     else:
                         start = codon_idx * 3
-                        c0, c1, c2 = n_seq_str[start:start + 3]
+                        c0, c1, c2 = n_seq_str[start:start + 3].ljust(3, '-')
                         codon_idx += 1
 
                     if keep_mask[idx]:
@@ -340,7 +299,6 @@ class DNAThreader(Alignment):
             )
 
         codon_idx = 0
-        codon_count = len(n_seq_str) // 3
         reachable_chunks = (limit + 2) // 3
         threaded = []
         append = threaded.append
@@ -389,12 +347,9 @@ class DNAThreader(Alignment):
                             append('-')
                 else:
                     for bits in bit_group:
-                        if codon_idx >= codon_count:
-                            c0 = c1 = c2 = '-'
-                        else:
-                            start = codon_idx * 3
-                            c0, c1, c2 = n_seq_str[start:start + 3]
-                            codon_idx += 1
+                        start = codon_idx * 3
+                        c0, c1, c2 = n_seq_str[start:start + 3].ljust(3, '-')
+                        codon_idx += 1
                         if bits & 1:
                             append(c0)
                         if bits & 2:
@@ -403,12 +358,12 @@ class DNAThreader(Alignment):
                             append(c2)
         else:
             for chunk_idx in range(reachable_chunks):
-                aa = p_seq_str[chunk_idx // 3]
-                if aa in gap_chars or codon_idx >= codon_count:
+                aa = p_seq_str[chunk_idx]
+                if aa in gap_chars:
                     c0 = c1 = c2 = '-'
                 else:
                     start = codon_idx * 3
-                    c0, c1, c2 = n_seq_str[start:start + 3]
+                    c0, c1, c2 = n_seq_str[start:start + 3].ljust(3, '-')
                     codon_idx += 1
 
                 if keep_mask[idx]:
@@ -442,11 +397,11 @@ class DNAThreader(Alignment):
                 continue
 
             if getter is None:
-                nucleotide_offset += 9
+                nucleotide_offset += 3
                 continue
-            segment = n_seq_str[nucleotide_offset:nucleotide_offset + 9]
-            nucleotide_offset += 9
-            if len(segment) == 9:
+            segment = n_seq_str[nucleotide_offset:nucleotide_offset + 3]
+            nucleotide_offset += 3
+            if len(segment) == 3:
                 if getter is _FULL_SEGMENT:
                     append(segment)
                     continue
@@ -491,7 +446,7 @@ class DNAThreader(Alignment):
                     append(gap_fill * run_groups)
                 continue
 
-            emit_len = run_groups * 9
+            emit_len = run_groups * 3
             segment = n_seq_str[nucleotide_offset:nucleotide_offset + emit_len]
             nucleotide_offset += emit_len
             if getter is None:
@@ -504,7 +459,7 @@ class DNAThreader(Alignment):
                 continue
 
             for group_offset in range(run_groups):
-                base_idx = group_offset * 9
+                base_idx = group_offset * 3
                 append(join(
                     segment[base_idx + index]
                     if base_idx + index < len(segment)
@@ -548,7 +503,7 @@ class DNAThreader(Alignment):
                     append(gap_fill * run_groups)
                 continue
 
-            emit_len = run_groups * 9
+            emit_len = run_groups * 3
             segment = n_seq_str[nucleotide_offset:nucleotide_offset + emit_len]
             nucleotide_offset += emit_len
             if getter is None:
@@ -561,7 +516,7 @@ class DNAThreader(Alignment):
                 continue
 
             for group_offset in range(run_groups):
-                base_idx = group_offset * 9
+                base_idx = group_offset * 3
                 append(join(
                     segment[base_idx + index]
                     if base_idx + index < len(segment)
@@ -577,11 +532,11 @@ class DNAThreader(Alignment):
                 continue
 
             if getter is None:
-                nucleotide_offset += 9
+                nucleotide_offset += 3
                 continue
-            segment = n_seq_str[nucleotide_offset:nucleotide_offset + 9]
-            nucleotide_offset += 9
-            if len(segment) == 9:
+            segment = n_seq_str[nucleotide_offset:nucleotide_offset + 3]
+            nucleotide_offset += 3
+            if len(segment) == 3:
                 if getter is _FULL_SEGMENT:
                     append(segment)
                     continue
@@ -615,7 +570,7 @@ class DNAThreader(Alignment):
         append = threaded.append
         gap_chars = self.GAP_CHARS
         nucleotide_offset = 0
-        group_count = (limit + 8) // 9
+        group_count = (limit + 2) // 3
         aa_idx = 0
 
         while aa_idx < group_count:
@@ -629,13 +584,13 @@ class DNAThreader(Alignment):
                 aa_idx += 1
 
             run_groups = aa_idx - run_start
-            emit_len = min(run_groups * 9, limit - run_start * 9)
+            emit_len = min(run_groups * 3, limit - run_start * 3)
             if is_gap_run:
                 append('-' * emit_len)
                 continue
 
             segment = n_seq_str[nucleotide_offset:nucleotide_offset + emit_len]
-            nucleotide_offset += run_groups * 9
+            nucleotide_offset += run_groups * 3
             if len(segment) == emit_len:
                 append(segment)
             else:
@@ -645,7 +600,7 @@ class DNAThreader(Alignment):
 
     @staticmethod
     def _create_thread_mask_plan(keep_mask: list[bool], protein_length: int):
-        limit = min(protein_length * 9, len(keep_mask))
+        limit = min(protein_length * 3, len(keep_mask))
         all_sites_kept = all(keep_mask) if len(keep_mask) == limit else all(keep_mask[:limit])
         reachable_chunks = (limit + 2) // 3
         chunk_keep_bits = []
@@ -659,14 +614,11 @@ class DNAThreader(Alignment):
             if idx + 2 < limit and keep_mask[idx + 2]:
                 bits |= 4
             chunk_keep_bits.append(bits)
-        grouped_keep_bits = [
-            tuple(chunk_keep_bits[idx:idx + 3])
-            for idx in range(0, len(chunk_keep_bits), 3)
-        ]
+        grouped_keep_bits = [(bits,) for bits in chunk_keep_bits]
         group_emitters = _GroupEmitters()
         for bit_group in grouped_keep_bits:
-            if bit_group == (7, 7, 7):
-                keep_indices = (0, 1, 2, 3, 4, 5, 6, 7, 8)
+            if bit_group == (7,):
+                keep_indices = (0, 1, 2)
                 getter = _FULL_SEGMENT
             elif not any(bit_group):
                 keep_indices = ()
@@ -694,7 +646,7 @@ class DNAThreader(Alignment):
                 keep_index_set = set(keep_indices)
                 group_emitters.uniform_emitter = first_emitter
                 group_emitters.uniform_selectors = tuple(
-                    index in keep_index_set for index in range(9)
+                    index in keep_index_set for index in range(3)
                 )
             elif len(group_emitters) > 1:
                 prefix_length = len(group_emitters) - 1
@@ -706,7 +658,7 @@ class DNAThreader(Alignment):
                     keep_index_set = set(keep_indices)
                     group_emitters.uniform_prefix_emitter = first_emitter
                     group_emitters.uniform_prefix_selectors = tuple(
-                        index in keep_index_set for index in range(9)
+                        index in keep_index_set for index in range(3)
                     )
                     group_emitters.uniform_prefix_length = prefix_length
         return (
