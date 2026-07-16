@@ -46,6 +46,7 @@ def test_installed_target_probe_runs_outside_checkout(mocker):
     )
 
     assert check_wheel_entry_points.installed_target_load_errors(Path("python")) == {}
+    assert Path(run.call_args.args[0][0]) == Path("python").absolute()
     assert Path(run.call_args.kwargs["cwd"]) != Path.cwd()
 
 

@@ -66,6 +66,7 @@ def target_load_errors(entry_points: dict[str, str]) -> dict[str, str]:
 
 def installed_target_load_errors(python: Path) -> dict[str, str]:
     """Load console-script targets from the interpreter's installed wheel."""
+    python = python.absolute()
     with tempfile.TemporaryDirectory() as working_directory:
         completed = subprocess.run(
             [str(python), "-c", INSTALLED_TARGET_CHECK],
