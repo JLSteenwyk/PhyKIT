@@ -39,7 +39,7 @@ source for accepted spellings, required arguments, types, defaults, and choices.
      - false
      - str
      - acctran
-     - any
+     - acctran, deltran
    * - ``--phylogram``
      - false
      - boolean

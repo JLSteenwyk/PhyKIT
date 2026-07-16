@@ -1189,7 +1189,7 @@ Categories: Trait evolution
 - -t, --tree: type=str; required=True; default=None; choices=None
 - -d, --data: type=str; required=True; default=None; choices=None
 - -o, --output: type=str; required=True; default=None; choices=None
-- --optimization: type=str; required=False; default=acctran; choices=None
+- --optimization: type=str; required=False; default=acctran; choices=['acctran', 'deltran']
 - --phylogram: type=boolean; required=False; default=False; choices=None
 - --characters: type=str; required=False; default=None; choices=None
 - --allow-taxon-mismatch: type=boolean; required=False; default=False; choices=None
