@@ -1044,6 +1044,9 @@ class CreateConcatenationMatrix(Alignment):
                 payload["output_files"]["occupancy_plot"] = plot_output
             print_json(payload)
         else:
-            if self.plot_occupancy:
-                print(f"Occupancy plot output: {plot_output}")
-            print("Complete!\n")
+            try:
+                if self.plot_occupancy:
+                    print(f"Occupancy plot output: {plot_output}")
+                print("Complete!\n")
+            except BrokenPipeError:
+                pass

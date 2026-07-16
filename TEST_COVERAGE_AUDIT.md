@@ -76,8 +76,10 @@ serialization contract. This avoids treating filenames as proof of a gap.
    dedicated `make test.validation` target, outside ordinary unit coverage.
 3. **Completed:** threshold/phytools parsing ignores unrelated R output, checks
    required keys, and shares each seeded 100,000-generation run across assertions.
-4. Broken-pipe integration tests use `producer | head` through `os.system`, so
-   they assert the consumer's pipeline status rather than PhyKIT's process status.
+4. **Completed:** broken-pipe integration tests now close an unbuffered
+   producer's stdout directly and assert PhyKIT's own return code and stderr;
+   this exposed and fixed uncaught completion output in concatenation and
+   variable-sites services.
 5. Coverage targets include tests and repository tooling, omit branch coverage,
    and do not provide a package-level threshold.
 6. The supported Python matrix runs only on macOS despite the OS-independent
