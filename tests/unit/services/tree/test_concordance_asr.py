@@ -1,7 +1,5 @@
 import copy
 import builtins
-import json
-import math
 import pickle as stdlib_pickle
 import subprocess
 import sys
@@ -112,6 +110,25 @@ def test_lazy_pickle_caches_resolved_copy_helpers(monkeypatch):
         ("dumps", ("tree2",), {"protocol": protocol}),
         ("loads", ("tree2",), {}),
     ]
+
+
+def test_lazy_pickle_loads_first_caches_dumps_helper(monkeypatch):
+    lazy_pickle = concordance_asr_module._LazyPickle()
+    monkeypatch.setattr(stdlib_pickle, "loads", lambda value: value)
+
+    assert lazy_pickle.loads("tree") == "tree"
+    assert lazy_pickle.__dict__["dumps"] is stdlib_pickle.dumps
+
+
+def test_lazy_json_output_delegates_to_helper(monkeypatch):
+    calls = []
+    monkeypatch.setattr(
+        "phykit.helpers.json_output.print_json",
+        lambda *args, **kwargs: calls.append((args, kwargs)) or "printed",
+    )
+
+    assert concordance_asr_module.print_json({"result": 1}, indent=2) == "printed"
+    assert calls == [(({"result": 1},), {"indent": 2})]
 
 
 here = Path(__file__).resolve().parent
@@ -359,6 +376,43 @@ class TestTaxaNormalization:
         assert len(shared) == 8
         assert spy.call_count == (2 * len(gene_trees)) + 1
 
+    def test_shared_mode_prunes_species_and_gene_tree_taxa(self, default_args):
+        svc = ConcordanceAsr(default_args)
+        species_tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        gene_trees = [
+            Phylo.read(StringIO("((A:1,B:1):1,(C:1,E:1):1);"), "newick"),
+            Phylo.read(StringIO("((A:1,C:1):1,(B:1,F:1):1);"), "newick"),
+        ]
+
+        pruned_trees, shared = svc._normalize_taxa(
+            species_tree,
+            gene_trees,
+            {"A", "B", "C", "D"},
+        )
+
+        assert shared == {"A", "B", "C"}
+        assert svc.get_tip_names_from_tree(species_tree) == ["A", "B", "C"]
+        assert all(
+            set(svc.get_tip_names_from_tree(tree)) == shared
+            for tree in pruned_trees
+        )
+
+    def test_shared_mode_requires_three_shared_taxa(self, default_args):
+        svc = ConcordanceAsr(default_args)
+        species_tree = Phylo.read(StringIO("((A:1,B:1):1,C:1);"), "newick")
+        gene_trees = [
+            Phylo.read(StringIO("((A:1,B:1):1,D:1);"), "newick"),
+            Phylo.read(StringIO("((A:1,B:1):1,E:1);"), "newick"),
+        ]
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            svc._normalize_taxa(species_tree, gene_trees, {"A", "B", "C"})
+
+        assert exc_info.value.messages == [
+            "Only 2 shared taxa across species and gene trees.",
+            "At least 3 shared taxa are required.",
+        ]
+
 
 def _make_asr_helper():
     """Create a minimal AncestralReconstruction helper for testing."""
@@ -409,6 +463,92 @@ class TestGCFComputation:
         assert clade_tip_sets[id(species_tree.root)] == frozenset(
             svc.get_tip_names_from_tree(species_tree)
         )
+
+    def test_collect_clade_tip_sets_supports_legacy_tree_interface(self, default_args):
+        svc = ConcordanceAsr(default_args)
+        parsed = Phylo.read(StringIO("((A,B),(C,D));"), "newick")
+
+        class LegacyTree:
+            def find_clades(self, *args, **kwargs):
+                return parsed.find_clades(*args, **kwargs)
+
+        clade_tip_sets = svc._collect_clade_tip_sets(LegacyTree())
+
+        assert clade_tip_sets[id(parsed.root)] == frozenset({"A", "B", "C", "D"})
+
+    def test_gcf_computation_supports_legacy_tree_iterators(
+        self, default_args, monkeypatch
+    ):
+        svc = ConcordanceAsr(default_args)
+        svc._asr = Namespace(_build_parent_map=lambda _tree: {})
+        gene_clade = Namespace()
+        species_tip = Namespace(is_terminal=lambda: True)
+
+        class LegacyGeneTree:
+            def get_nonterminals(self):
+                return [gene_clade]
+
+        class LegacySpeciesTree:
+            def find_clades(self, **_kwargs):
+                return [species_tip]
+
+        gene_tree = LegacyGeneTree()
+        species_tree = LegacySpeciesTree()
+        monkeypatch.setattr(
+            svc,
+            "_collect_clade_tip_sets",
+            lambda tree: (
+                {id(gene_clade): frozenset({"A", "B"})}
+                if tree is gene_tree
+                else {}
+            ),
+        )
+
+        observed = svc._compute_gcf_per_node(
+            species_tree,
+            [gene_tree],
+            {"A", "B", "C", "D"},
+        )
+
+        assert observed == {}
+
+    def test_gcf_defaults_to_concordant_when_no_topology_is_observed(
+        self, default_args, monkeypatch
+    ):
+        svc = ConcordanceAsr(default_args)
+        svc._asr = _make_asr_helper()
+        species_tree = svc.read_tree_file()
+        gene_trees = svc._parse_gene_trees(GENE_TREES)
+        monkeypatch.setattr(
+            svc,
+            "_count_gcf_topologies",
+            lambda *_args: (0, 0, 0),
+        )
+
+        result = svc._compute_gcf_per_node(
+            species_tree,
+            gene_trees,
+            set(svc.get_tip_names_from_tree(species_tree)),
+        )
+
+        assert result
+        assert all(value == (1.0, 0.0, 0.0) for value in result.values())
+
+    def test_four_group_decomposition_rejects_node_without_siblings(
+        self, default_args
+    ):
+        svc = ConcordanceAsr(default_args)
+        children = [Namespace(), Namespace()]
+        node = Namespace(is_terminal=lambda: False, clades=children)
+        parent = Namespace(clades=[node])
+
+        assert svc._get_four_groups(
+            Namespace(),
+            node,
+            {id(node): parent},
+            frozenset({"A", "B", "C", "D"}),
+            {id(children[0]): {"A"}, id(children[1]): {"B"}},
+        ) is None
 
     def test_gcf_fractions(self, default_args):
         svc = ConcordanceAsr(default_args)
@@ -686,6 +826,24 @@ class TestCachedDescendantAssembly:
 
 
 class TestNNIAlternatives:
+    def test_root_and_unpaired_nodes_have_no_nni_alternatives(self, default_args):
+        svc = ConcordanceAsr(default_args)
+        species_tree = svc.read_tree_file()
+
+        assert svc._build_nni_alternative_at_node(
+            species_tree,
+            species_tree.root,
+            {},
+        ) == []
+
+        target = Namespace(clades=[Namespace(), Namespace()])
+        parent = Namespace(clades=[target])
+        assert svc._build_nni_alternative_at_node(
+            species_tree,
+            target,
+            {id(target): parent},
+        ) == []
+
     def test_produces_alternatives(self, default_args):
         svc = ConcordanceAsr(default_args)
         svc._asr = _make_asr_helper()
@@ -744,8 +902,6 @@ class TestNNIAlternatives:
         svc._asr = _make_asr_helper()
         species_tree = svc.read_tree_file()
         parent_map = svc._asr._build_parent_map(species_tree)
-        all_taxa = frozenset(t.name for t in species_tree.get_terminals())
-
         for clade in species_tree.find_clades(order="preorder"):
             if clade.is_terminal() or clade == species_tree.root:
                 continue
@@ -830,6 +986,38 @@ class TestLawOfTotalVariance:
 
 
 class TestWeightedMethod:
+    def test_run_asr_on_tree_rejects_fewer_than_three_remaining_tips(
+        self, default_args, monkeypatch
+    ):
+        svc = ConcordanceAsr(default_args)
+        tree = Namespace()
+        monkeypatch.setattr(svc, "get_tip_names_from_tree", lambda _tree: ["A", "B"])
+        monkeypatch.setattr(
+            svc,
+            "_tips_to_prune_for_ordered_mapping",
+            lambda *_args: [],
+        )
+
+        assert svc._run_asr_on_tree(tree, {"A": 1.0, "B": 2.0}) == ({}, {}, 0.0)
+
+    def test_run_asr_on_tree_rejects_fewer_than_three_trait_matches(
+        self, default_args, monkeypatch
+    ):
+        svc = ConcordanceAsr(default_args)
+        tree = Namespace()
+        monkeypatch.setattr(
+            svc,
+            "get_tip_names_from_tree",
+            lambda _tree: ["A", "B", "C"],
+        )
+        monkeypatch.setattr(
+            svc,
+            "_tips_to_prune_for_ordered_mapping",
+            lambda *_args: [],
+        )
+
+        assert svc._run_asr_on_tree(tree, {"A": 1.0, "B": 2.0}) == ({}, {}, 0.0)
+
     def test_run_asr_on_tree_uses_fast_tip_name_helper_without_pruning(
         self, default_args, mocker
     ):
@@ -894,7 +1082,6 @@ class TestWeightedMethod:
         species_tree = svc.read_tree_file()
         gene_trees = svc._parse_gene_trees(GENE_TREES)
         all_taxa = set(t.name for t in species_tree.get_terminals())
-        from phykit.services.tree.ancestral_reconstruction import AncestralReconstruction
         trait_values = svc._asr._parse_single_trait_data(TRAITS_FILE, sorted(all_taxa))
 
         result = svc._run_weighted(species_tree, gene_trees, trait_values, all_taxa)
@@ -1535,10 +1722,7 @@ class TestCircularPlot:
 
     def test_concordance_asr_circular(self):
         """--circular flag produces a circular layout concordance ASR plot."""
-        try:
-            import matplotlib
-        except ImportError:
-            pytest.skip("matplotlib not installed")
+        pytest.importorskip("matplotlib")
 
         import tempfile
         import os
@@ -1571,6 +1755,20 @@ class TestCircularPlot:
 
 
 class TestEdgeCases:
+    def test_gene_tree_without_branch_lengths_errors(self, tmp_path, default_args):
+        gene_trees = tmp_path / "missing-lengths.nwk"
+        gene_trees.write_text("((A,B),C);\n((A,C),B);\n")
+        default_args.gene_trees = str(gene_trees)
+        svc = ConcordanceAsr(default_args)
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            svc.run()
+
+        assert exc_info.value.messages == [
+            "Gene tree 1 has branches without lengths.",
+            "All gene trees must have branch lengths.",
+        ]
+
     def test_single_gene_tree_errors(self):
         """Single gene tree should raise error."""
         import tempfile
@@ -1657,7 +1855,6 @@ class TestEdgeCases:
 
     def test_ci_with_weighted(self, ci_args):
         svc = ConcordanceAsr(ci_args)
-        captured = []
         with patch("builtins.print") as mock_print:
             svc.run()
 
@@ -1858,7 +2055,6 @@ class TestBenchmarkVerification:
         )
 
         # Run components manually
-        node_labels = svc._asr._label_internal_nodes(species_tree)
         parent_map = svc._asr._build_parent_map(species_tree)
         gcf_per_node = svc._compute_gcf_per_node(
             species_tree, gene_trees, all_taxa
