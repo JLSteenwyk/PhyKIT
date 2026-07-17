@@ -540,6 +540,8 @@ class Phykit:
                       symmetric phylogeny
                 alignment_outlier_taxa (alias: outlier_taxa; aot)
                     - identify potential outlier taxa and why they were flagged
+                alignment_outlier_regions (alias: outlier_regions; aor)
+                    - detect localized nonhomologous or erroneous sequence regions
                 column_score (alias: cs)
                     - calculate column score between a reference and query alignment
                 compositional_bias_per_site (alias: comp_bias_per_site; cbps)
@@ -1236,6 +1238,92 @@ class Phykit:
         parser.add_argument("--entropy-z", type=float, default=3.0, required=False, help=SUPPRESS)
         _add_json_argument(parser)
         _run_service(parser, argv, AlignmentOutlierTaxa)
+
+    @staticmethod
+    def alignment_outlier_regions(argv):
+        parser = _new_parser(
+            description=_dedent(
+                f"""\
+                {help_header}
+
+                Detect localized outlier regions in a multiple sequence alignment.
+
+                This command uses a TAPER-inspired two-dimensional method. It scores
+                residues relative to their alignment columns, detects unusually high
+                scores within each sequence at multiple window sizes, and smooths
+                window calls into contiguous regions. Only residues belonging to a
+                flagged taxon-region are reported or masked; complete alignment
+                columns are not removed.
+
+                Citation:
+                  Zhang C, Zhao Y, Braun EL, and Mirarab S. 2021. TAPER:
+                  Pinpointing errors in multiple sequence alignments despite varying
+                  rates of evolution. Methods in Ecology and Evolution 12:2145-2158.
+                  doi:10.1111/2041-210X.13696
+
+                Aliases:
+                  alignment_outlier_regions, outlier_regions, aor
+                Command line interfaces:
+                  pk_alignment_outlier_regions, pk_outlier_regions, pk_aor
+
+                Usage:
+                phykit alignment_outlier_regions <alignment>
+                  [--cutoff <float>] [--report <path>]
+                  [--mask-output <path>] [--mask-character <character>]
+                  [--json]
+
+                Options
+                =====================================================
+                <alignment>                 multiple sequence alignment
+
+                --cutoff                    minimum divergence score used
+                                            to control detection sensitivity;
+                                            must be >1 (default: 3.0)
+
+                --report                    optional path for the region
+                                            report; defaults to standard output
+
+                --mask-output               optional path for a FASTA alignment
+                                            with flagged residues masked
+
+                --mask-character            single ambiguity character used in
+                                            the masked alignment (default: ?)
+
+                --json                      output the report as JSON
+                """
+            ),
+        )
+        parser.add_argument("alignment", type=str, help=SUPPRESS)
+        parser.add_argument(
+            "--cutoff",
+            type=float,
+            default=3.0,
+            required=False,
+            help=SUPPRESS,
+        )
+        parser.add_argument(
+            "--report",
+            type=str,
+            default=None,
+            required=False,
+            help=SUPPRESS,
+        )
+        parser.add_argument(
+            "--mask-output",
+            type=str,
+            default=None,
+            required=False,
+            help=SUPPRESS,
+        )
+        parser.add_argument(
+            "--mask-character",
+            type=str,
+            default="?",
+            required=False,
+            help=SUPPRESS,
+        )
+        _add_json_argument(parser)
+        _run_service(parser, argv, AlignmentOutlierRegions)
 
     @staticmethod
     def column_score(argv):
@@ -10210,6 +10298,10 @@ def alignment_recoding(argv=None):
 
 def alignment_outlier_taxa(argv=None):
     Phykit.alignment_outlier_taxa(sys.argv[1:])
+
+
+def alignment_outlier_regions(argv=None):
+    Phykit.alignment_outlier_regions(sys.argv[1:])
 
 
 def column_score(argv=None):
