@@ -82,6 +82,15 @@ class TestProcessArgs:
 
 
 class TestTraitParsing:
+    def test_missing_file_reports_path(self, tmp_path):
+        missing = tmp_path / "missing.tsv"
+        svc = ContMap.__new__(ContMap)
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            svc._parse_single_trait_data(str(missing), ["A", "B", "C"])
+
+        assert str(missing) in exc_info.value.messages[0]
+
     def test_comments_and_blanks(self, tmp_path):
         trait_file = tmp_path / "traits.tsv"
         trait_file.write_text(
@@ -173,6 +182,49 @@ class TestTraitParsing:
             "Non-numeric trait value 'bad' for taxon 'bear' on line 2."
             in exc_info.value.messages
         )
+
+    def test_unordered_exact_taxa_emit_no_warnings(self, tmp_path, capsys):
+        trait_file = tmp_path / "traits.tsv"
+        trait_file.write_text("C\t3.0\nA\t1.0\nB\t2.0\n")
+        svc = ContMap.__new__(ContMap)
+
+        traits = svc._parse_single_trait_data(
+            str(trait_file), ["A", "B", "C"]
+        )
+
+        assert traits == {"C": 3.0, "A": 1.0, "B": 2.0}
+        assert capsys.readouterr().err == ""
+
+    def test_taxon_mismatches_warn_and_return_shared_values(
+        self, tmp_path, capsys
+    ):
+        trait_file = tmp_path / "traits.tsv"
+        trait_file.write_text("A\t1.0\nB\t2.0\nC\t3.0\nextra\t4.0\n")
+        svc = ContMap.__new__(ContMap)
+
+        traits = svc._parse_single_trait_data(
+            str(trait_file), ["A", "B", "C", "missing"]
+        )
+
+        assert traits == {"A": 1.0, "B": 2.0, "C": 3.0}
+        stderr = capsys.readouterr().err
+        assert "missing" in stderr
+        assert "extra" in stderr
+
+    def test_too_few_shared_taxa_are_rejected(self, tmp_path, capsys):
+        trait_file = tmp_path / "traits.tsv"
+        trait_file.write_text("A\t1.0\nB\t2.0\nextra\t3.0\n")
+        svc = ContMap.__new__(ContMap)
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            svc._parse_single_trait_data(
+                str(trait_file), ["A", "B", "missing"]
+            )
+
+        assert "Only 2 shared taxa" in exc_info.value.messages[0]
+        stderr = capsys.readouterr().err
+        assert "missing" in stderr
+        assert "extra" in stderr
 
 
 class TestRun:
@@ -420,6 +472,14 @@ class TestRun:
 
 
 class TestFastAnc:
+    def test_internal_labels_preserve_existing_names(self):
+        svc = ContMap.__new__(ContMap)
+        tree = Phylo.read(StringIO("(A:1,B:1)ancestor;"), "newick")
+
+        labels = svc._label_internal_nodes(tree)
+
+        assert labels[id(tree.root)] == "ancestor"
+
     def test_iter_postorder_matches_biopython_order(self):
         svc = ContMap.__new__(ContMap)
         tree = Phylo.read(
@@ -493,6 +553,21 @@ class TestFastAnc:
         assert set(estimates) == {"N1", "N2", "N3"}
         assert sigma2 > 0
 
+    def test_fast_anc_handles_missing_tip_and_zero_length_branches(self):
+        svc = ContMap.__new__(ContMap)
+        tree = Phylo.read(StringIO("(A:0,B:0);"), "newick")
+        labels = svc._label_internal_nodes(tree)
+
+        estimates, sigma2 = svc._fast_anc(
+            tree,
+            np.array([5.0]),
+            ["A"],
+            labels,
+        )
+
+        assert estimates[labels[id(tree.root)]] == pytest.approx(5.0)
+        assert sigma2 == 0.0
+
     def test_sigma2_from_contrasts_handles_polytomy(self):
         svc = ContMap.__new__(ContMap)
         tree = Phylo.read(StringIO("(A:1,B:1,C:1);"), "newick")
@@ -516,6 +591,21 @@ class TestFastAnc:
         combined_var = 0.5
         expected_second = ((3.0 - combined_est) ** 2) / (1.0 + combined_var)
         assert sigma2 == pytest.approx((expected_first + expected_second) / 2.0)
+
+    def test_sigma2_handles_missing_and_zero_variance_children(self):
+        svc = ContMap.__new__(ContMap)
+        tree = Phylo.read(StringIO("(A:0,B:0,C:0);"), "newick")
+        a, b, _c = tree.root.clades
+
+        sigma2 = svc._compute_sigma2_from_contrasts(
+            tree,
+            np.array([1.0, 1.0]),
+            {id(a): 1.0, id(b): 1.0},
+            {id(a): 0.0, id(b): 0.0},
+            ["A", "B"],
+        )
+
+        assert sigma2 == 0.0
 
 
 class TestPlotContMap:
@@ -643,6 +733,34 @@ class TestPlotContMap:
         )
 
         assert arcs == [(0, 0, 5.0, 1.0, 2.0, 3.0)]
+
+    def test_contmap_scalar_arcs_skip_incomplete_nodes(self):
+        missing_coord = Clade(clades=[Clade(name="A"), Clade(name="B")])
+        missing_estimate = Clade(clades=[Clade(name="C"), Clade(name="D")])
+        missing_child_coord = Clade(
+            clades=[Clade(name="E"), Clade(name="F")]
+        )
+        polytomy = Clade(
+            clades=[Clade(name="G"), Clade(name="H"), Clade(name="I")]
+        )
+        coords = {
+            id(missing_estimate): {"radius": 1.0, "angle": 0.0},
+            id(missing_child_coord): {"radius": 2.0, "angle": 0.0},
+            id(missing_child_coord.clades[0]): {"radius": 3.0, "angle": 0.5},
+            id(polytomy): {"radius": 4.0, "angle": 0.0},
+            id(polytomy.clades[0]): {"radius": 5.0, "angle": 1.0},
+        }
+        estimates = {
+            id(missing_coord): 1.0,
+            id(missing_child_coord): 2.0,
+            id(polytomy): 3.0,
+        }
+
+        assert ContMap._contmap_scalar_arcs(
+            [missing_coord, missing_estimate, missing_child_coord, polytomy],
+            coords,
+            estimates,
+        ) == []
 
     def test_iter_preorder_preserves_order_without_reversed(self):
         class NoReversedList(list):
