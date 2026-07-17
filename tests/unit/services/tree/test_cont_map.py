@@ -228,6 +228,30 @@ class TestTraitParsing:
 
 
 class TestRun:
+    def test_circular_color_annotations_render(self, tmp_path):
+        pytest.importorskip("matplotlib")
+        color_file = tmp_path / "colors.tsv"
+        color_file.write_text(
+            "raccoon,bear\trange\t#ffcc00\tHighlighted taxa\n"
+            "raccoon\tlabel\t#0033cc\n"
+        )
+        output = tmp_path / "cont-map-circular.png"
+        svc = ContMap(
+            Namespace(
+                tree=TREE_SIMPLE,
+                trait_data=TRAITS_FILE,
+                output=str(output),
+                json=False,
+                circular=True,
+                color_file=str(color_file),
+            )
+        )
+
+        svc.run()
+
+        assert output.exists()
+        assert output.stat().st_size > 0
+
     def test_run_all_tips_present_uses_read_only_tree_without_copy_or_prune(
         self, mocker
     ):
