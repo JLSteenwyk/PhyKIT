@@ -82,6 +82,29 @@ def _make_args(**overrides):
 
 
 class TestChronogram:
+    @pytest.mark.parametrize("circular", [False, True])
+    def test_color_annotations_render_in_both_layouts(self, tmp_path, circular):
+        pytest.importorskip("matplotlib")
+        color_file = tmp_path / "colors.tsv"
+        color_file.write_text(
+            "bear,raccoon\trange\t#ffcc00\tRange\n"
+            "bear,raccoon\tclade\t#cc0033\tClade\n"
+            "bear\tlabel\t#0033cc\n"
+        )
+        output = tmp_path / f"chronogram-{circular}.png"
+        svc = Chronogram(
+            _make_args(
+                plot_output=str(output),
+                circular=circular,
+                color_file=str(color_file),
+            )
+        )
+
+        svc.run()
+
+        assert output.exists()
+        assert output.stat().st_size > 0
+
     def test_run_reuses_unmodified_tree(self, mocker, tmp_path):
         out = str(tmp_path / "chrono.png")
         svc = Chronogram(_make_args(plot_output=out))
