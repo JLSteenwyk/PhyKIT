@@ -659,6 +659,87 @@ class TestPhylogeneticPCALambda:
     REF_LOG_LIKELIHOOD = -6.016939
     REF_EIGENVALUES = [0.076301214816, 0.002241847818, 0.000315397635]
 
+    def test_centering_and_likelihood_use_inverse_fallbacks(
+        self, lambda_args, monkeypatch
+    ):
+        svc = PhylogeneticOrdination(lambda_args)
+        Y = np.arange(12.0).reshape(4, 3)
+        C = np.eye(4)
+        expected_center = (np.ones_like(Y), None)
+
+        def fail_center(*_args, **_kwargs):
+            raise np.linalg.LinAlgError("cholesky failed")
+
+        def fail_likelihood(*_args, **_kwargs):
+            raise np.linalg.LinAlgError("cholesky failed")
+
+        monkeypatch.setattr(svc, "_center_traits_by_vcv_cholesky", fail_center)
+        monkeypatch.setattr(
+            svc, "_center_traits_by_vcv_inverse", lambda *_args: expected_center
+        )
+        monkeypatch.setattr(
+            svc, "_multi_trait_log_likelihood_cholesky", fail_likelihood
+        )
+        monkeypatch.setattr(
+            svc, "_multi_trait_log_likelihood_inverse", lambda *_args: -12.5
+        )
+
+        assert svc._center_traits_by_vcv(Y, C) is expected_center
+        assert svc._multi_trait_log_likelihood(Y, C) == -12.5
+
+    def test_centering_without_weighted_matrix(self, lambda_args):
+        svc = PhylogeneticOrdination(lambda_args)
+        Y = np.arange(12.0).reshape(4, 3)
+        C = np.eye(4)
+
+        centered_cholesky, weighted_cholesky = (
+            svc._center_traits_by_vcv_cholesky(Y, C, include_weighted=False)
+        )
+        centered_inverse, weighted_inverse = svc._center_traits_by_vcv_inverse(
+            Y, C, include_weighted=False
+        )
+
+        np.testing.assert_allclose(centered_cholesky, centered_inverse)
+        assert weighted_cholesky is None
+        assert weighted_inverse is None
+
+    def test_likelihood_rejects_singular_trait_covariance(self, lambda_args):
+        svc = PhylogeneticOrdination(lambda_args)
+        Y = np.ones((4, 2))
+        C = np.eye(4)
+
+        assert svc._multi_trait_log_likelihood_cholesky(Y, C) == -1e20
+        assert svc._multi_trait_log_likelihood_inverse(Y, C) == -1e20
+
+    def test_lambda_search_penalizes_failed_candidates(
+        self, lambda_args, monkeypatch
+    ):
+        svc = PhylogeneticOrdination(lambda_args)
+        calls = 0
+
+        def likelihood(_Y, _C):
+            nonlocal calls
+            calls += 1
+            if calls <= 10:
+                raise np.linalg.LinAlgError("invalid candidate")
+            return -7.0
+
+        def minimize(fn, bounds, method):
+            midpoint = sum(bounds) / 2.0
+            return Namespace(x=midpoint, fun=fn(midpoint))
+
+        monkeypatch.setattr(svc, "_multi_trait_log_likelihood", likelihood)
+        monkeypatch.setattr(
+            phylogenetic_ordination_module, "minimize_scalar", minimize
+        )
+
+        lambda_value, log_likelihood = svc._multi_trait_lambda(
+            np.ones((3, 2)), np.eye(3), 1.0
+        )
+
+        assert 0.0 <= lambda_value <= 1.0
+        assert log_likelihood == -7.0
+
     def test_multi_trait_log_likelihood_cholesky_matches_inverse(self, lambda_args):
         rng = np.random.default_rng(20260623)
         svc = PhylogeneticOrdination(lambda_args)
@@ -940,6 +1021,15 @@ class TestPhylogeneticPCALambda:
 
 
 class TestTSNEEmbedding:
+    def test_explicit_perplexity_below_one_is_rejected(self, tsne_args):
+        tsne_args.perplexity = 0.5
+        svc = PhylogeneticOrdination(tsne_args)
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            svc._embed_tsne(np.ones((4, 2)), 4)
+
+        assert "perplexity >= 1" in exc_info.value.messages[0]
+
     def test_shape(self, tsne_args):
         svc = PhylogeneticOrdination(tsne_args)
         tree = svc.read_tree_file()
@@ -1001,6 +1091,15 @@ class TestTSNEEmbedding:
 
 
 class TestUMAPEmbedding:
+    def test_explicit_neighbor_count_below_two_is_rejected(self, umap_args):
+        umap_args.n_neighbors = 1
+        svc = PhylogeneticOrdination(umap_args)
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            svc._embed_umap(np.ones((3, 2)), 3)
+
+        assert "n_neighbors >= 2" in exc_info.value.messages[0]
+
     def test_shape(self, umap_args):
         svc = PhylogeneticOrdination(umap_args)
         tree = svc.read_tree_file()
