@@ -63,6 +63,29 @@ def test_lazy_numpy_caches_resolved_attributes():
     assert lazy_np._module is not None
 
 
+def test_lazy_json_output_delegates_to_helper(monkeypatch):
+    calls = []
+    monkeypatch.setattr(
+        "phykit.helpers.json_output.print_json",
+        lambda *args, **kwargs: calls.append((args, kwargs)) or "printed",
+    )
+
+    assert rate_heterogeneity_module.print_json({"result": 1}, indent=2) == "printed"
+    assert calls == [(({"result": 1},), {"indent": 2})]
+
+
+def test_chi_squared_survival_function_supports_other_degrees_of_freedom():
+    from scipy.stats import chi2
+
+    assert rate_heterogeneity_module._chi2_sf(4.5, 3) == pytest.approx(
+        chi2.sf(4.5, df=3)
+    )
+
+
+def test_empty_per_regime_vcv_sum_returns_zero():
+    assert RateHeterogeneity._sum_vcv_matrices({}) == 0
+
+
 def test_merge_nonempty_child_state_sets_does_not_slice_children():
     class NoSliceList(list):
         def __getitem__(self, key):
@@ -374,6 +397,35 @@ class TestRegimeParsing:
         assert "1 taxa in tree but not in regime file: dog" in stderr
         assert "1 taxa in regime file but not in tree: off_tree" in stderr
 
+    def test_unordered_exact_taxa_return_without_warnings(
+        self, service, tmp_path, capsys
+    ):
+        regime_file = tmp_path / "regimes.tsv"
+        regime_file.write_text("C\tr1\nA\tr1\nB\tr2\n")
+
+        regimes = service._parse_regime_file(
+            str(regime_file),
+            ["A", "B", "C"],
+        )
+
+        assert regimes == {"C": "r1", "A": "r1", "B": "r2"}
+        assert capsys.readouterr().err == ""
+
+    def test_fewer_than_three_shared_regime_taxa_errors(self, service, tmp_path):
+        regime_file = tmp_path / "regimes.tsv"
+        regime_file.write_text("A\tr1\nB\tr2\nX\tr1\n")
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            service._parse_regime_file(
+                str(regime_file),
+                ["A", "B", "C"],
+            )
+
+        assert exc_info.value.messages == [
+            "Only 2 shared taxa between tree and regime file.",
+            "At least 3 shared taxa are required.",
+        ]
+
 
 class TestTraitParsing:
     def test_comments_and_blanks(self, service, tmp_path):
@@ -463,6 +515,62 @@ class TestTraitParsing:
             "Non-numeric trait value 'bad' for taxon 'bear' on line 2."
             in exc_info.value.messages
         )
+
+    def test_missing_file(self, service):
+        with pytest.raises(PhykitUserError) as exc_info:
+            service._parse_trait_file(
+                "/nonexistent/traits.tsv",
+                ["A", "B", "C"],
+            )
+
+        assert exc_info.value.messages[0] == (
+            "/nonexistent/traits.tsv corresponds to no such file or directory."
+        )
+
+    def test_unordered_exact_taxa_return_without_warnings(
+        self, service, tmp_path, capsys
+    ):
+        trait_file = tmp_path / "traits.tsv"
+        trait_file.write_text("C\t3.0\nA\t1.0\nB\t2.0\n")
+
+        traits = service._parse_trait_file(
+            str(trait_file),
+            ["A", "B", "C"],
+        )
+
+        assert traits == {"C": 3.0, "A": 1.0, "B": 2.0}
+        assert capsys.readouterr().err == ""
+
+    def test_mismatched_taxa_warn_and_return_shared_values(
+        self, service, tmp_path, capsys
+    ):
+        trait_file = tmp_path / "traits.tsv"
+        trait_file.write_text("A\t1.0\nB\t2.0\nC\t3.0\nE\t5.0\n")
+
+        traits = service._parse_trait_file(
+            str(trait_file),
+            ["A", "B", "C", "D"],
+        )
+
+        assert traits == {"A": 1.0, "B": 2.0, "C": 3.0}
+        stderr = capsys.readouterr().err
+        assert "1 taxa in tree but not in trait file: D" in stderr
+        assert "1 taxa in trait file but not in tree: E" in stderr
+
+    def test_fewer_than_three_shared_trait_taxa_errors(self, service, tmp_path):
+        trait_file = tmp_path / "traits.tsv"
+        trait_file.write_text("A\t1.0\nB\t2.0\nX\t3.0\n")
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            service._parse_trait_file(
+                str(trait_file),
+                ["A", "B", "C"],
+            )
+
+        assert exc_info.value.messages == [
+            "Only 2 shared taxa between tree and trait file.",
+            "At least 3 shared taxa are required.",
+        ]
 
 
 class TestFitchParsimony:
@@ -1118,6 +1226,67 @@ class TestRValidation:
 
 
 class TestRun:
+    def test_exact_shared_data_requires_three_taxa(self):
+        with pytest.raises(PhykitUserError) as exc_info:
+            RateHeterogeneity._prepare_shared_trait_regime_data(
+                ["A", "B"],
+                {"A": 1.0, "B": 2.0},
+                {"A": "r1", "B": "r2"},
+            )
+
+        assert exc_info.value.messages == [
+            "Only 2 shared taxa among tree, trait, and regime files.",
+            "At least 3 shared taxa are required.",
+        ]
+
+    def test_partially_overlapping_data_requires_three_shared_taxa(self):
+        with pytest.raises(PhykitUserError) as exc_info:
+            RateHeterogeneity._prepare_shared_trait_regime_data(
+                ["A", "B", "C"],
+                {"A": 1.0, "B": 2.0, "C": 3.0},
+                {"A": "r1", "B": "r2", "D": "r1"},
+            )
+
+        assert exc_info.value.messages == [
+            "Only 2 shared taxa among tree, trait, and regime files.",
+            "At least 3 shared taxa are required.",
+        ]
+
+    def test_equal_taxa_in_different_orders_reuse_input_mappings(self):
+        trait_values = {"A": 1.0, "B": 2.0, "C": 3.0}
+        regime_assignments = {"C": "r1", "B": "r2", "A": "r1"}
+
+        observed = RateHeterogeneity._prepare_shared_trait_regime_data(
+            ["A", "B", "C"],
+            trait_values,
+            regime_assignments,
+        )
+
+        assert observed[0] is trait_values
+        assert observed[1] is regime_assignments
+        assert observed[2] == []
+        assert observed[3] == ["A", "B", "C"]
+        assert observed[4] == ["r1", "r2"]
+
+    def test_run_requires_two_distinct_regimes(self, default_args, tmp_path):
+        regime_file = tmp_path / "one-regime.tsv"
+        tree = RateHeterogeneity(default_args).read_tree_file()
+        regime_file.write_text(
+            "".join(
+                f"{tip.name}\tshared\n"
+                for tip in tree.get_terminals()
+            )
+        )
+        default_args.regime_data = str(regime_file)
+        service = RateHeterogeneity(default_args)
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            service.run()
+
+        assert exc_info.value.messages == [
+            "At least 2 distinct regimes are required."
+        ]
+
     @patch("builtins.print")
     def test_text_output(self, mocked_print, default_args):
         svc = RateHeterogeneity(default_args)
@@ -1933,10 +2102,7 @@ class TestPlot:
         assert output_path.stat().st_size > 0
 
     def test_plot_file_created(self, default_args):
-        try:
-            import matplotlib
-        except ImportError:
-            pytest.skip("matplotlib not installed")
+        pytest.importorskip("matplotlib")
 
         with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as f:
             tmppath = f.name
@@ -1952,10 +2118,7 @@ class TestPlot:
                 os.unlink(tmppath)
 
     def test_plot_circular(self):
-        try:
-            import matplotlib
-        except ImportError:
-            pytest.skip("matplotlib not installed")
+        pytest.importorskip("matplotlib")
 
         with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as f:
             tmppath = f.name
