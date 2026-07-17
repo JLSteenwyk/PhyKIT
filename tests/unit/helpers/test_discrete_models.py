@@ -1591,8 +1591,199 @@ class TestFelsensteinPruning:
         assert loglik2 == loglik1
         discrete_models._FIT_Q_MATRIX_CACHE.clear()
 
+    def test_fit_q_matrix_recovers_when_optimizers_reject_inputs(self, monkeypatch):
+        from Bio.Phylo.Newick import Clade, Tree
+        import phykit.helpers.discrete_models as discrete_models
+
+        tree = Tree(
+            root=Clade(
+                clades=[
+                    Clade(branch_length=1.0, name="A"),
+                    Clade(branch_length=1.0, name="B"),
+                    Clade(branch_length=1.0, name="C"),
+                ],
+            )
+        )
+        context = _prepare_felsenstein_context(
+            tree,
+            {"A": "0", "B": "1", "C": "2"},
+            ["0", "1", "2"],
+        )
+        context["fit_q_matrix_cache_key"] = None
+
+        def reject_optimization(*_args, **_kwargs):
+            raise ValueError("optimizer rejected input")
+
+        monkeypatch.setattr(discrete_models, "minimize", reject_optimization)
+
+        Q, loglik = fit_q_matrix(
+            tree,
+            {"A": "0", "B": "1", "C": "2"},
+            ["0", "1", "2"],
+            "SYM",
+            pruning_context=context,
+        )
+
+        assert Q.shape == (3, 3)
+        assert np.isfinite(loglik)
+
+    def test_fit_q_matrix_cache_evicts_oldest_entry(self, monkeypatch):
+        import phykit.helpers.discrete_models as discrete_models
+
+        discrete_models._FIT_Q_MATRIX_CACHE.clear()
+        monkeypatch.setattr(discrete_models, "_FIT_Q_MATRIX_CACHE_MAXSIZE", 2)
+        Q = np.eye(2)
+
+        discrete_models._cache_fit_q_matrix_result("first", Q, -1.0)
+        discrete_models._cache_fit_q_matrix_result("second", Q, -2.0)
+        discrete_models._cache_fit_q_matrix_result("third", Q, -3.0)
+
+        assert "first" not in discrete_models._FIT_Q_MATRIX_CACHE
+        assert set(discrete_models._FIT_Q_MATRIX_CACHE) == {"second", "third"}
+        discrete_models._FIT_Q_MATRIX_CACHE.clear()
+
 
 class TestParseDiscreteTraits:
+    def test_legacy_multi_column_parser_returns_selected_trait(self):
+        import phykit.helpers.discrete_models as discrete_models
+
+        result = discrete_models._parse_multi_column(
+            [
+                "taxon\tdiet\thabitat",
+                "A\tcarnivore\tforest",
+                "B\therbivore\tplains",
+                "C\tomnivore\twetland",
+            ],
+            "traits.tsv",
+            ["A", "B", "C"],
+            "diet",
+        )
+
+        assert result == {
+            "A": "carnivore",
+            "B": "herbivore",
+            "C": "omnivore",
+        }
+
+    @pytest.mark.parametrize(
+        ("data_lines", "trait_column", "expected_message"),
+        [
+            (
+                ["taxon\tdiet"],
+                "diet",
+                "Trait file must have a header row and at least one data row.",
+            ),
+            (
+                ["taxon", "A"],
+                "diet",
+                "Header must have at least 2 columns (taxon + at least 1 trait).",
+            ),
+            (
+                ["taxon\tdiet", "A\tcarnivore"],
+                "habitat",
+                "Column 'habitat' not found in trait file.",
+            ),
+            (
+                ["taxon\tdiet\thabitat", "A\tcarnivore"],
+                "diet",
+                "Line 2 has 2 columns; expected 3.",
+            ),
+            (
+                ["taxon\tdiet", "A\t"],
+                "diet",
+                "Missing trait value for taxon 'A' on line 2.",
+            ),
+        ],
+    )
+    def test_legacy_multi_column_parser_reports_invalid_input(
+        self, data_lines, trait_column, expected_message
+    ):
+        import phykit.helpers.discrete_models as discrete_models
+
+        with pytest.raises(PhykitUserError) as excinfo:
+            discrete_models._parse_multi_column(
+                data_lines,
+                "traits.tsv",
+                ["A", "B", "C"],
+                trait_column,
+            )
+
+        assert expected_message in excinfo.value.messages
+
+    def test_legacy_two_column_parser_returns_traits(self):
+        import phykit.helpers.discrete_models as discrete_models
+
+        result = discrete_models._parse_two_column(
+            ["A\tcarnivore", "B\therbivore", "C\tomnivore"],
+            "traits.tsv",
+            ["A", "B", "C"],
+        )
+
+        assert result == {
+            "A": "carnivore",
+            "B": "herbivore",
+            "C": "omnivore",
+        }
+
+    @pytest.mark.parametrize(
+        ("line", "column_count"),
+        [("A", 1), ("A\tcarnivore\textra", 3)],
+    )
+    def test_legacy_two_column_parser_rejects_malformed_rows(
+        self, line, column_count
+    ):
+        import phykit.helpers.discrete_models as discrete_models
+
+        with pytest.raises(PhykitUserError) as excinfo:
+            discrete_models._parse_two_column(
+                [line],
+                "traits.tsv",
+                ["A", "B", "C"],
+            )
+
+        assert (
+            f"Line 1 has {column_count} columns; expected 2 (taxon, state)."
+            in excinfo.value.messages
+        )
+
+    def test_shared_taxa_validation_accepts_reordered_equal_sets(self, capsys):
+        import phykit.helpers.discrete_models as discrete_models
+
+        traits = {"A": "0", "B": "1", "C": "0"}
+
+        observed = discrete_models._validate_shared_taxa(
+            traits, ["C", "B", "A"]
+        )
+
+        assert observed is traits
+        assert capsys.readouterr().err == ""
+
+    def test_shared_taxa_validation_warns_for_both_unmatched_sets(self, capsys):
+        import phykit.helpers.discrete_models as discrete_models
+
+        observed = discrete_models._validate_shared_taxa(
+            {"A": "0", "B": "1", "C": "0", "D": "1"},
+            ["A", "B", "C", "E"],
+        )
+
+        assert observed == {"A": "0", "B": "1", "C": "0"}
+        warnings = capsys.readouterr().err
+        assert "1 taxa in tree but not in trait file: E" in warnings
+        assert "1 taxa in trait file but not in tree: D" in warnings
+
+    def test_parse_multi_column_reports_missing_selected_column(self, tmp_path):
+        path = tmp_path / "traits.tsv"
+        path.write_text("taxon\tdiet\nA\tcarnivore\nB\therbivore\nC\tomnivore\n")
+
+        with pytest.raises(PhykitUserError) as excinfo:
+            parse_discrete_traits(
+                str(path),
+                ["A", "B", "C"],
+                trait_column="habitat",
+            )
+
+        assert "Column 'habitat' not found in trait file." in excinfo.value.messages
+
     def test_parse_multi_column(self, tmp_path):
         f = tmp_path / "traits.tsv"
         f.write_text("taxon\tdiet\nA\tcarnivore\nB\therbivore\nC\tomnivore\n")
