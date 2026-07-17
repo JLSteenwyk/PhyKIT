@@ -141,6 +141,19 @@ def test_all_sequences_identical_does_not_slice_taxa_names():
     assert identity_matrix_module._all_sequences_identical(sequences, taxa_names) is True
 
 
+def test_identity_matrix_helpers_handle_empty_inputs():
+    assert identity_matrix_module._all_sequences_identical({}, []) is False
+    assert identity_matrix_module._shared_valid_sites(
+        np.empty((0, 3), dtype=bool)
+    ) is None
+
+    matrix = identity_matrix_module._direct_ascii_identity_matrix(
+        np.empty((2, 0), dtype=np.uint8),
+        0,
+    )
+    np.testing.assert_array_equal(matrix, np.eye(2))
+
+
 def test_repeated_cluster_wrappers_cache_scipy_imports(monkeypatch):
     previous_linkage = identity_matrix_module._LINKAGE
     previous_leaves_list = identity_matrix_module._LEAVES_LIST
@@ -1091,3 +1104,170 @@ class TestIdentityMatrixUnit:
         assert len(payload["taxa_order"]) == 3
         # taxon_A and taxon_B are identical, so max should be 1.0
         assert payload["max_identity"]["value"] == 1.0
+
+    def test_parse_alignment_rejects_empty_input(
+        self, tmp_path, monkeypatch, capsys
+    ):
+        service = IdentityMatrix(_make_args("empty.fa", tmp_path / "out.png"))
+        monkeypatch.setattr(
+            service,
+            "get_alignment_and_format",
+            lambda: ([], "fasta", False),
+        )
+
+        with pytest.raises(SystemExit) as exc_info:
+            service._parse_alignment()
+
+        assert exc_info.value.code == 2
+        assert capsys.readouterr().err == (
+            "Error: no sequences found in alignment.\n"
+        )
+
+    def test_run_rejects_single_taxon(self, tmp_path, monkeypatch, capsys):
+        service = IdentityMatrix(_make_args("one.fa", tmp_path / "out.png"))
+        monkeypatch.setattr(
+            service,
+            "_parse_alignment",
+            lambda: ({"only": "ACGT"}, ["only"], 4),
+        )
+
+        with pytest.raises(SystemExit) as exc_info:
+            service.run()
+
+        assert exc_info.value.code == 2
+        assert capsys.readouterr().err == (
+            "Error: alignment must contain at least 2 taxa.\n"
+        )
+
+    def test_run_parses_partition_and_ignores_broken_pipe(
+        self, tmp_path, monkeypatch
+    ):
+        aln_path = tmp_path / "aln.fa"
+        partition_path = tmp_path / "parts.txt"
+        _write_alignment(aln_path, {"a": "ACGT", "b": "ACGA"})
+        partition_path.write_text("DNA, gene=1-4\n")
+        service = IdentityMatrix(
+            _make_args(
+                aln_path,
+                tmp_path / "out.png",
+                sort="alpha",
+                partition=str(partition_path),
+            )
+        )
+        captured = {}
+
+        def capture_plot(*args, **kwargs):
+            captured["partitions"] = kwargs["partitions"]
+
+        monkeypatch.setattr(service, "_plot_heatmap", capture_plot)
+        monkeypatch.setattr(
+            service,
+            "_print_text_output",
+            lambda *args: (_ for _ in ()).throw(BrokenPipeError),
+        )
+
+        service.run()
+
+        assert captured["partitions"] == [("gene", 0, 4)]
+
+    def test_cache_key_failures_and_eviction(self, tmp_path, monkeypatch):
+        missing_service = IdentityMatrix(
+            _make_args(tmp_path / "missing.fa", tmp_path / "out.png")
+        )
+        assert missing_service._run_cache_key() is None
+        assert missing_service._get_cached_run_data() is None
+        missing_service._store_cached_run_data(
+            {}, [], 0, np.empty((0, 0)), [], [], None, (0, 0, [], 0, [])
+        )
+
+        aln_path = tmp_path / "aln.fa"
+        _write_alignment(aln_path, {"a": "AA", "b": "AT"})
+        tree_service = IdentityMatrix(
+            _make_args(
+                aln_path,
+                tmp_path / "tree.png",
+                sort="tree",
+                tree=str(tmp_path / "missing.tree"),
+            )
+        )
+        assert tree_service._run_cache_key()[-1] is None
+
+        service = IdentityMatrix(_make_args(aln_path, tmp_path / "out.png"))
+        identity_matrix_module._IDENTITY_RUN_CACHE.clear()
+        identity_matrix_module._IDENTITY_RUN_CACHE[("old",)] = ("sentinel",)
+        monkeypatch.setattr(identity_matrix_module, "_IDENTITY_RUN_CACHE_MAXSIZE", 1)
+        service._store_cached_run_data(
+            {"a": "AA", "b": "AT"},
+            ["a", "b"],
+            2,
+            np.array([[1.0, 0.5], [0.5, 1.0]]),
+            [0, 1],
+            ["a", "b"],
+            None,
+            (0.5, 0.5, ["a", "b"], 0.5, ["a", "b"]),
+        )
+
+        assert ("old",) not in identity_matrix_module._IDENTITY_RUN_CACHE
+        assert len(identity_matrix_module._IDENTITY_RUN_CACHE) == 1
+        identity_matrix_module._IDENTITY_RUN_CACHE.clear()
+
+    def test_unicode_computation_fallbacks_match_pairwise_oracles(self, tmp_path):
+        service = IdentityMatrix(_make_args("aln.fa", tmp_path / "out.png"))
+        sequences = {"a": "AΩ-T", "b": "AΩGT", "c": "TΩGT"}
+        taxa = ["a", "b", "c"]
+        partitions = [("left", 0, 2), ("right", 2, 4)]
+
+        matrix = service._compute_identity_matrix(sequences, taxa)
+        pairwise_matrix = service._compute_identity_matrix_pairwise(sequences, taxa)
+        names, values = service._compute_partition_identities(
+            sequences,
+            taxa,
+            partitions,
+        )
+        expected_names, expected_values = (
+            service._compute_partition_identities_pairwise(
+                sequences,
+                taxa,
+                partitions,
+            )
+        )
+
+        np.testing.assert_allclose(matrix, pairwise_matrix)
+        assert names == expected_names
+        np.testing.assert_allclose(values, expected_values)
+
+    def test_unicode_pairwise_fallback_sets_all_invalid_pairs_to_zero(
+        self, tmp_path
+    ):
+        service = IdentityMatrix(_make_args("aln.fa", tmp_path / "out.png"))
+        sequences = {"a": "Ω--", "b": "?Ψ?"}
+
+        matrix = service._compute_identity_matrix_pairwise(
+            sequences,
+            ["a", "b"],
+        )
+
+        np.testing.assert_array_equal(matrix, np.eye(2))
+
+    def test_small_ordering_and_partition_strip_edge_cases(self, tmp_path):
+        service = IdentityMatrix(
+            _make_args("aln.fa", tmp_path / "out.png", sort="cluster")
+        )
+        matrix = np.array([[1.0, 0.5], [0.5, 1.0]])
+
+        order, labels = service._determine_order(matrix, ["b", "a"], 2)
+        assert order == [0, 1]
+        assert labels == ["b", "a"]
+
+        service.sort_method = "input"
+        order, labels = service._determine_order(matrix, ["b", "a"], 2)
+        assert order == [0, 1]
+        assert labels == ["b", "a"]
+
+        strip = service._partition_identity_strip(
+            np.empty((0, 2)),
+            [0],
+            n_taxa=1,
+            n_parts=2,
+        )
+        np.testing.assert_array_equal(strip, np.zeros((1, 2)))
