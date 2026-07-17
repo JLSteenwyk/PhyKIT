@@ -264,6 +264,10 @@ class TestMatrixExp:
         P = matrix_exp(Q, 0.0)
         assert np.allclose(P, np.eye(2))
 
+    def test_zero_rate_two_state_matrix_is_identity_for_positive_time(self):
+        Q = build_q_matrix(np.array([0.0]), 2, "ER")
+        np.testing.assert_array_equal(matrix_exp(Q, 10.0), np.eye(2))
+
     def test_rows_sum_to_one(self):
         Q = build_q_matrix(np.array([0.5]), 3, "ER")
         P = matrix_exp(Q, 1.0)
@@ -1046,6 +1050,61 @@ class TestFelsensteinPruning:
             pi,
         ) == pytest.approx(expected)
 
+    @pytest.mark.parametrize("indexed_lengths", [True, False])
+    def test_five_state_er_rate_matches_general_q_likelihood(
+        self,
+        indexed_lengths,
+    ):
+        from Bio.Phylo.Newick import Clade, Tree
+
+        states = [str(index) for index in range(5)]
+        tree = Tree(
+            root=Clade(
+                clades=[
+                    Clade(branch_length=0.5, name=f"T{index}")
+                    for index in range(5)
+                ]
+            )
+        )
+        tip_states = {f"T{index}": state for index, state in enumerate(states)}
+        context = _prepare_felsenstein_context(tree, tip_states, states)
+        rate = 0.13
+        pi = np.ones(5) / 5.0
+        Q = build_q_matrix(np.array([rate]), 5, "ER")
+
+        if not indexed_lengths:
+            context.pop("internal_entries_by_length_index")
+            context.pop("unique_branch_lengths")
+
+        expected = _felsenstein_loglik_prepared(context, Q, pi)
+        observed = _felsenstein_loglik_er_rate(context, rate, pi)
+
+        assert observed == pytest.approx(expected, rel=1e-12, abs=1e-12)
+
+    def test_five_state_er_rate_returns_floor_for_zero_root_probability(self):
+        from Bio.Phylo.Newick import Clade, Tree
+
+        states = [str(index) for index in range(5)]
+        tree = Tree(
+            root=Clade(
+                clades=[
+                    Clade(branch_length=1.0, name=f"T{index}")
+                    for index in range(5)
+                ]
+            )
+        )
+        context = _prepare_felsenstein_context(
+            tree,
+            {f"T{index}": state for index, state in enumerate(states)},
+            states,
+        )
+
+        assert _felsenstein_loglik_er_rate(
+            context,
+            0.2,
+            np.zeros(5),
+        ) == -1e20
+
     def test_two_state_er_fit_avoids_objective_q_rebuilds(self, monkeypatch):
         from Bio.Phylo.Newick import Clade, Tree
         import phykit.helpers.discrete_models as discrete_models
@@ -1328,6 +1387,45 @@ class TestParseDiscreteTraits:
             parse_discrete_traits(str(f), ["A", "B", "C"], trait_column="diet")
 
         assert "Line 3 has 5 columns; expected 4." in excinfo.value.messages
+
+    @pytest.mark.parametrize(
+        ("content", "expected_message"),
+        [
+            (
+                "taxon\nA\n",
+                "Header must have at least 2 columns (taxon + at least 1 trait).",
+            ),
+            (
+                "taxon\tdiet\thabitat\nA\t\tforest\nB\therbivore\tplain\n",
+                "Missing trait value for taxon 'A' on line 2.",
+            ),
+            (
+                "taxon\tdiet\n",
+                "Trait file must have a header row and at least one data row.",
+            ),
+            (
+                "# comments only\n\n",
+                "Trait file must have a header row and at least one data row.",
+            ),
+        ],
+    )
+    def test_parse_multi_column_reports_malformed_streams(
+        self,
+        tmp_path,
+        content,
+        expected_message,
+    ):
+        path = tmp_path / "traits.tsv"
+        path.write_text(content)
+
+        with pytest.raises(PhykitUserError) as excinfo:
+            parse_discrete_traits(
+                str(path),
+                ["A", "B", "C"],
+                trait_column="diet",
+            )
+
+        assert expected_message in excinfo.value.messages
 
     def test_parse_two_column(self, tmp_path):
         f = tmp_path / "traits.tsv"
