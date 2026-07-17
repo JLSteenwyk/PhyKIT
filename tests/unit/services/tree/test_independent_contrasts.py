@@ -15,10 +15,12 @@ import subprocess
 import sys
 import builtins
 import json
+import math
 from argparse import Namespace
 from pathlib import Path
 from Bio.Phylo.BaseTree import TreeMixin
 
+from phykit.errors import PhykitUserError
 from phykit.services.tree.independent_contrasts import IndependentContrasts
 import phykit.services.tree.independent_contrasts as ic_module
 
@@ -423,6 +425,52 @@ class TestPICComputation:
         assert len(fallback_tree.root.clades) == 2
         assert all(len(clade.clades) <= 2 for clade in fallback_tree.find_clades())
 
+    def test_malformed_polytomy_traversal_delegates_to_fallback(self, args):
+        from Bio import Phylo
+        from io import StringIO
+
+        fallback_tree = Phylo.read(
+            StringIO("(A:1,B:1,C:1,D:1);"), "newick"
+        )
+
+        class MalformedRoot:
+            clades = [object()]
+
+        class MalformedTree:
+            root = MalformedRoot()
+
+            def find_clades(self, *call_args, **kwargs):
+                return fallback_tree.find_clades(*call_args, **kwargs)
+
+        ic = IndependentContrasts(args)
+
+        ic._resolve_polytomies(MalformedTree())
+
+        assert len(fallback_tree.root.clades) == 2
+
+    def test_standard_pic_builders_decline_legacy_tree(self, args):
+        ic = IndependentContrasts(args)
+
+        assert ic._compute_pic_standard_tree(object(), {}) is None
+        assert ic._compute_pic_text_summaries_standard_tree(object(), {}) is None
+
+    def test_standard_pic_builders_skip_unresolved_or_missing_nodes(self, args):
+        from Bio import Phylo
+        from io import StringIO
+
+        ic = IndependentContrasts(args)
+        polytomy = Phylo.read(StringIO("(A:1,B:1,C:1);"), "newick")
+        missing_tip = Phylo.read(StringIO("(A:1,B:1);"), "newick")
+
+        assert ic._compute_pic_standard_tree(polytomy, {"A": 1.0}) == ([], [])
+        assert ic._compute_pic_standard_tree(missing_tip, {"A": 1.0}) == ([], [])
+        assert ic._compute_pic_text_summaries_standard_tree(
+            polytomy, {"A": 1.0}
+        ) == ([], [])
+        assert ic._compute_pic_text_summaries_standard_tree(
+            missing_tip, {"A": 1.0}
+        ) == ([], [])
+
     def test_direct_postorder_preserves_left_to_right_order(self):
         from Bio import Phylo
         from io import StringIO
@@ -482,6 +530,8 @@ class TestPICComputation:
             (["A", "B"], [], 1, ["A"]),
             (["A", "B"], ["C", "D"], 3, ["A", "B", "C"]),
             (["C", "D"], ["A", "B"], 3, ["A", "B", "C"]),
+            (["C", "D"], ["A", "B"], 2, ["A", "B"]),
+            (["A", "C"], ["B"], 3, ["A", "B", "C"]),
         ],
     )
     def test_limited_label_merge_boundary_cases(
@@ -598,6 +648,47 @@ class TestPICComputation:
 
         assert list(tip_traits) == ["A", "B", "C"]
         assert tip_traits == {"A": 1.0, "B": 2.0, "C": 3.0}
+
+    def test_parse_trait_data_skips_non_numeric_and_malformed_rows(
+        self, monkeypatch, args
+    ):
+        from io import StringIO
+
+        monkeypatch.setattr(
+            "builtins.open",
+            lambda *_args, **_kwargs: StringIO(
+                "bad\tnot-a-number\nmalformed\nA\t1\nB\t2\nC\t3\n"
+            ),
+        )
+        ic = IndependentContrasts(args)
+
+        observed = ic._parse_trait_data("traits.tsv", ["A", "B", "C"])
+
+        assert observed == {"A": 1.0, "B": 2.0, "C": 3.0}
+
+    def test_parse_trait_data_reports_missing_file(self, tmp_path, args):
+        ic = IndependentContrasts(args)
+
+        with pytest.raises(PhykitUserError) as excinfo:
+            ic._parse_trait_data(str(tmp_path / "missing.tsv"), ["A", "B", "C"])
+
+        assert "not found" in excinfo.value.messages[0]
+
+    def test_parse_trait_data_reports_insufficient_shared_taxa(
+        self, monkeypatch, args
+    ):
+        from io import StringIO
+
+        monkeypatch.setattr(
+            "builtins.open",
+            lambda *_args, **_kwargs: StringIO("A\t1\nB\t2\n"),
+        )
+        ic = IndependentContrasts(args)
+
+        with pytest.raises(PhykitUserError) as excinfo:
+            ic._parse_trait_data("traits.tsv", ["A", "B", "C"])
+
+        assert "Only 2 shared taxa" in excinfo.value.messages[0]
 
 
 class TestPICRun:
@@ -829,6 +920,21 @@ class TestPICRun:
         assert mean_abs == pytest.approx(expected_mean_abs)
         assert variance == pytest.approx(expected_variance)
 
+    @pytest.mark.parametrize(
+        ("contrasts", "expected_mean"),
+        [([], float("nan")), ([2.0], 2.0)],
+    )
+    def test_scalar_contrast_summary_handles_fewer_than_two_values(
+        self, contrasts, expected_mean
+    ):
+        mean_abs, variance = ic_module._contrast_summary_stats_scalar(contrasts)
+
+        if math.isnan(expected_mean):
+            assert math.isnan(mean_abs)
+        else:
+            assert mean_abs == expected_mean
+        assert math.isnan(variance)
+
     def test_print_text_summary_stats_avoid_generic_wrappers(
         self, args, monkeypatch, capsys
     ):
@@ -894,6 +1000,16 @@ class TestPICRun:
             {"node": 1, "contrast": 1.0, "tips": ["A", "B"]},
             {"node": 2, "contrast": -3.0, "tips": ["C", "D"]},
         ]
+
+    def test_print_json_ignores_broken_pipe(self, monkeypatch, args):
+        ic = IndependentContrasts(args)
+
+        def fail_dump(*_args, **_kwargs):
+            raise BrokenPipeError
+
+        monkeypatch.setattr(ic_module, "_json_dumps", fail_dump)
+
+        ic._print_json([1.0], [["A", "B"]], {"A": 1.0, "B": 2.0})
 
     def test_large_contrast_summary_uses_numpy_array_path(
         self, monkeypatch, args
