@@ -12,6 +12,32 @@ here = Path(__file__)
 
 @pytest.mark.integration
 class TestCreateConcatenationMatrix(object):
+    def test_unequal_locus_exits_without_output(self, tmp_path, capsys):
+        alignment = tmp_path / "unequal.fa"
+        alignment.write_text(">A\nAAAA\n>B\nCCC\n")
+        alignment_list = tmp_path / "alignments.txt"
+        alignment_list.write_text(f"{alignment}\n")
+        prefix = tmp_path / "concat"
+        testargs = [
+            "phykit",
+            "create_concatenation_matrix",
+            "-a",
+            str(alignment_list),
+            "-p",
+            str(prefix),
+        ]
+
+        with patch.object(sys, "argv", testargs), pytest.raises(SystemExit) as error:
+            Phykit()
+
+        assert error.value.code == 2
+        assert "taxon 'B' has 3 sites; expected 4 sites from taxon 'A'" in (
+            capsys.readouterr().out
+        )
+        assert not Path(f"{prefix}.fa").exists()
+        assert not Path(f"{prefix}.partition").exists()
+        assert not Path(f"{prefix}.occupancy").exists()
+
     @patch("builtins.print")
     def test_create_concatenation_matrix0(self, mocked_print):
         prefix = "output/create_concat_matrix"

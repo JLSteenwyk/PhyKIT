@@ -44,6 +44,39 @@ assert module._MINIMIZE_SCALAR is None
     subprocess.run([sys.executable, "-c", code], check=True)
 
 
+def test_cli_rejects_negative_branch_length_before_json_output(tmp_path):
+    tree_path = tmp_path / "negative.tre"
+    tree_path.write_text("((a:-0.1,b:1):1,c:2);")
+    trait_path = tmp_path / "traits.tsv"
+    trait_path.write_text("a\t1\nb\t2\nc\t3\n")
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "phykit",
+            "phylogenetic_signal",
+            "-t",
+            str(tree_path),
+            "-d",
+            str(trait_path),
+            "--json",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 2
+    assert "finite and nonnegative" in result.stdout
+    assert "a" in result.stdout
+    assert "-0.1" in result.stdout
+    assert not result.stdout.lstrip().startswith("{")
+    assert "NaN" not in result.stdout
+    assert "Infinity" not in result.stdout
+    assert "traceback" not in result.stderr.lower()
+
+
 def test_lazy_numpy_caches_module_and_attributes():
     lazy_np = ps_module._LazyNumpy()
 

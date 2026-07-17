@@ -37,6 +37,23 @@ class TestJsonOutput:
         assert to_builtin_json_types(7) == 7
         assert to_builtin_json_types(1.25) == 1.25
 
+    def test_to_builtin_json_types_converts_nested_non_finite_values_to_null(self):
+        payload = {
+            "nan": float("nan"),
+            "nested": [float("inf"), (1.0, float("-inf"))],
+            "array": np.array([2.0, np.nan]),
+        }
+
+        converted = to_builtin_json_types(payload)
+
+        assert converted == {
+            "nan": None,
+            "nested": [None, [1.0, None]],
+            "array": [2.0, None],
+        }
+        assert converted is not payload
+        assert np.isnan(payload["nan"])
+
     def test_to_builtin_json_types_reuses_builtin_containers(self):
         payload = {"rows": [{"a": 1, "b": [2, 3]}], "ok": True}
 
@@ -122,6 +139,31 @@ class TestJsonOutput:
         assert parsed == {"a": 1, "b": 2.5}
 
     @patch("builtins.print")
+    def test_print_json_emits_strict_json_for_nested_non_finite_values(
+        self, mocked_print
+    ):
+        payload = {
+            "nan": float("nan"),
+            "nested": [float("inf"), {"negative": float("-inf")}],
+            "numpy": np.array([1.0, np.nan]),
+        }
+
+        print_json(payload)
+
+        output = mocked_print.call_args.args[0]
+
+        def reject_constant(value):
+            raise AssertionError(f"nonstandard JSON constant: {value}")
+
+        assert json.loads(output, parse_constant=reject_constant) == {
+            "nan": None,
+            "nested": [None, {"negative": None}],
+            "numpy": [1.0, None],
+        }
+        assert "NaN" not in output
+        assert "Infinity" not in output
+
+    @patch("builtins.print")
     def test_print_json_skips_conversion_for_builtin_payload(
         self, mocked_print, monkeypatch
     ):
@@ -184,6 +226,7 @@ class TestJsonOutput:
                 {
                     "sort_keys": False,
                     "default": json_output_module._json_default,
+                    "allow_nan": False,
                 },
             )
         ]

@@ -86,21 +86,40 @@ def _read_fasta(path):
 
 
 class TestPartitionParsing:
-    def test_parse_partition_file_handles_comments_whitespace_and_trailing_text(self, tmp_path):
+    def test_parse_partition_file_handles_comments_and_whitespace(self, tmp_path):
         path = os.path.join(str(tmp_path), "test.partition")
         with open(path, "w") as fh:
             fh.write("   # ignored\n")
             fh.write("\n")
             fh.write("AUTO, gene1=1-3\n")
-            fh.write("DNA,   gene2   =   4   -   6 trailing text\n")
-            fh.write("invalid line\n")
-            fh.write("DNA model, gene3=7-9\n")
-            fh.write("AUTO, gene 4=10-12\n")
+            fh.write("DNA,   gene2   =   4   -   6\n")
 
         assert AlignmentSubsample._parse_partition_file(path) == [
             ("gene1", 1, 3),
             ("gene2", 4, 6),
         ]
+
+    @pytest.mark.parametrize(
+        "row",
+        [
+            "invalid line",
+            "DNA model, gene3=7-9",
+            "AUTO, gene 4=10-12",
+            "DNA, gene2=4-6 trailing text",
+        ],
+    )
+    def test_parse_partition_file_rejects_malformed_rows(self, tmp_path, row):
+        path = os.path.join(str(tmp_path), "bad.partition")
+        with open(path, "w") as fh:
+            fh.write("# comment\n")
+            fh.write(f"{row}\n")
+
+        with pytest.raises(PhykitUserError) as excinfo:
+            AlignmentSubsample._parse_partition_file(path)
+
+        assert excinfo.value.messages[0] == (
+            f"Malformed partition row on line 2: '{row}'."
+        )
 
     def test_read_list_file_skips_whitespace_prefixed_comments(self, tmp_path):
         path = os.path.join(str(tmp_path), "taxa.txt")
@@ -514,6 +533,59 @@ class TestSitesMode:
 # ---------------------------------------------------------------------------
 
 class TestPartitionsMode:
+    @pytest.mark.parametrize(
+        ("partitions", "sequences", "expected_message"),
+        [
+            (
+                [("gene1", 0, 3)],
+                {"t1": "AAACCC", "t2": "TTTGGG"},
+                "Partition 'gene1' starts at 0; coordinates must be >= 1.",
+            ),
+            (
+                [("gene1", 4, 3)],
+                {"t1": "AAACCC", "t2": "TTTGGG"},
+                "Partition 'gene1' ends at 3 before its start at 4.",
+            ),
+            (
+                [("gene1", 1, 7)],
+                {"t1": "AAACCC", "t2": "TTTGGG"},
+                "Partition 'gene1' ends at 7, beyond alignment length 6.",
+            ),
+            (
+                [("gene1", 1, 3)],
+                {"t1": "AAACCC", "t2": "TTTGG"},
+                "All sequences in the alignment must have the same length.",
+            ),
+        ],
+    )
+    def test_partitions_mode_validates_inputs_before_writing(
+        self, tmp_path, partitions, sequences, expected_message
+    ):
+        alignment = _make_alignment(str(tmp_path), sequences)
+        partition = _make_partition(str(tmp_path), partitions)
+        prefix = os.path.join(str(tmp_path), "out")
+        service = AlignmentSubsample(
+            Namespace(
+                mode="partitions",
+                alignment=alignment,
+                list=None,
+                partition=partition,
+                number=1,
+                fraction=None,
+                seed=42,
+                bootstrap=False,
+                output=prefix,
+                json=False,
+            )
+        )
+
+        with pytest.raises(PhykitUserError) as excinfo:
+            service.run()
+
+        assert excinfo.value.messages == [expected_message]
+        assert not os.path.exists(f"{prefix}.fa")
+        assert not os.path.exists(f"{prefix}.partition")
+
     def test_assemble_partition_subsample_handles_empty_selection(self):
         new_sequences, new_partitions = AlignmentSubsample._assemble_partition_subsample(
             {"t1": "AAACCC", "t2": "TTTGGG"},

@@ -1713,7 +1713,10 @@
           "type": "str",
           "nargs": null,
           "default": "acctran",
-          "choices": null,
+          "choices": [
+            "acctran",
+            "deltran"
+          ],
           "metavar": "",
           "action": "_StoreAction"
         },

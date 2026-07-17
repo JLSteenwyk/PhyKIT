@@ -18,6 +18,7 @@ from phykit.services.tree.threshold_model import ThresholdModel
 
 TREE_SIMPLE = "tests/sample_files/tree_simple.tre"
 TRAITS_FILE = "tests/sample_files/tree_simple_threshold_traits.tsv"
+pytestmark = pytest.mark.validation
 
 
 R_SCRIPT = r"""
@@ -60,6 +61,20 @@ def _has_r_phytools():
         return False
 
 
+def _parse_r_threshbayes_summary(stdout):
+    expected_keys = {"r_mean", "r_q025", "r_q975"}
+    summary = {}
+    for line in stdout.strip().splitlines():
+        key, separator, value = line.partition("=")
+        if separator and key in expected_keys:
+            summary[key] = float(value)
+    missing = expected_keys - summary.keys()
+    assert not missing, (
+        f"R output omitted threshold summaries {sorted(missing)}:\n{stdout}"
+    )
+    return summary
+
+
 def _run_r_threshbayes(tree_file, trait_file, seed=42):
     """Run R threshBayes and return posterior summary."""
     with tempfile.NamedTemporaryFile(mode="w", suffix=".R", delete=False) as f:
@@ -75,11 +90,7 @@ def _run_r_threshbayes(tree_file, trait_file, seed=42):
     finally:
         Path(r_script_path).unlink()
 
-    summary = {}
-    for line in result.stdout.strip().splitlines():
-        key, val = line.split("=")
-        summary[key] = float(val)
-    return summary
+    return _parse_r_threshbayes_summary(result.stdout)
 
 
 def _run_phykit_threshold(tree_file, trait_file, seed=42):
@@ -130,12 +141,35 @@ def _run_phykit_threshold(tree_file, trait_file, seed=42):
     }
 
 
-@pytest.mark.skipif(not _has_r_phytools(), reason="R with phytools not available")
+def test_parse_r_summary_ignores_unrelated_stdout():
+    stdout = """Loading required package: maps
+r_mean=0.125
+progress=ignored
+r_q025=-0.500
+r_q975=0.750
+"""
+
+    assert _parse_r_threshbayes_summary(stdout) == {
+        "r_mean": 0.125,
+        "r_q025": -0.5,
+        "r_q975": 0.75,
+    }
+
+
+@pytest.fixture(scope="module")
+def threshold_summaries():
+    if not _has_r_phytools():
+        pytest.skip("R with phytools not available")
+    return (
+        _run_r_threshbayes(TREE_SIMPLE, TRAITS_FILE),
+        _run_phykit_threshold(TREE_SIMPLE, TRAITS_FILE),
+    )
+
+
 class TestThresholdModelVsPhytools:
-    def test_correlation_direction_agrees(self):
+    def test_correlation_direction_agrees(self, threshold_summaries):
         """Both implementations should agree on the sign of r."""
-        r_summary = _run_r_threshbayes(TREE_SIMPLE, TRAITS_FILE)
-        pk_summary = _run_phykit_threshold(TREE_SIMPLE, TRAITS_FILE)
+        r_summary, pk_summary = threshold_summaries
 
         # Both should have the same sign for r_mean
         r_sign = np.sign(r_summary["r_mean"])
@@ -145,10 +179,9 @@ class TestThresholdModelVsPhytools:
             f"PK r_mean={pk_summary['r_mean']:.4f}"
         )
 
-    def test_intervals_overlap(self):
+    def test_intervals_overlap(self, threshold_summaries):
         """95% intervals from both implementations should overlap."""
-        r_summary = _run_r_threshbayes(TREE_SIMPLE, TRAITS_FILE)
-        pk_summary = _run_phykit_threshold(TREE_SIMPLE, TRAITS_FILE)
+        r_summary, pk_summary = threshold_summaries
 
         # Check that intervals overlap
         overlap = (
@@ -160,15 +193,14 @@ class TestThresholdModelVsPhytools:
             f"PK=[{pk_summary['r_q025']:.4f}, {pk_summary['r_q975']:.4f}]"
         )
 
-    def test_means_within_tolerance(self):
+    def test_means_within_tolerance(self, threshold_summaries):
         """Posterior means should be within 0.3 of each other.
 
         MCMC samplers won't produce identical results, but with enough
         iterations the posterior means should converge to similar values.
         The tolerance is generous because the dataset is small (8 taxa).
         """
-        r_summary = _run_r_threshbayes(TREE_SIMPLE, TRAITS_FILE)
-        pk_summary = _run_phykit_threshold(TREE_SIMPLE, TRAITS_FILE)
+        r_summary, pk_summary = threshold_summaries
 
         diff = abs(r_summary["r_mean"] - pk_summary["r_mean"])
         assert diff < 0.3, (

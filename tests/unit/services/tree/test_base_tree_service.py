@@ -430,6 +430,90 @@ class TestTreeBase:
 
         service.validate_tree(tree, min_tips=3, require_branch_lengths=True)
 
+    @pytest.mark.parametrize(
+        "branch_length",
+        [-0.1, float("nan"), float("inf"), float("-inf")],
+    )
+    def test_validate_tree_rejects_invalid_required_branch_lengths(
+        self,
+        branch_length,
+    ):
+        service = Tree()
+        tree = NewickTree(
+            root=Clade(
+                clades=[
+                    Clade(branch_length=branch_length, name="a"),
+                    Clade(branch_length=1.0, name="b"),
+                    Clade(branch_length=1.0, name="c"),
+                ],
+            )
+        )
+
+        with pytest.raises(PhykitUserError) as exc:
+            service.validate_tree(
+                tree,
+                min_tips=3,
+                require_branch_lengths=True,
+                context="comparative analysis",
+            )
+
+        assert exc.value.code == 2
+        message = exc.value.messages[0]
+        assert "comparative analysis" in message
+        assert "a" in message
+        assert repr(branch_length) in message
+        assert "finite and nonnegative" in message
+
+    def test_validate_tree_accepts_zero_required_branch_lengths(self):
+        tree = Phylo.read(StringIO("((a:0,b:0):0,c:0);"), "newick")
+
+        Tree().validate_tree(
+            tree,
+            min_tips=3,
+            require_branch_lengths=True,
+        )
+
+    def test_validate_tree_rejects_negative_length_when_assigning_defaults(self):
+        tree = Phylo.read(StringIO("((a:-0.1,b):1,c:1);"), "newick")
+
+        with pytest.raises(PhykitUserError):
+            Tree().validate_tree(
+                tree,
+                min_tips=3,
+                assign_default_branch_length=1e-8,
+            )
+
+    def test_validate_tree_fallback_rejects_negative_required_length(self):
+        class FallbackClade:
+            def __init__(self, name, branch_length):
+                self.name = name
+                self.branch_length = branch_length
+
+        class FallbackTree:
+            def __init__(self):
+                self.root = object()
+                self.terminals = [
+                    FallbackClade("a", -0.1),
+                    FallbackClade("b", 1.0),
+                    FallbackClade("c", 1.0),
+                ]
+
+            def get_terminals(self):
+                return self.terminals
+
+            def find_clades(self):
+                return [self.root, *self.terminals]
+
+        with pytest.raises(PhykitUserError) as exc:
+            Tree().validate_tree(
+                FallbackTree(),
+                min_tips=3,
+                require_branch_lengths=True,
+            )
+
+        assert "branch 'a'" in exc.value.messages[0]
+        assert "-0.1" in exc.value.messages[0]
+
     def test_validate_tree_assigns_default_lengths_with_direct_traversal(self, monkeypatch):
         service = Tree()
         tree = NewickTree(
@@ -575,6 +659,61 @@ class TestTreeBase:
         out = service.read_tree_file_unmodified()
 
         assert out is source_tree
+
+    @pytest.mark.parametrize(
+        ("newick", "expected_message"),
+        [
+            pytest.param("", "empty", id="empty-file"),
+            pytest.param("((a:1,b:1);", "parentheses", id="unmatched-parenthesis"),
+            pytest.param("(a:1,b:1); garbage", "trailing", id="trailing-garbage"),
+            pytest.param(
+                "(a:1,b:1);\n(c:1,d:1);",
+                "exactly one",
+                id="multiple-trees",
+            ),
+            pytest.param("(a:1,:1);", "blank tip", id="blank-tip"),
+            pytest.param("(a:1,a:2);", "duplicate tip", id="duplicate-tip"),
+            pytest.param("(a:nan,b:1);", "finite", id="nan-branch-length"),
+            pytest.param("(a:inf,b:1);", "finite", id="infinite-branch-length"),
+        ],
+    )
+    def test_read_tree_file_rejects_invalid_newick_boundaries(
+        self,
+        tmp_path,
+        newick,
+        expected_message,
+    ):
+        tree_path = tmp_path / "invalid.tre"
+        tree_path.write_text(newick)
+        Tree._cached_tree_read.cache_clear()
+
+        with pytest.raises(PhykitUserError) as exc:
+            Tree(tree_file_path=str(tree_path)).read_tree_file_unmodified()
+
+        assert exc.value.code == 2
+        assert str(tree_path) in exc.value.messages[0]
+        assert expected_message in exc.value.messages[0].lower()
+
+    @pytest.mark.parametrize(
+        "newick",
+        [
+            pytest.param("('a b':1,b:2);", id="quoted-tip"),
+            pytest.param("(a[comment]:1,b:2);", id="comment"),
+            pytest.param("(a:1e-6,b:2E+3)root:0;", id="scientific-notation"),
+        ],
+    )
+    def test_read_tree_file_accepts_valid_biophylo_newick(self, tmp_path, newick):
+        tree_path = tmp_path / "valid.tre"
+        tree_path.write_text(newick)
+        Tree._cached_tree_read.cache_clear()
+
+        expected = Phylo.read(StringIO(newick), "newick")
+        observed = Tree(tree_file_path=str(tree_path)).read_tree_file_unmodified()
+
+        assert [tip.name for tip in observed.get_terminals()] == [
+            tip.name for tip in expected.get_terminals()
+        ]
+        assert observed.total_branch_length() == expected.total_branch_length()
 
     def test_get_simple_newick_summary_uses_cached_file_hash(self, tmp_path):
         tree_path = tmp_path / "tree.tre"

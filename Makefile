@@ -106,16 +106,19 @@ develop:
 test: test.unit test.integration
 
 test.unit:
-	python3 -m pytest -m "not integration"
+	python -m pytest -m "not (integration or validation)"
 
 test.integration:
 	rm -rf output/
 	mkdir output/
-	python3 -m pytest --basetemp=output -m "integration"
+	python -m pytest --basetemp=output -m "integration"
 	rm test.fa test.occupancy test.partition
 
+test.validation:
+	python -m pytest -m "validation" tests/validation
+
 test.fast:
-	python -m pytest -m "not (integration or slow)"
+	python -m pytest -m "not (integration or slow or validation)"
 	rm -rf output/
 	mkdir output/
 	python -m pytest --basetemp=output -m "integration and not slow" -vv
@@ -125,9 +128,9 @@ test.fast:
 test.coverage: coverage.unit coverage.integration
 
 coverage.unit:
-	python -m pytest --cov=./ -m "not integration" --cov-report=xml:unit.coverage.xml
+	python -m pytest --cov=phykit --cov-branch --cov-fail-under=80 -m "not (integration or validation)" --cov-report=xml:unit.coverage.xml
 
 coverage.integration:
 	rm -rf output/
 	mkdir output/
-	python -m pytest --basetemp=output --cov=./ -m "integration" --cov-report=xml:integration.coverage.xml
+	python -m pytest --basetemp=output --cov=phykit --cov-branch -m "integration" --cov-report=xml:integration.coverage.xml

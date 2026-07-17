@@ -14,6 +14,10 @@ here = Path(__file__)
 def pytest_configure(config):
     config.addinivalue_line("markers", "integration: mark as integration test")
     config.addinivalue_line("markers", "slow: mark as slow-running test")
+    config.addinivalue_line(
+        "markers",
+        "validation: requires an optional external scientific implementation",
+    )
 
 
 @pytest.fixture(autouse=True)

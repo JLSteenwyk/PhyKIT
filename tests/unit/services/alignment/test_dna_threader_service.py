@@ -11,6 +11,26 @@ from phykit.services.alignment.dna_threader import DNAThreader
 import phykit.services.alignment.dna_threader as dna_threader_module
 
 
+def thread_codons_oracle(protein, nucleotide, keep_mask):
+    """Reference codon threading independent of the production helpers."""
+    aligned = []
+    nucleotide_offset = 0
+    for amino_acid in protein:
+        if amino_acid in DNAThreader.GAP_CHARS:
+            aligned.extend("---")
+            continue
+
+        codon = nucleotide[nucleotide_offset:nucleotide_offset + 3]
+        nucleotide_offset += 3
+        aligned.extend(codon.ljust(3, "-"))
+
+    return "".join(
+        base
+        for base, keep in zip(aligned, keep_mask)
+        if keep
+    )
+
+
 @pytest.fixture
 def args():
     return Namespace(
@@ -227,6 +247,55 @@ assert "Bio.AlignIO" not in sys.modules
 
         assert service._thread_sequence("AC", "AAACCCGGGTTT", [True] * 6) == "AAACCC"
 
+    @pytest.mark.parametrize(
+        ("protein", "nucleotide", "expected"),
+        [
+            ("A-C", "AAACCC", "AAA---CCC"),
+            ("-AC", "AAACCC", "---AAACCC"),
+            ("AC-", "AAACCC", "AAACCC---"),
+            ("A--C", "AAACCC", "AAA------CCC"),
+            ("AXC", "AAACCC", "AAA---CCC"),
+        ],
+    )
+    def test_thread_sequence_places_codons_at_aligned_amino_acids(
+        self, args, protein, nucleotide, expected
+    ):
+        args.stop = False
+        service = DNAThreader(args)
+        keep_mask = [True] * (len(protein) * 3)
+
+        observed = service._thread_sequence(
+            protein,
+            nucleotide,
+            keep_mask,
+            keep_mask_all_true=True,
+        )
+
+        assert observed == thread_codons_oracle(protein, nucleotide, keep_mask)
+        assert observed == expected
+
+    def test_thread_sequence_masked_gap_path_matches_codon_oracle(self, args):
+        args.stop = False
+        service = DNAThreader(args)
+        protein = "A-CD"
+        nucleotide = "AAACCCGGG"
+        keep_mask = [
+            True, False, True,
+            True, True, False,
+            False, True, True,
+            True, False, True,
+        ]
+        plan = service._create_thread_mask_plan(keep_mask, len(protein))
+
+        observed = service._thread_sequence(
+            protein,
+            nucleotide,
+            keep_mask,
+            keep_mask_plan=plan,
+        )
+
+        assert observed == thread_codons_oracle(protein, nucleotide, keep_mask)
+
     def test_has_gap_char_detects_threading_gap_symbols(self):
         assert DNAThreader._has_gap_char("ACD") is False
         assert DNAThreader._has_gap_char("A-D") is True
@@ -289,17 +358,23 @@ assert "Bio.AlignIO" not in sys.modules
             )
         ]
 
-    def test_thread_sequence_no_stop_gap_path_matches_legacy_output(self, args):
+    def test_thread_sequence_masked_gap_path_matches_codon_positions(self, args):
+        args.stop = False
         service = DNAThreader(args)
+        protein = "A-CDEF"
+        nucleotide = "AAACCCGGGTTTAAACCC"
+        keep_mask = [
+            True, False, True, True, True, False, True, True, True,
+            False, True, True, True, False, True, True, True, False,
+        ]
 
         threaded = service._thread_sequence(
-            "A-CDEF",
-            "AAACCCGGGTTTAAACCC",
-            [True, False, True, True, True, False, True, True, True,
-             False, True, True, True, False, True, True, True, False],
+            protein,
+            nucleotide,
+            keep_mask,
         )
 
-        assert threaded == "AACCGGG------"
+        assert threaded == thread_codons_oracle(protein, nucleotide, keep_mask)
 
     def test_thread_sequence_uses_precomputed_mask_plan_for_gap_path(self, args):
         class NoIndexMask(list):
@@ -372,7 +447,7 @@ assert "Bio.AlignIO" not in sys.modules
         service = DNAThreader(args)
         protein = "AC"
         nucleotide = "AAACCCGGGTTTAAACCC"
-        keep_mask = [False] * 9 + [True] * 9
+        keep_mask = [False] * 3 + [True] * 3
         plan = service._create_thread_mask_plan(keep_mask, len(protein))
 
         observed = service._thread_sequence(
@@ -382,7 +457,7 @@ assert "Bio.AlignIO" not in sys.modules
             keep_mask_plan=plan,
         )
 
-        assert observed == "TTTAAACCC"
+        assert observed == "CCC"
 
     def test_thread_sequence_emit_plan_matches_terminal_stop_path(self, args):
         class NoIndexMask(list):
@@ -420,7 +495,7 @@ assert "Bio.AlignIO" not in sys.modules
         service = DNAThreader(args)
         protein = "AA--CCXDD"
         nucleotide = "AAACCCGGGTTTAAACCCGGGTTT"
-        keep_mask = [True, False, True, True, True, False, False, True, True] * len(protein)
+        keep_mask = [True, False, True] * len(protein)
         expected = service._thread_sequence(protein, nucleotide, keep_mask)
         plan = service._create_thread_mask_plan(keep_mask, len(protein))
 
@@ -432,18 +507,14 @@ assert "Bio.AlignIO" not in sys.modules
         )
 
         assert plan[4].uniform_emitter is not None
-        assert plan[4].uniform_selectors == (
-            True, False, True,
-            True, True, False,
-            False, True, True,
-        )
+        assert plan[4].uniform_selectors == (True, False, True)
         assert observed == expected
 
     def test_uniform_emit_plan_preserves_short_dna_padding(self, args):
         service = DNAThreader(args)
         protein = "AACD"
         nucleotide = "AAACCCGGGTT"
-        keep_mask = [True, False, True, True, True, False, False, True, True] * len(protein)
+        keep_mask = [True, False, True] * len(protein)
         expected = service._thread_sequence(protein, nucleotide, keep_mask)
         plan = service._create_thread_mask_plan(keep_mask, len(protein))
 
@@ -464,12 +535,8 @@ assert "Bio.AlignIO" not in sys.modules
         service = DNAThreader(args)
         protein = "AA--CCXDDD"
         nucleotide = "AAACCCGGGTTTAAACCCGGGTTTAAACCCGGG"
-        keep_mask = [
-            True, False, True,
-            True, True, False,
-            False, True, True,
-        ] * len(protein)
-        keep_mask = keep_mask[:len(protein) * 3]
+        keep_mask = [True, False, True] * (len(protein) - 1)
+        keep_mask.extend([True, True, False])
         expected = service._thread_sequence(protein, nucleotide, keep_mask)
         plan = service._create_thread_mask_plan(keep_mask, len(protein))
 
@@ -481,11 +548,7 @@ assert "Bio.AlignIO" not in sys.modules
         )
 
         assert plan[4].uniform_selectors is None
-        assert plan[4].uniform_prefix_selectors == (
-            True, False, True,
-            True, True, False,
-            False, True, True,
-        )
+        assert plan[4].uniform_prefix_selectors == (True, False, True)
         assert plan[4].uniform_prefix_length == len(plan[4]) - 1
         assert observed == expected
 
@@ -518,15 +581,11 @@ assert "Bio.AlignIO" not in sys.modules
         )
 
         assert threaded == (
-            "AAACCCGGG"
-            "TTTAAACCC"
-            "---------"
-            "---------"
-            "GGGTTT---"
-            "---------"
-            "---------"
-            "---------"
-            "---------"
+            "AAACCC"
+            "------"
+            "GGGTTT"
+            "---"
+            "AAACCC"
         )
 
     def test_thread_sequence_all_keep_hint_skips_mask_scan(self, args):
@@ -623,7 +682,7 @@ assert "Bio.AlignIO" not in sys.modules
 
         pal2nal = service.thread(iter(prot_records))
 
-        assert pal2nal["gene1"] == "AAACCC---"
+        assert pal2nal["gene1"] == "AAA---CCC"
         create_plan.assert_not_called()
 
     def test_thread_uses_mask_helper_all_true_flag_without_rescanning_mask(

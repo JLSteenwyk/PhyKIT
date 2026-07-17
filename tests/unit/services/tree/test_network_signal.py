@@ -705,6 +705,170 @@ class TestNetworkVCV:
 # ===========================================================================
 
 class TestQuartetJsonInference:
+    @pytest.mark.parametrize(
+        ("quartet_data", "expected_message"),
+        [
+            pytest.param([], "top-level object", id="root-list"),
+            pytest.param({}, "'quartets' list", id="missing-quartets"),
+            pytest.param({"quartets": {}}, "'quartets' list", id="quartets-dict"),
+            pytest.param({"quartets": [1]}, "record 1 must be an object", id="scalar-row"),
+            pytest.param(
+                {
+                    "quartets": [
+                        {
+                            "taxa": ["A", "B", "C"],
+                            "counts": [1, 2, 3],
+                            "classification": "hybrid",
+                            "dominant_topology": "{A, B} | {C, D}",
+                        }
+                    ]
+                },
+                "exactly four taxa",
+                id="taxa-shape",
+            ),
+            pytest.param(
+                {
+                    "quartets": [
+                        {
+                            "taxa": ["A", "A", "C", "D"],
+                            "counts": [1, 2, 3],
+                            "classification": "hybrid",
+                            "dominant_topology": "{A, A} | {C, D}",
+                        }
+                    ]
+                },
+                "unique, non-empty",
+                id="duplicate-taxon",
+            ),
+            pytest.param(
+                {
+                    "quartets": [
+                        {
+                            "taxa": ["A", "B", "C", "D"],
+                            "counts": [1, 2],
+                            "classification": "hybrid",
+                            "dominant_topology": "{A, B} | {C, D}",
+                        }
+                    ]
+                },
+                "exactly three counts",
+                id="counts-shape",
+            ),
+            pytest.param(
+                {
+                    "quartets": [
+                        {
+                            "taxa": ["A", "B", "C", "D"],
+                            "counts": [1, "2", 3],
+                            "classification": "hybrid",
+                            "dominant_topology": "{A, B} | {C, D}",
+                        }
+                    ]
+                },
+                "finite nonnegative numbers",
+                id="nonnumeric-count",
+            ),
+            pytest.param(
+                {
+                    "quartets": [
+                        {
+                            "taxa": ["A", "B", "C", "D"],
+                            "counts": [1, -1, 3],
+                            "classification": "hybrid",
+                            "dominant_topology": "{A, B} | {C, D}",
+                        }
+                    ]
+                },
+                "finite nonnegative numbers",
+                id="negative-count",
+            ),
+            pytest.param(
+                {
+                    "quartets": [
+                        {
+                            "taxa": ["A", "B", "C", "D"],
+                            "counts": [1, float("nan"), 3],
+                            "classification": "hybrid",
+                            "dominant_topology": "{A, B} | {C, D}",
+                        }
+                    ]
+                },
+                "finite nonnegative numbers",
+                id="nonfinite-count",
+            ),
+            pytest.param(
+                {
+                    "quartets": [
+                        {
+                            "taxa": ["A", "B", "C", "D"],
+                            "counts": [1, 2, 3],
+                            "classification": "other",
+                            "dominant_topology": "{A, B} | {C, D}",
+                        }
+                    ]
+                },
+                "classification",
+                id="classification",
+            ),
+            pytest.param(
+                {
+                    "quartets": [
+                        {
+                            "taxa": ["A", "B", "C", "D"],
+                            "counts": [1, 2, 3],
+                            "classification": ["hybrid"],
+                            "dominant_topology": "{A, B} | {C, D}",
+                        }
+                    ]
+                },
+                "classification",
+                id="classification-shape",
+            ),
+            pytest.param(
+                {
+                    "quartets": [
+                        {
+                            "taxa": ["A", "B", "C", "D"],
+                            "counts": [1, 2, 3],
+                            "classification": "hybrid",
+                            "dominant_topology": "{A, B} | {C, X}",
+                        }
+                    ]
+                },
+                "topology must contain the same four taxa",
+                id="topology-taxa",
+            ),
+        ],
+    )
+    def test_validate_quartet_json_rejects_invalid_schema(
+        self,
+        quartet_data,
+        expected_message,
+    ):
+        with pytest.raises(PhykitUserError) as exc:
+            NetworkSignal._validate_quartet_json(quartet_data, "quartets.json")
+
+        assert exc.value.code == 2
+        assert "quartets.json" in exc.value.messages[0]
+        assert expected_message in exc.value.messages[0]
+
+    def test_validate_quartet_json_rejects_duplicate_quartet_records(self):
+        row = {
+            "taxa": ["A", "B", "C", "D"],
+            "counts": [4, 3, 2],
+            "classification": "hybrid",
+            "dominant_topology": "{A, B} | {C, D}",
+        }
+        duplicate = dict(row, taxa=["D", "C", "B", "A"])
+
+        with pytest.raises(PhykitUserError) as exc:
+            NetworkSignal._validate_quartet_json(
+                {"quartets": [row, duplicate]},
+                "quartets.json",
+            )
+
+        assert "duplicate quartet record 2" in exc.value.messages[0]
+
     def test_identify_swap_pair(self):
         """{A,B}|{D,E} dom + {A,D}|{B,E} minor -> swap = {B,D}."""
         dominant = (frozenset({"A", "B"}), frozenset({"D", "E"}))

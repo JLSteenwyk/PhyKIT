@@ -6,6 +6,7 @@ import pytest
 
 TREE_SIMPLE = "tests/sample_files/tree_simple.tre"
 GENE_TREES = "tests/sample_files/gene_trees_simple.nwk"
+pytestmark = pytest.mark.integration
 
 
 class TestBasicInvocation:

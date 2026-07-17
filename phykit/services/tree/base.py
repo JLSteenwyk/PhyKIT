@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
+from math import isfinite
 import os
 
 from ..base import BaseService
@@ -93,8 +94,186 @@ class Tree(BaseService):
     def _cached_tree_read(file_path: str, tree_format: str, file_hash: str):
         """Cached tree reading with file hash for cache invalidation."""
         from Bio import Phylo
+        from Bio.Phylo.NewickIO import NewickError
 
-        return Phylo.read(file_path, tree_format)
+        if tree_format == "newick":
+            Tree._read_single_newick_document(file_path)
+
+        try:
+            tree = Phylo.read(file_path, tree_format)
+        except (NewickError, ValueError) as error:
+            raise PhykitUserError(
+                [f"Invalid Newick tree {file_path}: {error}"],
+                code=2,
+            ) from None
+
+        if tree_format == "newick":
+            Tree._validate_parsed_newick(tree, file_path)
+        return tree
+
+    @staticmethod
+    def _read_single_newick_document(
+        file_path: str,
+        validate_branch_lengths: bool = True,
+    ) -> str:
+        with open(file_path) as handle:
+            text = handle.read()
+
+        if not text.strip():
+            raise PhykitUserError(
+                [f"Invalid Newick tree {file_path}: file is empty."],
+                code=2,
+            )
+
+        depth = 0
+        comment_depth = 0
+        in_quote = False
+        semicolons = []
+        index = 0
+        while index < len(text):
+            char = text[index]
+            if in_quote:
+                if char == "'":
+                    if index + 1 < len(text) and text[index + 1] == "'":
+                        index += 1
+                    else:
+                        in_quote = False
+                index += 1
+                continue
+            if comment_depth:
+                if char == "[":
+                    comment_depth += 1
+                elif char == "]":
+                    comment_depth -= 1
+                index += 1
+                continue
+            if char == "'":
+                in_quote = True
+            elif char == "[":
+                comment_depth = 1
+            elif char == "]":
+                raise PhykitUserError(
+                    [
+                        f"Invalid Newick tree {file_path}: "
+                        "unmatched comment delimiter."
+                    ],
+                    code=2,
+                )
+            elif char == "(":
+                depth += 1
+            elif char == ")":
+                depth -= 1
+                if depth < 0:
+                    raise PhykitUserError(
+                        [
+                            f"Invalid Newick tree {file_path}: "
+                            "unbalanced parentheses."
+                        ],
+                        code=2,
+                    )
+            elif char == ":" and validate_branch_lengths:
+                number_start = index + 1
+                while number_start < len(text) and text[number_start].isspace():
+                    number_start += 1
+                number_end = number_start
+                while (
+                    number_end < len(text)
+                    and text[number_end] not in ",);["
+                    and not text[number_end].isspace()
+                ):
+                    number_end += 1
+                number = text[number_start:number_end]
+                try:
+                    branch_length = float(number)
+                except ValueError:
+                    raise PhykitUserError(
+                        [
+                            f"Invalid Newick tree {file_path}: branch length "
+                            f"{number!r} is not a valid number."
+                        ],
+                        code=2,
+                    ) from None
+                if not isfinite(branch_length):
+                    raise PhykitUserError(
+                        [
+                            f"Invalid Newick tree {file_path}: branch lengths "
+                            "must be finite."
+                        ],
+                        code=2,
+                    )
+            elif char == ";":
+                semicolons.append(index)
+            index += 1
+
+        if in_quote or comment_depth:
+            delimiter = "quote" if in_quote else "comment delimiter"
+            raise PhykitUserError(
+                [f"Invalid Newick tree {file_path}: unmatched {delimiter}."],
+                code=2,
+            )
+        if depth:
+            raise PhykitUserError(
+                [f"Invalid Newick tree {file_path}: unbalanced parentheses."],
+                code=2,
+            )
+        if len(semicolons) > 1:
+            raise PhykitUserError(
+                [f"Invalid Newick file {file_path}: expected exactly one tree."],
+                code=2,
+            )
+        if not semicolons:
+            raise PhykitUserError(
+                [
+                    f"Invalid Newick tree {file_path}: "
+                    "tree must terminate with a semicolon."
+                ],
+                code=2,
+            )
+        if text[semicolons[0] + 1 :].strip():
+            raise PhykitUserError(
+                [
+                    f"Invalid Newick tree {file_path}: "
+                    "trailing content after semicolon."
+                ],
+                code=2,
+            )
+        return text
+
+    @staticmethod
+    def _validate_parsed_newick(tree, file_path: str) -> None:
+        seen_names = set()
+        stack = [tree.root]
+        while stack:
+            clade = stack.pop()
+            branch_length = clade.branch_length
+            if branch_length is not None and not isfinite(branch_length):
+                raise PhykitUserError(
+                    [
+                        f"Invalid Newick tree {file_path}: branch lengths "
+                        "must be finite."
+                    ],
+                    code=2,
+                )
+            children = clade.clades
+            if children:
+                stack.extend(children)
+                continue
+
+            name = clade.name
+            if name is None or not str(name).strip():
+                raise PhykitUserError(
+                    [f"Invalid Newick tree {file_path}: blank tip label."],
+                    code=2,
+                )
+            if name in seen_names:
+                raise PhykitUserError(
+                    [
+                        f"Invalid Newick tree {file_path}: "
+                        f"duplicate tip label {name!r}."
+                    ],
+                    code=2,
+                )
+            seen_names.add(name)
 
     @staticmethod
     @lru_cache(maxsize=32)
@@ -197,8 +376,10 @@ class Tree(BaseService):
 
     @staticmethod
     def _scan_simple_newick_summary(file_path: str):
-        with open(file_path) as handle:
-            text = handle.read()
+        text = Tree._read_single_newick_document(
+            file_path,
+            validate_branch_lengths=False,
+        )
 
         if not text or any(char in text for char in "'\"[]"):
             return None
@@ -219,21 +400,31 @@ class Tree(BaseService):
                 continue
 
             if char == "(":
+                if prev_sig not in (None, "(", ","):
+                    return None
                 prev_sig = "("
                 i += 1
                 continue
             if char == ",":
+                if prev_sig in (None, "(", ","):
+                    return None
                 prev_sig = ","
                 i += 1
                 continue
             if char == ")":
+                if prev_sig in (None, "(", ","):
+                    return None
                 prev_sig = ")"
                 i += 1
                 continue
             if char == ";":
+                if len(set(tip_names)) != len(tip_names):
+                    return None
                 return tuple(tip_names), total_len, internal_len
 
             if char == ":":
+                if prev_sig in (None, "(", ","):
+                    return None
                 i += 1
                 start = i
                 while i < text_len and text[i] not in ",);":
@@ -246,6 +437,8 @@ class Tree(BaseService):
                 try:
                     branch_length = float(number)
                 except ValueError:
+                    return None
+                if not isfinite(branch_length):
                     return None
                 total_len += branch_length
                 if prev_sig in (")", "internal_label"):
@@ -271,8 +464,10 @@ class Tree(BaseService):
 
     @staticmethod
     def _scan_simple_newick_tip_names(file_path: str):
-        with open(file_path) as handle:
-            text = handle.read()
+        text = Tree._read_single_newick_document(
+            file_path,
+            validate_branch_lengths=False,
+        )
 
         if not text or any(char in text for char in "'\"[]"):
             return None
@@ -291,21 +486,31 @@ class Tree(BaseService):
                 continue
 
             if char == "(":
+                if prev_sig not in (None, "(", ","):
+                    return None
                 prev_sig = "("
                 i += 1
                 continue
             if char == ",":
+                if prev_sig in (None, "(", ","):
+                    return None
                 prev_sig = ","
                 i += 1
                 continue
             if char == ")":
+                if prev_sig in (None, "(", ","):
+                    return None
                 prev_sig = ")"
                 i += 1
                 continue
             if char == ";":
+                if len(set(tip_names)) != len(tip_names):
+                    return None
                 return tuple(tip_names)
 
             if char == ":":
+                if prev_sig in (None, "(", ","):
+                    return None
                 i += 1
                 start = i
                 while i < text_len and text[i] not in ",);" and text[i] not in whitespace:
@@ -314,8 +519,10 @@ class Tree(BaseService):
                 if not number:
                     return None
                 try:
-                    float(number)
+                    branch_length = float(number)
                 except ValueError:
+                    return None
+                if not isfinite(branch_length):
                     return None
                 prev_sig = "branch_length"
                 continue
@@ -366,8 +573,10 @@ class Tree(BaseService):
 
     @staticmethod
     def _scan_simple_newick_terminal_distance_stats(file_path: str):
-        with open(file_path) as handle:
-            text = handle.read()
+        text = Tree._read_single_newick_document(
+            file_path,
+            validate_branch_lengths=False,
+        )
 
         if not text or any(char in text for char in "'\"[]"):
             return None
@@ -408,6 +617,8 @@ class Tree(BaseService):
             try:
                 length = float(number)
             except ValueError:
+                return None
+            if not isfinite(length):
                 return None
             return skip_ws(index), length
 
@@ -1071,17 +1282,29 @@ class Tree(BaseService):
                 code=2,
             )
 
-        if assign_default_branch_length is not None:
+        if assign_default_branch_length is not None or require_branch_lengths:
+            missing_branch_length_clades = []
             for clade in tree.find_clades():
-                if clade.branch_length is None and clade != tree.root:
-                    clade.branch_length = assign_default_branch_length
-        elif require_branch_lengths:
-            for clade in tree.find_clades():
-                if clade.branch_length is None and clade != tree.root:
-                    raise PhykitUserError(
-                        [f"All branches in the tree must have lengths{ctx}."],
-                        code=2,
+                if clade == tree.root:
+                    continue
+                if clade.branch_length is None:
+                    missing_branch_length_clades.append(clade)
+                elif not self._is_valid_analysis_branch_length(
+                    clade.branch_length
+                ):
+                    self._raise_invalid_analysis_branch_length(
+                        clade,
+                        clade.branch_length,
+                        ctx,
                     )
+            if assign_default_branch_length is not None:
+                for clade in missing_branch_length_clades:
+                    clade.branch_length = assign_default_branch_length
+            elif missing_branch_length_clades:
+                raise PhykitUserError(
+                    [f"All branches in the tree must have lengths{ctx}."],
+                    code=2,
+                )
 
     @staticmethod
     def _has_minimum_terminals(tree, min_tips: int) -> bool:
@@ -1134,6 +1357,7 @@ class Tree(BaseService):
 
         tip_count = 0
         missing_branch_length_clades = []
+        invalid_branch_length = None
         stack = [root]
         try:
             pop = stack.pop
@@ -1147,8 +1371,14 @@ class Tree(BaseService):
                 else:
                     tip_count += 1
 
-                if clade is not root and clade.branch_length is None:
-                    missing_append(clade)
+                if clade is not root:
+                    branch_length = clade.branch_length
+                    if branch_length is None:
+                        missing_append(clade)
+                    elif not Tree._is_valid_analysis_branch_length(
+                        branch_length
+                    ):
+                        invalid_branch_length = (clade, branch_length)
         except AttributeError:
             return False
 
@@ -1156,6 +1386,13 @@ class Tree(BaseService):
             raise PhykitUserError(
                 [f"Tree must have at least {min_tips} tips{ctx}."],
                 code=2,
+            )
+
+        if invalid_branch_length is not None:
+            Tree._raise_invalid_analysis_branch_length(
+                invalid_branch_length[0],
+                invalid_branch_length[1],
+                ctx,
             )
 
         if assign_default_branch_length is not None:
@@ -1168,6 +1405,29 @@ class Tree(BaseService):
             )
 
         return True
+
+    @staticmethod
+    def _is_valid_analysis_branch_length(branch_length) -> bool:
+        try:
+            return isfinite(branch_length) and branch_length >= 0.0
+        except TypeError:
+            return False
+
+    @staticmethod
+    def _raise_invalid_analysis_branch_length(
+        clade,
+        branch_length,
+        ctx: str,
+    ) -> None:
+        name = getattr(clade, "name", None)
+        branch = f"branch {name!r}" if name else "an internal branch"
+        raise PhykitUserError(
+            [
+                f"Branch length for {branch} must be finite and nonnegative"
+                f"{ctx}; got {branch_length!r}."
+            ],
+            code=2,
+        )
 
     def shared_tips(self, a, b):
         """

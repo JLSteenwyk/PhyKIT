@@ -94,7 +94,10 @@ class VariableSites(Alignment):
             )
             return
 
-        print(f"{var_sites}\t{aln_len}\t{round(var_sites_per, 4)}")
+        try:
+            print(f"{var_sites}\t{aln_len}\t{round(var_sites_per, 4)}")
+        except BrokenPipeError:
+            pass
 
     def process_args(self, args) -> dict[str, str]:
         return dict(

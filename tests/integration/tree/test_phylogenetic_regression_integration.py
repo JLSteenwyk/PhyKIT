@@ -16,6 +16,34 @@ MULTI_TRAITS_FILE = str(SAMPLE_FILES / "tree_simple_multi_traits.tsv")
 
 @pytest.mark.integration
 class TestPhylogeneticRegressionIntegration:
+    def test_pgls_rejects_non_finite_trait_with_context(
+        self, tmp_path, capsys
+    ):
+        trait_file = tmp_path / "non_finite_traits.tsv"
+        trait_file.write_text(
+            "taxon\tbody_mass\tbrain_size\n"
+            "A\t1.0\t2.0\n"
+            "B\t3.0\tnan\n"
+            "C\t4.0\t5.0\n"
+        )
+        testargs = [
+            "phykit",
+            "phylogenetic_regression",
+            "-t", TREE_SIMPLE,
+            "-d", str(trait_file),
+            "-y", "brain_size",
+            "-x", "body_mass",
+        ]
+
+        with patch.object(sys, "argv", testargs), pytest.raises(SystemExit) as error:
+            Phykit()
+
+        assert error.value.code == 2
+        assert capsys.readouterr().out == (
+            "Non-finite trait value 'nan' for taxon 'B' "
+            "(trait 'brain_size') on line 3.\n"
+        )
+
     @patch("builtins.print")
     def test_pgls_basic(self, mocked_print):
         testargs = [

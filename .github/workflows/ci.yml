@@ -50,6 +50,24 @@ jobs:
         name: codecov-integration
         fail_ci_if_error: false
 
+  wheel-smoke:
+    name: Wheel smoke (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Build and smoke test installed wheel
+        run: |
+          python -m pip install --upgrade pip build
+          python -m build --wheel
+          python scripts/check_wheel_entry_points.py dist --install-smoke
+
   docs:
     runs-on: macos-latest
     steps:
@@ -86,6 +104,8 @@ jobs:
           python -m venv tutorial-wheel
           tutorial-wheel/bin/python -m pip install --upgrade pip
           tutorial-wheel/bin/python -m pip install dist/*.whl
+          python scripts/check_wheel_entry_points.py dist/*.whl \
+            --smoke-python tutorial-wheel/bin/python
           python scripts/smoke_tutorials.py --python tutorial-wheel/bin/python
       - name: Deploy
         if: ${{ github.ref == 'refs/heads/master' }}

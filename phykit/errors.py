@@ -7,3 +7,6 @@ class PhykitUserError(SystemExit):
     def __init__(self, messages, code: int = 2):
         self.messages: list[str] = list(messages)
         super().__init__(code)
+
+    def __reduce__(self):
+        return type(self), (self.messages, self.code)

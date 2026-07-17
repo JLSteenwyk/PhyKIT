@@ -1,6 +1,7 @@
 import builtins
 import importlib
 import json
+import math
 import os
 import subprocess
 import sys
@@ -1055,6 +1056,38 @@ class TestComputeHPD:
 
 
 class TestRunMCMC:
+    @pytest.mark.parametrize(
+        ("value", "expected"),
+        [
+            (-1.0, -1.0),
+            (0.0, 0.0),
+            (1.0, 1.0),
+            (1.5, 0.5),
+            (2.5, -0.5),
+            (-1.5, -0.5),
+            (1_000_000_000_000.25, 0.25),
+            (-1_000_000_000_000.25, -0.25),
+        ],
+    )
+    def test_correlation_reflection_is_constant_time(self, value, expected):
+        assert ThresholdModel._reflect_correlation(value) == expected
+
+    @pytest.mark.parametrize("value", [math.inf, -math.inf, math.nan])
+    def test_correlation_reflection_rejects_non_finite_values(self, value):
+        assert ThresholdModel._reflect_correlation(value) is None
+
+    def test_correlation_proposal_variance_is_bounded(self):
+        variance = 0.1
+        for _ in range(1_000):
+            variance = ThresholdModel._adapt_proposal_variance(
+                "r", variance, acceptance_rate=1.0
+            )
+
+        assert variance == 1.0
+        assert ThresholdModel._adapt_proposal_variance(
+            "r", variance, acceptance_rate=0.0
+        ) == 0.5
+
     def test_run_mcmc_mean_diagonal_uses_trace(self, monkeypatch):
         tree = _make_tree()
         names = sorted([t.name for t in tree.get_terminals()])

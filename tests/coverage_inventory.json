@@ -1,0 +1,4310 @@
+{
+  "authoritative_sources": [
+    "phykit/cli_registry.py",
+    "phykit/phykit.py",
+    "phykit/service_factories.py",
+    "tests/unit",
+    "tests/integration",
+    "docs/_data/tutorial_smoke.json"
+  ],
+  "commands": [
+    {
+      "aliases": [
+        "aln_entropy",
+        "entropy"
+      ],
+      "canonical": "alignment_entropy",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_alignment_entropy",
+        "pk_aln_entropy",
+        "pk_entropy"
+      ],
+      "factory": "AlignmentEntropy",
+      "handler": "alignment_entropy",
+      "integration_tests": [
+        "tests/integration/alignment/test_alignment_entropy_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/alignment/alignment_entropy.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/alignment/test_alignment_entropy.py"
+      ]
+    },
+    {
+      "aliases": [
+        "al",
+        "aln_len"
+      ],
+      "canonical": "alignment_length",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_alignment_length",
+        "pk_al",
+        "pk_aln_len"
+      ],
+      "factory": "AlignmentLength",
+      "handler": "alignment_length",
+      "integration_tests": [
+        "tests/integration/alignment/test_alignment_length_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/alignment/alignment_length.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [
+        1,
+        4
+      ],
+      "unit_tests": [
+        "tests/unit/services/alignment/test_alignment_length.py"
+      ]
+    },
+    {
+      "aliases": [
+        "aln_len_no_gaps",
+        "alng"
+      ],
+      "canonical": "alignment_length_no_gaps",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_alignment_length_no_gaps",
+        "pk_aln_len_no_gaps",
+        "pk_alng"
+      ],
+      "factory": "AlignmentLengthNoGaps",
+      "handler": "alignment_length_no_gaps",
+      "integration_tests": [
+        "tests/integration/alignment/test_alignment_length_integration_no_gaps.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/alignment/alignment_length_no_gaps.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/alignment/test_alignment_length_no_gaps.py"
+      ]
+    },
+    {
+      "aliases": [
+        "aot",
+        "outlier_taxa"
+      ],
+      "canonical": "alignment_outlier_taxa",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_alignment_outlier_taxa",
+        "pk_aot",
+        "pk_outlier_taxa"
+      ],
+      "factory": "AlignmentOutlierTaxa",
+      "handler": "alignment_outlier_taxa",
+      "integration_tests": [
+        "tests/integration/alignment/test_alignment_outlier_taxa_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/alignment/alignment_outlier_taxa.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/alignment/test_alignment_outlier_taxa.py"
+      ]
+    },
+    {
+      "aliases": [
+        "aln_recoding",
+        "recode"
+      ],
+      "canonical": "alignment_recoding",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_alignment_recoding",
+        "pk_aln_recoding",
+        "pk_recode"
+      ],
+      "factory": "AlignmentRecoding",
+      "handler": "alignment_recoding",
+      "integration_tests": [
+        "tests/integration/alignment/test_alignment_recoding.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/alignment/alignment_recoding.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/alignment/test_alignment_recoding_service.py"
+      ]
+    },
+    {
+      "aliases": [
+        "aln_subsample",
+        "subsample"
+      ],
+      "canonical": "alignment_subsample",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_alignment_subsample",
+        "pk_aln_subsample",
+        "pk_subsample"
+      ],
+      "factory": "AlignmentSubsample",
+      "handler": "alignment_subsample",
+      "integration_tests": [
+        "tests/integration/alignment/test_alignment_subsample_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/alignment/alignment_subsample.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/alignment/test_alignment_subsample.py"
+      ]
+    },
+    {
+      "aliases": [
+        "anc_recon",
+        "asr"
+      ],
+      "canonical": "ancestral_state_reconstruction",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_ancestral_state_reconstruction",
+        "pk_anc_recon",
+        "pk_asr"
+      ],
+      "factory": "AncestralReconstruction",
+      "handler": "ancestral_state_reconstruction",
+      "integration_tests": [
+        "tests/integration/tree/test_ancestral_reconstruction_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/ancestral_reconstruction.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [
+        11
+      ],
+      "unit_tests": [
+        "tests/unit/services/tree/test_ancestral_reconstruction.py"
+      ]
+    },
+    {
+      "aliases": [
+        "bss"
+      ],
+      "canonical": "bipartition_support_stats",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_bipartition_support_stats",
+        "pk_bss"
+      ],
+      "factory": "BipartitionSupportStats",
+      "handler": "bipartition_support_stats",
+      "integration_tests": [
+        "tests/integration/tree/test_bipartition_support_stats_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/bipartition_support_stats.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_bipartition_support_stats.py"
+      ]
+    },
+    {
+      "aliases": [
+        "blm"
+      ],
+      "canonical": "branch_length_multiplier",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_branch_length_multiplier",
+        "pk_blm"
+      ],
+      "factory": "BranchLengthMultiplier",
+      "handler": "branch_length_multiplier",
+      "integration_tests": [
+        "tests/integration/tree/test_branch_length_multiplier_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/branch_length_multiplier.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_branch_length_multiplier_service.py"
+      ]
+    },
+    {
+      "aliases": [
+        "charmap",
+        "synapomorphy_map"
+      ],
+      "canonical": "character_map",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_character_map",
+        "pk_charmap",
+        "pk_synapomorphy_map"
+      ],
+      "factory": "CharacterMap",
+      "handler": "character_map",
+      "integration_tests": [
+        "tests/integration/tree/test_character_map_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/character_map.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_character_map.py"
+      ]
+    },
+    {
+      "aliases": [
+        "chrono",
+        "time_tree"
+      ],
+      "canonical": "chronogram",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_chronogram",
+        "pk_chrono",
+        "pk_time_tree"
+      ],
+      "factory": "Chronogram",
+      "handler": "chronogram",
+      "integration_tests": [
+        "tests/integration/tree/test_chronogram_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/chronogram.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_chronogram.py"
+      ]
+    },
+    {
+      "aliases": [
+        "dn_ds",
+        "dnds",
+        "kaks"
+      ],
+      "canonical": "codon_dnds",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_codon_dnds",
+        "pk_dn_ds",
+        "pk_dnds",
+        "pk_kaks"
+      ],
+      "factory": "CodonDnDs",
+      "handler": "codon_dnds",
+      "integration_tests": [
+        "tests/integration/alignment/test_codon_dnds_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/alignment/codon_dnds.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/alignment/test_codon_dnds.py"
+      ]
+    },
+    {
+      "aliases": [
+        "cb",
+        "collapse"
+      ],
+      "canonical": "collapse_branches",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_collapse_branches",
+        "pk_cb",
+        "pk_collapse"
+      ],
+      "factory": "CollapseBranches",
+      "handler": "collapse_branches",
+      "integration_tests": [
+        "tests/integration/tree/test_collapse_branches_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/collapse_branches.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_collapse_branches_service.py"
+      ]
+    },
+    {
+      "aliases": [
+        "cs"
+      ],
+      "canonical": "column_score",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_column_score",
+        "pk_cs"
+      ],
+      "factory": "ColumnScore",
+      "handler": "column_score",
+      "integration_tests": [
+        "tests/integration/alignment/test_column_score.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/alignment/column_score.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/alignment/test_column_score_service.py"
+      ]
+    },
+    {
+      "aliases": [
+        "comp_tax",
+        "comp_taxon"
+      ],
+      "canonical": "composition_per_taxon",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_composition_per_taxon",
+        "pk_comp_tax",
+        "pk_comp_taxon"
+      ],
+      "factory": "CompositionPerTaxon",
+      "handler": "composition_per_taxon",
+      "integration_tests": [
+        "tests/integration/alignment/test_composition_per_taxon_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/alignment/composition_per_taxon.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/alignment/test_composition_per_taxon.py"
+      ]
+    },
+    {
+      "aliases": [
+        "cbps",
+        "comp_bias_per_site"
+      ],
+      "canonical": "compositional_bias_per_site",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_compositional_bias_per_site",
+        "pk_cbps",
+        "pk_comp_bias_per_site"
+      ],
+      "factory": "CompositionalBiasPerSite",
+      "handler": "compositional_bias_per_site",
+      "integration_tests": [
+        "tests/integration/alignment/test_compositional_bias_per_site.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/alignment/compositional_bias_per_site.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/alignment/test_compositional_bias_per_site_service.py"
+      ]
+    },
+    {
+      "aliases": [
+        "casr",
+        "conc_asr"
+      ],
+      "canonical": "concordance_asr",
+      "disposition": "Direct unit tests exercise the service, including run/output paths; add integration coverage only for a concrete cross-layer contract.",
+      "entry_points": [
+        "pk_concordance_asr",
+        "pk_casr",
+        "pk_conc_asr"
+      ],
+      "factory": "ConcordanceAsr",
+      "handler": "concordance_asr",
+      "integration_tests": [],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/concordance_asr.py",
+      "status": "unit_only_documented",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_concordance_asr.py"
+      ]
+    },
+    {
+      "aliases": [
+        "consnet",
+        "splitnet",
+        "splits_network"
+      ],
+      "canonical": "consensus_network",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_consensus_network",
+        "pk_consnet",
+        "pk_splitnet",
+        "pk_splits_network"
+      ],
+      "factory": "ConsensusNetwork",
+      "handler": "consensus_network",
+      "integration_tests": [
+        "tests/integration/tree/test_consensus_network_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/consensus_network.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [
+        18,
+        20
+      ],
+      "unit_tests": [
+        "tests/unit/services/tree/test_consensus_network.py"
+      ]
+    },
+    {
+      "aliases": [
+        "consensus",
+        "ctree"
+      ],
+      "canonical": "consensus_tree",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_consensus_tree",
+        "pk_consensus",
+        "pk_ctree"
+      ],
+      "factory": "ConsensusTree",
+      "handler": "consensus_tree",
+      "integration_tests": [
+        "tests/integration/tree/test_consensus_tree_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/consensus_tree.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_consensus_tree.py"
+      ]
+    },
+    {
+      "aliases": [
+        "cmap",
+        "contmap"
+      ],
+      "canonical": "cont_map",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_cont_map",
+        "pk_cmap",
+        "pk_contmap"
+      ],
+      "factory": "ContMap",
+      "handler": "cont_map",
+      "integration_tests": [
+        "tests/integration/tree/test_cont_map_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/cont_map.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [
+        14
+      ],
+      "unit_tests": [
+        "tests/unit/services/tree/test_cont_map.py"
+      ]
+    },
+    {
+      "aliases": [
+        "tangle",
+        "tanglegram"
+      ],
+      "canonical": "cophylo",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_cophylo",
+        "pk_tangle",
+        "pk_tanglegram"
+      ],
+      "factory": "Cophylo",
+      "handler": "cophylo",
+      "integration_tests": [
+        "tests/integration/tree/test_cophylo_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/cophylo.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_cophylo.py"
+      ]
+    },
+    {
+      "aliases": [
+        "cover"
+      ],
+      "canonical": "covarying_evolutionary_rates",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_covarying_evolutionary_rates",
+        "pk_cover"
+      ],
+      "factory": "CovaryingEvolutionaryRates",
+      "handler": "covarying_evolutionary_rates",
+      "integration_tests": [
+        "tests/integration/tree/test_covarying_evolutionary_rates_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/covarying_evolutionary_rates.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_covarying_evolutionary_rates.py"
+      ]
+    },
+    {
+      "aliases": [
+        "cc",
+        "create_concat"
+      ],
+      "canonical": "create_concatenation_matrix",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_create_concatenation_matrix",
+        "pk_cc",
+        "pk_create_concat"
+      ],
+      "factory": "CreateConcatenationMatrix",
+      "handler": "create_concatenation_matrix",
+      "integration_tests": [
+        "tests/integration/alignment/test_create_concatenation_matrix_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/alignment/create_concatenation_matrix.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/alignment/test_create_concatenation_matrix.py"
+      ]
+    },
+    {
+      "aliases": [
+        "densitymap",
+        "dmap"
+      ],
+      "canonical": "density_map",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_density_map",
+        "pk_densitymap",
+        "pk_dmap"
+      ],
+      "factory": "DensityMap",
+      "handler": "density_map",
+      "integration_tests": [
+        "tests/integration/tree/test_density_map_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/density_map.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_density_map.py"
+      ]
+    },
+    {
+      "aliases": [
+        "dfoil_test"
+      ],
+      "canonical": "dfoil",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_dfoil",
+        "pk_dfoil_test"
+      ],
+      "factory": "Dfoil",
+      "handler": "dfoil",
+      "integration_tests": [
+        "tests/integration/alignment/test_dfoil_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/alignment/dfoil.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/alignment/test_dfoil.py"
+      ]
+    },
+    {
+      "aliases": [
+        "da",
+        "disc_asym"
+      ],
+      "canonical": "discordance_asymmetry",
+      "disposition": "Direct unit tests exercise the service, including run/output paths; add integration coverage only for a concrete cross-layer contract.",
+      "entry_points": [
+        "pk_discordance_asymmetry",
+        "pk_da",
+        "pk_disc_asym"
+      ],
+      "factory": "DiscordanceAsymmetry",
+      "handler": "discordance_asymmetry",
+      "integration_tests": [],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/discordance_asymmetry.py",
+      "status": "unit_only_documented",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_discordance_asymmetry.py"
+      ]
+    },
+    {
+      "aliases": [
+        "abba_baba",
+        "dstat"
+      ],
+      "canonical": "dstatistic",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_dstatistic",
+        "pk_abba_baba",
+        "pk_dstat"
+      ],
+      "factory": "Dstatistic",
+      "handler": "dstatistic",
+      "integration_tests": [
+        "tests/integration/alignment/test_dstatistic_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/alignment/dstatistic.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/alignment/test_dstatistic.py"
+      ]
+    },
+    {
+      "aliases": [
+        "disparity_through_time"
+      ],
+      "canonical": "dtt",
+      "disposition": "Direct unit tests exercise the service, including run/output paths; add integration coverage only for a concrete cross-layer contract.",
+      "entry_points": [
+        "pk_dtt",
+        "pk_disparity_through_time"
+      ],
+      "factory": "Dtt",
+      "handler": "dtt",
+      "integration_tests": [],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/dtt.py",
+      "status": "unit_only_documented",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_dtt.py"
+      ]
+    },
+    {
+      "aliases": [
+        "dvmc"
+      ],
+      "canonical": "degree_of_violation_of_a_molecular_clock",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_degree_of_violation_of_a_molecular_clock",
+        "pk_dvmc"
+      ],
+      "factory": "DVMC",
+      "handler": "dvmc",
+      "integration_tests": [
+        "tests/integration/tree/test_dvmc_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/dvmc.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_dvmc.py"
+      ]
+    },
+    {
+      "aliases": [
+        "etm"
+      ],
+      "canonical": "evo_tempo_map",
+      "disposition": "Direct unit tests exercise the service, including run/output paths; add integration coverage only for a concrete cross-layer contract.",
+      "entry_points": [
+        "pk_evo_tempo_map",
+        "pk_etm"
+      ],
+      "factory": "EvoTempoMap",
+      "handler": "evo_tempo_map",
+      "integration_tests": [],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/evo_tempo_map.py",
+      "status": "unit_only_documented",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_evo_tempo_map.py"
+      ]
+    },
+    {
+      "aliases": [
+        "evo_rate"
+      ],
+      "canonical": "evolutionary_rate",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_evolutionary_rate",
+        "pk_evo_rate"
+      ],
+      "factory": "EvolutionaryRate",
+      "handler": "evolutionary_rate",
+      "integration_tests": [
+        "tests/integration/tree/test_evolutionary_rate.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/evolutionary_rate.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_evolutionary_rate_service.py"
+      ]
+    },
+    {
+      "aliases": [
+        "erps",
+        "evo_rate_per_site"
+      ],
+      "canonical": "evolutionary_rate_per_site",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_evolutionary_rate_per_site",
+        "pk_erps",
+        "pk_evo_rate_per_site"
+      ],
+      "factory": "EvolutionaryRatePerSite",
+      "handler": "evolutionary_rate_per_site",
+      "integration_tests": [
+        "tests/integration/alignment/test_evolutionary_rate_per_site.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/alignment/evolutionary_rate_per_site.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/alignment/test_evolutionary_rate_per_site_service.py"
+      ]
+    },
+    {
+      "aliases": [
+        "ge",
+        "get_entry"
+      ],
+      "canonical": "faidx",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_faidx",
+        "pk_ge",
+        "pk_get_entry"
+      ],
+      "factory": "Faidx",
+      "handler": "faidx",
+      "integration_tests": [
+        "tests/integration/alignment/test_faidx.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/alignment/faidx.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/alignment/test_faidx_service.py"
+      ]
+    },
+    {
+      "aliases": [
+        "faith_pd",
+        "fpd",
+        "phylo_diversity"
+      ],
+      "canonical": "faiths_pd",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_faiths_pd",
+        "pk_faith_pd",
+        "pk_fpd",
+        "pk_phylo_diversity"
+      ],
+      "factory": "FaithsPD",
+      "handler": "faiths_pd",
+      "integration_tests": [
+        "tests/integration/tree/test_faiths_pd_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/faiths_pd.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_faiths_pd.py"
+      ]
+    },
+    {
+      "aliases": [
+        "fc",
+        "fitcontinuous"
+      ],
+      "canonical": "fit_continuous",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_fit_continuous",
+        "pk_fc",
+        "pk_fitcontinuous"
+      ],
+      "factory": "FitContinuous",
+      "handler": "fit_continuous",
+      "integration_tests": [
+        "tests/integration/tree/test_fit_continuous_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/fit_continuous.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [
+        15
+      ],
+      "unit_tests": [
+        "tests/unit/services/tree/test_fit_continuous.py"
+      ]
+    },
+    {
+      "aliases": [
+        "fd",
+        "fitdiscrete"
+      ],
+      "canonical": "fit_discrete",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_fit_discrete",
+        "pk_fd",
+        "pk_fitdiscrete"
+      ],
+      "factory": "FitDiscrete",
+      "handler": "fit_discrete",
+      "integration_tests": [
+        "tests/integration/tree/test_fit_discrete_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/fit_discrete.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_fit_discrete.py"
+      ]
+    },
+    {
+      "aliases": [
+        "gc"
+      ],
+      "canonical": "gc_content",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_gc_content",
+        "pk_gc"
+      ],
+      "factory": "GCContent",
+      "handler": "gc_content",
+      "integration_tests": [
+        "tests/integration/alignment/test_gc_content_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/alignment/gc_content.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/alignment/test_gc_content_service.py"
+      ]
+    },
+    {
+      "aliases": [
+        "clan_check"
+      ],
+      "canonical": "hidden_paralogy_check",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_hidden_paralogy_check",
+        "pk_clan_check"
+      ],
+      "factory": "HiddenParalogyCheck",
+      "handler": "hidden_paralogy_check",
+      "integration_tests": [
+        "tests/integration/tree/test_hidden_paralogy_check_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/hidden_paralogy_check.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_hidden_paralogy_check.py"
+      ]
+    },
+    {
+      "aliases": [
+        "hybrid",
+        "reticulation"
+      ],
+      "canonical": "hybridization",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_hybridization",
+        "pk_hybrid",
+        "pk_reticulation"
+      ],
+      "factory": "Hybridization",
+      "handler": "hybridization",
+      "integration_tests": [
+        "tests/integration/tree/test_hybridization_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/hybridization.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_hybridization.py"
+      ]
+    },
+    {
+      "aliases": [
+        "id_matrix",
+        "seqid"
+      ],
+      "canonical": "identity_matrix",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_identity_matrix",
+        "pk_id_matrix",
+        "pk_seqid"
+      ],
+      "factory": "IdentityMatrix",
+      "handler": "identity_matrix",
+      "integration_tests": [
+        "tests/integration/alignment/test_identity_matrix_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/alignment/identity_matrix.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/alignment/test_identity_matrix.py"
+      ]
+    },
+    {
+      "aliases": [
+        "phylo_contrasts",
+        "pic"
+      ],
+      "canonical": "independent_contrasts",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_independent_contrasts",
+        "pk_phylo_contrasts",
+        "pk_pic"
+      ],
+      "factory": "IndependentContrasts",
+      "handler": "independent_contrasts",
+      "integration_tests": [
+        "tests/integration/tree/test_independent_contrasts_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/independent_contrasts.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_independent_contrasts.py"
+      ]
+    },
+    {
+      "aliases": [
+        "ibs"
+      ],
+      "canonical": "internal_branch_stats",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_internal_branch_stats",
+        "pk_ibs"
+      ],
+      "factory": "InternalBranchStats",
+      "handler": "internal_branch_stats",
+      "integration_tests": [
+        "tests/integration/tree/test_internal_branch_stats_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/internal_branch_stats.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_internal_branch_stats.py"
+      ]
+    },
+    {
+      "aliases": [
+        "il"
+      ],
+      "canonical": "internode_labeler",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_internode_labeler",
+        "pk_il"
+      ],
+      "factory": "InternodeLabeler",
+      "handler": "internode_labeler",
+      "integration_tests": [
+        "tests/integration/tree/test_internode_labeler_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/internode_labeler.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_internode_labeler.py",
+        "tests/unit/services/tree/test_internode_labeler_service.py"
+      ]
+    },
+    {
+      "aliases": [
+        "kf",
+        "kf_dist",
+        "kuhner_felsenstein_distance"
+      ],
+      "canonical": "kf_distance",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_kf_distance",
+        "pk_kf",
+        "pk_kf_dist",
+        "pk_kuhner_felsenstein_distance"
+      ],
+      "factory": "KuhnerFelsensteinDistance",
+      "handler": "kf_distance",
+      "integration_tests": [
+        "tests/integration/tree/test_kf_distance_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/kf_distance.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_kf_distance.py"
+      ]
+    },
+    {
+      "aliases": [
+        "lca_subtree"
+      ],
+      "canonical": "last_common_ancestor_subtree",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_last_common_ancestor_subtree",
+        "pk_lca_subtree"
+      ],
+      "factory": "LastCommonAncestorSubtree",
+      "handler": "last_common_ancestor_subtree",
+      "integration_tests": [
+        "tests/integration/tree/test_last_common_ancestor_subtree_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/last_common_ancestor_subtree.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_last_common_ancestor_subtree_service.py"
+      ]
+    },
+    {
+      "aliases": [
+        "lb_score",
+        "lbs"
+      ],
+      "canonical": "long_branch_score",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_long_branch_score",
+        "pk_lb_score",
+        "pk_lbs"
+      ],
+      "factory": "LBScore",
+      "handler": "lb_score",
+      "integration_tests": [
+        "tests/integration/tree/test_lb_score_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/lb_score.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_lb_score.py"
+      ]
+    },
+    {
+      "aliases": [
+        "gamma",
+        "gamma_stat"
+      ],
+      "canonical": "ltt",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_ltt",
+        "pk_gamma",
+        "pk_gamma_stat"
+      ],
+      "factory": "LTT",
+      "handler": "ltt",
+      "integration_tests": [
+        "tests/integration/tree/test_ltt_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/ltt.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_ltt.py"
+      ]
+    },
+    {
+      "aliases": [
+        "mask",
+        "mask_aln"
+      ],
+      "canonical": "mask_alignment",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_mask_alignment",
+        "pk_mask",
+        "pk_mask_aln"
+      ],
+      "factory": "MaskAlignment",
+      "handler": "mask_alignment",
+      "integration_tests": [
+        "tests/integration/alignment/test_mask_alignment_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/alignment/mask_alignment.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/alignment/test_mask_alignment.py"
+      ]
+    },
+    {
+      "aliases": [
+        "is_monophyletic"
+      ],
+      "canonical": "monophyly_check",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_monophyly_check",
+        "pk_is_monophyletic"
+      ],
+      "factory": "MonophylyCheck",
+      "handler": "monophyly_check",
+      "integration_tests": [
+        "tests/integration/tree/test_monophyly_check_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/monophyly_check.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_monophyly_check_service.py"
+      ]
+    },
+    {
+      "aliases": [
+        "nni"
+      ],
+      "canonical": "nearest_neighbor_interchange",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_nearest_neighbor_interchange",
+        "pk_nni"
+      ],
+      "factory": "NearestNeighborInterchange",
+      "handler": "nearest_neighbor_interchange",
+      "integration_tests": [
+        "tests/integration/tree/test_nearest_neighbor_interchange_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/nearest_neighbor_interchange.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_nearest_neighbor_interchange_service.py"
+      ]
+    },
+    {
+      "aliases": [
+        "nnet"
+      ],
+      "canonical": "neighbor_net",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_neighbor_net",
+        "pk_nnet"
+      ],
+      "factory": "NeighborNet",
+      "handler": "neighbor_net",
+      "integration_tests": [
+        "tests/integration/tree/test_neighbor_net_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/neighbor_net.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_neighbor_net.py"
+      ]
+    },
+    {
+      "aliases": [
+        "net_signal",
+        "netsig"
+      ],
+      "canonical": "network_signal",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_network_signal",
+        "pk_net_signal",
+        "pk_netsig"
+      ],
+      "factory": "NetworkSignal",
+      "handler": "network_signal",
+      "integration_tests": [
+        "tests/integration/tree/test_network_signal_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/network_signal.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_network_signal.py"
+      ]
+    },
+    {
+      "aliases": [
+        "filter_occupancy",
+        "occ_filter"
+      ],
+      "canonical": "occupancy_filter",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_occupancy_filter",
+        "pk_filter_occupancy",
+        "pk_occ_filter"
+      ],
+      "factory": "OccupancyFilter",
+      "handler": "occupancy_filter",
+      "integration_tests": [
+        "tests/integration/alignment/test_occupancy_filter_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/alignment/occupancy_filter.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/alignment/test_occupancy_filter.py"
+      ]
+    },
+    {
+      "aliases": [
+        "occ_tax",
+        "occupancy_taxon"
+      ],
+      "canonical": "occupancy_per_taxon",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_occupancy_per_taxon",
+        "pk_occ_tax",
+        "pk_occupancy_taxon"
+      ],
+      "factory": "OccupancyPerTaxon",
+      "handler": "occupancy_per_taxon",
+      "integration_tests": [
+        "tests/integration/alignment/test_occupancy_per_taxon_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/alignment/occupancy_per_taxon.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/alignment/test_occupancy_per_taxon.py"
+      ]
+    },
+    {
+      "aliases": [
+        "detect_shifts",
+        "l1ou",
+        "ou_shifts"
+      ],
+      "canonical": "ou_shift_detection",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_ou_shift_detection",
+        "pk_detect_shifts",
+        "pk_l1ou",
+        "pk_ou_shifts"
+      ],
+      "factory": "OUShiftDetection",
+      "handler": "ou_shift_detection",
+      "integration_tests": [
+        "tests/integration/tree/test_ou_shift_detection_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/ou_shift_detection.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [
+        17
+      ],
+      "unit_tests": [
+        "tests/unit/services/tree/test_ou_shift_detection.py"
+      ]
+    },
+    {
+      "aliases": [
+        "fit_ouwie",
+        "multi_regime_ou"
+      ],
+      "canonical": "ouwie",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_ouwie",
+        "pk_fit_ouwie",
+        "pk_multi_regime_ou"
+      ],
+      "factory": "OUwie",
+      "handler": "ouwie",
+      "integration_tests": [
+        "tests/integration/tree/test_ouwie_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/ouwie.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [
+        16
+      ],
+      "unit_tests": [
+        "tests/unit/services/tree/test_ouwie.py"
+      ]
+    },
+    {
+      "aliases": [
+        "pairwise_id",
+        "pi"
+      ],
+      "canonical": "pairwise_identity",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_pairwise_identity",
+        "pk_pairwise_id",
+        "pk_pi"
+      ],
+      "factory": "PairwiseIdentity",
+      "handler": "pairwise_identity",
+      "integration_tests": [
+        "tests/integration/alignment/test_pairwise_identity_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/alignment/pairwise_identity.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/alignment/test_pairwise_identity_service.py"
+      ]
+    },
+    {
+      "aliases": [
+        "pis"
+      ],
+      "canonical": "parsimony_informative_sites",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_parsimony_informative_sites",
+        "pk_pis"
+      ],
+      "factory": "ParsimonyInformative",
+      "handler": "parsimony_informative_sites",
+      "integration_tests": [
+        "tests/integration/alignment/test_parsimony_informative_sites_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/alignment/parsimony_informative_sites.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/alignment/test_parsimony_informative_sites.py"
+      ]
+    },
+    {
+      "aliases": [
+        "pars",
+        "parsimony"
+      ],
+      "canonical": "parsimony_score",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_parsimony_score",
+        "pk_pars",
+        "pk_parsimony"
+      ],
+      "factory": "ParsimonyScore",
+      "handler": "parsimony_score",
+      "integration_tests": [
+        "tests/integration/tree/test_parsimony_score_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/parsimony_score.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_parsimony_score.py"
+      ]
+    },
+    {
+      "aliases": [
+        "pd"
+      ],
+      "canonical": "patristic_distances",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_patristic_distances",
+        "pk_pd"
+      ],
+      "factory": "PatristicDistances",
+      "handler": "patristic_distances",
+      "integration_tests": [
+        "tests/integration/tree/test_patristic_distances_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/patristic_distances.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_patristic_distances.py"
+      ]
+    },
+    {
+      "aliases": [
+        "tg",
+        "traitgram"
+      ],
+      "canonical": "phenogram",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_phenogram",
+        "pk_tg",
+        "pk_traitgram"
+      ],
+      "factory": "Phenogram",
+      "handler": "phenogram",
+      "integration_tests": [
+        "tests/integration/tree/test_phenogram_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/phenogram.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_phenogram.py"
+      ]
+    },
+    {
+      "aliases": [
+        "panova",
+        "phylo_manova",
+        "pmanova"
+      ],
+      "canonical": "phylo_anova",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_phylo_anova",
+        "pk_panova",
+        "pk_phylo_manova",
+        "pk_pmanova"
+      ],
+      "factory": "PhyloAnova",
+      "handler": "phylo_anova",
+      "integration_tests": [
+        "tests/integration/tree/test_phylo_anova_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/phylo_anova.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_phylo_anova.py"
+      ]
+    },
+    {
+      "aliases": [
+        "pgwas"
+      ],
+      "canonical": "phylo_gwas",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_phylo_gwas",
+        "pk_pgwas"
+      ],
+      "factory": "PhyloGwas",
+      "handler": "phylo_gwas",
+      "integration_tests": [
+        "tests/integration/alignment/test_phylo_gwas_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/alignment/phylo_gwas.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/alignment/test_phylo_gwas.py"
+      ]
+    },
+    {
+      "aliases": [
+        "ph",
+        "pheatmap"
+      ],
+      "canonical": "phylo_heatmap",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_phylo_heatmap",
+        "pk_ph",
+        "pk_pheatmap"
+      ],
+      "factory": "PhyloHeatmap",
+      "handler": "phylo_heatmap",
+      "integration_tests": [
+        "tests/integration/tree/test_phylo_heatmap_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/phylo_heatmap.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_phylo_heatmap.py"
+      ]
+    },
+    {
+      "aliases": [
+        "impute",
+        "phylo_imp"
+      ],
+      "canonical": "phylo_impute",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_phylo_impute",
+        "pk_impute",
+        "pk_phylo_imp"
+      ],
+      "factory": "PhyloImpute",
+      "handler": "phylo_impute",
+      "integration_tests": [
+        "tests/integration/tree/test_phylo_impute_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/phylo_impute.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_phylo_impute.py"
+      ]
+    },
+    {
+      "aliases": [
+        "phylo_logreg",
+        "plogreg"
+      ],
+      "canonical": "phylo_logistic",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_phylo_logistic",
+        "pk_phylo_logreg",
+        "pk_plogreg"
+      ],
+      "factory": "PhyloLogistic",
+      "handler": "phylo_logistic",
+      "integration_tests": [
+        "tests/integration/tree/test_phylo_logistic_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/phylo_logistic.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_phylo_logistic.py"
+      ]
+    },
+    {
+      "aliases": [
+        "phylopath",
+        "ppath"
+      ],
+      "canonical": "phylo_path",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_phylo_path",
+        "pk_phylopath",
+        "pk_ppath"
+      ],
+      "factory": "PhyloPath",
+      "handler": "phylo_path",
+      "integration_tests": [
+        "tests/integration/tree/test_phylo_path_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/phylo_path.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_phylo_path.py"
+      ]
+    },
+    {
+      "aliases": [
+        "pglm",
+        "phylo_glm"
+      ],
+      "canonical": "phylogenetic_glm",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_phylogenetic_glm",
+        "pk_pglm",
+        "pk_phylo_glm"
+      ],
+      "factory": "PhylogeneticGLM",
+      "handler": "phylogenetic_glm",
+      "integration_tests": [
+        "tests/integration/tree/test_phylogenetic_glm_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/phylogenetic_glm.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [
+        10
+      ],
+      "unit_tests": [
+        "tests/unit/services/tree/test_phylogenetic_glm.py"
+      ]
+    },
+    {
+      "aliases": [
+        "dimreduce",
+        "ord",
+        "ordination",
+        "pdr",
+        "phyl_pca",
+        "phylo_dimreduce",
+        "phylo_ordination",
+        "phylo_pca",
+        "ppca"
+      ],
+      "canonical": "phylogenetic_ordination",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_phylogenetic_ordination",
+        "pk_dimreduce",
+        "pk_ord",
+        "pk_ordination",
+        "pk_pdr",
+        "pk_phyl_pca",
+        "pk_phylo_dimreduce",
+        "pk_phylo_ordination",
+        "pk_phylo_pca",
+        "pk_ppca"
+      ],
+      "factory": "PhylogeneticOrdination",
+      "handler": "phylogenetic_ordination",
+      "integration_tests": [
+        "tests/integration/tree/test_phylogenetic_ordination_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/phylogenetic_ordination.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [
+        7
+      ],
+      "unit_tests": [
+        "tests/unit/services/tree/test_phylogenetic_ordination.py"
+      ]
+    },
+    {
+      "aliases": [
+        "pgls",
+        "phylo_regression"
+      ],
+      "canonical": "phylogenetic_regression",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_phylogenetic_regression",
+        "pk_pgls",
+        "pk_phylo_regression"
+      ],
+      "factory": "PhylogeneticRegression",
+      "handler": "phylogenetic_regression",
+      "integration_tests": [
+        "tests/integration/tree/test_phylogenetic_regression_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/phylogenetic_regression.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [
+        9
+      ],
+      "unit_tests": [
+        "tests/unit/services/tree/test_phylogenetic_regression.py"
+      ]
+    },
+    {
+      "aliases": [
+        "phylo_signal",
+        "ps"
+      ],
+      "canonical": "phylogenetic_signal",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_phylogenetic_signal",
+        "pk_phylo_signal",
+        "pk_ps"
+      ],
+      "factory": "PhylogeneticSignal",
+      "handler": "phylogenetic_signal",
+      "integration_tests": [
+        "tests/integration/tree/test_phylogenetic_signal_invariant_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/phylogenetic_signal.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [
+        6,
+        19
+      ],
+      "unit_tests": [
+        "tests/unit/services/tree/test_phylogenetic_signal.py"
+      ]
+    },
+    {
+      "aliases": [
+        "phmo",
+        "phylomorpho"
+      ],
+      "canonical": "phylomorphospace",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_phylomorphospace",
+        "pk_phmo",
+        "pk_phylomorpho"
+      ],
+      "factory": "Phylomorphospace",
+      "handler": "phylomorphospace",
+      "integration_tests": [
+        "tests/integration/tree/test_phylomorphospace_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/phylomorphospace.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [
+        8
+      ],
+      "unit_tests": [
+        "tests/unit/services/tree/test_phylomorphospace.py"
+      ]
+    },
+    {
+      "aliases": [
+        "paqc",
+        "plot_qc"
+      ],
+      "canonical": "plot_alignment_qc",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_plot_alignment_qc",
+        "pk_paqc",
+        "pk_plot_qc"
+      ],
+      "factory": "PlotAlignmentQC",
+      "handler": "plot_alignment_qc",
+      "integration_tests": [
+        "tests/integration/alignment/test_plot_alignment_qc_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/alignment/plot_alignment_qc.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/alignment/test_plot_alignment_qc.py"
+      ]
+    },
+    {
+      "aliases": [
+        "polyt",
+        "polyt_test",
+        "ptt"
+      ],
+      "canonical": "polytomy_test",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_polytomy_test",
+        "pk_polyt",
+        "pk_polyt_test",
+        "pk_ptt"
+      ],
+      "factory": "PolytomyTest",
+      "handler": "polytomy_test",
+      "integration_tests": [
+        "tests/integration/tree/test_polytomy_test_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/polytomy_test.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [
+        3
+      ],
+      "unit_tests": [
+        "tests/unit/services/tree/test_polytomy_test.py"
+      ]
+    },
+    {
+      "aliases": [
+        "print",
+        "pt"
+      ],
+      "canonical": "print_tree",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_print_tree",
+        "pk_print",
+        "pk_pt"
+      ],
+      "factory": "PrintTree",
+      "handler": "print_tree",
+      "integration_tests": [
+        "tests/integration/tree/test_print_tree_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/print_tree.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_print_tree.py"
+      ]
+    },
+    {
+      "aliases": [
+        "prune"
+      ],
+      "canonical": "prune_tree",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_prune_tree",
+        "pk_prune"
+      ],
+      "factory": "PruneTree",
+      "handler": "prune_tree",
+      "integration_tests": [
+        "tests/integration/tree/test_prune_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/prune_tree.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_prune_tree.py"
+      ]
+    },
+    {
+      "aliases": [
+        "nanuq",
+        "qnet",
+        "quartet_net"
+      ],
+      "canonical": "quartet_network",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_quartet_network",
+        "pk_nanuq",
+        "pk_qnet",
+        "pk_quartet_net"
+      ],
+      "factory": "QuartetNetwork",
+      "handler": "quartet_network",
+      "integration_tests": [
+        "tests/integration/tree/test_quartet_network_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/quartet_network.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_quartet_network.py"
+      ]
+    },
+    {
+      "aliases": [
+        "qpie",
+        "quartet_pie_chart"
+      ],
+      "canonical": "quartet_pie",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_quartet_pie",
+        "pk_qpie",
+        "pk_quartet_pie_chart"
+      ],
+      "factory": "QuartetPie",
+      "handler": "quartet_pie",
+      "integration_tests": [
+        "tests/integration/tree/test_quartet_pie_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/quartet_pie.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [
+        21
+      ],
+      "unit_tests": [
+        "tests/unit/services/tree/test_quartet_pie.py"
+      ]
+    },
+    {
+      "aliases": [
+        "brownie",
+        "rh"
+      ],
+      "canonical": "rate_heterogeneity",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_rate_heterogeneity",
+        "pk_brownie",
+        "pk_rh"
+      ],
+      "factory": "RateHeterogeneity",
+      "handler": "rate_heterogeneity",
+      "integration_tests": [
+        "tests/integration/tree/test_rate_heterogeneity_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/rate_heterogeneity.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [
+        13
+      ],
+      "unit_tests": [
+        "tests/unit/services/tree/test_rate_heterogeneity.py"
+      ]
+    },
+    {
+      "aliases": [
+        "rcv",
+        "rel_comp_var"
+      ],
+      "canonical": "relative_composition_variability",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_relative_composition_variability",
+        "pk_rcv",
+        "pk_rel_comp_var"
+      ],
+      "factory": "RelativeCompositionVariability",
+      "handler": "rcv",
+      "integration_tests": [
+        "tests/integration/alignment/test_rcv_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/alignment/rcv.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/alignment/test_rcv.py"
+      ]
+    },
+    {
+      "aliases": [
+        "rcvt",
+        "rel_comp_var_taxon"
+      ],
+      "canonical": "relative_composition_variability_taxon",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_relative_composition_variability_taxon",
+        "pk_rcvt",
+        "pk_rel_comp_var_taxon"
+      ],
+      "factory": "RelativeCompositionVariabilityTaxon",
+      "handler": "rcvt",
+      "integration_tests": [
+        "tests/integration/alignment/test_rcvt_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/alignment/rcvt.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/alignment/test_rcvt_service.py"
+      ]
+    },
+    {
+      "aliases": [
+        "rrt",
+        "tajima_rrt"
+      ],
+      "canonical": "relative_rate_test",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_relative_rate_test",
+        "pk_rrt",
+        "pk_tajima_rrt"
+      ],
+      "factory": "RelativeRateTest",
+      "handler": "relative_rate_test",
+      "integration_tests": [
+        "tests/integration/tree/test_relative_rate_test_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/relative_rate_test.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_relative_rate_test.py"
+      ]
+    },
+    {
+      "aliases": [
+        "rename_fasta"
+      ],
+      "canonical": "rename_fasta_entries",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_rename_fasta_entries",
+        "pk_rename_fasta"
+      ],
+      "factory": "RenameFastaEntries",
+      "handler": "rename_fasta_entries",
+      "integration_tests": [
+        "tests/integration/alignment/test_rename_fasta_entries_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/alignment/rename_fasta_entries.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/alignment/test_rename_fasta_entries_service.py"
+      ]
+    },
+    {
+      "aliases": [
+        "rename_tips",
+        "rename_tree"
+      ],
+      "canonical": "rename_tree_tips",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_rename_tree_tips",
+        "pk_rename_tips",
+        "pk_rename_tree"
+      ],
+      "factory": "RenameTreeTips",
+      "handler": "rename_tree_tips",
+      "integration_tests": [
+        "tests/integration/tree/test_rename_tree_tips_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/rename_tree_tips.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_rename_tree_tips_service.py"
+      ]
+    },
+    {
+      "aliases": [
+        "rf",
+        "rf_dist",
+        "rf_distance"
+      ],
+      "canonical": "robinson_foulds_distance",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_robinson_foulds_distance",
+        "pk_rf",
+        "pk_rf_dist",
+        "pk_rf_distance"
+      ],
+      "factory": "RobinsonFouldsDistance",
+      "handler": "rf_distance",
+      "integration_tests": [
+        "tests/integration/tree/test_rf_distance_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/rf_distance.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_rf_distance.py"
+      ]
+    },
+    {
+      "aliases": [
+        "root",
+        "rt"
+      ],
+      "canonical": "root_tree",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_root_tree",
+        "pk_root",
+        "pk_rt"
+      ],
+      "factory": "RootTree",
+      "handler": "root_tree",
+      "integration_tests": [
+        "tests/integration/tree/test_root_tree.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/root_tree.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [
+        2
+      ],
+      "unit_tests": [
+        "tests/unit/services/tree/test_root_tree_service.py"
+      ]
+    },
+    {
+      "aliases": [
+        "sat"
+      ],
+      "canonical": "saturation",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_saturation",
+        "pk_sat"
+      ],
+      "factory": "Saturation",
+      "handler": "saturation",
+      "integration_tests": [
+        "tests/integration/tree/test_saturation_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/saturation.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_saturation.py"
+      ]
+    },
+    {
+      "aliases": [
+        "describe_simmap",
+        "smsummary"
+      ],
+      "canonical": "simmap_summary",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_simmap_summary",
+        "pk_describe_simmap",
+        "pk_smsummary"
+      ],
+      "factory": "SimmapSummary",
+      "handler": "simmap_summary",
+      "integration_tests": [
+        "tests/integration/tree/test_simmap_summary_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/simmap_summary.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_simmap_summary.py"
+      ]
+    },
+    {
+      "aliases": [
+        "sd",
+        "spec_disc"
+      ],
+      "canonical": "spectral_discordance",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_spectral_discordance",
+        "pk_sd",
+        "pk_spec_disc"
+      ],
+      "factory": "SpectralDiscordance",
+      "handler": "spectral_discordance",
+      "integration_tests": [],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/spectral_discordance.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [
+        12
+      ],
+      "unit_tests": [
+        "tests/unit/services/tree/test_spectral_discordance.py"
+      ]
+    },
+    {
+      "aliases": [
+        "spurious_seq",
+        "ss"
+      ],
+      "canonical": "spurious_sequence",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_spurious_sequence",
+        "pk_spurious_seq",
+        "pk_ss"
+      ],
+      "factory": "SpuriousSequence",
+      "handler": "spurious_sequence",
+      "integration_tests": [
+        "tests/integration/tree/test_spurious_sequence_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/spurious_sequence.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_spurious_sequence_service.py"
+      ]
+    },
+    {
+      "aliases": [
+        "scm",
+        "simmap"
+      ],
+      "canonical": "stochastic_character_map",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_stochastic_character_map",
+        "pk_scm",
+        "pk_simmap"
+      ],
+      "factory": "StochasticCharacterMap",
+      "handler": "stochastic_character_map",
+      "integration_tests": [
+        "tests/integration/tree/test_stochastic_character_map_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/stochastic_character_map.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [
+        5
+      ],
+      "unit_tests": [
+        "tests/unit/services/tree/test_stochastic_character_map.py"
+      ]
+    },
+    {
+      "aliases": [
+        "spr"
+      ],
+      "canonical": "subtree_prune_regraft",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_subtree_prune_regraft",
+        "pk_spr"
+      ],
+      "factory": "Spr",
+      "handler": "subtree_prune_regraft",
+      "integration_tests": [
+        "tests/integration/tree/test_spr_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/spr.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_spr.py"
+      ]
+    },
+    {
+      "aliases": [
+        "sop",
+        "sops"
+      ],
+      "canonical": "sum_of_pairs_score",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_sum_of_pairs_score",
+        "pk_sop",
+        "pk_sops"
+      ],
+      "factory": "SumOfPairsScore",
+      "handler": "sum_of_pairs_score",
+      "integration_tests": [
+        "tests/integration/alignment/test_sum_of_pairs_score_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/alignment/sum_of_pairs_score.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/alignment/test_sum_of_pairs_score.py"
+      ]
+    },
+    {
+      "aliases": [
+        "shared_taxa",
+        "tgroups"
+      ],
+      "canonical": "taxon_groups",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_taxon_groups",
+        "pk_shared_taxa",
+        "pk_tgroups"
+      ],
+      "factory": "TaxonGroups",
+      "handler": "taxon_groups",
+      "integration_tests": [
+        "tests/integration/alignment/test_taxon_groups_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/alignment/taxon_groups.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/alignment/test_taxon_groups.py"
+      ]
+    },
+    {
+      "aliases": [
+        "tbs"
+      ],
+      "canonical": "terminal_branch_stats",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_terminal_branch_stats",
+        "pk_tbs"
+      ],
+      "factory": "TerminalBranchStats",
+      "handler": "terminal_branch_stats",
+      "integration_tests": [
+        "tests/integration/tree/test_terminal_branch_stats_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/terminal_branch_stats.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_terminal_branch_stats_service.py"
+      ]
+    },
+    {
+      "aliases": [
+        "p2n",
+        "pal2nal"
+      ],
+      "canonical": "thread_dna",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_thread_dna",
+        "pk_p2n",
+        "pk_pal2nal"
+      ],
+      "factory": "DNAThreader",
+      "handler": "thread_dna",
+      "integration_tests": [
+        "tests/integration/alignment/test_dna_threader_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/alignment/dna_threader.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/alignment/test_dna_threader_service.py"
+      ]
+    },
+    {
+      "aliases": [
+        "thresh",
+        "thresh_bayes",
+        "threshbayes",
+        "threshold"
+      ],
+      "canonical": "threshold_model",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_threshold_model",
+        "pk_thresh",
+        "pk_thresh_bayes",
+        "pk_threshbayes",
+        "pk_threshold"
+      ],
+      "factory": "ThresholdModel",
+      "handler": "threshold_model",
+      "integration_tests": [
+        "tests/integration/tree/test_threshold_model_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/threshold_model.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_threshold_model.py"
+      ]
+    },
+    {
+      "aliases": [
+        "labels",
+        "tl",
+        "tree_labels"
+      ],
+      "canonical": "tip_labels",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_tip_labels",
+        "pk_labels",
+        "pk_tl",
+        "pk_tree_labels"
+      ],
+      "factory": "TipLabels",
+      "handler": "tip_labels",
+      "integration_tests": [
+        "tests/integration/tree/test_tip_labels_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/tip_labels.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_tip_labels.py"
+      ]
+    },
+    {
+      "aliases": [
+        "t2t",
+        "t2t_dist"
+      ],
+      "canonical": "tip_to_tip_distance",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_tip_to_tip_distance",
+        "pk_t2t",
+        "pk_t2t_dist"
+      ],
+      "factory": "TipToTipDistance",
+      "handler": "tip_to_tip_distance",
+      "integration_tests": [
+        "tests/integration/tree/test_tip_to_tip_distance_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/tip_to_tip_distance.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_tip_to_tip_distance_service.py"
+      ]
+    },
+    {
+      "aliases": [
+        "t2t_nd",
+        "t2t_node_dist"
+      ],
+      "canonical": "tip_to_tip_node_distance",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_tip_to_tip_node_distance",
+        "pk_t2t_nd",
+        "pk_t2t_node_dist"
+      ],
+      "factory": "TipToTipNodeDistance",
+      "handler": "tip_to_tip_node_distance",
+      "integration_tests": [
+        "tests/integration/tree/test_tip_to_tip_node_distance_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/tip_to_tip_node_distance.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_tip_to_tip_node_distance_service.py"
+      ]
+    },
+    {
+      "aliases": [
+        "tree_len"
+      ],
+      "canonical": "total_tree_length",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_total_tree_length",
+        "pk_tree_len"
+      ],
+      "factory": "TotalTreeLength",
+      "handler": "total_tree_length",
+      "integration_tests": [
+        "tests/integration/tree/test_total_tree_length_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/total_tree_length.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_total_tree_length.py"
+      ]
+    },
+    {
+      "aliases": [
+        "phylo_corr",
+        "trait_corr"
+      ],
+      "canonical": "trait_correlation",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_trait_correlation",
+        "pk_phylo_corr",
+        "pk_trait_corr"
+      ],
+      "factory": "TraitCorrelation",
+      "handler": "trait_correlation",
+      "integration_tests": [
+        "tests/integration/tree/test_trait_correlation_integration.py",
+        "tests/integration/tree/test_trait_correlation_invariant_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/trait_correlation.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_trait_correlation.py"
+      ]
+    },
+    {
+      "aliases": [
+        "branch_rates",
+        "rate_map"
+      ],
+      "canonical": "trait_rate_map",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_trait_rate_map",
+        "pk_branch_rates",
+        "pk_rate_map"
+      ],
+      "factory": "TraitRateMap",
+      "handler": "trait_rate_map",
+      "integration_tests": [
+        "tests/integration/tree/test_trait_rate_map_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/trait_rate_map.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_trait_rate_map.py"
+      ]
+    },
+    {
+      "aliases": [
+        "annotate_tree",
+        "transfer_annot"
+      ],
+      "canonical": "transfer_annotations",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_transfer_annotations",
+        "pk_annotate_tree",
+        "pk_transfer_annot"
+      ],
+      "factory": "TransferAnnotations",
+      "handler": "transfer_annotations",
+      "integration_tests": [
+        "tests/integration/tree/test_transfer_annotations_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/transfer_annotations.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_transfer_annotations.py"
+      ]
+    },
+    {
+      "aliases": [
+        "tree_landscape",
+        "tspace"
+      ],
+      "canonical": "tree_space",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_tree_space",
+        "pk_tree_landscape",
+        "pk_tspace"
+      ],
+      "factory": "TreeSpace",
+      "handler": "tree_space",
+      "integration_tests": [
+        "tests/integration/tree/test_tree_space_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/tree_space.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_tree_space.py"
+      ]
+    },
+    {
+      "aliases": [
+        "tness"
+      ],
+      "canonical": "treeness",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_treeness",
+        "pk_tness"
+      ],
+      "factory": "Treeness",
+      "handler": "treeness",
+      "integration_tests": [
+        "tests/integration/tree/test_treeness_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/treeness.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_treeness.py"
+      ]
+    },
+    {
+      "aliases": [
+        "tor",
+        "toverr"
+      ],
+      "canonical": "treeness_over_rcv",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_treeness_over_rcv",
+        "pk_tor",
+        "pk_toverr"
+      ],
+      "factory": "TreenessOverRCV",
+      "handler": "treeness_over_rcv",
+      "integration_tests": [
+        "tests/integration/tree/test_treeness_over_rcv_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/tree/treeness_over_rcv.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/tree/test_treeness_over_rcv.py"
+      ]
+    },
+    {
+      "aliases": [
+        "vs"
+      ],
+      "canonical": "variable_sites",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_variable_sites",
+        "pk_vs"
+      ],
+      "factory": "VariableSites",
+      "handler": "variable_sites",
+      "integration_tests": [
+        "tests/integration/alignment/test_variable_sites_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/alignment/variable_sites.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/alignment/test_variable_sites.py"
+      ]
+    },
+    {
+      "aliases": [
+        "v"
+      ],
+      "canonical": "version",
+      "disposition": "Direct unit tests exercise the service, including run/output paths; add integration coverage only for a concrete cross-layer contract.",
+      "entry_points": [
+        "pk_version",
+        "pk_v"
+      ],
+      "factory": null,
+      "handler": "version",
+      "integration_tests": [],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": null,
+      "status": "unit_only_documented",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/test_cli_registry.py",
+        "tests/unit/test_main_entrypoint.py"
+      ]
+    }
+  ],
+  "schema_version": 1,
+  "services": [
+    {
+      "commands": [],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [],
+      "module": "phykit/services/alignment/_fasta.py",
+      "unit_tests": [
+        "tests/unit/services/alignment/test_fasta_helpers.py"
+      ]
+    },
+    {
+      "commands": [
+        "alignment_entropy"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/alignment/test_alignment_entropy_integration.py"
+      ],
+      "module": "phykit/services/alignment/alignment_entropy.py",
+      "unit_tests": [
+        "tests/unit/services/alignment/test_alignment_entropy.py"
+      ]
+    },
+    {
+      "commands": [
+        "alignment_length"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/alignment/test_alignment_length_integration.py"
+      ],
+      "module": "phykit/services/alignment/alignment_length.py",
+      "unit_tests": [
+        "tests/unit/services/alignment/test_alignment_length.py"
+      ]
+    },
+    {
+      "commands": [
+        "alignment_length_no_gaps"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/alignment/test_alignment_length_integration_no_gaps.py"
+      ],
+      "module": "phykit/services/alignment/alignment_length_no_gaps.py",
+      "unit_tests": [
+        "tests/unit/services/alignment/test_alignment_length_no_gaps.py"
+      ]
+    },
+    {
+      "commands": [
+        "alignment_outlier_taxa"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/alignment/test_alignment_outlier_taxa_integration.py"
+      ],
+      "module": "phykit/services/alignment/alignment_outlier_taxa.py",
+      "unit_tests": [
+        "tests/unit/services/alignment/test_alignment_outlier_taxa.py"
+      ]
+    },
+    {
+      "commands": [
+        "alignment_recoding"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/alignment/test_alignment_recoding.py"
+      ],
+      "module": "phykit/services/alignment/alignment_recoding.py",
+      "unit_tests": [
+        "tests/unit/services/alignment/test_alignment_recoding_service.py"
+      ]
+    },
+    {
+      "commands": [
+        "alignment_subsample"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/alignment/test_alignment_subsample_integration.py"
+      ],
+      "module": "phykit/services/alignment/alignment_subsample.py",
+      "unit_tests": [
+        "tests/unit/services/alignment/test_alignment_subsample.py"
+      ]
+    },
+    {
+      "commands": [],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [],
+      "module": "phykit/services/alignment/base.py",
+      "unit_tests": [
+        "tests/unit/services/alignment/test_alignment_length.py",
+        "tests/unit/services/alignment/test_create_concatenation_matrix.py"
+      ]
+    },
+    {
+      "commands": [
+        "codon_dnds"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/alignment/test_codon_dnds_integration.py"
+      ],
+      "module": "phykit/services/alignment/codon_dnds.py",
+      "unit_tests": [
+        "tests/unit/services/alignment/test_codon_dnds.py"
+      ]
+    },
+    {
+      "commands": [
+        "column_score"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/alignment/test_column_score.py"
+      ],
+      "module": "phykit/services/alignment/column_score.py",
+      "unit_tests": [
+        "tests/unit/services/alignment/test_column_score_service.py"
+      ]
+    },
+    {
+      "commands": [
+        "composition_per_taxon"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/alignment/test_composition_per_taxon_integration.py"
+      ],
+      "module": "phykit/services/alignment/composition_per_taxon.py",
+      "unit_tests": [
+        "tests/unit/services/alignment/test_composition_per_taxon.py"
+      ]
+    },
+    {
+      "commands": [
+        "compositional_bias_per_site"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/alignment/test_compositional_bias_per_site.py"
+      ],
+      "module": "phykit/services/alignment/compositional_bias_per_site.py",
+      "unit_tests": [
+        "tests/unit/services/alignment/test_compositional_bias_per_site_service.py"
+      ]
+    },
+    {
+      "commands": [
+        "create_concatenation_matrix"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/alignment/test_create_concatenation_matrix_integration.py"
+      ],
+      "module": "phykit/services/alignment/create_concatenation_matrix.py",
+      "unit_tests": [
+        "tests/unit/services/alignment/test_create_concatenation_matrix.py"
+      ]
+    },
+    {
+      "commands": [
+        "dfoil"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/alignment/test_dfoil_integration.py"
+      ],
+      "module": "phykit/services/alignment/dfoil.py",
+      "unit_tests": [
+        "tests/unit/services/alignment/test_dfoil.py"
+      ]
+    },
+    {
+      "commands": [
+        "thread_dna"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/alignment/test_dna_threader_integration.py"
+      ],
+      "module": "phykit/services/alignment/dna_threader.py",
+      "unit_tests": [
+        "tests/unit/services/alignment/test_dna_threader_service.py"
+      ]
+    },
+    {
+      "commands": [
+        "dstatistic"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/alignment/test_dstatistic_integration.py"
+      ],
+      "module": "phykit/services/alignment/dstatistic.py",
+      "unit_tests": [
+        "tests/unit/services/alignment/test_dstatistic.py"
+      ]
+    },
+    {
+      "commands": [
+        "evolutionary_rate_per_site"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/alignment/test_evolutionary_rate_per_site.py"
+      ],
+      "module": "phykit/services/alignment/evolutionary_rate_per_site.py",
+      "unit_tests": [
+        "tests/unit/services/alignment/test_evolutionary_rate_per_site_service.py"
+      ]
+    },
+    {
+      "commands": [
+        "faidx"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/alignment/test_faidx.py"
+      ],
+      "module": "phykit/services/alignment/faidx.py",
+      "unit_tests": [
+        "tests/unit/services/alignment/test_faidx_service.py"
+      ]
+    },
+    {
+      "commands": [
+        "gc_content"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/alignment/test_gc_content_integration.py"
+      ],
+      "module": "phykit/services/alignment/gc_content.py",
+      "unit_tests": [
+        "tests/unit/services/alignment/test_gc_content_service.py"
+      ]
+    },
+    {
+      "commands": [
+        "identity_matrix"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/alignment/test_identity_matrix_integration.py"
+      ],
+      "module": "phykit/services/alignment/identity_matrix.py",
+      "unit_tests": [
+        "tests/unit/services/alignment/test_identity_matrix.py"
+      ]
+    },
+    {
+      "commands": [
+        "mask_alignment"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/alignment/test_mask_alignment_integration.py"
+      ],
+      "module": "phykit/services/alignment/mask_alignment.py",
+      "unit_tests": [
+        "tests/unit/services/alignment/test_mask_alignment.py"
+      ]
+    },
+    {
+      "commands": [
+        "occupancy_filter"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/alignment/test_occupancy_filter_integration.py"
+      ],
+      "module": "phykit/services/alignment/occupancy_filter.py",
+      "unit_tests": [
+        "tests/unit/services/alignment/test_occupancy_filter.py"
+      ]
+    },
+    {
+      "commands": [
+        "occupancy_per_taxon"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/alignment/test_occupancy_per_taxon_integration.py"
+      ],
+      "module": "phykit/services/alignment/occupancy_per_taxon.py",
+      "unit_tests": [
+        "tests/unit/services/alignment/test_occupancy_per_taxon.py"
+      ]
+    },
+    {
+      "commands": [
+        "pairwise_identity"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/alignment/test_pairwise_identity_integration.py"
+      ],
+      "module": "phykit/services/alignment/pairwise_identity.py",
+      "unit_tests": [
+        "tests/unit/services/alignment/test_pairwise_identity_service.py"
+      ]
+    },
+    {
+      "commands": [
+        "parsimony_informative_sites"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/alignment/test_parsimony_informative_sites_integration.py"
+      ],
+      "module": "phykit/services/alignment/parsimony_informative_sites.py",
+      "unit_tests": [
+        "tests/unit/services/alignment/test_parsimony_informative_sites.py"
+      ]
+    },
+    {
+      "commands": [
+        "phylo_gwas"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/alignment/test_phylo_gwas_integration.py"
+      ],
+      "module": "phykit/services/alignment/phylo_gwas.py",
+      "unit_tests": [
+        "tests/unit/services/alignment/test_phylo_gwas.py"
+      ]
+    },
+    {
+      "commands": [
+        "plot_alignment_qc"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/alignment/test_plot_alignment_qc_integration.py"
+      ],
+      "module": "phykit/services/alignment/plot_alignment_qc.py",
+      "unit_tests": [
+        "tests/unit/services/alignment/test_plot_alignment_qc.py"
+      ]
+    },
+    {
+      "commands": [
+        "relative_composition_variability"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/alignment/test_rcv_integration.py"
+      ],
+      "module": "phykit/services/alignment/rcv.py",
+      "unit_tests": [
+        "tests/unit/services/alignment/test_rcv.py"
+      ]
+    },
+    {
+      "commands": [
+        "relative_composition_variability_taxon"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/alignment/test_rcvt_integration.py"
+      ],
+      "module": "phykit/services/alignment/rcvt.py",
+      "unit_tests": [
+        "tests/unit/services/alignment/test_rcvt_service.py"
+      ]
+    },
+    {
+      "commands": [
+        "rename_fasta_entries"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/alignment/test_rename_fasta_entries_integration.py"
+      ],
+      "module": "phykit/services/alignment/rename_fasta_entries.py",
+      "unit_tests": [
+        "tests/unit/services/alignment/test_rename_fasta_entries_service.py"
+      ]
+    },
+    {
+      "commands": [
+        "sum_of_pairs_score"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/alignment/test_sum_of_pairs_score_integration.py"
+      ],
+      "module": "phykit/services/alignment/sum_of_pairs_score.py",
+      "unit_tests": [
+        "tests/unit/services/alignment/test_sum_of_pairs_score.py"
+      ]
+    },
+    {
+      "commands": [
+        "taxon_groups"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/alignment/test_taxon_groups_integration.py"
+      ],
+      "module": "phykit/services/alignment/taxon_groups.py",
+      "unit_tests": [
+        "tests/unit/services/alignment/test_taxon_groups.py"
+      ]
+    },
+    {
+      "commands": [
+        "variable_sites"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/alignment/test_variable_sites_integration.py"
+      ],
+      "module": "phykit/services/alignment/variable_sites.py",
+      "unit_tests": [
+        "tests/unit/services/alignment/test_variable_sites.py"
+      ]
+    },
+    {
+      "commands": [],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [],
+      "module": "phykit/services/base.py",
+      "unit_tests": [
+        "tests/unit/services/test_base.py"
+      ]
+    },
+    {
+      "commands": [
+        "ancestral_state_reconstruction"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_ancestral_reconstruction_integration.py"
+      ],
+      "module": "phykit/services/tree/ancestral_reconstruction.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_ancestral_reconstruction.py"
+      ]
+    },
+    {
+      "commands": [],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [],
+      "module": "phykit/services/tree/base.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_base_tree_service.py"
+      ]
+    },
+    {
+      "commands": [
+        "bipartition_support_stats"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_bipartition_support_stats_integration.py"
+      ],
+      "module": "phykit/services/tree/bipartition_support_stats.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_bipartition_support_stats.py"
+      ]
+    },
+    {
+      "commands": [
+        "branch_length_multiplier"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_branch_length_multiplier_integration.py"
+      ],
+      "module": "phykit/services/tree/branch_length_multiplier.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_branch_length_multiplier_service.py"
+      ]
+    },
+    {
+      "commands": [
+        "character_map"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_character_map_integration.py"
+      ],
+      "module": "phykit/services/tree/character_map.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_character_map.py"
+      ]
+    },
+    {
+      "commands": [
+        "chronogram"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_chronogram_integration.py"
+      ],
+      "module": "phykit/services/tree/chronogram.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_chronogram.py"
+      ]
+    },
+    {
+      "commands": [
+        "collapse_branches"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_collapse_branches_integration.py"
+      ],
+      "module": "phykit/services/tree/collapse_branches.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_collapse_branches_service.py"
+      ]
+    },
+    {
+      "commands": [
+        "concordance_asr"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [],
+      "module": "phykit/services/tree/concordance_asr.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_concordance_asr.py"
+      ]
+    },
+    {
+      "commands": [
+        "consensus_network"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_consensus_network_integration.py"
+      ],
+      "module": "phykit/services/tree/consensus_network.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_consensus_network.py"
+      ]
+    },
+    {
+      "commands": [
+        "consensus_tree"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_consensus_tree_integration.py"
+      ],
+      "module": "phykit/services/tree/consensus_tree.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_consensus_tree.py"
+      ]
+    },
+    {
+      "commands": [
+        "cont_map"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_cont_map_integration.py"
+      ],
+      "module": "phykit/services/tree/cont_map.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_cont_map.py"
+      ]
+    },
+    {
+      "commands": [
+        "cophylo"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_cophylo_integration.py"
+      ],
+      "module": "phykit/services/tree/cophylo.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_cophylo.py"
+      ]
+    },
+    {
+      "commands": [
+        "covarying_evolutionary_rates"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_covarying_evolutionary_rates_integration.py"
+      ],
+      "module": "phykit/services/tree/covarying_evolutionary_rates.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_covarying_evolutionary_rates.py"
+      ]
+    },
+    {
+      "commands": [
+        "density_map"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_density_map_integration.py"
+      ],
+      "module": "phykit/services/tree/density_map.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_density_map.py"
+      ]
+    },
+    {
+      "commands": [
+        "discordance_asymmetry"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [],
+      "module": "phykit/services/tree/discordance_asymmetry.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_discordance_asymmetry.py"
+      ]
+    },
+    {
+      "commands": [
+        "dtt"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [],
+      "module": "phykit/services/tree/dtt.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_dtt.py"
+      ]
+    },
+    {
+      "commands": [
+        "degree_of_violation_of_a_molecular_clock"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_dvmc_integration.py"
+      ],
+      "module": "phykit/services/tree/dvmc.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_dvmc.py"
+      ]
+    },
+    {
+      "commands": [
+        "evo_tempo_map"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [],
+      "module": "phykit/services/tree/evo_tempo_map.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_evo_tempo_map.py"
+      ]
+    },
+    {
+      "commands": [
+        "evolutionary_rate"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_evolutionary_rate.py"
+      ],
+      "module": "phykit/services/tree/evolutionary_rate.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_evolutionary_rate_service.py"
+      ]
+    },
+    {
+      "commands": [
+        "faiths_pd"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_faiths_pd_integration.py"
+      ],
+      "module": "phykit/services/tree/faiths_pd.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_faiths_pd.py"
+      ]
+    },
+    {
+      "commands": [
+        "fit_continuous"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_fit_continuous_integration.py"
+      ],
+      "module": "phykit/services/tree/fit_continuous.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_fit_continuous.py"
+      ]
+    },
+    {
+      "commands": [
+        "fit_discrete"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_fit_discrete_integration.py"
+      ],
+      "module": "phykit/services/tree/fit_discrete.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_fit_discrete.py"
+      ]
+    },
+    {
+      "commands": [
+        "hidden_paralogy_check"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_hidden_paralogy_check_integration.py"
+      ],
+      "module": "phykit/services/tree/hidden_paralogy_check.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_hidden_paralogy_check.py"
+      ]
+    },
+    {
+      "commands": [
+        "hybridization"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_hybridization_integration.py"
+      ],
+      "module": "phykit/services/tree/hybridization.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_hybridization.py"
+      ]
+    },
+    {
+      "commands": [
+        "independent_contrasts"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_independent_contrasts_integration.py"
+      ],
+      "module": "phykit/services/tree/independent_contrasts.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_independent_contrasts.py"
+      ]
+    },
+    {
+      "commands": [
+        "internal_branch_stats"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_internal_branch_stats_integration.py"
+      ],
+      "module": "phykit/services/tree/internal_branch_stats.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_internal_branch_stats.py"
+      ]
+    },
+    {
+      "commands": [
+        "internode_labeler"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_internode_labeler_integration.py"
+      ],
+      "module": "phykit/services/tree/internode_labeler.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_internode_labeler.py",
+        "tests/unit/services/tree/test_internode_labeler_service.py"
+      ]
+    },
+    {
+      "commands": [
+        "kf_distance"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_kf_distance_integration.py"
+      ],
+      "module": "phykit/services/tree/kf_distance.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_kf_distance.py"
+      ]
+    },
+    {
+      "commands": [
+        "last_common_ancestor_subtree"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_last_common_ancestor_subtree_integration.py"
+      ],
+      "module": "phykit/services/tree/last_common_ancestor_subtree.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_last_common_ancestor_subtree_service.py"
+      ]
+    },
+    {
+      "commands": [
+        "long_branch_score"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_lb_score_integration.py"
+      ],
+      "module": "phykit/services/tree/lb_score.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_lb_score.py"
+      ]
+    },
+    {
+      "commands": [
+        "ltt"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_ltt_integration.py"
+      ],
+      "module": "phykit/services/tree/ltt.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_ltt.py"
+      ]
+    },
+    {
+      "commands": [
+        "monophyly_check"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_monophyly_check_integration.py"
+      ],
+      "module": "phykit/services/tree/monophyly_check.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_monophyly_check_service.py"
+      ]
+    },
+    {
+      "commands": [
+        "nearest_neighbor_interchange"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_nearest_neighbor_interchange_integration.py"
+      ],
+      "module": "phykit/services/tree/nearest_neighbor_interchange.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_nearest_neighbor_interchange_service.py"
+      ]
+    },
+    {
+      "commands": [
+        "neighbor_net"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_neighbor_net_integration.py"
+      ],
+      "module": "phykit/services/tree/neighbor_net.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_neighbor_net.py"
+      ]
+    },
+    {
+      "commands": [
+        "network_signal"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_network_signal_integration.py"
+      ],
+      "module": "phykit/services/tree/network_signal.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_network_signal.py"
+      ]
+    },
+    {
+      "commands": [
+        "ou_shift_detection"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_ou_shift_detection_integration.py"
+      ],
+      "module": "phykit/services/tree/ou_shift_detection.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_ou_shift_detection.py"
+      ]
+    },
+    {
+      "commands": [
+        "ouwie"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_ouwie_integration.py"
+      ],
+      "module": "phykit/services/tree/ouwie.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_ouwie.py"
+      ]
+    },
+    {
+      "commands": [
+        "parsimony_score"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_parsimony_score_integration.py"
+      ],
+      "module": "phykit/services/tree/parsimony_score.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_parsimony_score.py"
+      ]
+    },
+    {
+      "commands": [
+        "patristic_distances"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_patristic_distances_integration.py"
+      ],
+      "module": "phykit/services/tree/patristic_distances.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_patristic_distances.py"
+      ]
+    },
+    {
+      "commands": [
+        "phenogram"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_phenogram_integration.py"
+      ],
+      "module": "phykit/services/tree/phenogram.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_phenogram.py"
+      ]
+    },
+    {
+      "commands": [
+        "phylo_anova"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_phylo_anova_integration.py"
+      ],
+      "module": "phykit/services/tree/phylo_anova.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_phylo_anova.py"
+      ]
+    },
+    {
+      "commands": [
+        "phylo_heatmap"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_phylo_heatmap_integration.py"
+      ],
+      "module": "phykit/services/tree/phylo_heatmap.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_phylo_heatmap.py"
+      ]
+    },
+    {
+      "commands": [
+        "phylo_impute"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_phylo_impute_integration.py"
+      ],
+      "module": "phykit/services/tree/phylo_impute.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_phylo_impute.py"
+      ]
+    },
+    {
+      "commands": [
+        "phylo_logistic"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_phylo_logistic_integration.py"
+      ],
+      "module": "phykit/services/tree/phylo_logistic.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_phylo_logistic.py"
+      ]
+    },
+    {
+      "commands": [
+        "phylo_path"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_phylo_path_integration.py"
+      ],
+      "module": "phykit/services/tree/phylo_path.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_phylo_path.py"
+      ]
+    },
+    {
+      "commands": [
+        "phylogenetic_glm"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_phylogenetic_glm_integration.py"
+      ],
+      "module": "phykit/services/tree/phylogenetic_glm.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_phylogenetic_glm.py"
+      ]
+    },
+    {
+      "commands": [
+        "phylogenetic_ordination"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_phylogenetic_ordination_integration.py"
+      ],
+      "module": "phykit/services/tree/phylogenetic_ordination.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_phylogenetic_ordination.py"
+      ]
+    },
+    {
+      "commands": [
+        "phylogenetic_regression"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_phylogenetic_regression_integration.py"
+      ],
+      "module": "phykit/services/tree/phylogenetic_regression.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_phylogenetic_regression.py"
+      ]
+    },
+    {
+      "commands": [
+        "phylogenetic_signal"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_phylogenetic_signal_invariant_integration.py"
+      ],
+      "module": "phykit/services/tree/phylogenetic_signal.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_phylogenetic_signal.py"
+      ]
+    },
+    {
+      "commands": [
+        "phylomorphospace"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_phylomorphospace_integration.py"
+      ],
+      "module": "phykit/services/tree/phylomorphospace.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_phylomorphospace.py"
+      ]
+    },
+    {
+      "commands": [
+        "polytomy_test"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_polytomy_test_integration.py"
+      ],
+      "module": "phykit/services/tree/polytomy_test.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_polytomy_test.py"
+      ]
+    },
+    {
+      "commands": [
+        "print_tree"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_print_tree_integration.py"
+      ],
+      "module": "phykit/services/tree/print_tree.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_print_tree.py"
+      ]
+    },
+    {
+      "commands": [
+        "prune_tree"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_prune_integration.py"
+      ],
+      "module": "phykit/services/tree/prune_tree.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_prune_tree.py"
+      ]
+    },
+    {
+      "commands": [
+        "quartet_network"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_quartet_network_integration.py"
+      ],
+      "module": "phykit/services/tree/quartet_network.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_quartet_network.py"
+      ]
+    },
+    {
+      "commands": [
+        "quartet_pie"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_quartet_pie_integration.py"
+      ],
+      "module": "phykit/services/tree/quartet_pie.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_quartet_pie.py"
+      ]
+    },
+    {
+      "commands": [
+        "rate_heterogeneity"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_rate_heterogeneity_integration.py"
+      ],
+      "module": "phykit/services/tree/rate_heterogeneity.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_rate_heterogeneity.py"
+      ]
+    },
+    {
+      "commands": [
+        "relative_rate_test"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_relative_rate_test_integration.py"
+      ],
+      "module": "phykit/services/tree/relative_rate_test.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_relative_rate_test.py"
+      ]
+    },
+    {
+      "commands": [
+        "rename_tree_tips"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_rename_tree_tips_integration.py"
+      ],
+      "module": "phykit/services/tree/rename_tree_tips.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_rename_tree_tips_service.py"
+      ]
+    },
+    {
+      "commands": [
+        "robinson_foulds_distance"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_rf_distance_integration.py"
+      ],
+      "module": "phykit/services/tree/rf_distance.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_rf_distance.py"
+      ]
+    },
+    {
+      "commands": [
+        "root_tree"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_root_tree.py"
+      ],
+      "module": "phykit/services/tree/root_tree.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_root_tree_service.py"
+      ]
+    },
+    {
+      "commands": [
+        "saturation"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_saturation_integration.py"
+      ],
+      "module": "phykit/services/tree/saturation.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_saturation.py"
+      ]
+    },
+    {
+      "commands": [
+        "simmap_summary"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_simmap_summary_integration.py"
+      ],
+      "module": "phykit/services/tree/simmap_summary.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_simmap_summary.py"
+      ]
+    },
+    {
+      "commands": [
+        "spectral_discordance"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [],
+      "module": "phykit/services/tree/spectral_discordance.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_spectral_discordance.py"
+      ]
+    },
+    {
+      "commands": [
+        "subtree_prune_regraft"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_spr_integration.py"
+      ],
+      "module": "phykit/services/tree/spr.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_spr.py"
+      ]
+    },
+    {
+      "commands": [
+        "spurious_sequence"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_spurious_sequence_integration.py"
+      ],
+      "module": "phykit/services/tree/spurious_sequence.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_spurious_sequence_service.py"
+      ]
+    },
+    {
+      "commands": [
+        "stochastic_character_map"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_stochastic_character_map_integration.py"
+      ],
+      "module": "phykit/services/tree/stochastic_character_map.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_stochastic_character_map.py"
+      ]
+    },
+    {
+      "commands": [
+        "terminal_branch_stats"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_terminal_branch_stats_integration.py"
+      ],
+      "module": "phykit/services/tree/terminal_branch_stats.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_terminal_branch_stats_service.py"
+      ]
+    },
+    {
+      "commands": [
+        "threshold_model"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_threshold_model_integration.py"
+      ],
+      "module": "phykit/services/tree/threshold_model.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_threshold_model.py"
+      ]
+    },
+    {
+      "commands": [
+        "tip_labels"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_tip_labels_integration.py"
+      ],
+      "module": "phykit/services/tree/tip_labels.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_tip_labels.py"
+      ]
+    },
+    {
+      "commands": [
+        "tip_to_tip_distance"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_tip_to_tip_distance_integration.py"
+      ],
+      "module": "phykit/services/tree/tip_to_tip_distance.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_tip_to_tip_distance_service.py"
+      ]
+    },
+    {
+      "commands": [
+        "tip_to_tip_node_distance"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_tip_to_tip_node_distance_integration.py"
+      ],
+      "module": "phykit/services/tree/tip_to_tip_node_distance.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_tip_to_tip_node_distance_service.py"
+      ]
+    },
+    {
+      "commands": [
+        "total_tree_length"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_total_tree_length_integration.py"
+      ],
+      "module": "phykit/services/tree/total_tree_length.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_total_tree_length.py"
+      ]
+    },
+    {
+      "commands": [
+        "trait_correlation"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_trait_correlation_integration.py",
+        "tests/integration/tree/test_trait_correlation_invariant_integration.py"
+      ],
+      "module": "phykit/services/tree/trait_correlation.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_trait_correlation.py"
+      ]
+    },
+    {
+      "commands": [
+        "trait_rate_map"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_trait_rate_map_integration.py"
+      ],
+      "module": "phykit/services/tree/trait_rate_map.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_trait_rate_map.py"
+      ]
+    },
+    {
+      "commands": [
+        "transfer_annotations"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_transfer_annotations_integration.py"
+      ],
+      "module": "phykit/services/tree/transfer_annotations.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_transfer_annotations.py"
+      ]
+    },
+    {
+      "commands": [
+        "tree_space"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_tree_space_integration.py"
+      ],
+      "module": "phykit/services/tree/tree_space.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_tree_space.py"
+      ]
+    },
+    {
+      "commands": [
+        "treeness"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_treeness_integration.py"
+      ],
+      "module": "phykit/services/tree/treeness.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_treeness.py"
+      ]
+    },
+    {
+      "commands": [
+        "treeness_over_rcv"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/tree/test_treeness_over_rcv_integration.py"
+      ],
+      "module": "phykit/services/tree/treeness_over_rcv.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_treeness_over_rcv.py"
+      ]
+    },
+    {
+      "commands": [],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [],
+      "module": "phykit/services/tree/vcv_utils.py",
+      "unit_tests": [
+        "tests/unit/services/tree/test_vcv_utils.py"
+      ]
+    }
+  ],
+  "summary": {
+    "canonical_commands": 109,
+    "commands_with_integration_tests": 103,
+    "commands_with_tutorial_smoke": 18,
+    "commands_with_unit_tests": 109,
+    "public_command_names": 317,
+    "service_modules": 113,
+    "uncallable_module_wrappers": 0
+  }
+}

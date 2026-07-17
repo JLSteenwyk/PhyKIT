@@ -8,6 +8,7 @@ Test data:
 from mock import patch
 from pathlib import Path
 import json
+import subprocess
 import sys
 
 import pytest
@@ -19,6 +20,67 @@ here = Path(__file__)
 
 @pytest.mark.integration
 class TestCharacterMap:
+    def test_invalid_optimization_is_rejected_before_output(self, tmp_path):
+        output = tmp_path / "invalid-optimization.png"
+
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "phykit",
+                "character_map",
+                "-t",
+                f"{here.parent.parent.parent}/sample_files/tree_character_map.tre",
+                "-d",
+                f"{here.parent.parent.parent}/sample_files/character_matrix_simple.tsv",
+                "-o",
+                str(output),
+                "--optimization",
+                "deltain",
+                "--json",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+
+        assert result.returncode == 2
+        assert "invalid choice" in result.stderr
+        assert "deltain" in result.stderr
+        assert not result.stdout.lstrip().startswith("{")
+        assert not output.exists()
+
+    def test_out_of_range_character_is_rejected_before_output(self, tmp_path):
+        output = tmp_path / "invalid-character.png"
+
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "phykit",
+                "character_map",
+                "-t",
+                f"{here.parent.parent.parent}/sample_files/tree_character_map.tre",
+                "-d",
+                f"{here.parent.parent.parent}/sample_files/character_matrix_simple.tsv",
+                "-o",
+                str(output),
+                "--characters",
+                "8",
+                "--json",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+
+        assert result.returncode == 2
+        assert "--characters" in result.stdout
+        assert "8" in result.stdout
+        assert not result.stdout.lstrip().startswith("{")
+        assert "traceback" not in result.stderr.lower()
+        assert not output.exists()
+
     @patch("builtins.print")
     def test_unresolved_polytomy_is_analyzed_and_plotted(
         self,

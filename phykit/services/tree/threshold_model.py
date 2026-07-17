@@ -33,6 +33,7 @@ _INF = math.inf
 _NEG_INF = -math.inf
 _LOG_2PI = math.log(2.0 * math.pi)
 _INV_SQRT2 = 1.0 / math.sqrt(2.0)
+_MAX_R_PROPOSAL_VARIANCE = 1.0
 _TEXT_REPORT_TEMPLATE = (
     "Trait 1: %s (%s%s)\n"
     "Trait 2: %s (%s%s)\n"
@@ -778,6 +779,22 @@ class ThresholdModel(Tree):
             return C_inv, logdet_C
 
     @staticmethod
+    def _reflect_correlation(value):
+        if not math.isfinite(value):
+            return None
+        return 1.0 - abs(((value + 1.0) % 4.0) - 2.0)
+
+    @staticmethod
+    def _adapt_proposal_variance(name, variance, acceptance_rate):
+        if acceptance_rate < 0.15:
+            variance *= 0.5
+        elif acceptance_rate > 0.35:
+            variance *= 1.5
+        if name == "r":
+            variance = min(variance, _MAX_R_PROPOSAL_VARIANCE)
+        return variance
+
+    @staticmethod
     def _run_mcmc(
         trait1_dict, trait2_dict, type1, type2,
         ordered_names, C, ngen, sample, burnin_frac, rng
@@ -950,21 +967,18 @@ class ThresholdModel(Tree):
 
             # Metropolis step: r (normal proposal with reflection on [-1,1])
             attempt["r"] += 1
-            r_prop = r + rng.normal(0, prop_sd["r"])
-            # Reflect into [-1, 1]
-            while r_prop < -1 or r_prop > 1:
-                if r_prop < -1:
-                    r_prop = -2 - r_prop
-                if r_prop > 1:
-                    r_prop = 2 - r_prop
-            prop_ll = ThresholdModel._log_likelihood_bivariate_bm_from_stats(
-                quad_stats, sigma2_1, sigma2_2, r_prop, a1, a2, logdet_C, n
+            r_prop = ThresholdModel._reflect_correlation(
+                r + rng.normal(0, prop_sd["r"])
             )
-            log_alpha = prop_ll - current_ll
-            if math.isfinite(log_alpha) and math.log(rng.random()) < log_alpha:
-                r = r_prop
-                current_ll = prop_ll
-                accept["r"] += 1
+            if r_prop is not None:
+                prop_ll = ThresholdModel._log_likelihood_bivariate_bm_from_stats(
+                    quad_stats, sigma2_1, sigma2_2, r_prop, a1, a2, logdet_C, n
+                )
+                log_alpha = prop_ll - current_ll
+                if math.isfinite(log_alpha) and math.log(rng.random()) < log_alpha:
+                    r = r_prop
+                    current_ll = prop_ll
+                    accept["r"] += 1
 
             # Metropolis step: a1 (only for continuous traits)
             if update_a1:
@@ -997,10 +1011,9 @@ class ThresholdModel(Tree):
                 for key in prop_var:
                     if attempt[key] > 0:
                         rate = accept[key] / attempt[key]
-                        if rate < 0.15:
-                            prop_var[key] *= 0.5
-                        elif rate > 0.35:
-                            prop_var[key] *= 1.5
+                        prop_var[key] = ThresholdModel._adapt_proposal_variance(
+                            key, prop_var[key], rate
+                        )
                         prop_sd[key] = math.sqrt(prop_var[key])
                         accept[key] = 0
                         attempt[key] = 0

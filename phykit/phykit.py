@@ -3211,7 +3211,8 @@ class Phykit:
         )
         parser.add_argument(
             "--optimization", type=str, default="acctran",
-            required=False, help=SUPPRESS, metavar=""
+            choices=("acctran", "deltran"), required=False,
+            help=SUPPRESS, metavar=""
         )
         parser.add_argument(
             "--phylogram", action="store_true", required=False, help=SUPPRESS
@@ -10153,6 +10154,10 @@ def alignment_length_no_gaps(argv=None):
 
 def alignment_entropy(argv=None):
     Phykit.alignment_entropy(sys.argv[1:])
+
+
+def alignment_recoding(argv=None):
+    Phykit.alignment_recoding(sys.argv[1:])
 
 
 def alignment_outlier_taxa(argv=None):

@@ -1,6 +1,7 @@
 from argparse import Namespace
 from collections import defaultdict
 import multiprocessing
+import pickle
 from pathlib import Path
 import subprocess
 import sys
@@ -11,6 +12,7 @@ from Bio.SeqRecord import SeqRecord
 import numpy as np
 import pytest
 
+from phykit.errors import PhykitUserError
 from phykit.services.alignment.create_concatenation_matrix import (
     CreateConcatenationMatrix,
     _ParsedFastaRecord,
@@ -78,6 +80,14 @@ def args():
 
 
 class TestCreateConcatenationMatrix:
+    def test_user_error_round_trips_between_processes(self):
+        error = PhykitUserError(["invalid alignment"], code=2)
+
+        restored = pickle.loads(pickle.dumps(error))
+
+        assert restored.messages == ["invalid alignment"]
+        assert restored.code == 2
+
     def test_init_sets_alignment_list_path(self, args):
         ccm = CreateConcatenationMatrix(args)
         assert ccm.alignment_list_path == args.alignment_list
@@ -293,11 +303,11 @@ class TestCreateConcatenationMatrix:
         assert concatenated_seqs["A"] == ["ACGT"]
         assert concatenated_seqs["B"] == ["TGCA"]
 
-    def test_process_taxa_sequences_preserves_duplicate_records(self, args):
+    def test_process_taxa_sequences_appends_validated_records(self, args):
         ccm = CreateConcatenationMatrix(args)
         records = [
             SeqRecord(Seq("ACGT"), id="A"),
-            SeqRecord(Seq("TGCA"), id="A"),
+            SeqRecord(Seq("TGCA"), id="B"),
         ]
         concatenated_seqs = defaultdict(list)
 
@@ -309,8 +319,8 @@ class TestCreateConcatenationMatrix:
             taxa_set={"A", "B"},
         )
 
-        assert concatenated_seqs["A"] == ["ACGT", "TGCA"]
-        assert concatenated_seqs["B"] == ["????"]
+        assert concatenated_seqs["A"] == ["ACGT"]
+        assert concatenated_seqs["B"] == ["TGCA"]
 
     def test_process_taxa_sequences_converts_mixed_external_records(self, args):
         class Record:
@@ -549,18 +559,91 @@ class TestCreateConcatenationMatrix:
         assert seq_dict["B"] == "????"
         assert seq_dict["C"] == "AAGT"
 
-    def test_process_alignment_file_preserves_first_duplicate_record(self, tmp_path):
+    def test_process_alignment_file_rejects_duplicate_taxon(self, tmp_path):
         fasta = tmp_path / "gene.fa"
         _write_fasta(fasta, [("A", "ACGT"), ("A", "TTTT"), ("B", "CCCC")])
-        _, seq_dict, present_taxa, og_len = CreateConcatenationMatrix._process_alignment_file(
-            str(fasta),
-            ["A", "B", "C"],
+
+        with pytest.raises(PhykitUserError) as excinfo:
+            CreateConcatenationMatrix._process_alignment_file(
+                str(fasta),
+                ["A", "B", "C"],
+            )
+
+        assert (
+            f"Alignment '{fasta}' contains duplicate taxon 'A' "
+            "(records 1 and 2)."
+        ) in excinfo.value.messages
+
+    @pytest.mark.parametrize(
+        "execution_path",
+        ["sequential", "process_pool", "process_fallback"],
+    )
+    @pytest.mark.parametrize(
+        ("bad_records", "expected_detail"),
+        [
+            (
+                [("A", "GGGG"), ("A", "TTTT"), ("B", "CCCC")],
+                "contains duplicate taxon 'A' (records 1 and 2)",
+            ),
+            (
+                [("A", "GGGG"), ("B", "CCC")],
+                "taxon 'B' has 3 sites; expected 4 sites from taxon 'A'",
+            ),
+        ],
+    )
+    def test_invalid_locus_is_rejected_before_any_output(
+        self,
+        tmp_path,
+        monkeypatch,
+        execution_path,
+        bad_records,
+        expected_detail,
+    ):
+        valid = tmp_path / "valid.fa"
+        invalid = tmp_path / "invalid.fa"
+        _write_fasta(valid, [("A", "AAAA"), ("B", "CCCC")])
+        _write_fasta(invalid, bad_records)
+        alignment_list = tmp_path / "alignments.txt"
+        alignment_list.write_text(f"{valid}\n{invalid}\n")
+        prefix = tmp_path / "results" / "concat"
+        plot_output = tmp_path / "results" / "custom.png"
+
+        if execution_path != "sequential":
+            monkeypatch.setattr(ccm_module, "_PARALLEL_MIN_ALIGNMENT_FILES", 1)
+            monkeypatch.setattr(ccm_module, "_PARALLEL_MIN_ALIGNMENT_BYTES", 0)
+
+        if execution_path == "process_fallback":
+            class FailingExecutor:
+                def __init__(self, *args, **kwargs):
+                    pass
+
+                def __enter__(self):
+                    raise RuntimeError("force deterministic process fallback")
+
+                def __exit__(self, exc_type, exc, traceback):
+                    return False
+
+            monkeypatch.setattr(ccm_module, "ProcessPoolExecutor", FailingExecutor)
+
+        ccm = CreateConcatenationMatrix(
+            Namespace(
+                alignment_list=str(alignment_list),
+                prefix=str(prefix),
+                json=True,
+                plot_occupancy=True,
+                plot_output=str(plot_output),
+            )
         )
-        assert present_taxa == {"A", "B"}
-        assert og_len == 4
-        assert seq_dict["A"] == "ACGT"
-        assert seq_dict["B"] == "CCCC"
-        assert seq_dict["C"] == "????"
+
+        with pytest.raises(PhykitUserError) as excinfo:
+            ccm.create_concatenation_matrix(str(alignment_list), str(prefix))
+
+        assert expected_detail in excinfo.value.messages[0]
+        assert not Path(f"{prefix}.fa").exists()
+        assert not Path(f"{prefix}.partition").exists()
+        assert not Path(f"{prefix}.occupancy").exists()
+        assert not plot_output.exists()
+        assert list(tmp_path.rglob("*.tmp")) == []
 
     def test_process_alignment_file_all_present_returns_parsed_sequences(self, tmp_path):
         fasta = tmp_path / "gene.fa"
@@ -579,7 +662,7 @@ class TestCreateConcatenationMatrix:
         fasta = tmp_path / "gene.fa"
         fasta.write_text(
             ">A description here\nAC GT\nAA\n"
-            ">B another description\nCC\nCC\n"
+            ">B another description\nCC\nCC\nCC\n"
         )
         _, seq_dict, present_taxa, og_len = CreateConcatenationMatrix._process_alignment_file(
             str(fasta),
@@ -588,7 +671,7 @@ class TestCreateConcatenationMatrix:
         assert present_taxa == {"A", "B"}
         assert og_len == 6
         assert seq_dict["A"] == "ACGTAA"
-        assert seq_dict["B"] == "CCCC"
+        assert seq_dict["B"] == "CCCCCC"
         assert seq_dict["C"] == "??????"
 
     def test_create_concatenation_matrix_sequential(self, tmp_path):

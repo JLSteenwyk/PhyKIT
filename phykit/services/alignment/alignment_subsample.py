@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 from ._fasta import read_fasta_first_token
 from .base import Alignment
 from ...errors import PhykitUserError
@@ -19,6 +21,9 @@ _RANGE_SITE_SAMPLE_MIN_LENGTH = 1_000_000
 _RANGE_SITE_SAMPLE_MID_MIN_LENGTH = 100_000
 _RANGE_SITE_SAMPLE_MAX_COUNT = 50_000
 _RANGE_SITE_SAMPLE_MAX_FRACTION = 0.1
+_PARTITION_LINE_PATTERN = re.compile(
+    r"\s*(\S+)\s*,\s*(\S+)\s*=\s*(\d+)\s*-\s*(\d+)\s*"
+)
 
 
 class AlignmentSubsample(Alignment):
@@ -112,6 +117,8 @@ class AlignmentSubsample(Alignment):
 
         partitions = self._parse_partition_file(self.partition_path)
         sequences = self._read_alignment(self.alignment_path)
+        alignment_length = self._alignment_length(sequences)
+        self._validate_partition_bounds(partitions, alignment_length)
         total = len(partitions)
         n = self._compute_n(total, "partitions")
         selected = self._sample(rng, partitions, n)
@@ -139,20 +146,7 @@ class AlignmentSubsample(Alignment):
             )
 
         sequences = self._read_alignment(self.alignment_path)
-        seq_iter = iter(sequences.values())
-        try:
-            aln_len = len(next(seq_iter))
-        except StopIteration:
-            raise PhykitUserError(
-                ["All sequences in the alignment must have the same length."],
-                code=2,
-            )
-        for seq in seq_iter:
-            if len(seq) != aln_len:
-                raise PhykitUserError(
-                    ["All sequences in the alignment must have the same length."],
-                    code=2,
-                )
+        aln_len = self._alignment_length(sequences)
         n = self._compute_n(aln_len, "sites")
 
         if not self.bootstrap and n == aln_len:
@@ -203,6 +197,24 @@ class AlignmentSubsample(Alignment):
         return read_fasta_first_token(path)
 
     @staticmethod
+    def _alignment_length(sequences: dict[str, str]) -> int:
+        seq_iter = iter(sequences.values())
+        try:
+            alignment_length = len(next(seq_iter))
+        except StopIteration:
+            raise PhykitUserError(
+                ["All sequences in the alignment must have the same length."],
+                code=2,
+            )
+        for sequence in seq_iter:
+            if len(sequence) != alignment_length:
+                raise PhykitUserError(
+                    ["All sequences in the alignment must have the same length."],
+                    code=2,
+                )
+        return alignment_length
+
+    @staticmethod
     def _parse_partition_file(path: str) -> list[tuple[str, int, int]]:
         """Parse RAxML-style partition file.
 
@@ -210,68 +222,61 @@ class AlignmentSubsample(Alignment):
         """
         partitions: list[tuple[str, int, int]] = []
         with open(path) as fh:
-            for line in fh:
+            for line_number, line in enumerate(fh, start=1):
                 stripped = line.strip()
                 if not stripped or stripped[0] == "#":
                     continue
                 partition = AlignmentSubsample._parse_partition_line(stripped)
-                if partition is not None:
-                    partitions.append(partition)
+                if partition is None:
+                    raise PhykitUserError(
+                        [
+                            f"Malformed partition row on line {line_number}: "
+                            f"'{stripped}'.",
+                            "Expected: MODEL, name=start-end",
+                        ],
+                        code=2,
+                    )
+                partitions.append(partition)
         return partitions
 
     @staticmethod
     def _parse_partition_line(line: str) -> tuple[str, int, int] | None:
-        try:
-            model, rest = line.split(", ", 1)
-            name, range_part = rest.split("=", 1)
-            start_text, end_text = range_part.split("-", 1)
-            if (
-                model
-                and " " not in model
-                and name
-                and " " not in name
-                and start_text.isdigit()
-            ):
-                if end_text.isdigit():
-                    return name, int(start_text), int(end_text)
-                end_digits = AlignmentSubsample._leading_digits(end_text)
-                if end_digits.isdigit():
-                    return name, int(start_text), int(end_digits)
-        except (IndexError, ValueError):
-            pass
-
-        try:
-            model, rest = line.split(",", 1)
-            name_part, range_part = rest.lstrip().split("=", 1)
-            start_part, end_part = range_part.lstrip().split("-", 1)
-        except ValueError:
+        match = _PARTITION_LINE_PATTERN.fullmatch(line)
+        if match is None:
             return None
-
-        if len(model.split()) != 1:
-            return None
-
-        name = name_part.rstrip()
-        if not name or len(name.split()) != 1:
-            return None
-
-        start_text = start_part.strip()
-        if not start_text.isdigit():
-            return None
-
-        end_text = end_part.lstrip()
-        end_digits = AlignmentSubsample._leading_digits(end_text)
-        if not end_digits.isdigit():
-            return None
-
-        return name, int(start_text), int(end_digits)
+        _model, name, start_text, end_text = match.groups()
+        return name, int(start_text), int(end_text)
 
     @staticmethod
-    def _leading_digits(text: str) -> str:
-        idx = 0
-        text_len = len(text)
-        while idx < text_len and text[idx].isdigit():
-            idx += 1
-        return text[:idx]
+    def _validate_partition_bounds(
+        partitions: list[tuple[str, int, int]],
+        alignment_length: int,
+    ) -> None:
+        for name, start, end in partitions:
+            if start < 1:
+                raise PhykitUserError(
+                    [
+                        f"Partition '{name}' starts at {start}; "
+                        "coordinates must be >= 1."
+                    ],
+                    code=2,
+                )
+            if end < start:
+                raise PhykitUserError(
+                    [
+                        f"Partition '{name}' ends at {end} before its start "
+                        f"at {start}."
+                    ],
+                    code=2,
+                )
+            if end > alignment_length:
+                raise PhykitUserError(
+                    [
+                        f"Partition '{name}' ends at {end}, beyond alignment "
+                        f"length {alignment_length}."
+                    ],
+                    code=2,
+                )
 
     def _compute_n(self, total: int, label: str) -> int:
         if self.number is not None:
