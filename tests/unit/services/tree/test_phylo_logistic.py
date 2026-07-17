@@ -11,6 +11,7 @@ from argparse import Namespace
 from pathlib import Path
 from unittest.mock import patch
 from Bio import Phylo
+from Bio.Phylo.BaseTree import Clade
 
 from phykit.services.tree.phylo_logistic import PhyloLogistic
 import phykit.services.tree.phylo_logistic as phylo_logistic_module
@@ -286,6 +287,14 @@ def test_standard_errors_from_info_matrix_keeps_inverse_fallback():
     np.testing.assert_allclose(observed, expected)
 
 
+def test_standard_errors_return_nan_for_singular_information():
+    observed = phylo_logistic_module._standard_errors_from_info_matrix(
+        np.zeros((2, 2))
+    )
+
+    assert np.isnan(observed).all()
+
+
 @pytest.fixture
 def basic_args():
     return Namespace(
@@ -365,8 +374,102 @@ class TestProcessArgs:
         parsed = svc.process_args(args)
         assert parsed["predictors"] == ["x1", "x2", "x3"]
 
+    def test_predictor_list_is_preserved(self):
+        args = Namespace(
+            tree="t.tre",
+            trait_data="d.tsv",
+            response="y",
+            predictor=["x1", "x2"],
+        )
+
+        parsed = PhyloLogistic.__new__(PhyloLogistic).process_args(args)
+
+        assert parsed["predictors"] == ["x1", "x2"]
+
+    @pytest.mark.parametrize(
+        ("p_value", "expected"),
+        [
+            (0.0005, "***"),
+            (0.005, "**"),
+            (0.02, "*"),
+            (0.08, "."),
+            (0.5, " "),
+        ],
+    )
+    def test_significance_code_boundaries(self, p_value, expected):
+        svc = PhyloLogistic.__new__(PhyloLogistic)
+
+        assert svc._signif_code(p_value) == expected
+
 
 class TestTransformedVCV:
+    def test_root_tip_distances_support_tree_protocol_fallbacks(self, basic_args):
+        svc = PhyloLogistic(basic_args)
+        root = object()
+        tip_a = Clade(name="A")
+        tip_b = Clade(name="B")
+
+        class DepthTree:
+            def __init__(self):
+                self.root = root
+
+            def depths(self):
+                return {root: 2.0, tip_a: 5.0, tip_b: 9.0}
+
+            def get_terminals(self):
+                return [tip_a, tip_b]
+
+        class DistanceTree:
+            def __init__(self):
+                self.root = root
+
+            def depths(self):
+                raise TypeError("depths unavailable")
+
+            def distance(self, tree_root, name):
+                assert tree_root is root
+                return {"A": 3.0, "B": 7.0}[name]
+
+        np.testing.assert_allclose(
+            svc._root_tip_distances(DepthTree(), ["B", "A"]),
+            [7.0, 3.0],
+        )
+        np.testing.assert_allclose(
+            svc._root_tip_distances(DistanceTree(), ["A", "B"]),
+            [3.0, 7.0],
+        )
+
+    def test_transformed_vcv_handles_nonpositive_branch_callback(
+        self, basic_args, monkeypatch
+    ):
+        from phykit.services.tree import vcv_utils
+
+        svc = PhyloLogistic(basic_args)
+        tree = Phylo.read(StringIO("(A:1,B:1);"), "newick")
+        observed = {}
+
+        def transformed_builder(tree_arg, names, transform):
+            assert tree_arg is tree
+            assert names == ["A", "B"]
+            observed["zero"] = transform(0.0)
+            observed["positive"] = transform(2.0)
+            return np.eye(2)
+
+        monkeypatch.setattr(
+            vcv_utils, "build_transformed_vcv_matrix", transformed_builder
+        )
+
+        matrix, _diag = svc._build_logistic_vcv(
+            tree,
+            0.5,
+            ["A", "B"],
+            vcv_utils.build_vcv_matrix,
+            np.array([1.0, 1.0]),
+        )
+
+        assert observed["zero"] == 0.0
+        assert observed["positive"] > 0.0
+        assert np.all(np.diag(matrix) > 1.0)
     def test_transformed_vcv_alpha_zero(self, basic_args):
         """When alpha ~ 0, the transformed VCV should be the standard BM VCV."""
         from phykit.services.tree.vcv_utils import build_vcv_matrix
@@ -613,6 +716,100 @@ class TestTransformedVCV:
 
 
 class TestFit:
+    def test_singular_starting_value_system_returns_current_estimate(self):
+        svc = PhyloLogistic.__new__(PhyloLogistic)
+        X = np.ones((4, 2))
+        y = np.array([0.0, 1.0, 0.0, 1.0])
+
+        beta = svc._logistic_starting_values(y, X)
+
+        np.testing.assert_allclose(beta, np.zeros(2))
+
+    def test_info_matrix_falls_back_to_inverse(self, basic_args, monkeypatch):
+        svc = PhyloLogistic(basic_args)
+        expected = np.array([[3.0]])
+
+        def fail_cholesky(*_args, **_kwargs):
+            raise np.linalg.LinAlgError("not positive definite")
+
+        monkeypatch.setattr(svc, "_compute_info_matrix_cholesky", fail_cholesky)
+        monkeypatch.setattr(
+            svc, "_compute_info_matrix_inverse", lambda *_args: expected
+        )
+
+        observed = svc._compute_info_matrix(
+            np.ones((2, 1)), np.full(2, 0.5), np.eye(2)
+        )
+
+        assert observed is expected
+
+    def test_info_matrix_inverse_regularizes_singular_vcv(self, basic_args):
+        svc = PhyloLogistic(basic_args)
+
+        observed = svc._compute_info_matrix_inverse(
+            np.ones((2, 2)), np.full(2, 0.5), np.zeros((2, 2))
+        )
+
+        np.testing.assert_allclose(observed, np.eye(2) * 1e-10)
+
+    def test_penalized_likelihood_rejects_vcv_failure(
+        self, basic_args, monkeypatch
+    ):
+        svc = PhyloLogistic(basic_args)
+        monkeypatch.setattr(
+            svc,
+            "_build_logistic_vcv",
+            lambda *_args: (_ for _ in ()).throw(ValueError("bad VCV")),
+        )
+
+        observed = svc._neg_pen_loglik(
+            np.array([0.0, 0.0]),
+            np.ones((2, 1)),
+            np.array([0.0, 1.0]),
+            object(),
+            ["A", "B"],
+            object(),
+            np.ones(2),
+        )
+
+        assert observed == 1e10
+
+    def test_penalized_likelihood_rejects_nonfinite_and_singular_terms(
+        self, basic_args, monkeypatch
+    ):
+        svc = PhyloLogistic(basic_args)
+        monkeypatch.setattr(
+            svc, "_build_logistic_vcv", lambda *_args: (np.eye(2), np.ones(2))
+        )
+        args = (
+            np.array([0.0, 0.0]),
+            np.ones((2, 1)),
+            np.array([0.0, 1.0]),
+            object(),
+            ["A", "B"],
+            object(),
+            np.ones(2),
+        )
+
+        monkeypatch.setattr(
+            phylo_logistic_module, "_bernoulli_log_likelihood", lambda *_args: np.nan
+        )
+        assert svc._neg_pen_loglik(*args) == 1e10
+
+        monkeypatch.setattr(
+            phylo_logistic_module, "_bernoulli_log_likelihood", lambda *_args: -1.0
+        )
+        monkeypatch.setattr(
+            svc, "_compute_info_matrix", lambda *_args: np.array([[-1.0]])
+        )
+        assert svc._neg_pen_loglik(*args) == 1e10
+
+        def fail_slogdet(_matrix):
+            raise np.linalg.LinAlgError("singular")
+
+        monkeypatch.setattr(phylo_logistic_module.np.linalg, "slogdet", fail_slogdet)
+        assert svc._neg_pen_loglik(*args) == 1e10
+
     def test_logistic_starting_values_match_diagonal_weight_reference(self, monkeypatch):
         svc = PhyloLogistic.__new__(PhyloLogistic)
         rng = np.random.default_rng(20260623)
@@ -722,6 +919,74 @@ class TestFit:
 
 
 class TestValidation:
+    def test_insufficient_observations_for_predictor_count(self, mocker):
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data="traits.tsv",
+            response="y",
+            predictor=["x1", "x2"],
+            json=False,
+        )
+        svc = PhyloLogistic(args)
+        tree = object()
+        mocker.patch.object(svc, "read_tree_file_unmodified", return_value=tree)
+        mocker.patch.object(svc, "validate_tree")
+        mocker.patch.object(
+            svc, "get_tip_names_from_tree", return_value=["A", "B", "C"]
+        )
+        mocker.patch(
+            "phykit.services.tree.phylo_logistic.parse_multi_trait_file",
+            return_value=(
+                ["y", "x1", "x2"],
+                {
+                    "A": [0.0, 1.0, 2.0],
+                    "B": [1.0, 2.0, 3.0],
+                    "C": [0.0, 3.0, 4.0],
+                },
+            ),
+        )
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            svc.run()
+
+        assert "Insufficient observations" in exc_info.value.messages[0]
+
+    @pytest.mark.parametrize(
+        ("response", "message"),
+        [
+            (np.array([0.0, 1.0, 2.0, 0.0]), "only 0 and 1"),
+            (np.zeros(4), "must contain both"),
+        ],
+    )
+    def test_invalid_binary_responses(self, mocker, basic_args, response, message):
+        svc = PhyloLogistic(basic_args)
+        tree = object()
+        mocker.patch.object(svc, "read_tree_file_unmodified", return_value=tree)
+        mocker.patch.object(svc, "validate_tree")
+        mocker.patch.object(
+            svc, "get_tip_names_from_tree", return_value=["A", "B", "C", "D"]
+        )
+        mocker.patch(
+            "phykit.services.tree.phylo_logistic.parse_multi_trait_file",
+            return_value=(
+                ["has_wings", "body_mass"],
+                {
+                    "A": [0.0, 1.0],
+                    "B": [1.0, 2.0],
+                    "C": [0.0, 3.0],
+                    "D": [1.0, 4.0],
+                },
+            ),
+        )
+        mocker.patch(
+            "phykit.services.tree.phylo_logistic.response_predictor_arrays",
+            return_value=(response, np.ones((4, 2))),
+        )
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            svc.run()
+
+        assert message in exc_info.value.messages[0]
     def test_missing_column(self, basic_args):
         basic_args.response = "nonexistent_column"
         svc = PhyloLogistic(basic_args)
