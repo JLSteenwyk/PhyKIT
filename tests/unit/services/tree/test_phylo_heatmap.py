@@ -98,6 +98,24 @@ class TestPhyloHeatmapInit:
 
 
 class TestTraitParsing:
+    @pytest.mark.parametrize(
+        "contents",
+        [
+            "# comment\n\n",
+            "taxon\nA\nB\nC\n",
+            "taxon\ttrait\n# no data\n",
+        ],
+    )
+    def test_structurally_empty_matrices_are_rejected(
+        self, args, tmp_path, contents
+    ):
+        ph = PhyloHeatmap(args)
+        trait_file = tmp_path / "invalid.tsv"
+        trait_file.write_text(contents)
+
+        with pytest.raises(SystemExit):
+            ph._parse_trait_matrix(str(trait_file), ["A", "B", "C"])
+
     def test_parse_multi_column_tsv(self, args):
         ph = PhyloHeatmap(args)
         tree = ph.read_tree_file()
@@ -225,8 +243,52 @@ class TestTraitParsing:
         with pytest.raises(SystemExit):
             ph._parse_trait_matrix(str(f), ["A", "B", "C"])
 
+    def test_unordered_exact_taxa_emit_no_warnings(self, args, tmp_path, capsys):
+        ph = PhyloHeatmap(args)
+        trait_file = tmp_path / "unordered.tsv"
+        trait_file.write_text(
+            "taxon\ttrait\nC\t3.0\nA\t1.0\nB\t2.0\n"
+        )
+
+        names, data = ph._parse_trait_matrix(
+            str(trait_file), ["A", "B", "C"]
+        )
+
+        assert names == ["trait"]
+        assert data == {"C": [3.0], "A": [1.0], "B": [2.0]}
+        assert capsys.readouterr().err == ""
+
+    def test_taxon_mismatches_warn_and_return_shared_data(
+        self, args, tmp_path, capsys
+    ):
+        ph = PhyloHeatmap(args)
+        trait_file = tmp_path / "mismatch.tsv"
+        trait_file.write_text(
+            "taxon\ttrait\nA\t1.0\nB\t2.0\nC\t3.0\nextra\t4.0\n"
+        )
+
+        names, data = ph._parse_trait_matrix(
+            str(trait_file), ["A", "B", "C", "missing"]
+        )
+
+        assert names == ["trait"]
+        assert data == {"A": [1.0], "B": [2.0], "C": [3.0]}
+        stderr = capsys.readouterr().err
+        assert "missing" in stderr
+        assert "extra" in stderr
+
 
 class TestPhyloHeatmapPlot:
+    @pytest.mark.parametrize(
+        "tree",
+        [
+            Namespace(root=object()),
+            Namespace(root=Namespace(clades=[object()])),
+        ],
+    )
+    def test_default_branch_length_scan_handles_generic_trees(self, tree):
+        assert PhyloHeatmap._needs_default_branch_lengths(tree) is True
+
     def test_build_heatmap_matrix_uses_typed_asarray(self, monkeypatch):
         trait_data = {
             "B": [3, 4],
