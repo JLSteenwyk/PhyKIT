@@ -46,6 +46,16 @@ def _make_tree(newick):
     return Phylo.read(StringIO(newick), "newick")
 
 
+def _make_balanced_tree(tip_names):
+    def build(names):
+        if len(names) == 1:
+            return f"{names[0]}:1"
+        midpoint = len(names) // 2
+        return f"({build(names[:midpoint])},{build(names[midpoint:])}):1"
+
+    return _make_tree(f"{build(tip_names)};")
+
+
 # ---------------------------------------------------------------------------
 # build_parent_map
 # ---------------------------------------------------------------------------
@@ -647,6 +657,46 @@ class TestFitchDownpass:
             {"A", "G", "T"},
             {"T"},
         ]
+
+    @pytest.mark.parametrize(
+        "mode",
+        [
+            "all_large",
+            "all_large_cached",
+            "mixed",
+            "mixed_cached",
+        ],
+    )
+    def test_bitmask_state_conversion_matches_generic_fitch(self, mode, monkeypatch):
+        cached = mode.endswith("cached")
+        mixed = mode.startswith("mixed")
+        tip_count = 28 if cached else 8
+        character_count = 16 if cached else (2 if mixed else 1)
+        tip_names = [f"T{index}" for index in range(tip_count)]
+        tree = _make_balanced_tree(tip_names)
+        tip_states = {}
+
+        for index, name in enumerate(tip_names):
+            pattern = index % 7 if cached else index
+            states = []
+            for character in range(character_count):
+                if mixed and character % 2 == 0:
+                    states.append(str(pattern % 2))
+                else:
+                    states.append(f"S{pattern}")
+            tip_states[name] = states
+
+        optimized_sets, optimized_scores = fitch_downpass(tree, tip_states)
+
+        monkeypatch.setattr(
+            parsimony_module,
+            "_postorder_clades_direct",
+            lambda _tree: None,
+        )
+        generic_sets, generic_scores = fitch_downpass(tree, tip_states)
+
+        assert optimized_scores == generic_scores
+        assert optimized_sets == generic_sets
 
     def test_polytomy_tree_after_resolve(self):
         """Works on a resolved polytomy tree."""
