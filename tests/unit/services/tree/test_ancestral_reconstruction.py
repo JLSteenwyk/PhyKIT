@@ -684,6 +684,78 @@ class TestFastAnc:
         assert sigma2 > 0
         assert np.isfinite(ll)
 
+    def test_fast_anc_falls_back_when_direct_preorder_is_unavailable(
+        self, ci_args, monkeypatch
+    ):
+        svc = AncestralReconstruction(ci_args)
+        tree = Phylo.read(StringIO("((A:1,B:2):1,C:2):0;"), "newick")
+        ordered_names = ["A", "B", "C"]
+        x = np.array([0.0, 1.0, 3.0])
+        node_labels = svc._label_internal_nodes(tree)
+        expected = svc._fast_anc(tree, x, ordered_names, node_labels)
+        original_iter_preorder = svc._iter_preorder
+        call_count = 0
+
+        def fail_first_preorder(root):
+            nonlocal call_count
+            call_count += 1
+            if call_count == 1:
+                raise AttributeError("direct traversal unavailable")
+            return original_iter_preorder(root)
+
+        monkeypatch.setattr(svc, "_iter_preorder", fail_first_preorder)
+
+        observed = svc._fast_anc(tree, x, ordered_names, node_labels)
+
+        assert observed[0] == pytest.approx(expected[0])
+        assert observed[1] == pytest.approx(expected[1])
+        assert observed[2] == pytest.approx(expected[2])
+        assert observed[3] == pytest.approx(expected[3])
+
+    def test_fast_anc_handles_an_unobserved_subtree(self, ci_args):
+        svc = AncestralReconstruction(ci_args)
+        tree = Phylo.read(
+            StringIO("((X:1,Y:1):1,(A:1,B:1):1):0;"),
+            "newick",
+        )
+        observed_internal = tree.root.clades[1]
+        node_labels = svc._label_internal_nodes(tree)
+        del node_labels[id(tree.root)]
+
+        estimates, cis, sigma2, ll = svc._fast_anc(
+            tree,
+            np.array([1.0, 2.0]),
+            ["A", "B"],
+            node_labels,
+        )
+
+        observed_label = node_labels[id(observed_internal)]
+        assert estimates == {observed_label: pytest.approx(1.5)}
+        assert observed_label in cis
+        assert sigma2 == pytest.approx(0.5)
+        assert np.isfinite(ll)
+
+    def test_fast_anc_handles_zero_length_branches(self, ci_args):
+        svc = AncestralReconstruction(ci_args)
+        tree = Phylo.read(StringIO("((A:0,B:0):0,C:0):0;"), "newick")
+        node_labels = svc._label_internal_nodes(tree)
+
+        estimates, cis, sigma2, ll = svc._fast_anc(
+            tree,
+            np.array([1.0, 2.0, 3.0]),
+            ["A", "B", "C"],
+            node_labels,
+        )
+
+        assert all(np.isfinite(value) for value in estimates.values())
+        assert all(
+            np.isfinite(lower) and lower < estimates[label] < upper
+            for label, (lower, upper) in cis.items()
+        )
+        assert np.isfinite(sigma2)
+        assert sigma2 > 0
+        assert ll == float("-inf")
+
     def test_sigma2_from_contrasts_streams_polytomy_children(self, ci_args):
         svc = AncestralReconstruction(ci_args)
         tree = Phylo.read(StringIO("(A:1,B:1,C:1);"), "newick")
@@ -707,6 +779,44 @@ class TestFastAnc:
         combined_var = 0.5
         second = ((3.0 - combined_est) ** 2) / (1.0 + combined_var)
         assert sigma2 == pytest.approx((first + second) / 2.0)
+
+    def test_sigma2_from_contrasts_skips_unobserved_children(self, ci_args):
+        svc = AncestralReconstruction(ci_args)
+        tree = Phylo.read(StringIO("(A:1,B:1,C:1);"), "newick")
+        a, _, c = tree.root.clades
+        node_estimates = {id(a): 1.0, id(c): 3.0}
+        node_variances = {id(a): 0.0, id(c): 0.0}
+
+        sigma2 = svc._compute_sigma2_from_contrasts(
+            tree,
+            np.array([1.0, 3.0]),
+            node_estimates,
+            node_variances,
+            ["A", "C"],
+        )
+
+        assert sigma2 == pytest.approx(2.0)
+
+    def test_sigma2_from_contrasts_returns_zero_without_valid_contrasts(
+        self, ci_args
+    ):
+        svc = AncestralReconstruction(ci_args)
+        tree = Phylo.read(StringIO("(A:0,B:0,C:0);"), "newick")
+        node_estimates = {
+            id(tip): float(index)
+            for index, tip in enumerate(tree.root.clades, start=1)
+        }
+        node_variances = {id(tip): 0.0 for tip in tree.root.clades}
+
+        sigma2 = svc._compute_sigma2_from_contrasts(
+            tree,
+            np.array([1.0, 2.0, 3.0]),
+            node_estimates,
+            node_variances,
+            ["A", "B", "C"],
+        )
+
+        assert sigma2 == 0.0
 
 
 class TestAncML:
@@ -764,6 +874,24 @@ class TestAncML:
         )
         assert ll < 0  # Log-likelihood should be negative for real data
 
+    def test_singular_vcv_matrix_is_reported_to_the_user(self, ml_args, mocker):
+        svc = AncestralReconstruction(ml_args)
+        tree = Phylo.read(StringIO("(A:1,B:1,C:1);"), "newick")
+        mocker.patch.object(svc, "_build_vcv_matrix", return_value=np.zeros((3, 3)))
+
+        with pytest.raises(PhykitUserError) as excinfo:
+            svc._anc_ml(
+                tree,
+                np.array([1.0, 2.0, 3.0]),
+                ["A", "B", "C"],
+                svc._label_internal_nodes(tree),
+            )
+
+        assert excinfo.value.messages == [
+            "Singular VCV matrix: cannot invert.",
+            "Check that the tree has valid branch lengths.",
+        ]
+
     def test_cross_covariance_fast_path_does_not_call_distance_get_path_or_mrca(
         self, ml_args, monkeypatch
     ):
@@ -795,6 +923,87 @@ class TestAncML:
         assert observed[1] == pytest.approx(expected[1])
         assert observed[2] == pytest.approx(expected[2])
         assert observed[3] == pytest.approx(expected[3])
+
+    def test_ml_falls_back_to_root_paths_when_direct_covariances_fail(
+        self, ml_args, mocker
+    ):
+        svc = AncestralReconstruction(ml_args)
+        tree = Phylo.read(StringIO("((A:1,B:2):1,C:3):0;"), "newick")
+        ordered_names = ["A", "B", "C"]
+        x = np.array([0.0, 1.0, 3.0])
+        node_labels = svc._label_internal_nodes(tree)
+        expected = svc._anc_ml(tree, x, ordered_names, node_labels)
+        mocker.patch.object(
+            svc, "_prepare_ml_cross_covariances_direct", return_value=None
+        )
+
+        observed = svc._anc_ml(tree, x, ordered_names, node_labels)
+
+        assert observed[0] == pytest.approx(expected[0])
+        assert observed[1] == pytest.approx(expected[1])
+        assert observed[2] == pytest.approx(expected[2])
+        assert observed[3] == pytest.approx(expected[3])
+
+    def test_ml_falls_back_to_distance_covariances_without_depths(
+        self, ml_args, mocker
+    ):
+        svc = AncestralReconstruction(ml_args)
+        tree = Phylo.read(StringIO("((A:1,B:2):1,C:3):0;"), "newick")
+        ordered_names = ["A", "B", "C"]
+        x = np.array([0.0, 1.0, 3.0])
+        node_labels = svc._label_internal_nodes(tree)
+        expected = svc._anc_ml(tree, x, ordered_names, node_labels)
+        mocker.patch.object(tree, "depths", side_effect=TypeError("no depths"))
+
+        observed = svc._anc_ml(tree, x, ordered_names, node_labels)
+
+        assert observed[0] == pytest.approx(expected[0])
+        assert observed[1] == pytest.approx(expected[1])
+        assert observed[2] == pytest.approx(expected[2])
+        assert observed[3] == pytest.approx(expected[3])
+
+    def test_ml_returns_no_node_estimates_without_node_labels(self, ml_args):
+        svc = AncestralReconstruction(ml_args)
+        tree = Phylo.read(StringIO("((A:1,B:2):1,C:3):0;"), "newick")
+
+        estimates, cis, sigma2, ll = svc._anc_ml(
+            tree,
+            np.array([0.0, 1.0, 3.0]),
+            ["A", "B", "C"],
+            {},
+        )
+
+        assert estimates == {}
+        assert cis == {}
+        assert sigma2 > 0
+        assert np.isfinite(ll)
+
+    def test_ml_clamps_negative_conditional_variance(self, ml_args, mocker):
+        svc = AncestralReconstruction(ml_args)
+        tree = Phylo.read(StringIO("((A:1,B:2):1,C:3):0;"), "newick")
+        internal = tree.root.clades[0]
+        node_labels = {id(internal): "internal"}
+        mocker.patch.object(
+            svc,
+            "_prepare_ml_cross_covariances_direct",
+            return_value=(
+                [internal],
+                ["internal"],
+                np.array([0.0]),
+                np.array([[10.0, 0.0, 0.0]]),
+            ),
+        )
+
+        estimates, cis, _, _ = svc._anc_ml(
+            tree,
+            np.array([0.0, 1.0, 3.0]),
+            ["A", "B", "C"],
+            node_labels,
+        )
+
+        assert cis["internal"] == pytest.approx(
+            (estimates["internal"], estimates["internal"])
+        )
 
     def test_ml_cross_covariance_uses_direct_tree_traversal(
         self, ml_args, monkeypatch
@@ -911,6 +1120,130 @@ class TestAncML:
         )
 
         assert np.isfinite(observed)
+
+    @pytest.mark.parametrize(
+        ("ordered_names", "sigma2"),
+        [(["A"], 0.0), ([], 1.0)],
+    )
+    def test_compute_log_likelihood_rejects_empty_or_nonpositive_inputs(
+        self, ml_args, mocker, ordered_names, sigma2
+    ):
+        svc = AncestralReconstruction(ml_args)
+        build_vcv = mocker.patch.object(svc, "_build_vcv_matrix")
+
+        observed = svc._compute_log_likelihood(
+            object(), np.zeros(len(ordered_names)), ordered_names, sigma2
+        )
+
+        assert observed == float("-inf")
+        build_vcv.assert_not_called()
+
+    def test_compute_log_likelihood_falls_back_to_matrix_inverse(
+        self, ml_args, mocker
+    ):
+        svc = AncestralReconstruction(ml_args)
+        tree = Phylo.read(StringIO("((A:1,B:2):1,C:3):0;"), "newick")
+        ordered_names = ["A", "B", "C"]
+        x = np.array([0.0, 1.0, 3.0])
+        expected = svc._compute_log_likelihood(tree, x, ordered_names, 0.75)
+        mocker.patch.object(
+            ancestral_module, "cho_factor", side_effect=ValueError("not positive")
+        )
+
+        observed = svc._compute_log_likelihood(tree, x, ordered_names, 0.75)
+
+        assert observed == pytest.approx(expected)
+
+    def test_compute_log_likelihood_rejects_indefinite_covariance(
+        self, ml_args, mocker
+    ):
+        svc = AncestralReconstruction(ml_args)
+        mocker.patch.object(
+            svc,
+            "_build_vcv_matrix",
+            return_value=np.diag([1.0, -1.0]),
+        )
+        mocker.patch.object(
+            ancestral_module, "cho_factor", side_effect=ValueError("not positive")
+        )
+
+        observed = svc._compute_log_likelihood(
+            object(), np.array([0.0, 1.0]), ["A", "B"], 1.0
+        )
+
+        assert observed == float("-inf")
+
+    def test_compute_log_likelihood_handles_inverse_failure(
+        self, ml_args, mocker
+    ):
+        svc = AncestralReconstruction(ml_args)
+        mocker.patch.object(svc, "_build_vcv_matrix", return_value=np.eye(2))
+        mocker.patch.object(
+            ancestral_module, "cho_factor", side_effect=ValueError("not positive")
+        )
+        mocker.patch.object(
+            ancestral_module.np.linalg,
+            "inv",
+            side_effect=np.linalg.LinAlgError("singular"),
+        )
+
+        observed = svc._compute_log_likelihood(
+            object(), np.array([0.0, 1.0]), ["A", "B"], 1.0
+        )
+
+        assert observed == float("-inf")
+
+    @pytest.mark.parametrize(
+        ("tree_newick", "ordered_names"),
+        [
+            ("(A:1,B:1);", ["A", "A"]),
+            ("(A:1,A:1,B:1);", ["A", "B"]),
+            ("(A:1,B:1);", ["A", "B", "C"]),
+        ],
+    )
+    def test_direct_ml_covariances_reject_ambiguous_tip_mappings(
+        self, ml_args, tree_newick, ordered_names
+    ):
+        svc = AncestralReconstruction(ml_args)
+        tree = Phylo.read(StringIO(tree_newick), "newick")
+
+        result = svc._prepare_ml_cross_covariances_direct(
+            tree,
+            ordered_names,
+            svc._label_internal_nodes(tree),
+            tree.depths(),
+            tree.depths()[tree.root],
+        )
+
+        assert result is None
+
+    def test_direct_ml_covariances_ignore_unrequested_tips(self, ml_args):
+        svc = AncestralReconstruction(ml_args)
+        tree = Phylo.read(StringIO("(A:1,B:1,X:1);"), "newick")
+
+        clades, labels, distances, covariances = (
+            svc._prepare_ml_cross_covariances_direct(
+                tree,
+                ["A", "B"],
+                svc._label_internal_nodes(tree),
+                tree.depths(),
+                tree.depths()[tree.root],
+            )
+        )
+
+        assert clades == [tree.root]
+        assert labels == ["N1"]
+        np.testing.assert_array_equal(distances, [0.0])
+        np.testing.assert_array_equal(covariances, [[0.0, 0.0]])
+
+    def test_direct_ml_covariances_require_a_root(self, ml_args):
+        svc = AncestralReconstruction(ml_args)
+
+        result = svc._prepare_ml_cross_covariances_direct(
+            object(), ["A"], {}, {}, 0.0
+        )
+
+        assert result is None
 
     def test_ml_reuses_inverse_weighted_residuals(self, ml_args, monkeypatch):
         args = Namespace(**vars(ml_args))
