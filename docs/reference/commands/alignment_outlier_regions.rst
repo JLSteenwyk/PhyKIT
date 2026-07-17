@@ -35,7 +35,7 @@ characters are replaced, while gaps, existing ambiguous characters, unaffected
 taxa, and unaffected columns are retained.
 
 Method
-######
+^^^^^^
 
 PhyKIT uses a two-dimensional procedure inspired by TAPER:
 
@@ -68,7 +68,7 @@ the programs. Cite TAPER when using this command:
    https://doi.org/10.1111/2041-210X.13696
 
 Input and missing data
-######################
+^^^^^^^^^^^^^^^^^^^^^^
 
 The input must be a multiple sequence alignment. PhyKIT accepts the alignment
 formats supported elsewhere in the toolkit, including FASTA, PHYLIP, Clustal,
@@ -80,7 +80,7 @@ missing. Missing characters do not contribute to column frequencies, window
 scores, or sequence coordinates.
 
 Output
-######
+^^^^^^
 
 The default tab-separated report contains one row per detected region:
 
@@ -108,7 +108,7 @@ output additionally records the citation, parameters, alignment dimensions,
 number of affected taxa, and number of masked characters.
 
 Examples
-########
+^^^^^^^^
 
 Print a tab-separated region report:
 
@@ -141,7 +141,7 @@ than 1:
    phykit alignment_outlier_regions alignment.fa --cutoff 2.5
 
 Interpretation and limitations
-##############################
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 A reported region is a statistical outlier, not proof that the underlying
 characters are nonhomologous. Inspect important calls and compare downstream
@@ -154,13 +154,14 @@ look like normal biological variation rather than an outlier. The method also
 assumes that the alignment mostly represents the same homologous locus; resolve
 clear paralogy before interpreting localized calls.
 
-Lower ``--cutoff`` values are more aggressive and can increase false positives.
+Lower finite ``--cutoff`` values greater than 1 are more aggressive and can
+increase false positives.
 The default value of 3.0 follows the TAPER recommendation. Masking should be
 treated as a sensitivity-analysis step rather than an automatic guarantee of a
 better phylogenetic estimate.
 
 Related commands
-################
+^^^^^^^^^^^^^^^^
 
 - :doc:`alignment_outlier_taxa` evaluates whole-sequence quality features.
 - :doc:`spurious_sequence` detects tree-based long-branch and diameter-impact
@@ -169,4 +170,3 @@ Related commands
   of hidden paralogy.
 - :doc:`mask_alignment` removes complete alignment columns using occupancy,
   gap, or entropy thresholds.
-
