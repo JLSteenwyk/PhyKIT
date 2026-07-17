@@ -1038,6 +1038,28 @@ class TestPlotRateMap:
 
 
 class TestRun:
+    @pytest.mark.parametrize("circular", [False, True])
+    def test_color_annotations_render_in_both_layouts(self, tmp_path, circular):
+        pytest.importorskip("matplotlib")
+        color_file = tmp_path / "colors.tsv"
+        color_file.write_text(
+            "raccoon,bear\trange\t#ffcc00\tHighlighted taxa\n"
+            "raccoon\tlabel\t#0033cc\n"
+        )
+        output = tmp_path / f"trait-rate-{circular}.png"
+        svc = TraitRateMap(
+            _make_args(
+                output=str(output),
+                color_file=str(color_file),
+                circular=circular,
+            )
+        )
+
+        svc.run()
+
+        assert output.exists()
+        assert output.stat().st_size > 0
+
     def test_creates_png(self):
         try:
             import matplotlib
