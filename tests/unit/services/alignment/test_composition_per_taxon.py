@@ -811,3 +811,335 @@ assert "Bio.SeqIO.FastaIO" not in sys.modules
         svc.run()
         out, _ = capsys.readouterr()
         assert out == ""
+
+    def test_scalar_helpers_cover_empty_invalid_and_zero_rows(self):
+        assert composition_per_taxon_module._composition_per_taxon_scalar(
+            [],
+            {"-", "?", "N"},
+        ) == ([], [])
+        assert composition_per_taxon_module._composition_per_taxon_scalar(
+            [("t1", "---"), ("t2", "???")],
+            {"-", "?", "N"},
+        ) == ([], [])
+
+        symbols, rows = composition_per_taxon_module._composition_per_taxon_scalar(
+            [("invalid", "---"), ("valid", "AAA")],
+            {"-", "?", "N"},
+        )
+        assert symbols == ["A"]
+        assert rows[0][0] == "invalid"
+        assert rows[0][1] == [0.0]
+        assert rows[1][1] == [1.0]
+
+    def test_parser_helpers_clean_wrapped_and_unicode_sequences(self):
+        assert composition_per_taxon_module._clean_simple_fasta_sequence(
+            ["ac ", "g\r"]
+        ) == "acg"
+        assert composition_per_taxon_module._sequence_has_protein_symbols(
+            "ACGTN-?*"
+        ) is False
+        assert composition_per_taxon_module._sequence_has_protein_symbols(
+            "ACΩT"
+        ) is True
+
+    @pytest.mark.parametrize(
+        "contents",
+        [
+            "",
+            "not fasta\n>t1\nACGT\n",
+            ">t1\nACGT\n>t2\nACG\n",
+            ">t1\nACGT\n>t2\nACG\n>t3\nACGT\n",
+        ],
+    )
+    def test_simple_fasta_reader_rejects_invalid_inputs(
+        self, tmp_path, contents
+    ):
+        path = tmp_path / "input.fa"
+        path.write_text(contents)
+
+        assert composition_per_taxon_module._read_small_simple_fasta_records(
+            str(path)
+        ) is None
+
+    def test_simple_fasta_reader_handles_missing_and_oversized_inputs(
+        self, tmp_path, monkeypatch
+    ):
+        assert composition_per_taxon_module._read_small_simple_fasta_records(
+            str(tmp_path / "missing.fa")
+        ) is None
+
+        path = tmp_path / "large.fa"
+        path.write_text(">t1\nACGT\n>t2\nACGT\n")
+        monkeypatch.setattr(
+            composition_per_taxon_module,
+            "_COMPOSITION_SCALAR_MAX_CELLS",
+            4,
+        )
+        assert composition_per_taxon_module._read_small_simple_fasta_records(
+            str(path)
+        ) is None
+
+    def test_bounded_count_dtype_supports_all_integer_ranges(self):
+        assert composition_per_taxon_module._bounded_ascii_count_dtype(
+            0xFFFF
+        ) is np.uint16
+        assert composition_per_taxon_module._bounded_ascii_count_dtype(
+            0x10000
+        ) is np.uint32
+        assert composition_per_taxon_module._bounded_ascii_count_dtype(
+            0x100000000
+        ) is np.uint64
+
+    def test_invalid_lookup_cache_reuses_existing_array(self, args):
+        service = CompositionPerTaxon(args)
+        service._INVALID_LOOKUP_CACHE.clear()
+
+        first = service._invalid_lookup_for_chars({"n", "?"})
+        second = service._invalid_lookup_for_chars({"N", "?"})
+
+        assert second is first
+
+    def test_calculate_composition_accepts_unknown_length_iterables(self, args):
+        service = CompositionPerTaxon(args)
+        records = iter(
+            [
+                SimpleNamespace(id="a", seq="ACGT"),
+                SimpleNamespace(id="b", seq="AGGT"),
+            ]
+        )
+
+        symbols, rows = service.calculate_composition_per_taxon(
+            records,
+            is_protein=False,
+        )
+
+        assert symbols == ["A", "C", "G", "T"]
+        assert [record_id for record_id, _ in rows] == ["a", "b"]
+        assert service.calculate_composition_per_taxon([], False) == ([], [])
+
+    def test_indexed_single_record_skips_zero_sample(self, args, monkeypatch):
+        class IndexedAlignment:
+            records = [SimpleNamespace(id="only", seq="ACGT")]
+
+            def __len__(self):
+                return 1
+
+            def __getitem__(self, index):
+                return self.records[index]
+
+            def __iter__(self):
+                raise AssertionError("indexed path should not iterate")
+
+        monkeypatch.setattr(
+            composition_per_taxon_module,
+            "_IDENTICAL_INDEXED_SCAN_MIN_RECORDS",
+            1,
+        )
+        service = CompositionPerTaxon(args)
+
+        symbols, rows = service.calculate_composition_per_taxon(
+            IndexedAlignment(),
+            is_protein=False,
+        )
+
+        assert symbols == ["A", "C", "G", "T"]
+        assert [record_id for record_id, _ in rows] == ["only"]
+
+    def test_indexed_identical_unicode_and_invalid_sequences(
+        self, args, monkeypatch
+    ):
+        class IndexedAlignment:
+            def __init__(self, sequence):
+                self.records = [
+                    SimpleNamespace(id=f"t{idx}", seq=sequence)
+                    for idx in range(3)
+                ]
+
+            def __len__(self):
+                return len(self.records)
+
+            def __getitem__(self, index):
+                return self.records[index]
+
+            def __iter__(self):
+                raise AssertionError("indexed path should not iterate")
+
+        monkeypatch.setattr(
+            composition_per_taxon_module,
+            "_IDENTICAL_INDEXED_SCAN_MIN_RECORDS",
+            3,
+        )
+        service = CompositionPerTaxon(args)
+
+        symbols, rows = service.calculate_composition_per_taxon(
+            IndexedAlignment("AΩA"),
+            is_protein=True,
+        )
+        assert symbols == ["A", "Ω"]
+        np.testing.assert_allclose(rows[0][1], [2 / 3, 1 / 3])
+        assert service.calculate_composition_per_taxon(
+            IndexedAlignment("---"),
+            is_protein=False,
+        ) == ([], [])
+
+    @pytest.mark.parametrize("mismatch_index", [1, 2])
+    def test_indexed_scan_mismatches_fall_back_to_complete_alignment(
+        self, args, monkeypatch, mismatch_index
+    ):
+        class IndexedAlignment:
+            def __init__(self):
+                self.records = [
+                    SimpleNamespace(
+                        id=f"t{idx}",
+                        seq="TCGT" if idx == mismatch_index else "ACGT",
+                    )
+                    for idx in range(5)
+                ]
+
+            def __len__(self):
+                return len(self.records)
+
+            def __getitem__(self, index):
+                return self.records[index]
+
+            def __iter__(self):
+                return iter(self.records)
+
+        monkeypatch.setattr(
+            composition_per_taxon_module,
+            "_IDENTICAL_INDEXED_SCAN_MIN_RECORDS",
+            5,
+        )
+        service = CompositionPerTaxon(args)
+
+        symbols, rows = service.calculate_composition_per_taxon(
+            IndexedAlignment(),
+            is_protein=False,
+        )
+
+        assert symbols == ["A", "C", "G", "T"]
+        assert len(rows) == 5
+
+    def test_indexed_scan_errors_fall_back_to_iteration(self, args, monkeypatch):
+        class FragileIndexedAlignment:
+            records = [
+                SimpleNamespace(id="t0", seq="ACGT"),
+                SimpleNamespace(id="t1", seq="AGGT"),
+                SimpleNamespace(id="t2", seq="ATGT"),
+            ]
+
+            def __len__(self):
+                return len(self.records)
+
+            def __getitem__(self, index):
+                if index:
+                    raise TypeError("indexing unavailable")
+                return self.records[index]
+
+            def __iter__(self):
+                return iter(self.records)
+
+        monkeypatch.setattr(
+            composition_per_taxon_module,
+            "_IDENTICAL_INDEXED_SCAN_MIN_RECORDS",
+            3,
+        )
+        service = CompositionPerTaxon(args)
+
+        symbols, rows = service.calculate_composition_per_taxon(
+            FragileIndexedAlignment(),
+            is_protein=False,
+        )
+
+        assert symbols == ["A", "C", "G", "T"]
+        assert len(rows) == 3
+
+    def test_forced_matrix_backends_match_scalar_compositions(
+        self, args, monkeypatch
+    ):
+        def composition_oracle(records, invalid_chars):
+            invalid = {char.upper() for char in invalid_chars}
+            valid_rows = [
+                [char for char in str(record.seq).upper() if char not in invalid]
+                for record in records
+            ]
+            symbols = sorted({char for row in valid_rows for char in row})
+            values = [
+                [row.count(symbol) / len(row) if row else 0.0 for symbol in symbols]
+                for row in valid_rows
+            ]
+            return symbols, values
+
+        service = CompositionPerTaxon(args)
+        monkeypatch.setattr(
+            composition_per_taxon_module,
+            "_COMPOSITION_SCALAR_MAX_CELLS",
+            0,
+        )
+        monkeypatch.setattr(
+            composition_per_taxon_module,
+            "_ASCII_OFFSET_BINCOUNT_MAX_ROWS",
+            1,
+        )
+
+        cases = [
+            (
+                [
+                    SimpleNamespace(id="a", seq="A-A"),
+                    SimpleNamespace(id="b", seq="AAA"),
+                ],
+                False,
+            ),
+            (
+                [
+                    SimpleNamespace(id="a", seq="ACDEFGHIKLMNPQRSTVWY"),
+                    SimpleNamespace(id="b", seq="YWVTSRQPNMLKIHGFEDCA"),
+                ],
+                True,
+            ),
+            (
+                [
+                    SimpleNamespace(id="a", seq="AΩCC"),
+                    SimpleNamespace(id="b", seq="TΩGG"),
+                ],
+                True,
+            ),
+        ]
+
+        for records, is_protein in cases:
+            symbols, rows = service.calculate_composition_per_taxon(
+                records,
+                is_protein=is_protein,
+            )
+            expected_symbols, expected_rows = composition_oracle(
+                records,
+                service.get_gap_chars(is_protein),
+            )
+            assert symbols == expected_symbols
+            np.testing.assert_allclose(
+                [values for _, values in rows],
+                expected_rows,
+            )
+
+    def test_identical_unicode_and_invalid_matrix_shortcuts(self, args):
+        service = CompositionPerTaxon(args)
+        unicode_records = [
+            SimpleNamespace(id="a", seq="AΩA"),
+            SimpleNamespace(id="b", seq="aωa"),
+        ]
+        invalid_records = [
+            SimpleNamespace(id="a", seq="---"),
+            SimpleNamespace(id="b", seq="---"),
+        ]
+
+        symbols, rows = service.calculate_composition_per_taxon(
+            unicode_records,
+            is_protein=True,
+        )
+
+        assert symbols == ["A", "Ω"]
+        np.testing.assert_allclose(rows[0][1], [2 / 3, 1 / 3])
+        assert service.calculate_composition_per_taxon(
+            invalid_records,
+            is_protein=False,
+        ) == ([], [])
