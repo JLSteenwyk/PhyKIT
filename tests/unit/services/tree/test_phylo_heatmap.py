@@ -279,6 +279,33 @@ class TestTraitParsing:
 
 
 class TestPhyloHeatmapPlot:
+    def test_circular_constant_matrix_with_color_annotations(self, args, tmp_path):
+        pytest.importorskip("matplotlib")
+        tree = Phylo.read(args.tree, "newick")
+        taxa = [tip.name for tip in tree.get_terminals()]
+        data_file = tmp_path / "constant.tsv"
+        data_file.write_text(
+            "taxon\tconstant\n"
+            + "".join(f"{taxon}\t1.0\n" for taxon in taxa)
+        )
+        color_file = tmp_path / "colors.tsv"
+        color_file.write_text(
+            "bear,raccoon\trange\t#ffcc00\tRange\n"
+            "bear,raccoon\tclade\t#cc0033\tClade\n"
+            "bear\tlabel\t#0033cc\n"
+        )
+        args.data = str(data_file)
+        args.output = str(tmp_path / "circular-constant.png")
+        args.circular = True
+        args.standardize = True
+        args.color_file = str(color_file)
+        ph = PhyloHeatmap(args)
+
+        ph.run()
+
+        assert Path(args.output).exists()
+        assert Path(args.output).stat().st_size > 0
+
     def test_clustered_columns_render_dendrogram(self, args):
         pytest.importorskip("matplotlib")
         pytest.importorskip("scipy")
