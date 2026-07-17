@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Change log &mdash; phykit 2.3.0 documentation</title>
+  <title>Change log &mdash; phykit 2.4.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=ae8b8648" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../_static/flavicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=c3c8ae58"></script>
+      <script src="../_static/documentation_options.js?v=4d935f96"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -85,6 +85,15 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.4.0</strong>:</p>
+<p>TreeShrink-inspired spurious-sequence detection:</p>
+<ul class="simple">
+<li><p>Enhanced <code class="docutils literal notranslate"><span class="pre">spurious_sequence</span></code> with an opt-in <code class="docutils literal notranslate"><span class="pre">diameter-impact</span></code> method for
+deterministic TreeShrink-inspired detection of tips that disproportionately
+increase weighted tree diameter. Added significance calibration for one
+tree, pooled tree lists, and per-species tree-list analysis while preserving
+the original median-factor behavior and output by default.</p></li>
+</ul>
 <p><strong>2.3.0</strong>:</p>
 <ul class="simple">
 <li><p>Added <code class="docutils literal notranslate"><span class="pre">codon_dnds</span></code> (aliases: <code class="docutils literal notranslate"><span class="pre">dnds</span></code>, <code class="docutils literal notranslate"><span class="pre">dn_ds</span></code>, and <code class="docutils literal notranslate"><span class="pre">kaks</span></code>) for

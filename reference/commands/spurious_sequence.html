@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Spurious homolog identification &mdash; phykit 2.3.0 documentation</title>
+  <title>Spurious homolog identification &mdash; phykit 2.4.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=ae8b8648" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../../_static/flavicon.png"/>
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=c3c8ae58"></script>
+      <script src="../../_static/documentation_options.js?v=4d935f96"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -109,7 +109,7 @@
              
   <section id="spurious-homolog-identification">
 <span id="command-spurious-sequence"></span><span id="cmd-spurious-sequence"></span><h1>Spurious homolog identification<a class="headerlink" href="#spurious-homolog-identification" title="Link to this heading"></a></h1>
-<p>Identify spurious sequences in alignments</p>
+<p>Identify potentially spurious sequences from phylogenetic trees</p>
 <section id="command-identity">
 <h2>Command identity<a class="headerlink" href="#command-identity" title="Link to this heading"></a></h2>
 <dl class="field-list simple">
@@ -134,7 +134,7 @@
 <h2>Runtime interface<a class="headerlink" href="#runtime-interface" title="Link to this heading"></a></h2>
 <section id="synopsis">
 <h3>Synopsis<a class="headerlink" href="#synopsis" title="Link to this heading"></a></h3>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>phykit spurious_sequence &lt;tree&gt; [--factor &lt;factor&gt;] [--json]
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>phykit spurious_sequence &lt;tree&gt; [--factor &lt;factor&gt;] [--method &lt;method&gt;] [--alpha &lt;alpha&gt;] [--max-remove &lt;max_remove&gt;] [--tree-list] [--per-species] [--json]
 </pre></div>
 </div>
 </section>
@@ -171,7 +171,37 @@ source for accepted spellings, required arguments, types, defaults, and choices.
 <td><p>none</p></td>
 <td><p>any</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--json</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--method</span></code></p></td>
+<td><p>false</p></td>
+<td><p>string</p></td>
+<td><p>median-factor</p></td>
+<td><p>median-factor, diameter-impact</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--alpha</span></code></p></td>
+<td><p>false</p></td>
+<td><p>float</p></td>
+<td><p>0.05</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--max-remove</span></code></p></td>
+<td><p>false</p></td>
+<td><p>int</p></td>
+<td><p>none</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--tree-list</span></code></p></td>
+<td><p>false</p></td>
+<td><p>boolean</p></td>
+<td><p>false</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--per-species</span></code></p></td>
+<td><p>false</p></td>
+<td><p>boolean</p></td>
+<td><p>false</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--json</span></code></p></td>
 <td><p>false</p></td>
 <td><p>boolean</p></td>
 <td><p>false</p></td>
@@ -188,30 +218,144 @@ validation and scientific limitations are described in the guidance below.</p>
 </section>
 <section id="guidance-interpretation-and-examples">
 <h2>Guidance, interpretation, and examples<a class="headerlink" href="#guidance-interpretation-and-examples" title="Link to this heading"></a></h2>
-<p>Determines potentially spurious homologs using branch lengths.</p>
-<p>Identifies potentially spurious sequences and reports
-tips in the phylogeny that could possibly be removed
-from the associated multiple sequence alignment. PhyKIT
-does so by identifying and reporting long terminal branches
-defined as branches that are equal to or greater than 20 times the median
-length of all branches.</p>
-<p>PhyKIT reports the following information
-col1: name of tip that is a putatively spurious sequence
-col2: length of branch leading to putatively spurious sequence
-col3: threshold used to identify putatively spurious sequences
-col4: median branch length in the phylogeny</p>
+<p><code class="docutils literal notranslate"><span class="pre">spurious_sequence</span></code> provides two methods for identifying tips whose branch
+lengths are inconsistent with the rest of a gene tree. Both methods report
+candidates for review; neither edits an alignment or tree.</p>
+<section id="median-factor-method">
+<h3>Median-factor method<a class="headerlink" href="#median-factor-method" title="Link to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">--method</span> <span class="pre">median-factor</span></code> is the default and preserves the original command
+behavior. It reports terminal branches that are at least <code class="docutils literal notranslate"><span class="pre">--factor</span></code> times
+the median terminal-branch length. The default factor is 20.</p>
+<p>Text output has four tab-delimited columns:</p>
+<ol class="arabic simple">
+<li><p>taxon name</p></li>
+<li><p>terminal branch length</p></li>
+<li><p>long-branch threshold</p></li>
+<li><p>median terminal-branch length</p></li>
+</ol>
 <p>If there are no putatively spurious sequences, &quot;None&quot; is reported.</p>
 <p>Using this method to identify potentially spurious sequences
 was, to my knowledge, first introduced by Shen et al., (2018)
 Cell doi: 10.1016/j.cell.2018.10.023.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>spurious_seq<span class="w"> </span>&lt;file&gt;<span class="w"> </span>-f/--factor<span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>spurious_sequence<span class="w"> </span>gene.tre
+phykit<span class="w"> </span>spurious_sequence<span class="w"> </span>gene.tre<span class="w"> </span>--factor<span class="w"> </span><span class="m">10</span><span class="w"> </span>--json
+</pre></div>
+</div>
+</section>
+<section id="diameter-impact-method">
+<h3>Diameter-impact method<a class="headerlink" href="#diameter-impact-method" title="Link to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">--method</span> <span class="pre">diameter-impact</span></code> detects tips that disproportionately increase a
+tree's weighted diameter, the greatest branch-length distance between any two
+active tips. At each iteration, PhyKIT evaluates both endpoints of the current
+diameter and removes the endpoint whose removal produces the smaller next
+diameter. The tip signature is
+<code class="docutils literal notranslate"><span class="pre">log(diameter_before</span> <span class="pre">/</span> <span class="pre">diameter_after)</span></code>. This repeats for
+<code class="docutils literal notranslate"><span class="pre">--max-remove</span></code> tips; the default is
+<code class="docutils literal notranslate"><span class="pre">min(floor(n</span> <span class="pre">/</span> <span class="pre">4),</span> <span class="pre">floor(5</span> <span class="pre">*</span> <span class="pre">sqrt(n)))</span></code>, capped so that two tips remain.</p>
+<p>For one tree, PhyKIT fits a one-sided normal model to all log-diameter
+signatures, including zero-impact tips. Equivalently, this models the
+multiplicative diameter ratios with a log-normal distribution. A tip is
+reported when its upper-tail p-value is less than <code class="docutils literal notranslate"><span class="pre">--alpha</span></code> (default 0.05).</p>
+<p>This is an independently implemented, deterministic TreeShrink-inspired
+endpoint-removal heuristic. It uses TreeShrink's diameter-reduction concept
+and statistical calibration, but it does not reproduce TreeShrink's full
+optimal removal-set search. See Mai and Mirarab (2018), BMC Genomics 19:272,
+doi: 10.1186/s12864-018-4620-2.</p>
+<p>The input must contain at least four uniquely named tips. Every non-root
+branch must have a finite, nonnegative length. Rooting does not affect the
+weighted tip-to-tip distances.</p>
+<p>Single-tree text output has seven tab-delimited columns:</p>
+<ol class="arabic simple">
+<li><p>taxon name</p></li>
+<li><p>log-diameter reduction signature</p></li>
+<li><p>upper-tail p-value</p></li>
+<li><p>removal rank</p></li>
+<li><p>terminal branch length</p></li>
+<li><p>diameter before removal</p></li>
+<li><p>diameter after removal</p></li>
+</ol>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>spurious_sequence<span class="w"> </span>gene.tre<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--method<span class="w"> </span>diameter-impact<span class="w"> </span>--alpha<span class="w"> </span><span class="m">0</span>.05
+</pre></div>
+</div>
+</section>
+<section id="tree-collections">
+<h3>Tree collections<a class="headerlink" href="#tree-collections" title="Link to this heading"></a></h3>
+<p>Use <code class="docutils literal notranslate"><span class="pre">--tree-list</span></code> when the positional input is a file containing one tree
+path per line. Blank lines and lines beginning with <code class="docutils literal notranslate"><span class="pre">#</span></code> are ignored. Relative
+tree paths are resolved from the list file's directory.</p>
+<p>By default, signatures from all listed trees are pooled. PhyKIT estimates
+upper-tail probabilities with a Gaussian kernel density estimate using
+Silverman's bandwidth and leave-one-out evaluation. <code class="docutils literal notranslate"><span class="pre">--per-species</span></code> instead
+builds a separate distribution for each taxon across trees in which it occurs.
+Groups with fewer than four observations are not called as outliers.</p>
+<p>Collection text output prepends the tree path to the seven columns described
+above.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>spurious_sequence<span class="w"> </span>trees.txt<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--method<span class="w"> </span>diameter-impact<span class="w"> </span>--tree-list<span class="w"> </span>--per-species<span class="w"> </span>--json
+</pre></div>
+</div>
+</section>
+<section id="json-output">
+<h3>JSON output<a class="headerlink" href="#json-output" title="Link to this heading"></a></h3>
+<p>The median-factor JSON contract is unchanged: <code class="docutils literal notranslate"><span class="pre">rows</span></code> and
+<code class="docutils literal notranslate"><span class="pre">spurious_sequences</span></code> contain identical candidate objects with <code class="docutils literal notranslate"><span class="pre">taxon</span></code>,
+<code class="docutils literal notranslate"><span class="pre">branch_length</span></code>, <code class="docutils literal notranslate"><span class="pre">threshold</span></code>, and <code class="docutils literal notranslate"><span class="pre">median</span></code> fields.</p>
+<p>Diameter-impact JSON adds <code class="docutils literal notranslate"><span class="pre">method</span></code>, <code class="docutils literal notranslate"><span class="pre">scope</span></code>, <code class="docutils literal notranslate"><span class="pre">alpha</span></code>, and <code class="docutils literal notranslate"><span class="pre">tree_count</span></code>
+metadata. <code class="docutils literal notranslate"><span class="pre">rows</span></code> and <code class="docutils literal notranslate"><span class="pre">spurious_sequences</span></code> contain identical objects with
+the tree path, taxon, signature, p-value, removal rank, terminal branch length,
+and before/after diameters.</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;alpha&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.05</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;method&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;diameter-impact&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;rows&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;diameter_after&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">2.0</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;diameter_before&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">101.0</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;p_value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.000007</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;removal_rank&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;signature&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">3.921973</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;taxon&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;outlier&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;terminal_branch_length&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">100.0</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;tree&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;gene.tre&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;scope&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;per-gene&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;spurious_sequences&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;diameter_after&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">2.0</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;diameter_before&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">101.0</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;p_value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.000007</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;removal_rank&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;signature&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">3.921973</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;taxon&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;outlier&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;terminal_branch_length&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">100.0</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;tree&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;gene.tre&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;tree_count&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>spurious_seq<span class="w"> </span>gene.tre<span class="w"> </span>--factor<span class="w"> </span><span class="m">20</span><span class="w"> </span>--json
 </pre></div>
 </div>
 <p>Options: <br />
 <em>&lt;file&gt;</em>: first argument after function name should be a tree file <br />
 <em>-f/--factor</em>: factor to multiply median branch length by to calculate
 the threshold of long branches. (Default: 20) <br />
+<em>--method</em>: <code class="docutils literal notranslate"><span class="pre">median-factor</span></code> or <code class="docutils literal notranslate"><span class="pre">diameter-impact</span></code> (default:
+<code class="docutils literal notranslate"><span class="pre">median-factor</span></code>) <br />
+<em>--alpha</em>: upper-tail significance level for <code class="docutils literal notranslate"><span class="pre">diameter-impact</span></code> (default:
+<code class="docutils literal notranslate"><span class="pre">0.05</span></code>) <br />
+<em>--max-remove</em>: maximum diameter endpoints evaluated; by default follows the
+TreeShrink-inspired rule described above <br />
+<em>--tree-list</em>: interpret the positional input as a tree-path list and pool
+signatures across trees <br />
+<em>--per-species</em>: with <code class="docutils literal notranslate"><span class="pre">--tree-list</span></code>, calibrate signatures independently for
+each taxon <br />
 <em>--json</em>: optional argument to print results as JSON</p>
+</section>
 </section>
 </section>
 
