@@ -1331,6 +1331,42 @@ class TestVCV:
 
         assert tip_map == {"A": terminals[0], "C": terminals[2]}
 
+    def test_terminal_map_falls_back_after_direct_traversal_fails(self, svc):
+        terminals = [Clade(name="A"), Clade(name="B")]
+
+        class FlakyRoot:
+            accesses = 0
+
+            @property
+            def clades(self):
+                self.accesses += 1
+                if self.accesses > 1:
+                    raise AttributeError("direct traversal unavailable")
+                return terminals
+
+        class FlakyTree:
+            root = FlakyRoot()
+
+            def get_terminals(self):
+                return terminals
+
+        tip_map = svc._terminal_map_for_ordered_names(FlakyTree(), ["B"])
+
+        assert tip_map == {"B": terminals[1]}
+
+    def test_path_vcv_ignores_unselected_branch_regimes(self, svc, monkeypatch):
+        monkeypatch.setattr(
+            svc,
+            "_build_root_to_tip_paths",
+            lambda *_args: {"A": [("tip", 1.0)]},
+        )
+
+        observed = svc._build_per_regime_vcv(
+            object(), ["A"], ["r1"], {"tip": "not-selected"}, {}
+        )
+
+        np.testing.assert_array_equal(observed["r1"], [[0.0]])
+
     def test_weight_builders_ignore_unknown_regimes_and_support_bm_limits(
         self, svc
     ):
@@ -1403,6 +1439,11 @@ class TestVCV:
         np.testing.assert_allclose(single, 2.0 * cache["shared_paths"])
         np.testing.assert_allclose(sum(per_regime.values()), cache["shared_paths"])
         np.testing.assert_allclose(multi, single)
+
+        unknown = svc._build_ou_H_matrices(
+            ["A"], {"A": [("tip", 1.0, "unknown", 0.0, 1.0)]}, ["r1"], 0.5
+        )
+        np.testing.assert_array_equal(unknown["r1"], [[0.0]])
 
     def test_single_alpha_cache_uses_shared_branch_lengths(self, svc):
         ordered_names = ["A", "B", "C"]
@@ -1899,6 +1940,23 @@ class TestNumericalFallbacks:
         assert indefinite[0] == float("-inf")
         assert indefinite[1] > 0
 
+    def test_inverse_likelihoods_reject_zero_total_precision(
+        self, svc, monkeypatch
+    ):
+        zero_precision_inverse = np.array([[1.0, -1.0], [-1.0, 1.0]])
+        monkeypatch.setattr(
+            ouwie_module.np.linalg,
+            "inv",
+            lambda _matrix: zero_precision_inverse,
+        )
+
+        assert svc._concentrated_ll_bm_inverse(
+            np.array([1.0, 2.0]), np.eye(2)
+        ) == (float("-inf"), 0.0, 0.0)
+        assert svc._bm_log_likelihood_from_vcv_inverse(
+            np.array([1.0, 2.0]), np.eye(2), np.ones(2)
+        ) == (0.0, float("-inf"))
+
     def test_bm_vcv_likelihood_falls_back_to_inverse(self, svc, monkeypatch):
         x = np.array([1.0, 2.0, 4.0])
         V = np.diag([1.0, 2.0, 3.0])
@@ -2041,6 +2099,26 @@ class TestNumericalFallbacks:
         np.testing.assert_array_equal(theta, [0.0])
         assert ll == float("-inf")
 
+    def test_inverse_ou_likelihoods_handle_inverse_failure(
+        self, svc, monkeypatch
+    ):
+        def fail_inverse(_matrix):
+            raise np.linalg.LinAlgError("singular")
+
+        monkeypatch.setattr(ouwie_module.np.linalg, "inv", fail_inverse)
+        x = np.array([1.0, 2.0])
+        W = np.ones((2, 1))
+
+        profile = svc._ou_profile_likelihood_inverse(x, W, np.eye(2))
+        gls = svc._ou_gls_log_likelihood_inverse(x, W, np.eye(2))
+        bm = svc._bm_log_likelihood_from_vcv_inverse(x, np.eye(2), np.ones(2))
+
+        np.testing.assert_array_equal(profile[0], [0.0])
+        assert profile[1:] == (0.0, float("-inf"))
+        np.testing.assert_array_equal(gls[0], [0.0])
+        assert gls[1] == float("-inf")
+        assert bm == (0.0, float("-inf"))
+
     def test_fit_model_rejects_unknown_internal_model(self, svc, precomputed):
         d = precomputed
 
@@ -2082,6 +2160,96 @@ class TestNumericalFallbacks:
             -np.inf,
         )
         assert calls == 10
+
+    def test_all_models_return_stable_results_when_optimization_fails(
+        self, precomputed, monkeypatch
+    ):
+        d = precomputed
+
+        def exercise_objective_then_fail(objective, initial, **_kwargs):
+            assert objective(initial) == 1e20
+            raise ValueError("optimizer failed")
+
+        monkeypatch.setattr(ouwie_module, "minimize", exercise_objective_then_fail)
+        monkeypatch.setattr(
+            d["svc"],
+            "_bm_log_likelihood_from_vcv",
+            lambda *_args: (0.0, float("-inf")),
+        )
+        monkeypatch.setattr(
+            d["svc"],
+            "_ou_profile_likelihood",
+            lambda _x, W, _V: (
+                np.zeros(W.shape[1]),
+                0.0,
+                float("-inf"),
+            ),
+        )
+        monkeypatch.setattr(
+            d["svc"],
+            "_ou_gls_log_likelihood",
+            lambda _x, W, _V: (np.zeros(W.shape[1]), float("-inf")),
+        )
+
+        def exercise_scalar_objective(objective, _bounds, niter=10):
+            assert niter == 10
+            assert objective(0.1) == 1e20
+            return 0.1, -np.inf
+
+        monkeypatch.setattr(
+            d["svc"], "_optimize_parameter", exercise_scalar_objective
+        )
+
+        results = [
+            d["svc"]._fit_bms(
+                d["x"], d["per_regime_vcv"], d["regimes"]
+            ),
+            d["svc"]._fit_ou1(
+                d["x"], d["ordered_names"], d["lineage_info"], 0.0
+            ),
+            d["svc"]._fit_oum(
+                d["x"],
+                d["ordered_names"],
+                d["lineage_info"],
+                d["regimes"],
+                d["root_regime"],
+                0.0,
+            ),
+            d["svc"]._fit_oumv(
+                d["x"],
+                d["ordered_names"],
+                d["lineage_info"],
+                d["regimes"],
+                d["root_regime"],
+                0.0,
+            ),
+            d["svc"]._fit_ouma(
+                d["x"],
+                d["ordered_names"],
+                d["lineage_info"],
+                d["regimes"],
+                d["root_regime"],
+                0.0,
+            ),
+            d["svc"]._fit_oumva(
+                d["x"],
+                d["ordered_names"],
+                d["lineage_info"],
+                d["regimes"],
+                d["root_regime"],
+                0.0,
+            ),
+        ]
+
+        assert [result["model"] for result in results] == [
+            "BMS",
+            "OU1",
+            "OUM",
+            "OUMV",
+            "OUMA",
+            "OUMVA",
+        ]
+        assert all(result["log_likelihood"] == float("-inf") for result in results)
 
     def test_cholesky_bm_likelihood_uses_single_solve(
         self, precomputed, monkeypatch
@@ -2598,6 +2766,27 @@ class TestModelComparison:
         for r in results:
             assert np.isfinite(r["log_likelihood"]), f"{r['model']} LL not finite"
 
+    def test_undefined_model_comparison_values_use_stable_sentinels(self, svc):
+        results = [
+            {
+                "model": "custom",
+                "k_params": 2,
+                "log_likelihood": -1.0,
+                "params": {},
+            }
+        ]
+
+        compared = svc._compute_model_comparison(
+            results,
+            n=2,
+            regime_assignments={"A": None},
+            ordered_names=["A"],
+        )
+
+        assert compared[0]["aicc"] == float("inf")
+        assert compared[0]["aicc_weight"] == 0.0
+        assert np.isnan(compared[0]["r_squared"])
+
 
 # ── TestRun ──────────────────────────────────────────────────────────
 
@@ -2685,6 +2874,29 @@ class TestRun:
             "    aquatic: 0.0500\n"
             "    terrestrial: 0.0600"
         )
+
+    def test_print_text_output_formats_scalar_ou_parameters(self, svc, mocker):
+        printed = mocker.patch("builtins.print")
+        result = {
+            "model": "OU1",
+            "k_params": 3,
+            "log_likelihood": -2.0,
+            "aic": 10.0,
+            "aicc": 11.0,
+            "delta_aicc": 0.0,
+            "aicc_weight": 1.0,
+            "bic": 12.0,
+            "delta_bic": 0.0,
+            "r_squared": 0.5,
+            "params": {"theta": 1.5, "alpha": 0.2, "sigma2": 0.3},
+        }
+
+        svc._print_text_output([result], 8, ["r1", "r2"])
+
+        output = printed.call_args.args[0]
+        assert "Theta: 1.5000" in output
+        assert "Alpha: 0.2000" in output
+        assert "Sigma-squared: 0.3000" in output
 
     @patch("builtins.print")
     def test_json_output(self, mocked_print):
