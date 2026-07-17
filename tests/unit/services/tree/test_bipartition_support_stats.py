@@ -282,6 +282,60 @@ assert "Bio.Phylo" not in sys.modules
             is None
         )
 
+    @pytest.mark.parametrize(
+        "newick",
+        [
+            ":1;",
+            "A:;",
+            "A:not-a-number;",
+            "(",
+            "(A:1",
+            "(A:1 X",
+            "(A:1)90:;",
+            "(A:1)not-support:1;",
+            "A:1",
+            "A:1; trailing",
+        ],
+        ids=[
+            "empty-label",
+            "empty-length",
+            "invalid-length",
+            "missing-child",
+            "unterminated-group",
+            "invalid-separator",
+            "invalid-internal-length",
+            "invalid-support",
+            "missing-semicolon",
+            "trailing-content",
+        ],
+    )
+    def test_scan_simple_newick_bipartitions_rejects_malformed_syntax(
+        self, tmp_path, newick
+    ):
+        tree = tmp_path / "malformed.tre"
+        tree.write_text(newick)
+
+        result = BipartitionSupportStats._scan_simple_newick_bipartitions(
+            str(tree)
+        )
+
+        assert result is None
+
+    def test_scan_simple_newick_bipartitions_handles_recursion_limit(
+        self, tmp_path
+    ):
+        depth = sys.getrecursionlimit() + 10
+        tree = tmp_path / "deep-tree.tre"
+        tree.write_text(
+            "(" * depth + "A:1" + ")" * depth + ";"
+        )
+
+        result = BipartitionSupportStats._scan_simple_newick_bipartitions(
+            str(tree)
+        )
+
+        assert result is None
+
     def test_to_builtin_converts_numpy_scalars(self, args):
         t = BipartitionSupportStats(args)
         value = {"a": np.int64(1), "b": [np.float64(1.5)]}
@@ -344,6 +398,61 @@ assert "Bio.Phylo" not in sys.modules
 
         assert vals == [90, 80]
         assert names == [["A", "B"], ["C", "D"]]
+
+    def test_get_bipartition_support_vals_supports_generic_tree(self, args):
+        t = BipartitionSupportStats(args)
+        tree = Phylo.read(StringIO("((A:1,B:1)90:1,C:2)80;"), "newick")
+
+        class GenericTree:
+            def find_clades(self, order):
+                return tree.find_clades(order=order)
+
+            def get_nonterminals(self):
+                return tree.get_nonterminals()
+
+        generic_tree = GenericTree()
+        vals, names = t.get_bipartition_support_vals(generic_tree)
+
+        assert vals == [80, 90]
+        assert names == [["A", "B", "C"], ["A", "B"]]
+        assert t.get_bipartition_support_values(generic_tree) == vals
+
+    def test_direct_bipartition_traversals_reject_incompatible_trees(self):
+        class MalformedRoot:
+            clades = [object()]
+            confidence = None
+
+        class MalformedTree:
+            root = MalformedRoot()
+
+        assert BipartitionSupportStats._get_bipartition_support_vals_direct(
+            object()
+        ) is None
+        assert BipartitionSupportStats._get_bipartition_support_values_array_direct(
+            object()
+        ) is None
+        assert BipartitionSupportStats._get_bipartition_support_vals_direct(
+            MalformedTree()
+        ) is None
+        assert BipartitionSupportStats._get_bipartition_support_values_array_direct(
+            MalformedTree()
+        ) is None
+
+    def test_direct_bipartition_traversals_support_multifurcations(self):
+        tree = Phylo.read(StringIO("(A:1,B:1,C:1)90;"), "newick")
+
+        vals, names = (
+            BipartitionSupportStats._get_bipartition_support_vals_direct(tree)
+        )
+        values = (
+            BipartitionSupportStats._get_bipartition_support_values_array_direct(
+                tree
+            )
+        )
+
+        assert vals == [90]
+        assert names == [["A", "B", "C"]]
+        assert values.tolist() == [90.0]
 
     def test_bipartition_support_vals_direct_preserves_order_without_child_reversed(
         self,
