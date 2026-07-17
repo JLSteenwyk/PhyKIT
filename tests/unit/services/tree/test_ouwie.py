@@ -445,6 +445,47 @@ class TestProcessArgs:
         assert ordered_names == ["B", "C", "D"]
         assert regime_names == ["r1", "r2"]
 
+    @pytest.mark.parametrize(
+        ("traits", "regimes"),
+        [
+            ({"A": 1.0, "B": 2.0}, {"A": "r1", "B": "r2"}),
+            (
+                {"A": 1.0, "B": 2.0, "trait_only": 3.0},
+                {"A": "r1", "B": "r2", "regime_only": "r3"},
+            ),
+        ],
+    )
+    def test_prepare_shared_trait_regime_data_requires_three_taxa(
+        self, traits, regimes
+    ):
+        with pytest.raises(PhykitUserError) as excinfo:
+            OUwie._prepare_shared_trait_regime_data(
+                ["A", "B", "C"], traits, regimes
+            )
+
+        assert excinfo.value.messages == [
+            "Only 2 shared taxa among tree, trait, and regime files.",
+            "At least 3 shared taxa are required.",
+        ]
+
+    def test_prepare_shared_trait_regime_data_reuses_reordered_complete_mappings(
+        self,
+    ):
+        traits = {"A": 1.0, "B": 2.0, "C": 3.0}
+        regimes = {"C": "r1", "B": "r2", "A": "r1"}
+
+        shared_traits, shared_regimes, tips_to_prune, ordered_names, regime_names = (
+            OUwie._prepare_shared_trait_regime_data(
+                ["A", "B", "C", "D"], traits, regimes
+            )
+        )
+
+        assert shared_traits is traits
+        assert shared_regimes is regimes
+        assert tips_to_prune == ["D"]
+        assert ordered_names == ["A", "B", "C"]
+        assert regime_names == ["r1", "r2"]
+
 
 class TestTraitAndRegimeParsing:
     def test_trait_file_skips_comments_and_blanks(self, tmp_path, default_args):
@@ -528,6 +569,46 @@ class TestTraitAndRegimeParsing:
             in exc_info.value.messages
         )
 
+    def test_trait_file_not_found(self, tmp_path, default_args):
+        svc = OUwie(default_args)
+
+        with pytest.raises(PhykitUserError) as excinfo:
+            svc._parse_trait_file(
+                str(tmp_path / "missing.tsv"), ["A", "B", "C"]
+            )
+
+        assert "corresponds to no such file or directory" in excinfo.value.messages[0]
+
+    def test_trait_file_reports_taxon_mismatches(
+        self, tmp_path, default_args, capsys
+    ):
+        trait_file = tmp_path / "traits.tsv"
+        trait_file.write_text("A\t1\nB\t2\nC\t3\nX\t4\n")
+        svc = OUwie(default_args)
+
+        traits = svc._parse_trait_file(
+            str(trait_file), ["A", "B", "C", "D"]
+        )
+
+        assert traits == {"A": 1.0, "B": 2.0, "C": 3.0}
+        assert capsys.readouterr().err.splitlines() == [
+            "Warning: 1 taxa in tree but not in trait file: D",
+            "Warning: 1 taxa in trait file but not in tree: X",
+        ]
+
+    def test_trait_file_requires_three_shared_taxa(self, tmp_path, default_args):
+        trait_file = tmp_path / "traits.tsv"
+        trait_file.write_text("A\t1\nB\t2\nX\t3\n")
+        svc = OUwie(default_args)
+
+        with pytest.raises(PhykitUserError) as excinfo:
+            svc._parse_trait_file(str(trait_file), ["A", "B", "C"])
+
+        assert excinfo.value.messages == [
+            "Only 2 shared taxa between tree and trait file.",
+            "At least 3 shared taxa are required.",
+        ]
+
     def test_all_shared_regime_file_emits_no_warnings(
         self, tmp_path, default_args, capsys
     ):
@@ -578,6 +659,48 @@ class TestTraitAndRegimeParsing:
             "Line 5 in regime file has 3 columns; expected 2."
             in exc_info.value.messages
         )
+
+    def test_regime_file_not_found(self, tmp_path, default_args):
+        svc = OUwie(default_args)
+
+        with pytest.raises(PhykitUserError) as excinfo:
+            svc._parse_regime_file(
+                str(tmp_path / "missing.tsv"), ["A", "B", "C"]
+            )
+
+        assert "corresponds to no such file or directory" in excinfo.value.messages[0]
+
+    def test_regime_file_reports_taxon_mismatches(
+        self, tmp_path, default_args, capsys
+    ):
+        regime_file = tmp_path / "regimes.tsv"
+        regime_file.write_text("A\tr1\nB\tr1\nC\tr2\nX\tr2\n")
+        svc = OUwie(default_args)
+
+        regimes = svc._parse_regime_file(
+            str(regime_file), ["A", "B", "C", "D"]
+        )
+
+        assert regimes == {"A": "r1", "B": "r1", "C": "r2"}
+        assert capsys.readouterr().err.splitlines() == [
+            "Warning: 1 taxa in tree but not in regime file: D",
+            "Warning: 1 taxa in regime file but not in tree: X",
+        ]
+
+    def test_regime_file_requires_three_shared_taxa(
+        self, tmp_path, default_args
+    ):
+        regime_file = tmp_path / "regimes.tsv"
+        regime_file.write_text("A\tr1\nB\tr1\nX\tr2\n")
+        svc = OUwie(default_args)
+
+        with pytest.raises(PhykitUserError) as excinfo:
+            svc._parse_regime_file(str(regime_file), ["A", "B", "C"])
+
+        assert excinfo.value.messages == [
+            "Only 2 shared taxa between tree and regime file.",
+            "At least 3 shared taxa are required.",
+        ]
 
 
 # ── TestWeightMatrix ─────────────────────────────────────────────────
@@ -763,6 +886,29 @@ class TestRegimeAssignment:
         assert parent_map[id(trifurcation.clades[2])] is trifurcation
         assert id(tree.root) not in parent_map
 
+    def test_parent_map_supports_legacy_tree_interface(self, svc):
+        tree = NewickTree(
+            root=Clade(
+                clades=[
+                    Clade(
+                        clades=[Clade(name="A"), Clade(name="B")],
+                    ),
+                    Clade(name="C"),
+                ]
+            )
+        )
+
+        class LegacyTree:
+            def find_clades(self, *args, **kwargs):
+                return tree.find_clades(*args, **kwargs)
+
+        parent_map = svc._build_parent_map(LegacyTree())
+
+        internal, terminal = tree.root.clades
+        assert parent_map[id(internal)] is tree.root
+        assert parent_map[id(terminal)] is tree.root
+        assert all(parent_map[id(child)] is internal for child in internal.clades)
+
     def test_combined_branch_and_root_regime_uses_direct_traversal(
         self, svc, monkeypatch
     ):
@@ -873,6 +1019,110 @@ class TestRegimeAssignment:
         assert root_regime == "alpha"
         assert branch_regimes[id(left)] == "beta"
         assert branch_regimes[id(right)] == "alpha"
+
+    def test_regime_assignment_falls_back_when_reversed_is_unavailable(
+        self, svc, monkeypatch
+    ):
+        tree = NewickTree(
+            root=Clade(
+                clades=[
+                    Clade(name="A", branch_length=1.0),
+                    Clade(name="B", branch_length=1.0),
+                    Clade(name="C", branch_length=1.0),
+                ]
+            )
+        )
+        parent_map = svc._build_parent_map(tree)
+        expected = svc._assign_branch_regimes_and_root(
+            tree, {"A": "r1", "B": "r2", "C": "r1"}, parent_map
+        )
+        original_reversed = reversed
+        call_count = 0
+
+        def fail_first_reversed(values):
+            nonlocal call_count
+            call_count += 1
+            if call_count == 1:
+                raise AttributeError("reversed traversal unavailable")
+            return original_reversed(values)
+
+        monkeypatch.setattr(builtins, "reversed", fail_first_reversed)
+
+        observed = svc._assign_branch_regimes_and_root(
+            tree, {"A": "r1", "B": "r2", "C": "r1"}, parent_map
+        )
+
+        assert observed == expected
+
+    @pytest.mark.parametrize(
+        ("tip_regimes", "expected_root"),
+        [({"A": "r1"}, "r1"), ({"B": "r2"}, "r2"), ({}, "unknown")],
+    )
+    def test_regime_assignment_handles_missing_tip_annotations(
+        self, svc, tip_regimes, expected_root
+    ):
+        tree = NewickTree(
+            root=Clade(
+                clades=[
+                    Clade(
+                        clades=[
+                            Clade(name="A", branch_length=1.0),
+                            Clade(name="B", branch_length=1.0),
+                        ],
+                        branch_length=1.0,
+                    ),
+                    Clade(name="C", branch_length=1.0),
+                ]
+            )
+        )
+        parent_map = svc._build_parent_map(tree)
+
+        branch_regimes, root_regime = svc._assign_branch_regimes_and_root(
+            tree, tip_regimes, parent_map
+        )
+
+        assert root_regime == expected_root
+        assert set(branch_regimes.values()) == {expected_root}
+
+    def test_regime_assignment_uses_node_state_without_parent_map(self, svc):
+        tree = NewickTree(
+            root=Clade(
+                clades=[
+                    Clade(name="A", branch_length=1.0),
+                    Clade(name="B", branch_length=1.0),
+                    Clade(name="C", branch_length=1.0),
+                ]
+            )
+        )
+
+        branch_regimes, root_regime = svc._assign_branch_regimes_and_root(
+            tree, {"A": "r1", "B": "r2", "C": "r1"}, {}
+        )
+
+        assert root_regime == "r1"
+        assert branch_regimes[id(tree.root.clades[0])] == "r1"
+        assert branch_regimes[id(tree.root.clades[1])] == "r2"
+
+
+class TestRunValidation:
+    def test_run_requires_two_distinct_regimes(
+        self, tmp_path, default_args
+    ):
+        regime_file = tmp_path / "regimes.tsv"
+        regime_file.write_text(
+            "raccoon\tA\nbear\tA\nsea_lion\tA\nseal\tA\n"
+            "monkey\tA\ncat\tA\nweasel\tA\ndog\tA\n"
+        )
+        default_args.regime_data = str(regime_file)
+        default_args.models = "BM1"
+        svc = OUwie(default_args)
+
+        with pytest.raises(PhykitUserError) as excinfo:
+            svc.run()
+
+        assert excinfo.value.messages == [
+            "At least 2 distinct regimes are required for OUwie models."
+        ]
 
 
 class TestVCV:
