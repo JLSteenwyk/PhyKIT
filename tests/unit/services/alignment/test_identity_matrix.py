@@ -1271,3 +1271,184 @@ class TestIdentityMatrixUnit:
             n_parts=2,
         )
         np.testing.assert_array_equal(strip, np.zeros((1, 2)))
+
+    def test_partition_identities_large_invalid_alignment_matches_pairwise(
+        self, tmp_path
+    ):
+        service = IdentityMatrix(_make_args("aln.fa", tmp_path / "out.png"))
+        taxa = [f"taxon_{idx}" for idx in range(128)]
+        sequences = {
+            name: ("A-GT" if idx % 2 else "AC?T")
+            for idx, name in enumerate(taxa)
+        }
+        partitions = [("first", 0, 2), ("second", 2, 4)]
+
+        names, observed = service._compute_partition_identities(
+            sequences,
+            taxa,
+            partitions,
+        )
+        expected_names, expected = service._compute_partition_identities_pairwise(
+            sequences,
+            taxa,
+            partitions,
+        )
+
+        assert names == expected_names
+        np.testing.assert_allclose(observed, expected)
+
+    def test_tree_order_falls_back_to_biopython_and_appends_missing_taxa(
+        self, tmp_path, monkeypatch
+    ):
+        from types import SimpleNamespace
+
+        from Bio import Phylo
+        from phykit.services.tree.base import Tree
+
+        service = IdentityMatrix(
+            _make_args(
+                "aln.fa",
+                tmp_path / "out.png",
+                sort="tree",
+                tree="tree.nwk",
+            )
+        )
+
+        class FallbackTree:
+            def get_terminals(self):
+                return [SimpleNamespace(name="b")]
+
+        monkeypatch.setattr(
+            Tree,
+            "_scan_simple_newick_tip_names",
+            staticmethod(lambda _path: None),
+        )
+        monkeypatch.setattr(
+            Tree,
+            "calculate_terminal_names_fast",
+            staticmethod(lambda _tree: None),
+        )
+        monkeypatch.setattr(Phylo, "read", lambda *_args: FallbackTree())
+
+        order, labels = service._determine_order(
+            np.eye(3),
+            ["a", "b", "c"],
+            3,
+        )
+
+        assert order == [1, 0, 2]
+        assert labels == ["b", "a", "c"]
+
+    def test_p_distance_clustering_returns_complete_order(self, tmp_path):
+        service = IdentityMatrix(
+            _make_args(
+                "aln.fa",
+                tmp_path / "out.png",
+                sort="cluster",
+                metric="p-distance",
+            )
+        )
+        distance_matrix = np.array(
+            [
+                [0.0, 0.1, 0.8],
+                [0.1, 0.0, 0.7],
+                [0.8, 0.7, 0.0],
+            ]
+        )
+
+        order, labels, cluster = service._determine_order(
+            distance_matrix,
+            ["a", "b", "c"],
+            3,
+            return_linkage=True,
+        )
+
+        assert sorted(order) == [0, 1, 2]
+        assert sorted(labels) == ["a", "b", "c"]
+        assert cluster is not None
+
+    def test_plot_heatmap_simple_layout_with_partition_strip(self, tmp_path):
+        output = tmp_path / "simple.png"
+        service = IdentityMatrix(
+            _make_args(
+                "aln.fa",
+                output,
+                sort="alpha",
+                no_title=True,
+                ylabel_fontsize=0,
+                axis_fontsize=8,
+            )
+        )
+        service.plot_config.ylabel_fontsize = 0
+        service.plot_config.show_title = False
+        sequences = {"a": "ACGT", "b": "ACGA"}
+
+        service._plot_heatmap(
+            np.array([[1.0, 0.75], [0.75, 1.0]]),
+            ["a", "b"],
+            [0, 1],
+            ["a", "b"],
+            2,
+            partitions=[("gene", 0, 4)],
+            sequences=sequences,
+        )
+
+        assert output.exists()
+        assert output.stat().st_size > 0
+
+    def test_plot_heatmap_builds_p_distance_linkage_when_missing(self, tmp_path):
+        output = tmp_path / "cluster.png"
+        service = IdentityMatrix(
+            _make_args(
+                "aln.fa",
+                output,
+                sort="cluster",
+                metric="p-distance",
+            )
+        )
+        distance_matrix = np.array(
+            [
+                [0.0, 0.1, 0.8],
+                [0.1, 0.0, 0.7],
+                [0.8, 0.7, 0.0],
+            ]
+        )
+
+        service._plot_heatmap(
+            distance_matrix,
+            ["a", "b", "c"],
+            [0, 1, 2],
+            ["a", "b", "c"],
+            3,
+            cluster_linkage=None,
+        )
+
+        assert output.exists()
+        assert output.stat().st_size > 0
+
+    def test_plot_heatmap_reports_missing_matplotlib(
+        self, tmp_path, monkeypatch, capsys
+    ):
+        original_import = builtins.__import__
+
+        def fake_import(name, globals=None, locals=None, fromlist=(), level=0):
+            if name.startswith("matplotlib"):
+                raise ImportError("matplotlib unavailable")
+            return original_import(name, globals, locals, fromlist, level)
+
+        monkeypatch.setattr(builtins, "__import__", fake_import)
+        service = IdentityMatrix(_make_args("aln.fa", tmp_path / "out.png"))
+
+        with pytest.raises(SystemExit) as exc_info:
+            service._plot_heatmap(
+                np.eye(2),
+                ["a", "b"],
+                [0, 1],
+                ["a", "b"],
+                2,
+            )
+
+        assert exc_info.value.code == 2
+        assert "matplotlib is required for identity_matrix" in (
+            capsys.readouterr().err
+        )
