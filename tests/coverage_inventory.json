@@ -91,6 +91,32 @@
     },
     {
       "aliases": [
+        "aor",
+        "outlier_regions"
+      ],
+      "canonical": "alignment_outlier_regions",
+      "disposition": "Direct unit coverage plus an integration or wheel workflow.",
+      "entry_points": [
+        "pk_alignment_outlier_regions",
+        "pk_aor",
+        "pk_outlier_regions"
+      ],
+      "factory": "AlignmentOutlierRegions",
+      "handler": "alignment_outlier_regions",
+      "integration_tests": [
+        "tests/integration/alignment/test_alignment_outlier_regions_integration.py"
+      ],
+      "module_wrapper_callable": true,
+      "parser_contract": "tests/unit/test_docs_category_coverage.py",
+      "service_module": "phykit/services/alignment/alignment_outlier_regions.py",
+      "status": "unit_and_workflow",
+      "tutorial_smoke": [],
+      "unit_tests": [
+        "tests/unit/services/alignment/test_alignment_outlier_regions.py"
+      ]
+    },
+    {
+      "aliases": [
         "aot",
         "outlier_taxa"
       ],
@@ -2905,6 +2931,19 @@
     },
     {
       "commands": [
+        "alignment_outlier_regions"
+      ],
+      "disposition": "Direct unit coverage is present.",
+      "integration_tests": [
+        "tests/integration/alignment/test_alignment_outlier_regions_integration.py"
+      ],
+      "module": "phykit/services/alignment/alignment_outlier_regions.py",
+      "unit_tests": [
+        "tests/unit/services/alignment/test_alignment_outlier_regions.py"
+      ]
+    },
+    {
+      "commands": [
         "alignment_outlier_taxa"
       ],
       "disposition": "Direct unit coverage is present.",
@@ -4299,12 +4338,12 @@
     }
   ],
   "summary": {
-    "canonical_commands": 109,
-    "commands_with_integration_tests": 103,
+    "canonical_commands": 110,
+    "commands_with_integration_tests": 104,
     "commands_with_tutorial_smoke": 18,
-    "commands_with_unit_tests": 109,
-    "public_command_names": 317,
-    "service_modules": 113,
+    "commands_with_unit_tests": 110,
+    "public_command_names": 320,
+    "service_modules": 114,
     "uncallable_module_wrappers": 0
   }
 }
