@@ -824,6 +824,43 @@ class TestCachedDescendantAssembly:
         assert node_data[0][1] == [1.0, 2.0]
         assert node_data[0][2] == 0.1
 
+    def test_uncertainty_node_data_uses_distribution_estimates_and_skips_short_rows(
+        self, default_args
+    ):
+        svc = ConcordanceAsr(default_args)
+        species_tree = svc.read_tree_file()
+        internal_clades = [
+            clade
+            for clade in species_tree.find_clades(order="preorder")
+            if not clade.is_terminal()
+        ]
+        clade_tip_sets = svc._collect_clade_tip_sets(species_tree)
+        result = {
+            "method": "distribution",
+            "ancestral_estimates": {
+                "included": {
+                    "descendants": sorted(clade_tip_sets[id(internal_clades[0])]),
+                    "gene_tree_estimates": [1.0, 2.0],
+                    "gcf": 0.8,
+                    "estimate": 1.5,
+                },
+                "short": {
+                    "descendants": sorted(clade_tip_sets[id(internal_clades[1])]),
+                    "gene_tree_estimates": [1.0],
+                    "gcf": 0.5,
+                    "estimate": 1.0,
+                },
+                "missing-descendants": {
+                    "gene_tree_estimates": [3.0, 4.0],
+                },
+            },
+        }
+
+        node_data = svc._collect_uncertainty_node_data(species_tree, result)
+
+        assert len(node_data) == 1
+        assert node_data[0][1] == [1.0, 2.0]
+
 
 class TestNNIAlternatives:
     def test_root_and_unpaired_nodes_have_no_nni_alternatives(self, default_args):
@@ -1099,6 +1136,89 @@ class TestWeightedMethod:
             assert "var_parameter" in entry
             assert 0.0 <= entry["gcf"] <= 1.0
 
+    def test_weighted_assembly_skips_unlabeled_and_unestimated_nodes(
+        self, default_args, monkeypatch
+    ):
+        svc = ConcordanceAsr(default_args)
+        species_tree = svc.read_tree_file()
+        svc._asr = Namespace(
+            _label_internal_nodes=lambda _tree: {id(species_tree.root): "root"},
+            _build_parent_map=lambda _tree: {},
+        )
+        clade_tip_sets = svc._collect_clade_tip_sets(species_tree)
+        monkeypatch.setattr(svc, "_run_asr_on_tree", lambda *_args: ({}, {}, 1.0))
+        monkeypatch.setattr(svc, "_compute_gcf_per_node", lambda *_args: {})
+        monkeypatch.setattr(
+            svc,
+            "_collect_clade_tip_sets",
+            lambda _tree: clade_tip_sets,
+        )
+
+        result = svc._run_weighted(
+            species_tree,
+            [],
+            {name: 1.0 for name in svc.get_tip_names_from_tree(species_tree)},
+            set(svc.get_tip_names_from_tree(species_tree)),
+        )
+
+        assert result["ancestral_estimates"] == {}
+
+    def test_weighted_assembly_handles_missing_and_extra_nni_estimates(
+        self, default_args, monkeypatch
+    ):
+        svc = ConcordanceAsr(default_args)
+        species_tree = svc.read_tree_file()
+        target = next(
+            clade
+            for clade in species_tree.find_clades(order="preorder")
+            if clade is not species_tree.root and not clade.is_terminal()
+        )
+        clade_tip_sets = svc._collect_clade_tip_sets(species_tree)
+        target_desc = clade_tip_sets[id(target)]
+        expected_desc = [frozenset({f"alt-{index}"}) for index in range(3)]
+        alt_trees = [object(), object(), object()]
+        svc._asr = Namespace(
+            _label_internal_nodes=lambda _tree: {id(target): "target"},
+            _build_parent_map=lambda _tree: {},
+        )
+
+        def run_asr(tree, _trait_values):
+            if tree is species_tree:
+                return {target_desc: 1.0}, {}, 1.0
+            index = alt_trees.index(tree)
+            if index == 1:
+                return {expected_desc[index]: 2.0}, {}, 1.0
+            return {}, {}, 1.0
+
+        monkeypatch.setattr(svc, "_run_asr_on_tree", run_asr)
+        monkeypatch.setattr(
+            svc,
+            "_compute_gcf_per_node",
+            lambda *_args: {id(target): (0.0, 0.0, 0.0)},
+        )
+        monkeypatch.setattr(
+            svc,
+            "_collect_clade_tip_sets",
+            lambda _tree: clade_tip_sets,
+        )
+        monkeypatch.setattr(
+            svc,
+            "_build_nni_alternative_at_node",
+            lambda *_args: list(zip(alt_trees, expected_desc)),
+        )
+
+        result = svc._run_weighted(
+            species_tree,
+            [object()],
+            {name: 1.0 for name in svc.get_tip_names_from_tree(species_tree)},
+            set(svc.get_tip_names_from_tree(species_tree)),
+        )
+
+        entry = result["ancestral_estimates"]["target"]
+        assert entry["estimate"] == 0.0
+        assert entry["source_estimates"] == [1.0, 2.0]
+        assert entry["source_weights"] == [0.0, 0.0]
+
     def test_all_concordant_matches_standard_asr(self, default_args):
         """When all gene trees match species tree, result should be close to standard ASR."""
         svc = ConcordanceAsr(default_args)
@@ -1173,6 +1293,33 @@ class TestDistributionMethod:
             "ci_lower" in e for e in result["ancestral_estimates"].values()
         )
         assert has_ci, "Distribution method should produce CIs"
+
+    def test_distribution_skips_unlabeled_nodes_without_estimates(
+        self, distribution_args, monkeypatch
+    ):
+        svc = ConcordanceAsr(distribution_args)
+        species_tree = svc.read_tree_file()
+        svc._asr = Namespace(
+            _label_internal_nodes=lambda _tree: {id(species_tree.root): "root"}
+        )
+        clade_tip_sets = svc._collect_clade_tip_sets(species_tree)
+        monkeypatch.setattr(svc, "_compute_gcf_per_node", lambda *_args: {})
+        monkeypatch.setattr(svc, "_run_asr_on_tree", lambda *_args: ({}, {}, 0.0))
+        monkeypatch.setattr(
+            svc,
+            "_collect_clade_tip_sets",
+            lambda _tree: clade_tip_sets,
+        )
+
+        result = svc._run_distribution(
+            species_tree,
+            [object(), object()],
+            {name: 1.0 for name in svc.get_tip_names_from_tree(species_tree)},
+            set(svc.get_tip_names_from_tree(species_tree)),
+        )
+
+        assert result["ancestral_estimates"] == {}
+        assert result["sigma2"] == 0.0
 
 
 class TestRun:
@@ -1272,6 +1419,53 @@ class TestRun:
         prune.assert_called_once_with(species_copy, ["dog"])
         assert run_weighted.call_args.args[0] is pruned_species
 
+    def test_run_supports_multi_trait_ladderized_uncertainty_output(
+        self, default_args, tmp_path, mocker
+    ):
+        default_args.trait = "body_mass"
+        default_args.ladderize = True
+        default_args.plot_uncertainty = str(tmp_path / "uncertainty.png")
+        svc = ConcordanceAsr(default_args)
+        species_tree = svc.read_tree_file()
+        gene_trees = svc._parse_gene_trees(GENE_TREES)
+        all_taxa = set(svc.get_tip_names_from_tree(species_tree))
+        trait_values = {
+            taxon: float(index)
+            for index, taxon in enumerate(svc.get_tip_names_from_tree(species_tree))
+        }
+        mocker.patch.object(
+            svc,
+            "read_tree_file_unmodified",
+            return_value=species_tree,
+        )
+        mocker.patch.object(svc, "_parse_gene_trees", return_value=gene_trees)
+        mocker.patch.object(
+            svc,
+            "_normalize_taxa",
+            return_value=(gene_trees, all_taxa),
+        )
+        mocker.patch(
+            "phykit.services.tree.ancestral_reconstruction."
+            "AncestralReconstruction._parse_multi_trait_data",
+            return_value=trait_values,
+        )
+        mocker.patch.object(svc, "_fast_tree_copy", return_value=species_tree)
+        ladderize = mocker.spy(species_tree, "ladderize")
+        result = {"method": "weighted", "ancestral_estimates": {}}
+        mocker.patch.object(svc, "_run_weighted", return_value=result)
+        plot_uncertainty = mocker.patch.object(svc, "_plot_uncertainty")
+        mocker.patch.object(svc, "_print_text_output")
+
+        svc.run()
+
+        ladderize.assert_called_once_with()
+        plot_uncertainty.assert_called_once_with(
+            species_tree,
+            result,
+            default_args.plot_uncertainty,
+        )
+        assert result["plot_uncertainty"] == default_args.plot_uncertainty
+
     def test_text_output(self, default_args):
         svc = ConcordanceAsr(default_args)
         with patch("builtins.print") as mock_print:
@@ -1347,6 +1541,66 @@ class TestRun:
 
 
 class TestCircularPlot:
+    def test_uncertainty_plot_skips_empty_and_unmatched_results(
+        self, default_args, tmp_path, capsys
+    ):
+        pytest.importorskip("matplotlib")
+        svc = ConcordanceAsr(default_args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+
+        svc._plot_uncertainty(
+            tree,
+            {"method": "weighted", "ancestral_estimates": {}},
+            str(tmp_path / "empty.png"),
+        )
+        svc._plot_uncertainty(
+            tree,
+            {
+                "method": "weighted",
+                "ancestral_estimates": {
+                    "missing": {
+                        "descendants": ["X", "Y"],
+                        "source_estimates": [1.0, 2.0],
+                    }
+                },
+            },
+            str(tmp_path / "unmatched.png"),
+        )
+
+        assert "No nodes with enough estimates" in capsys.readouterr().out
+        assert not (tmp_path / "empty.png").exists()
+        assert not (tmp_path / "unmatched.png").exists()
+
+    def test_uncertainty_plot_covers_concordance_colors_and_title(
+        self, default_args, tmp_path
+    ):
+        pytest.importorskip("matplotlib")
+        default_args.fig_height = 6
+        default_args.title = "Concordance uncertainty"
+        svc = ConcordanceAsr(default_args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        clade_tip_sets = svc._collect_clade_tip_sets(tree)
+        gcfs = iter([0.8, 0.5, 0.2])
+        estimates = {}
+        for index, clade in enumerate(svc._iter_preorder(tree.root)):
+            if not clade.clades:
+                continue
+            estimates[f"N{index}"] = {
+                "descendants": sorted(clade_tip_sets[id(clade)]),
+                "source_estimates": [float(index), float(index + 1)],
+                "gcf": next(gcfs),
+                "estimate": float(index),
+            }
+
+        output_path = tmp_path / "uncertainty-colors.png"
+        svc._plot_uncertainty(
+            tree,
+            {"method": "weighted", "ancestral_estimates": estimates},
+            str(output_path),
+        )
+
+        assert output_path.exists()
+
     @pytest.mark.parametrize("circular", [False, True])
     def test_concordance_plot_uses_direct_tree_traversal(
         self, default_args, monkeypatch, tmp_path, circular
