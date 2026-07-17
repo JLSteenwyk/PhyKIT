@@ -126,6 +126,67 @@ class TestInternalBranchStats(object):
         assert lengths == lengths_with_names
         assert lengths_and_names == []
 
+    @pytest.mark.parametrize("include_names", [False, True])
+    def test_get_internal_branch_lengths_generic_tree_fallback(
+        self, monkeypatch, args, include_names
+    ):
+        tree = Phylo.read(
+            StringIO("((A:1,B:2):3,(C:4,D:5));"),
+            "newick",
+        )
+        monkeypatch.setattr(
+            InternalBranchStats,
+            "_get_internal_branch_lengths_direct",
+            lambda *_args, **_kwargs: None,
+        )
+
+        lengths, rows = InternalBranchStats(args).get_internal_branch_lengths(
+            tree,
+            include_names=include_names,
+        )
+
+        assert lengths == [3.0]
+        if include_names:
+            assert rows == [(3.0, ["A", "B"])]
+        else:
+            assert rows == []
+
+    def test_direct_branch_helpers_signal_nonstandard_tree_fallback(self, args):
+        class MissingRoot:
+            pass
+
+        class MissingChildClades:
+            root = type("Root", (), {"clades": [object()]})()
+
+        assert (
+            InternalBranchStats._get_internal_branch_lengths_direct(MissingRoot())
+            is None
+        )
+        assert (
+            InternalBranchStats._get_internal_branch_lengths_array_direct(MissingRoot())
+            is None
+        )
+        assert (
+            InternalBranchStats._get_internal_branch_lengths_direct(
+                MissingChildClades(),
+                include_names=False,
+            )
+            is None
+        )
+        assert (
+            InternalBranchStats._get_internal_branch_lengths_direct(
+                MissingChildClades(),
+                include_names=True,
+            )
+            is None
+        )
+        assert (
+            InternalBranchStats._get_internal_branch_lengths_array_direct(
+                MissingChildClades()
+            )
+            is None
+        )
+
     def test_get_internal_branch_lengths_uses_direct_traversal(self, monkeypatch, args):
         t = InternalBranchStats(args)
         tree = Phylo.read(StringIO("((A:1,B:2):3,(C:4,D:5):6):7;"), "newick")
@@ -272,6 +333,18 @@ class TestInternalBranchStats(object):
         out, _ = capsys.readouterr()
         assert "requires a phylogeny with branch lengths" in out
 
+    def test_calculate_nonverbose_without_lengths_exits(self, args, capsys):
+        tree = Phylo.read(StringIO("(A,B,C);"), "newick")
+
+        with pytest.raises(SystemExit) as exc_info:
+            InternalBranchStats(args).calculate_internal_branch_stats(
+                tree,
+                include_names=False,
+            )
+
+        assert exc_info.value.code == 2
+        assert "requires a phylogeny with branch lengths" in capsys.readouterr().out
+
     def test_calculate_internal_branch_stats_nonverbose_uses_array_path(
         self, mocker, args
     ):
@@ -349,6 +422,56 @@ class TestInternalBranchStats(object):
         )
 
         assert result is None
+
+    @pytest.mark.parametrize(
+        "newick",
+        [
+            pytest.param("(", id="missing-child-and-close"),
+            pytest.param("(A", id="missing-close"),
+            pytest.param("(A B);", id="invalid-child-separator"),
+            pytest.param("();", id="missing-tip-label"),
+            pytest.param("(A:,B);", id="empty-terminal-length"),
+            pytest.param("((A,B):,C);", id="empty-internal-length"),
+            pytest.param("((A,B):invalid,C);", id="invalid-internal-length"),
+            pytest.param("(A,B)", id="missing-semicolon"),
+            pytest.param("(A,B); trailing", id="trailing-content"),
+        ],
+    )
+    def test_scan_simple_newick_internal_branches_rejects_malformed_input(
+        self, tmp_path, newick
+    ):
+        tree_file = tmp_path / "malformed.tre"
+        tree_file.write_text(newick)
+
+        assert (
+            InternalBranchStats._scan_simple_newick_internal_branches(str(tree_file))
+            is None
+        )
+
+    def test_scan_simple_newick_internal_branches_handles_deep_tree(self, tmp_path):
+        tree_file = tmp_path / "deep.tre"
+        tree_file.write_text("(" * 2_000 + "A" + ")" * 2_000 + ";")
+
+        assert (
+            InternalBranchStats._scan_simple_newick_internal_branches(str(tree_file))
+            is None
+        )
+
+    def test_run_fast_path_without_internal_lengths_exits(self, mocker, capsys):
+        service = InternalBranchStats(
+            Namespace(tree="x.tre", verbose=False, json=False)
+        )
+        mocker.patch.object(
+            service,
+            "_scan_simple_newick_internal_branches",
+            return_value=([], []),
+        )
+
+        with pytest.raises(SystemExit) as exc_info:
+            service.run()
+
+        assert exc_info.value.code == 2
+        assert "requires a phylogeny with branch lengths" in capsys.readouterr().out
 
     def test_run_verbose_uses_simple_newick_scan(self, mocker, capsys):
         t = InternalBranchStats(Namespace(tree="x.tre", verbose=True, json=False))
