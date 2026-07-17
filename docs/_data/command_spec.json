@@ -3116,25 +3116,57 @@
         "pk_ss"
       ],
       "title": "Spurious homolog identification",
-      "summary": "Identify spurious sequences in alignments",
+      "summary": "Detect long-branch and high-diameter-impact sequence outliers",
       "categories": [
         "Homology assessment"
       ],
       "page": "reference/commands/spurious_sequence.rst",
       "documentation": {
-        "purpose": "Identify spurious sequences in alignments",
+        "purpose": "Identify sequence outliers from terminal branch lengths or their impact on weighted tree diameter",
         "use_cases": [
-          "Identify spurious sequences in alignments"
+          "Screen one gene tree for unusually long terminal branches",
+          "Detect tips that disproportionately increase a gene tree's diameter",
+          "Calibrate diameter-impact signatures across many genes or separately by species"
         ],
-        "input_formats": [],
-        "outputs": [],
-        "errors": [],
-        "limitations": [],
-        "scientific_interpretation": "See the canonical command page.",
-        "validation": [],
-        "citations": [],
-        "examples": [],
-        "related_commands": [],
+        "input_formats": [
+          "A single Newick tree for median-factor or per-gene diameter-impact analysis",
+          "With --tree-list, a line-delimited file of Newick tree paths; blank and comment lines are ignored"
+        ],
+        "outputs": [
+          "Median-factor TSV rows: taxon, terminal branch length, threshold, and median",
+          "Diameter-impact TSV rows: optional tree path, taxon, signature, p-value, removal rank, terminal branch length, and before/after diameters",
+          "With --json, metadata and candidate rows in a structured object"
+        ],
+        "errors": [
+          "Diameter-impact analysis rejects trees with fewer than four tips or missing, negative, or non-finite branch lengths",
+          "Diameter-impact-only options cannot be combined with median-factor analysis",
+          "--per-species requires --tree-list"
+        ],
+        "limitations": [
+          "Reported tips are candidates for review; the command does not edit alignments or trees",
+          "The diameter-impact method is a deterministic TreeShrink-inspired endpoint-removal heuristic, not TreeShrink's full optimal removal-set search",
+          "Per-species groups with fewer than four observations are not called as outliers"
+        ],
+        "scientific_interpretation": "A larger diameter-impact signature means that removing the tip causes a larger proportional decrease in weighted tree diameter; a tip is reported only when its one-sided tail probability is below --alpha.",
+        "validation": [
+          "Newick parsing requires one tree with unique, nonblank tip labels",
+          "Diameter-impact analysis requires at least four tips and finite, nonnegative lengths on every non-root branch",
+          "--alpha must be finite and between 0 and 1; --max-remove must leave at least two tips"
+        ],
+        "citations": [
+          "Shen et al. 2018, Cell, doi:10.1016/j.cell.2018.10.023",
+          "Mai and Mirarab 2018, BMC Genomics 19:272, doi:10.1186/s12864-018-4620-2"
+        ],
+        "examples": [
+          "phykit spurious_sequence gene.tre --factor 20",
+          "phykit spurious_sequence gene.tre --method diameter-impact --alpha 0.05",
+          "phykit spurious_sequence trees.txt --method diameter-impact --tree-list --per-species --json"
+        ],
+        "related_commands": [
+          "hidden_paralogy_check",
+          "long_branch_score",
+          "terminal_branch_stats"
+        ],
         "related_tutorials": []
       }
     },

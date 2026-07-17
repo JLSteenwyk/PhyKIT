@@ -6,6 +6,16 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.4.0**:
+
+TreeShrink-inspired spurious-sequence detection:
+
+* Enhanced ``spurious_sequence`` with an opt-in ``diameter-impact`` method for
+  deterministic TreeShrink-inspired detection of tips that disproportionately
+  increase weighted tree diameter. Added significance calibration for one
+  tree, pooled tree lists, and per-species tree-list analysis while preserving
+  the original median-factor behavior and output by default.
+
 **2.3.0**:
 
 * Added ``codon_dnds`` (aliases: ``dnds``, ``dn_ds``, and ``kaks``) for

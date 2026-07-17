@@ -71,6 +71,62 @@ class TestSpuriousSequence:
         assert service.tree_file_path == args.tree
         assert service.factor == 20
         assert service.json_output is False
+        assert service.method == "median-factor"
+        assert service.alpha == 0.05
+        assert service.max_remove is None
+        assert service.tree_list is False
+        assert service.per_species is False
+
+    @pytest.mark.parametrize(
+        "values, message",
+        [
+            (
+                {"factor": 2, "method": "diameter-impact"},
+                "--factor cannot be used",
+            ),
+            (
+                {"method": "diameter-impact", "alpha": 0},
+                "--alpha must be",
+            ),
+            (
+                {"method": "diameter-impact", "max_remove": 0},
+                "--max-remove must be",
+            ),
+            (
+                {"method": "diameter-impact", "per_species": True},
+                "--per-species requires",
+            ),
+            (
+                {"method": "median-factor", "tree_list": True},
+                "require --method diameter-impact",
+            ),
+            (
+                {"method": "median-factor", "alpha": 0.1},
+                "require --method diameter-impact",
+            ),
+        ],
+    )
+    def test_process_args_rejects_incompatible_diameter_options(
+        self,
+        values,
+        message,
+    ):
+        arguments = {
+            "tree": "tree.tre",
+            "factor": None,
+            "method": "median-factor",
+            "alpha": 0.05,
+            "max_remove": None,
+            "tree_list": False,
+            "per_species": False,
+            "json": False,
+        }
+        arguments.update(values)
+
+        with pytest.raises(SystemExit) as error:
+            SpuriousSequence(Namespace(**arguments))
+
+        assert message in error.value.messages[0]
 
     def test_get_branch_lengths_and_names_uses_terminal_branches_only(self, args):
         service = SpuriousSequence(args)
@@ -337,3 +393,75 @@ class TestSpuriousSequence:
 
         read_tree.assert_called_once_with()
         mocked_print.assert_called_once_with("None")
+
+    def test_default_max_remove_matches_treeshrink_rule(self):
+        assert SpuriousSequence._default_max_remove(4) == 1
+        assert SpuriousSequence._default_max_remove(100) == 25
+        assert SpuriousSequence._default_max_remove(10_000) == 500
+
+    def test_diameter_shrink_trajectory_selects_high_impact_tip(self, args):
+        tree = Phylo.read(
+            StringIO(
+                "(outlier:100,"
+                + ",".join(f"tip_{index}:1" for index in range(1, 20))
+                + ");"
+            ),
+            "newick",
+        )
+        service = SpuriousSequence(args)
+        adjacency, names, _lengths = service._tree_graph(tree)
+
+        trajectory, initial_diameter = service._diameter_shrink_trajectory(
+            adjacency,
+            names,
+            max_remove=5,
+        )
+
+        assert initial_diameter == 101.0
+        assert trajectory[0]["taxon"] == "outlier"
+        assert trajectory[0]["diameter_after"] == 2.0
+        assert trajectory[0]["signature"] == pytest.approx(3.9219733363)
+
+    def test_per_gene_calibration_flags_extreme_signature(self, args):
+        service = SpuriousSequence(args)
+        analysis = {
+            "scores": {
+                "outlier": 3.9219733363,
+                **{f"tip_{index}": 0.0 for index in range(1, 20)},
+            },
+            "p_values": {},
+        }
+
+        service._assign_per_gene_p_values(analysis)
+
+        assert analysis["p_values"]["outlier"] < 0.05
+        assert analysis["p_values"]["tip_1"] > 0.05
+
+    def test_collection_kde_is_conservative_for_small_groups(self):
+        assert SpuriousSequence._kde_survival_probabilities([0.0, 0.0, 4.0]) == [
+            1.0,
+            1.0,
+            1.0,
+        ]
+
+    def test_collection_kde_flags_repeated_species_outlier(self):
+        probabilities = SpuriousSequence._kde_survival_probabilities(
+            [4.0, 0.0, 0.0, 0.0, 0.0]
+        )
+
+        assert probabilities[0] < 0.05
+        assert all(probability > 0.05 for probability in probabilities[1:])
+
+    def test_read_tree_list_resolves_relative_paths_and_ignores_comments(
+        self,
+        tmp_path,
+    ):
+        list_path = tmp_path / "trees.txt"
+        list_path.write_text("# gene trees\n\ngene1.tre\nsub/gene2.tre\n")
+
+        paths = SpuriousSequence._read_tree_list(str(list_path))
+
+        assert paths == [
+            str(tmp_path / "gene1.tre"),
+            str(tmp_path / "sub" / "gene2.tre"),
+        ]

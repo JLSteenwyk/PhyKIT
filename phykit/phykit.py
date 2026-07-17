@@ -8533,20 +8533,35 @@ class Phykit:
                 f"""\
                 {help_header} 
 
-                Determines potentially spurious homologs using branch lengths.
+                Determines potentially spurious homologs using branch lengths
+                or topology-aware tree-diameter impact.
 
                 Identifies potentially spurious sequences and reports
                 tips in the phylogeny that could possibly be removed
                 from the associated multiple sequence alignment. PhyKIT
-                does so by identifying and reporting long terminal branches
-                defined as branches that are equal to or 20 times the median
-                length of all branches.
+                By default, PhyKIT identifies and reports long terminal
+                branches defined as branches that are at least 20 times the
+                median terminal-branch length. The diameter-impact method
+                instead searches tree-diameter endpoints, measures the
+                reduction caused by removing each selected endpoint, and
+                reports statistically extreme log reductions.
 
-                PhyKIT reports the following information
+                Median-factor output reports the following information
                 col1: name of tip that is a putatively spurious sequence
                 col2: length of branch leading to putatively spurious sequence
                 col3: threshold used to identify putatively spurious sequences
                 col4: median branch length in the phylogeny
+
+                Diameter-impact output for one tree reports
+                col1: name of tip that is a putatively spurious sequence
+                col2: log reduction in tree diameter
+                col3: upper-tail p-value
+                col4: removal rank
+                col5: terminal branch length
+                col6: tree diameter before removal
+                col7: tree diameter after removal
+
+                With --tree-list, the tree path is prepended as column 1.
 
                 If there are no putatively spurious sequences, "None" is reported.
                 
@@ -8561,6 +8576,10 @@ class Phykit:
 
                 Usage:
                 phykit spurious_sequence <file> [-f 20] [--json]
+                phykit spurious_sequence <file> --method diameter-impact
+                    [--alpha 0.05] [--max-remove <count>] [--json]
+                phykit spurious_sequence <tree_list> --method diameter-impact
+                    --tree-list [--per-species] [--alpha 0.05] [--json]
 
                 Options
                 =====================================================
@@ -8573,6 +8592,25 @@ class Phykit:
                                             the threshold of long branches.
                                             (Default: 20)
 
+                --method                    detection method: median-factor
+                                            or diameter-impact.
+                                            (Default: median-factor)
+
+                --alpha                     upper-tail significance level for
+                                            diameter-impact detection.
+                                            (Default: 0.05)
+
+                --max-remove                maximum number of diameter
+                                            endpoints to evaluate. By default,
+                                            uses min(n/4, 5*sqrt(n)).
+
+                --tree-list                 interpret <file> as a line-delimited
+                                            list of tree paths and calibrate
+                                            signatures across all trees.
+
+                --per-species               with --tree-list, calibrate each
+                                            taxon's signatures separately.
+
                 --json                      optional argument to output
                                             results as JSON
                 """
@@ -8580,6 +8618,16 @@ class Phykit:
         )
         parser.add_argument("tree", type=str, help=SUPPRESS)
         parser.add_argument("-f", "--factor", type=float, required=False, help=SUPPRESS)
+        parser.add_argument(
+            "--method",
+            choices=("median-factor", "diameter-impact"),
+            default="median-factor",
+            help=SUPPRESS,
+        )
+        parser.add_argument("--alpha", type=float, default=0.05, help=SUPPRESS)
+        parser.add_argument("--max-remove", type=int, default=None, help=SUPPRESS)
+        parser.add_argument("--tree-list", action="store_true", help=SUPPRESS)
+        parser.add_argument("--per-species", action="store_true", help=SUPPRESS)
         _add_json_argument(parser)
         _run_service(parser, argv, SpuriousSequence)
 

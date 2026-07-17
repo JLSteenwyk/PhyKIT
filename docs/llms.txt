@@ -2,7 +2,7 @@
 
 > Command-line tools for processing and analyzing multiple sequence alignments, phylogenetic trees, and comparative trait data.
 
-Documentation version: 2.3.0
+Documentation version: 2.4.0
 
 ## Start
 
@@ -55,7 +55,7 @@ Documentation version: 2.3.0
 - [relative_rate_test](https://jlsteenwyk.github.io/PhyKIT/reference/commands/relative_rate_test.html): Relative rate test between lineages
 ### Homology assessment
 - [hidden_paralogy_check](https://jlsteenwyk.github.io/PhyKIT/reference/commands/hidden_paralogy_check.html): Check for hidden paralogy in gene trees
-- [spurious_sequence](https://jlsteenwyk.github.io/PhyKIT/reference/commands/spurious_sequence.html): Identify spurious sequences in alignments
+- [spurious_sequence](https://jlsteenwyk.github.io/PhyKIT/reference/commands/spurious_sequence.html): Detect long-branch and high-diameter-impact sequence outliers
 ### Introgression & gene flow
 - [dfoil](https://jlsteenwyk.github.io/PhyKIT/reference/commands/dfoil.html): DFOIL test for detecting and polarizing introgression in a 5-taxon symmetric phylogeny
 - [discordance_asymmetry](https://jlsteenwyk.github.io/PhyKIT/reference/commands/discordance_asymmetry.html): Test for asymmetric discordance (gene flow detection)

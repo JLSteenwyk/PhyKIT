@@ -3,7 +3,7 @@ Synopsis
 
 .. code-block:: text
 
-   phykit spurious_sequence <tree> [--factor <factor>] [--json]
+   phykit spurious_sequence <tree> [--factor <factor>] [--method <method>] [--alpha <alpha>] [--max-remove <max_remove>] [--tree-list] [--per-species] [--json]
 
 Arguments
 ^^^^^^^^^
@@ -29,6 +29,31 @@ source for accepted spellings, required arguments, types, defaults, and choices.
      - false
      - float
      - none
+     - any
+   * - ``--method``
+     - false
+     - string
+     - median-factor
+     - median-factor, diameter-impact
+   * - ``--alpha``
+     - false
+     - float
+     - 0.05
+     - any
+   * - ``--max-remove``
+     - false
+     - int
+     - none
+     - any
+   * - ``--tree-list``
+     - false
+     - boolean
+     - false
+     - any
+   * - ``--per-species``
+     - false
+     - boolean
+     - false
      - any
    * - ``--json``
      - false

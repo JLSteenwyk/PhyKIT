@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "phykit_version": "2.3.0",
+  "phykit_version": "2.4.0",
   "generated_from": [
     "phykit/cli_registry.py",
     "live argparse parsers",
@@ -19712,25 +19712,57 @@
         "pk_ss"
       ],
       "title": "Spurious homolog identification",
-      "summary": "Identify spurious sequences in alignments",
+      "summary": "Detect long-branch and high-diameter-impact sequence outliers",
       "categories": [
         "Homology assessment"
       ],
       "page": "reference/commands/spurious_sequence.rst",
       "documentation": {
-        "purpose": "Identify spurious sequences in alignments",
+        "purpose": "Identify sequence outliers from terminal branch lengths or their impact on weighted tree diameter",
         "use_cases": [
-          "Identify spurious sequences in alignments"
+          "Screen one gene tree for unusually long terminal branches",
+          "Detect tips that disproportionately increase a gene tree's diameter",
+          "Calibrate diameter-impact signatures across many genes or separately by species"
         ],
-        "input_formats": [],
-        "outputs": [],
-        "errors": [],
-        "limitations": [],
-        "scientific_interpretation": "See the canonical command page.",
-        "validation": [],
-        "citations": [],
-        "examples": [],
-        "related_commands": [],
+        "input_formats": [
+          "A single Newick tree for median-factor or per-gene diameter-impact analysis",
+          "With --tree-list, a line-delimited file of Newick tree paths; blank and comment lines are ignored"
+        ],
+        "outputs": [
+          "Median-factor TSV rows: taxon, terminal branch length, threshold, and median",
+          "Diameter-impact TSV rows: optional tree path, taxon, signature, p-value, removal rank, terminal branch length, and before/after diameters",
+          "With --json, metadata and candidate rows in a structured object"
+        ],
+        "errors": [
+          "Diameter-impact analysis rejects trees with fewer than four tips or missing, negative, or non-finite branch lengths",
+          "Diameter-impact-only options cannot be combined with median-factor analysis",
+          "--per-species requires --tree-list"
+        ],
+        "limitations": [
+          "Reported tips are candidates for review; the command does not edit alignments or trees",
+          "The diameter-impact method is a deterministic TreeShrink-inspired endpoint-removal heuristic, not TreeShrink's full optimal removal-set search",
+          "Per-species groups with fewer than four observations are not called as outliers"
+        ],
+        "scientific_interpretation": "A larger diameter-impact signature means that removing the tip causes a larger proportional decrease in weighted tree diameter; a tip is reported only when its one-sided tail probability is below --alpha.",
+        "validation": [
+          "Newick parsing requires one tree with unique, nonblank tip labels",
+          "Diameter-impact analysis requires at least four tips and finite, nonnegative lengths on every non-root branch",
+          "--alpha must be finite and between 0 and 1; --max-remove must leave at least two tips"
+        ],
+        "citations": [
+          "Shen et al. 2018, Cell, doi:10.1016/j.cell.2018.10.023",
+          "Mai and Mirarab 2018, BMC Genomics 19:272, doi:10.1186/s12864-018-4620-2"
+        ],
+        "examples": [
+          "phykit spurious_sequence gene.tre --factor 20",
+          "phykit spurious_sequence gene.tre --method diameter-impact --alpha 0.05",
+          "phykit spurious_sequence trees.txt --method diameter-impact --tree-list --per-species --json"
+        ],
+        "related_commands": [
+          "hidden_paralogy_check",
+          "long_branch_score",
+          "terminal_branch_stats"
+        ],
         "related_tutorials": []
       },
       "arguments": [
@@ -19762,6 +19794,79 @@
           "action": "_StoreAction"
         },
         {
+          "name": "method",
+          "flags": [
+            "--method"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "string",
+          "nargs": null,
+          "default": "median-factor",
+          "choices": [
+            "median-factor",
+            "diameter-impact"
+          ],
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "alpha",
+          "flags": [
+            "--alpha"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "float",
+          "nargs": null,
+          "default": 0.05,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "max_remove",
+          "flags": [
+            "--max-remove"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "int",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "tree_list",
+          "flags": [
+            "--tree-list"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "boolean",
+          "nargs": 0,
+          "default": false,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreTrueAction"
+        },
+        {
+          "name": "per_species",
+          "flags": [
+            "--per-species"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "boolean",
+          "nargs": 0,
+          "default": false,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreTrueAction"
+        },
+        {
           "name": "json",
           "flags": [
             "--json"
@@ -19791,7 +19896,38 @@
             ],
             "description": "Command-specific fields are documented on the canonical page and in checked examples."
           },
-          "examples": []
+          "examples": [
+            {
+              "alpha": 0.05,
+              "method": "diameter-impact",
+              "rows": [
+                {
+                  "diameter_after": 2.0,
+                  "diameter_before": 101.0,
+                  "p_value": 7e-06,
+                  "removal_rank": 1,
+                  "signature": 3.921973,
+                  "taxon": "outlier",
+                  "terminal_branch_length": 100.0,
+                  "tree": "gene.tre"
+                }
+              ],
+              "scope": "per-gene",
+              "spurious_sequences": [
+                {
+                  "diameter_after": 2.0,
+                  "diameter_before": 101.0,
+                  "p_value": 7e-06,
+                  "removal_rank": 1,
+                  "signature": 3.921973,
+                  "taxon": "outlier",
+                  "terminal_branch_length": 100.0,
+                  "tree": "gene.tre"
+                }
+              ],
+              "tree_count": 1
+            }
+          ]
         }
       }
     },
