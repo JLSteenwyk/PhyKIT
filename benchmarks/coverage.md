@@ -23,6 +23,22 @@ branch lines differently from Coverage.py's local aggregate. The branch target
 therefore needs local headroom above 92% before the Codecov target can be
 considered achieved.
 
+## Progress checkpoint
+
+- Date: 2026-07-17
+- Commit: `f75ab4aa`
+- Unit tests: 5,520 passed, 867 deselected
+- Integration tests: 859 passed, 5,528 deselected
+- Statements: 43,706 of 48,110 covered (90.85%)
+- Branches: 14,252 of 17,244 covered (82.65%)
+- Partial branches: 2,094
+- Combined statement-plus-branch coverage: 88.68%
+
+This checkpoint includes focused helper, alignment, and ancestral
+reconstruction coverage batches. Relative to the baseline, the suite covers
+950 additional statements and 497 additional branches while retaining the
+full branch-enabled unit and integration runs.
+
 ## Reproduction
 
 Run the complete unit and integration suites and create an aggregate report:
