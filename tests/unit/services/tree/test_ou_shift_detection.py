@@ -1201,6 +1201,35 @@ class TestNumericalFallbacks:
 
 
 class TestEndToEnd:
+    @staticmethod
+    def _stub_run_setup(svc, mocker, edges):
+        tree = Phylo.read(StringIO("((A:1,B:1):1,C:1);"), "newick")
+        traits = {"A": 1.0, "B": 2.0, "C": 3.0}
+        lineage = {name: [(0, 1.0, 0.0, 1.0)] for name in traits}
+        mocker.patch.object(svc, "read_tree_file_unmodified", return_value=tree)
+        mocker.patch.object(svc, "validate_tree")
+        mocker.patch.object(
+            svc, "get_tip_names_from_tree", return_value=list(traits)
+        )
+        mocker.patch.object(svc, "_parse_trait_file", return_value=traits)
+        mocker.patch.object(svc, "_build_parent_map", return_value={})
+        mocker.patch.object(
+            svc, "_build_lineage_info_no_regime", return_value=lineage
+        )
+        mocker.patch.object(svc, "_enumerate_edges", return_value=edges)
+        mocker.patch.object(
+            svc,
+            "_precompute_shared_path_lengths",
+            return_value=(np.eye(3), np.ones(3)),
+        )
+        build_result = mocker.patch.object(
+            svc,
+            "_build_final_result",
+            side_effect=lambda best, _tree: {"best": best},
+        )
+        mocker.patch.object(svc, "_output")
+        return build_result
+
     def test_pipeline_runs_with_setup(self, precomputed):
         """Pipeline should complete with pre-computed data."""
         svc = precomputed["svc"]
@@ -1341,6 +1370,45 @@ class TestEndToEnd:
         prune.assert_called_once_with("D")
         assert build_result.call_args.args[1] is tree_copy
 
+    def test_run_uses_empty_result_when_zero_edge_model_fails(
+        self, default_args, mocker
+    ):
+        svc = OUShiftDetection(default_args)
+        build_result = self._stub_run_setup(svc, mocker, edges=[])
+        mocker.patch.object(svc, "_fit_and_score_config", return_value=None)
+
+        svc.run()
+
+        fallback = build_result.call_args.args[0]
+        assert fallback["n_shifts"] == 0
+        assert fallback["log_likelihood"] == float("-inf")
+
+    def test_run_uses_empty_result_when_lasso_and_null_models_fail(
+        self, default_args, mocker
+    ):
+        svc = OUShiftDetection(default_args)
+        build_result = self._stub_run_setup(svc, mocker, edges=[(1, object())])
+        mocker.patch.object(svc, "_lasso_pass_with_selection", return_value=None)
+        mocker.patch.object(svc, "_fit_and_score_config", return_value=None)
+
+        svc.run()
+
+        assert build_result.call_args.args[0]["n_shifts"] == 0
+
+    def test_run_selects_improved_second_pass_model(self, default_args, mocker):
+        svc = OUShiftDetection(default_args)
+        build_result = self._stub_run_setup(svc, mocker, edges=[(1, object())])
+        first = {"alpha": 0.5, "pBIC": 10.0}
+        second = {"alpha": 0.75, "pBIC": 5.0}
+        lasso = mocker.patch.object(
+            svc, "_lasso_pass_with_selection", side_effect=[first, second]
+        )
+
+        svc.run()
+
+        assert lasso.call_count == 2
+        assert build_result.call_args.args[0] is second
+
 
 class TestOutput:
     def test_print_text_output_batches_detected_shifts(self, svc, mocker):
@@ -1388,6 +1456,46 @@ class TestOutput:
             "============================================================"
         )
 
+    def test_print_text_output_reports_no_shifts(self, svc, capsys):
+        result = {
+            "n_tips": 3,
+            "n_shifts": 0,
+            "criterion": "pBIC",
+            "alpha": 0.5,
+            "sigma2": 1.0,
+            "theta_root": 2.0,
+            "log_likelihood": -3.0,
+            "pBIC": 10.0,
+            "BIC": 11.0,
+            "AICc": 12.0,
+            "shifts": [],
+        }
+
+        svc._print_text_output(result)
+
+        assert "No shifts detected" in capsys.readouterr().out
+
+    def test_print_text_output_allows_closed_pipe(self, svc, monkeypatch):
+        result = {
+            "n_tips": 3,
+            "n_shifts": 0,
+            "criterion": "pBIC",
+            "alpha": 0.5,
+            "sigma2": 1.0,
+            "theta_root": 2.0,
+            "log_likelihood": -3.0,
+            "pBIC": 10.0,
+            "BIC": 11.0,
+            "AICc": 12.0,
+            "shifts": [],
+        }
+        monkeypatch.setattr(
+            "builtins.print",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(BrokenPipeError),
+        )
+
+        svc._print_text_output(result)
+
 
 class TestDescribeEdge:
     def test_terminal(self, precomputed):
@@ -1423,6 +1531,18 @@ class TestDescribeEdge:
 
         desc = svc._describe_edge(tree.root, tree)
         assert desc.startswith("stem of")
+
+    def test_falls_back_to_biopython_terminal_traversal(self, svc, monkeypatch):
+        tree = Phylo.read(StringIO("((A:1,B:1):1,C:1);"), "newick")
+        monkeypatch.setattr(
+            ou_shift_detection_module.Tree,
+            "calculate_terminal_names_fast",
+            staticmethod(lambda _clade: None),
+        )
+
+        description = svc._describe_edge(tree.root.clades[0], tree)
+
+        assert description == "stem of (A, B)"
 
 
 class TestProcessArgs:
@@ -1533,3 +1653,129 @@ class TestTraitParsing:
             "Non-numeric trait value 'bad' for taxon 'bear' on line 2."
             in exc_info.value.messages
         )
+
+    def test_missing_trait_file_error(self, tmp_path, default_args):
+        missing = tmp_path / "missing_traits.tsv"
+        svc = OUShiftDetection(default_args)
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            svc._parse_trait_file(str(missing), ["A", "B", "C"])
+
+        assert exc_info.value.code == 2
+        assert str(missing) in exc_info.value.messages[0]
+
+    def test_unordered_complete_trait_file_is_accepted(self, tmp_path, default_args):
+        trait_file = tmp_path / "traits.tsv"
+        trait_file.write_text("C\t3.0\nA\t1.0\nB\t2.0\n")
+        svc = OUShiftDetection(default_args)
+
+        traits = svc._parse_trait_file(str(trait_file), ["A", "B", "C"])
+
+        assert traits == {"C": 3.0, "A": 1.0, "B": 2.0}
+
+    def test_partial_overlap_warns_and_filters_traits(
+        self, tmp_path, default_args, capsys
+    ):
+        trait_file = tmp_path / "traits.tsv"
+        trait_file.write_text("A\t1.0\nB\t2.0\nC\t3.0\nE\t5.0\n")
+        svc = OUShiftDetection(default_args)
+
+        traits = svc._parse_trait_file(
+            str(trait_file), ["A", "B", "C", "D"]
+        )
+
+        stderr = capsys.readouterr().err
+        assert traits == {"A": 1.0, "B": 2.0, "C": 3.0}
+        assert "1 taxa in tree but not in trait file: D" in stderr
+        assert "1 taxa in trait file but not in tree: E" in stderr
+
+    def test_fewer_than_three_shared_taxa_is_rejected(
+        self, tmp_path, default_args
+    ):
+        trait_file = tmp_path / "traits.tsv"
+        trait_file.write_text("A\t1.0\nB\t2.0\nD\t4.0\n")
+        svc = OUShiftDetection(default_args)
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            svc._parse_trait_file(str(trait_file), ["A", "B", "C"])
+
+        assert "Only 2 shared taxa" in exc_info.value.messages[0]
+
+
+class TestModelFailureHandling:
+    def test_lasso_pass_skips_unfittable_candidate(self, precomputed, monkeypatch):
+        svc = precomputed["svc"]
+        null = {"pBIC": 10.0, "n_shifts": 0}
+        monkeypatch.setattr(
+            svc,
+            "_build_shift_weight_matrix",
+            lambda *_args: np.ones((svc._n, len(svc._edges) + 1)),
+        )
+        monkeypatch.setattr(svc, "_build_ou_vcv_fast", lambda *_args: np.eye(svc._n))
+        monkeypatch.setattr(
+            svc,
+            "_transform_to_independent",
+            lambda x, W, _V: (W, x),
+        )
+        monkeypatch.setattr(svc, "_extract_lasso_configs", lambda *_args: [[0]])
+        monkeypatch.setattr(
+            svc, "_fit_and_score_config", lambda config: null if not config else None
+        )
+
+        assert svc._lasso_pass_with_selection(0.5, 1) is null
+
+    def test_shift_model_rejects_invalid_final_fit(self, precomputed, monkeypatch):
+        svc = precomputed["svc"]
+        monkeypatch.setattr(svc, "_optimize_alpha", lambda *_args: 0.5)
+        monkeypatch.setattr(
+            svc,
+            "_gls_profile_likelihood",
+            lambda *_args: (np.zeros(2), 0.0, float("-inf")),
+        )
+
+        assert svc._fit_and_score_config([0]) is None
+
+    def test_shift_model_rejects_unavailable_pbic(self, precomputed, monkeypatch):
+        svc = precomputed["svc"]
+        monkeypatch.setattr(svc, "_optimize_alpha", lambda *_args: 0.5)
+        monkeypatch.setattr(
+            svc,
+            "_gls_profile_likelihood",
+            lambda *_args: (np.array([1.0, 0.5]), 1.0, -2.0),
+        )
+        monkeypatch.setattr(svc, "_compute_pbic_from_vcv", lambda *_args: None)
+
+        assert svc._fit_and_score_config([0]) is None
+
+    @pytest.mark.parametrize("pbic_available", [False, True])
+    def test_null_model_rejects_invalid_fit_or_pbic(
+        self, precomputed, monkeypatch, pbic_available
+    ):
+        svc = precomputed["svc"]
+        monkeypatch.setattr(svc, "_fit_ou1_for_alpha", lambda: 0.5)
+        if pbic_available:
+            monkeypatch.setattr(
+                svc,
+                "_gls_profile_likelihood",
+                lambda *_args: (np.array([1.0]), 0.0, float("-inf")),
+            )
+        else:
+            monkeypatch.setattr(
+                svc,
+                "_gls_profile_likelihood",
+                lambda *_args: (np.array([1.0]), 1.0, -2.0),
+            )
+            monkeypatch.setattr(svc, "_compute_pbic_from_vcv", lambda *_args: None)
+
+        assert svc._fit_null_model() is None
+
+    def test_backward_elimination_keeps_model_when_reduced_fit_fails(
+        self, svc, monkeypatch
+    ):
+        fitted = {"shift_edge_indices": [0], "pBIC": 10.0}
+        monkeypatch.setattr(svc, "_fit_and_score_config", lambda _config: None)
+
+        assert svc._backward_eliminate_single_pass(fitted) is fitted
+
+    def test_cholesky_inverse_path_returns_matrix(self, svc):
+        np.testing.assert_allclose(svc._invert_vcv(np.eye(2)), np.eye(2))
