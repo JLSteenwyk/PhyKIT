@@ -260,6 +260,53 @@ class TestTerminalBranchStats:
 
         assert lengths.tolist() == [1.0, 2.0, 4.0]
 
+    def test_direct_traversals_support_multifurcating_nodes(self, args):
+        tree = Phylo.read(StringIO("(A:1,B:2,C:3);"), "newick")
+
+        lengths, rows = TerminalBranchStats._get_terminal_branch_lengths_direct(
+            tree
+        )
+        lengths_array = (
+            TerminalBranchStats._get_terminal_branch_lengths_array_direct(tree)
+        )
+
+        assert lengths == [1.0, 2.0, 3.0]
+        assert rows == [[1.0, "A"], [2.0, "B"], [3.0, "C"]]
+        assert lengths_array.tolist() == lengths
+
+    def test_direct_traversals_reject_incompatible_tree_objects(self, args):
+        class MalformedChild:
+            branch_length = 1.0
+            name = "A"
+
+        class MalformedRoot:
+            clades = [MalformedChild()]
+
+        class MalformedTree:
+            root = MalformedRoot()
+
+        assert TerminalBranchStats._get_terminal_branch_lengths_direct(
+            object()
+        ) is None
+        assert TerminalBranchStats._get_terminal_branch_lengths_array_direct(
+            object()
+        ) is None
+        assert TerminalBranchStats._get_terminal_branch_lengths_direct(
+            MalformedTree()
+        ) is None
+        assert TerminalBranchStats._get_terminal_branch_lengths_array_direct(
+            MalformedTree()
+        ) is None
+
+    def test_array_stats_reject_tree_without_terminal_branch_lengths(self, args):
+        service = TerminalBranchStats(args)
+        tree = Phylo.read(StringIO("(A,B,C);"), "newick")
+
+        with pytest.raises(SystemExit) as exc_info:
+            service.calculate_terminal_branch_stats(tree, include_names=False)
+
+        assert exc_info.value.code == 2
+
     def test_scan_simple_newick_terminal_branches_preserves_order(self, tmp_path):
         tree_file = tmp_path / "tree.tre"
         tree_file.write_text("((A:1,B:2):3,(C,D:4):5);\n")
@@ -274,6 +321,58 @@ class TestTerminalBranchStats:
     def test_scan_simple_newick_terminal_branches_rejects_annotations(self, tmp_path):
         tree_file = tmp_path / "tree.tre"
         tree_file.write_text("((A:1,B:2):3[comment],C:4);\n")
+
+        result = TerminalBranchStats._scan_simple_newick_terminal_branches(
+            str(tree_file)
+        )
+
+        assert result is None
+
+    @pytest.mark.parametrize(
+        "newick",
+        [
+            ":1;",
+            "A:;",
+            "A:not-a-number;",
+            "(",
+            "(A:1",
+            "(A:1 X",
+            "(A:1):;",
+            "A:1",
+            "A:1; trailing",
+        ],
+        ids=[
+            "empty-label",
+            "empty-length",
+            "invalid-length",
+            "missing-child",
+            "unterminated-group",
+            "invalid-separator",
+            "invalid-internal-length",
+            "missing-semicolon",
+            "trailing-content",
+        ],
+    )
+    def test_scan_simple_newick_rejects_malformed_syntax(
+        self, tmp_path, newick
+    ):
+        tree_file = tmp_path / "malformed.tre"
+        tree_file.write_text(newick)
+
+        result = TerminalBranchStats._scan_simple_newick_terminal_branches(
+            str(tree_file)
+        )
+
+        assert result is None
+
+    def test_scan_simple_newick_falls_back_when_recursion_limit_is_reached(
+        self, tmp_path
+    ):
+        depth = sys.getrecursionlimit() + 10
+        tree_file = tmp_path / "deep-tree.tre"
+        tree_file.write_text(
+            "(" * depth + "A:1" + ")" * depth + ";"
+        )
 
         result = TerminalBranchStats._scan_simple_newick_terminal_branches(
             str(tree_file)
@@ -297,6 +396,50 @@ class TestTerminalBranchStats:
 
         out, _ = capsys.readouterr()
         assert out == "1.1235 A\n2.0 B\n4.0 C\n"
+
+    def test_run_simple_newick_fast_path_prints_summary(self, tmp_path, mocker):
+        tree_file = tmp_path / "tree.tre"
+        tree_file.write_text("(A:1,B:2,C:3);\n")
+        service = TerminalBranchStats(
+            Namespace(tree=str(tree_file), verbose=False, json=False)
+        )
+        mocked_stats = mocker.patch.object(
+            tbs_module,
+            "calculate_summary_statistics_from_arr",
+            return_value={"mean": 2.0},
+        )
+        mocked_print = mocker.patch.object(
+            tbs_module,
+            "print_summary_statistics",
+        )
+
+        service.run()
+
+        mocked_stats.assert_called_once_with([1.0, 2.0, 3.0])
+        mocked_print.assert_called_once_with({"mean": 2.0})
+
+    def test_run_simple_newick_fast_path_prints_json_summary(
+        self, tmp_path, mocker
+    ):
+        tree_file = tmp_path / "tree.tre"
+        tree_file.write_text("(A:1,B:2,C:3);\n")
+        service = TerminalBranchStats(
+            Namespace(tree=str(tree_file), verbose=False, json=True)
+        )
+        mocker.patch.object(
+            tbs_module,
+            "calculate_summary_statistics_from_arr",
+            return_value={"mean": 2.0},
+        )
+        mocked_json = mocker.patch.object(tbs_module, "print_json")
+
+        service.run()
+
+        stats_input = tbs_module.calculate_summary_statistics_from_arr.call_args.args[0]
+        assert stats_input.tolist() == [1.0, 2.0, 3.0]
+        mocked_json.assert_called_once_with(
+            {"verbose": False, "summary": {"mean": 2.0}}
+        )
 
     def test_run_non_verbose_prints_summary(self, mocker):
         args = Namespace(tree="/some/path/to/file.tre", verbose=False, json=False)
