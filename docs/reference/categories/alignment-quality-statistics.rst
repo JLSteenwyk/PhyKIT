@@ -4,6 +4,7 @@ Alignment quality & statistics
 - :doc:`Alignment entropy <../commands/alignment_entropy>` - Shannon entropy across alignment sites
 - :doc:`Alignment length <../commands/alignment_length>` - Length of an input alignment
 - :doc:`Alignment length no gaps <../commands/alignment_length_no_gaps>` - Alignment length excluding gapped sites
+- :doc:`Alignment outlier regions <../commands/alignment_outlier_regions>` - Detect localized outlier regions in multiple sequence alignments
 - :doc:`Alignment outlier taxa <../commands/alignment_outlier_taxa>` - Identify outlier taxa in alignments
 - :doc:`Codon dN/dS <../commands/codon_dnds>` - Pairwise synonymous and nonsynonymous substitution-rate estimates
 - :doc:`Column score <../commands/column_score>` - Column score for alignment quality
@@ -27,6 +28,7 @@ Alignment quality & statistics
    ../commands/alignment_entropy
    ../commands/alignment_length
    ../commands/alignment_length_no_gaps
+   ../commands/alignment_outlier_regions
    ../commands/alignment_outlier_taxa
    ../commands/codon_dnds
    ../commands/column_score

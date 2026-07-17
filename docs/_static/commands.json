@@ -506,6 +506,180 @@
       }
     },
     {
+      "canonical": "alignment_outlier_regions",
+      "handler": "alignment_outlier_regions",
+      "aliases": [
+        "aor",
+        "outlier_regions"
+      ],
+      "entry_points": [
+        "pk_alignment_outlier_regions",
+        "pk_aor",
+        "pk_outlier_regions"
+      ],
+      "title": "Alignment outlier regions",
+      "summary": "Detect localized outlier regions in multiple sequence alignments",
+      "categories": [
+        "Alignment quality & statistics",
+        "Homology assessment"
+      ],
+      "page": "reference/commands/alignment_outlier_regions.rst",
+      "documentation": {
+        "purpose": "Detect and optionally mask localized sequence regions that are unusually divergent across both alignment columns and individual sequences.",
+        "use_cases": [
+          "Identify candidate sequencing, assembly, annotation, contamination, or alignment errors",
+          "Create a masked alignment without deleting complete taxa or columns",
+          "Audit suspicious regions before phylogenetic inference"
+        ],
+        "input_formats": [
+          "Multiple sequence alignments in FASTA, PHYLIP, Clustal, MAF, or Stockholm format"
+        ],
+        "outputs": [
+          "Tab-separated region report on standard output or at --report",
+          "Structured JSON report with method, parameters, summary, and regions",
+          "Optional FASTA alignment with only flagged characters masked"
+        ],
+        "errors": [
+          "The cutoff must be greater than 1.0",
+          "The mask character must be one non-whitespace character other than a gap",
+          "Output paths cannot overwrite the input or each other"
+        ],
+        "limitations": [
+          "Calls are statistical outliers and do not prove nonhomology",
+          "Very short, very long, or frequently shared errors can be missed",
+          "Highly divergent valid regions can be flagged when taxon sampling is sparse",
+          "This independent TAPER-inspired implementation can differ from TAPER software output"
+        ],
+        "scientific_interpretation": "Reported cells are unusual relative to both their alignment columns and the remainder of their sequence. Review important calls and compare analyses with and without masking.",
+        "validation": [
+          "Synthetic local anomalies are detected while matched control sequences remain unchanged",
+          "Identical alignments produce no calls",
+          "Unit tests cover scoring, natural breaks, multi-scale smoothing, coordinates, masking, and option validation"
+        ],
+        "citations": [
+          "Zhang C, Zhao Y, Braun EL, and Mirarab S. 2021. TAPER: Pinpointing errors in multiple sequence alignments despite varying rates of evolution. Methods in Ecology and Evolution 12:2145-2158. doi:10.1111/2041-210X.13696"
+        ],
+        "examples": [
+          "phykit alignment_outlier_regions alignment.fa",
+          "phykit alignment_outlier_regions alignment.fa --report suspicious_regions.tsv --mask-output alignment.masked.fa",
+          "phykit alignment_outlier_regions alignment.fa --mask-character N --json"
+        ],
+        "related_commands": [
+          "alignment_outlier_taxa",
+          "spurious_sequence",
+          "hidden_paralogy_check",
+          "mask_alignment"
+        ],
+        "related_tutorials": [
+          "tutorials/pages/04-evaluating-the-accuracy-of-a-multiple-sequence-alignment.rst"
+        ]
+      },
+      "arguments": [
+        {
+          "name": "alignment",
+          "flags": [],
+          "positional": true,
+          "required": true,
+          "type": "str",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "cutoff",
+          "flags": [
+            "--cutoff"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "float",
+          "nargs": null,
+          "default": 3.0,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "report",
+          "flags": [
+            "--report"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "str",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "mask_output",
+          "flags": [
+            "--mask-output"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "str",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "mask_character",
+          "flags": [
+            "--mask-character"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "str",
+          "nargs": null,
+          "default": "?",
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "json",
+          "flags": [
+            "--json"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "boolean",
+          "nargs": 0,
+          "default": false,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreTrueAction"
+        }
+      ],
+      "documentation_url": "reference/commands/alignment_outlier_regions.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [
+          "--mask-output"
+        ],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
+    },
+    {
       "canonical": "alignment_outlier_taxa",
       "handler": "alignment_outlier_taxa",
       "aliases": [

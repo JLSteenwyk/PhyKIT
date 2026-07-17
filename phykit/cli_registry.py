@@ -21,6 +21,8 @@ ALIAS_TO_HANDLER: dict[str, str] = {
     "recode": "alignment_recoding",
     "outlier_taxa": "alignment_outlier_taxa",
     "aot": "alignment_outlier_taxa",
+    "outlier_regions": "alignment_outlier_regions",
+    "aor": "alignment_outlier_regions",
     "dtt": "dtt",
     "disparity_through_time": "dtt",
     "dstat": "dstatistic",

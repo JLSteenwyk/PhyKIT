@@ -7,6 +7,7 @@ _EXPORTS = {
     "AlignmentLengthNoGaps": "alignment_length_no_gaps",
     "AlignmentEntropy": "alignment_entropy",
     "AlignmentRecoding": "alignment_recoding",
+    "AlignmentOutlierRegions": "alignment_outlier_regions",
     "ColumnScore": "column_score",
     "CompositionalBiasPerSite": "compositional_bias_per_site",
     "CompositionPerTaxon": "composition_per_taxon",

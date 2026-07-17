@@ -126,6 +126,12 @@ These links preserve the command fragments used by earlier versions of the docum
 
 .. raw:: html
 
+   <span id="cmd-alignment_outlier_regions"></span>
+
+- :doc:`Alignment outlier regions </reference/commands/alignment_outlier_regions>`
+
+.. raw:: html
+
    <span id="cmd-alignment_outlier_taxa"></span>
 
 - :doc:`Alignment outlier taxa </reference/commands/alignment_outlier_taxa>`
