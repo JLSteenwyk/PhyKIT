@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from math import isfinite
 from pathlib import Path
 
 from ...errors import PhykitUserError
@@ -311,8 +312,8 @@ class AlignmentOutlierRegions(Alignment):
 
     def _validate_options(self) -> None:
         messages = []
-        if self.cutoff <= 1.0:
-            messages.append("cutoff must be greater than 1.0.")
+        if not isfinite(self.cutoff) or self.cutoff <= 1.0:
+            messages.append("cutoff must be finite and greater than 1.0.")
         if len(self.mask_character) != 1 or self.mask_character.isspace():
             messages.append("mask_character must be exactly one non-whitespace character.")
         elif self.mask_character == "-":
@@ -333,8 +334,9 @@ class AlignmentOutlierRegions(Alignment):
 
     @staticmethod
     def _alignment_arrays(alignment, is_protein: bool):
-        sequences = [str(record.seq).upper() for record in alignment]
-        n_taxa = len(sequences)
+        sequences = [str(record.seq) for record in alignment]
+        normalized_sequences = [sequence.upper() for sequence in sequences]
+        n_taxa = len(normalized_sequences)
         n_sites = alignment.get_alignment_length()
         if n_taxa == 0:
             empty = np.zeros((0, n_sites), dtype=np.uint8)
@@ -342,13 +344,13 @@ class AlignmentOutlierRegions(Alignment):
 
         try:
             alignment_array = np.frombuffer(
-                "".join(sequences).encode("ascii"),
+                "".join(normalized_sequences).encode("ascii"),
                 dtype=np.uint8,
             ).reshape(n_taxa, n_sites)
             valid_mask = _ascii_valid_mask(alignment_array, is_protein)
         except UnicodeEncodeError:
             alignment_array = np.asarray(
-                [list(sequence) for sequence in sequences],
+                [list(sequence) for sequence in normalized_sequences],
                 dtype="U1",
             )
             invalid = ["-", "?", "*", "X"]

@@ -141,7 +141,7 @@
           "Optional FASTA alignment with only flagged characters masked"
         ],
         "errors": [
-          "The cutoff must be greater than 1.0",
+          "The cutoff must be finite and greater than 1.0",
           "The mask character must be one non-whitespace character other than a gap",
           "Output paths cannot overwrite the input or each other"
         ],

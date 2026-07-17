@@ -144,7 +144,9 @@ def test_detect_preserves_gaps_and_ambiguous_symbols_when_masking():
 @pytest.mark.parametrize(
     "overrides,message",
     [
-        ({"cutoff": 1.0}, "cutoff must be greater than 1.0"),
+        ({"cutoff": 1.0}, "greater than 1.0"),
+        ({"cutoff": float("nan")}, "cutoff must be finite"),
+        ({"cutoff": float("inf")}, "cutoff must be finite"),
         ({"mask_character": "XX"}, "exactly one"),
         ({"mask_character": "-"}, "cannot be '-'"),
         ({"mask_output": "alignment.fa"}, "cannot overwrite"),
@@ -171,3 +173,13 @@ def test_render_tsv_includes_coordinate_contract():
     assert report.splitlines()[0].startswith("taxon\talignment_start")
     assert report.splitlines()[1].startswith("local_error\t49\t58\t49\t58")
 
+
+def test_masked_output_preserves_unflagged_letter_case():
+    alignment = _local_error_alignment()
+    alignment[-1].seq = Seq(str(alignment[-1].seq).lower())
+
+    result = _service().detect(alignment, is_protein=False)
+
+    masked = result["masked_sequences"][-1]
+    assert masked[:48] == "a" * 48
+    assert masked.count("?") == 10
