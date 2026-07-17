@@ -3,6 +3,11 @@ coverage:
   precision: 2
   round: down
   range: "70...95"
+  status:
+    project:
+      default:
+        target: 91.5%
+        threshold: 0
 ignore:
   - "tests"
   - "phykit-runner.py"

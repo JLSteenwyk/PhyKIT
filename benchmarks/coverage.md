@@ -87,6 +87,28 @@ coverage batches. Since the baseline, the suite covers 2,090 additional
 statements and 1,151 additional branches, increasing combined coverage by
 4.96 percentage points.
 
+## Final checkpoint
+
+- Date: 2026-07-17
+- Commit: `dd8bb2e6`
+- Unit tests: 5,970 passed, 869 deselected
+- Integration tests: 861 passed, 5,978 deselected
+- Unit-only combined statement-plus-branch coverage: 90.81%
+- Statements: 45,087 of 48,110 covered (93.72%)
+- Branches: 15,042 of 17,244 covered (87.23%)
+- Partial branches: 1,670
+- Combined statement-plus-branch coverage: 92.00508%
+
+The final batches add shared plot configuration, hybridization, OU shift
+detection, and tip-to-tip node-distance coverage. Since the baseline, the suite
+covers 2,331 additional statements and 1,287 additional branches, increasing
+combined coverage by 5.54 percentage points. No production module remains
+below 80% coverage.
+
+The exact result has insufficient cross-version headroom for a 92% hard gate.
+CI therefore enforces 90% on the unit-only report and 91.5% on the merged
+Codecov project report. The local combined target also fails below 91.5%.
+
 ## Reproduction
 
 Run the complete unit and integration suites and create an aggregate report:
@@ -95,7 +117,8 @@ Run the complete unit and integration suites and create an aggregate report:
 make coverage.combined
 ```
 
-The target prints a two-decimal report, retains raw data in the ignored
-`.coverage` file, and writes machine-readable totals to the ignored
+The target prints a two-decimal report, fails below 91.5%, retains raw data in
+the ignored `.coverage` file, and writes machine-readable totals to the ignored
 `output/combined.coverage.json` file. The existing `make test.coverage` target
-continues to generate the separate XML reports uploaded by CI.
+continues to generate the separate XML reports uploaded by CI, with a 90%
+unit-only floor.

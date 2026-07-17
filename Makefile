@@ -134,11 +134,11 @@ coverage.combined:
 	rm -rf output/
 	mkdir output/
 	python -m pytest --basetemp=output --cov=phykit --cov-branch --cov-append -m "integration" --cov-report=
-	python -m coverage report --precision=2
+	python -m coverage report --precision=2 --fail-under=91.5
 	python -m coverage json -o output/combined.coverage.json
 
 coverage.unit:
-	python -m pytest --cov=phykit --cov-branch --cov-fail-under=80 -m "not (integration or validation)" --cov-report=xml:unit.coverage.xml
+	python -m pytest --cov=phykit --cov-branch --cov-fail-under=90 -m "not (integration or validation)" --cov-report=xml:unit.coverage.xml
 
 coverage.integration:
 	rm -rf output/
