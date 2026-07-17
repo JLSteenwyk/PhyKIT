@@ -1,6 +1,7 @@
 import builtins
 import importlib
 import json
+import math
 import os
 import subprocess
 import sys
@@ -426,6 +427,32 @@ class TestRegimeParsing:
             "At least 3 shared taxa are required.",
         ]
 
+    @pytest.mark.parametrize(
+        ("tree_tips", "rows", "expected_warning"),
+        [
+            (
+                ["A", "B", "C", "D"],
+                "A\tr1\nB\tr1\nC\tr2\n",
+                "taxa in tree but not in regime file: D",
+            ),
+            (
+                ["A", "B", "C"],
+                "A\tr1\nB\tr1\nC\tr2\nD\tr2\n",
+                "taxa in regime file but not in tree: D",
+            ),
+        ],
+    )
+    def test_one_sided_regime_mismatches_warn(
+        self, service, tmp_path, capsys, tree_tips, rows, expected_warning
+    ):
+        regime_file = tmp_path / "regimes.tsv"
+        regime_file.write_text(rows)
+
+        regimes = service._parse_regime_file(str(regime_file), tree_tips)
+
+        assert set(regimes) == {"A", "B", "C"}
+        assert expected_warning in capsys.readouterr().err
+
 
 class TestTraitParsing:
     def test_comments_and_blanks(self, service, tmp_path):
@@ -571,6 +598,32 @@ class TestTraitParsing:
             "Only 2 shared taxa between tree and trait file.",
             "At least 3 shared taxa are required.",
         ]
+
+    @pytest.mark.parametrize(
+        ("tree_tips", "rows", "expected_warning"),
+        [
+            (
+                ["A", "B", "C", "D"],
+                "A\t1\nB\t2\nC\t3\n",
+                "taxa in tree but not in trait file: D",
+            ),
+            (
+                ["A", "B", "C"],
+                "A\t1\nB\t2\nC\t3\nD\t4\n",
+                "taxa in trait file but not in tree: D",
+            ),
+        ],
+    )
+    def test_one_sided_trait_mismatches_warn(
+        self, service, tmp_path, capsys, tree_tips, rows, expected_warning
+    ):
+        trait_file = tmp_path / "traits.tsv"
+        trait_file.write_text(rows)
+
+        traits = service._parse_trait_file(str(trait_file), tree_tips)
+
+        assert set(traits) == {"A", "B", "C"}
+        assert expected_warning in capsys.readouterr().err
 
 
 class TestFitchParsimony:
@@ -747,6 +800,68 @@ class TestFitchParsimony:
             if clade != tree.root:
                 assert id(clade) in branch_regimes
                 assert branch_regimes[id(clade)] in {"aquatic", "terrestrial"}
+
+    @pytest.mark.parametrize("assigned_tip", ["A", "B"])
+    def test_branch_regimes_handle_one_sided_and_missing_states(
+        self, service, assigned_tip
+    ):
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        parent_map = service._build_parent_map(tree)
+
+        branch_regimes = service._assign_branch_regimes(
+            tree,
+            {assigned_tip: "known"},
+            parent_map,
+        )
+
+        assert branch_regimes[id(tree.root.clades[0])] == "known"
+        assert branch_regimes[id(tree.root.clades[1])] == "known"
+        assert branch_regimes[id(tree.root.clades[1].clades[0])] == "known"
+
+    def test_branch_regimes_fall_back_when_postorder_states_are_unavailable(
+        self, service
+    ):
+        tree = Phylo.read(StringIO("((A:1,B:1):1,C:1);"), "newick")
+        preorder = list(service._iter_preorder(tree.root))
+        parent_map = service._build_parent_map(tree, preorder)
+
+        branch_regimes = service._assign_branch_regimes(
+            tree,
+            {"A": "fallback"},
+            parent_map,
+            preorder_clades=preorder,
+            postorder_clades=[],
+        )
+
+        assert set(branch_regimes.values()) == {"fallback"}
+
+    def test_branch_regimes_resolve_state_without_parent_context(self, service):
+        tree = Phylo.read(StringIO("(A:1,B:1,C:1);"), "newick")
+        tip = tree.root.clades[0]
+
+        branch_regimes = service._assign_branch_regimes(
+            tree,
+            {"A": "direct"},
+            {},
+            preorder_clades=[tree.root, tip],
+            postorder_clades=[tip, tree.root],
+        )
+
+        assert branch_regimes[id(tip)] == "direct"
+
+    def test_branch_regimes_mark_parentless_missing_state_unknown(self, service):
+        tree = Phylo.read(StringIO("(A:1,B:1,C:1);"), "newick")
+        missing_tip = tree.root.clades[1]
+
+        branch_regimes = service._assign_branch_regimes(
+            tree,
+            {"A": "known"},
+            {},
+            preorder_clades=[tree.root, missing_tip],
+            postorder_clades=[],
+        )
+
+        assert branch_regimes[id(missing_tip)] == "unknown"
 
 
 class TestPerRegimeVCV:
@@ -1000,6 +1115,50 @@ class TestSingleRate:
         assert calls == 1
         np.testing.assert_allclose(fast, inverse)
 
+    def test_fit_single_rate_falls_back_to_inverse(self, service, monkeypatch):
+        expected = (1.5, 2.5, -3.5)
+        monkeypatch.setattr(
+            service,
+            "_fit_single_rate_cholesky",
+            lambda *_args: (_ for _ in ()).throw(ValueError("not SPD")),
+        )
+        monkeypatch.setattr(
+            service,
+            "_fit_single_rate_inverse",
+            lambda *_args: expected,
+        )
+
+        assert service._fit_single_rate(np.ones(2), np.eye(2)) == expected
+
+    def test_cholesky_fit_rejects_zero_rate(self, service):
+        sigma2, ancestral, likelihood = service._fit_single_rate_cholesky(
+            np.ones(3),
+            np.eye(3),
+        )
+
+        assert sigma2 == pytest.approx(0.0)
+        assert ancestral == pytest.approx(1.0)
+        assert likelihood == -np.inf
+
+    def test_inverse_fit_reports_singular_covariance(self, service):
+        with pytest.raises(PhykitUserError) as exc_info:
+            service._fit_single_rate_inverse(
+                np.array([1.0, 2.0]),
+                np.zeros((2, 2)),
+            )
+
+        assert exc_info.value.messages[0] == "Singular VCV matrix: cannot invert."
+
+    def test_inverse_fit_rejects_zero_rate(self, service):
+        sigma2, ancestral, likelihood = service._fit_single_rate_inverse(
+            np.ones(3),
+            np.eye(3),
+        )
+
+        assert sigma2 == pytest.approx(0.0)
+        assert ancestral == pytest.approx(1.0)
+        assert likelihood == -np.inf
+
 
 class TestMultiRate:
     def test_log_likelihood_geq_single(self, service):
@@ -1109,8 +1268,155 @@ class TestMultiRate:
         assert calls == 1
         np.testing.assert_allclose(fast, inverse)
 
+    def test_multi_rate_likelihood_falls_back_for_singular_covariance(self, service):
+        ancestral, likelihood = service._multi_rate_log_likelihood(
+            np.array([1.0, 2.0]),
+            np.zeros((2, 2)),
+            np.ones(2),
+        )
+
+        assert ancestral == 0.0
+        assert likelihood == -np.inf
+
+    def test_cholesky_likelihood_rejects_zero_precision_sum(
+        self, service, monkeypatch
+    ):
+        monkeypatch.setattr(
+            rate_heterogeneity_module,
+            "cho_factor",
+            lambda matrix, **_kwargs: (matrix, True),
+        )
+        monkeypatch.setattr(
+            rate_heterogeneity_module,
+            "cho_solve",
+            lambda *_args, **_kwargs: np.zeros((2, 2)),
+        )
+
+        assert service._multi_rate_log_likelihood_cholesky(
+            np.array([1.0, 2.0]),
+            np.eye(2),
+            np.ones(2),
+        ) == (0.0, -np.inf)
+
+    @pytest.mark.parametrize(
+        "matrix",
+        [
+            pytest.param(np.zeros((2, 2)), id="singular"),
+            pytest.param(np.diag([1.0, -1.0]), id="zero-denominator"),
+            pytest.param(
+                np.diag([1.0, -2.0]),
+                id="non-positive-determinant",
+            ),
+        ],
+    )
+    def test_inverse_likelihood_rejects_invalid_covariance(
+        self, service, matrix
+    ):
+        ancestral, likelihood = service._multi_rate_log_likelihood_inverse(
+            np.array([1.0, 2.0]),
+            matrix,
+            np.ones(2),
+        )
+
+        assert ancestral == 0.0
+        assert likelihood == -np.inf
+
+    def test_multi_rate_fit_tolerates_failed_optimizers(self, service, monkeypatch):
+        monkeypatch.setattr(
+            rate_heterogeneity_module,
+            "minimize",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(ValueError("failed")),
+        )
+        monkeypatch.setattr(
+            service,
+            "_multi_rate_log_likelihood",
+            lambda *_args: (1.5, -2.5),
+        )
+        matrices = {"r1": np.eye(2), "r2": np.eye(2)}
+
+        sigma2, ancestral, likelihood = service._fit_multi_rate(
+            np.array([1.0, 2.0]),
+            matrices,
+            ["r1", "r2"],
+        )
+
+        np.testing.assert_array_equal(sigma2, np.ones(2))
+        assert ancestral == 1.5
+        assert likelihood == -2.5
+
+    def test_multi_rate_fit_rejects_non_finite_final_likelihood(
+        self, service, monkeypatch
+    ):
+        def penalized_minimize(function, x0, **_kwargs):
+            assert function(x0) == 1e20
+            return Namespace(fun=1.0, x=x0)
+
+        monkeypatch.setattr(
+            rate_heterogeneity_module,
+            "minimize",
+            penalized_minimize,
+        )
+        monkeypatch.setattr(
+            service,
+            "_multi_rate_log_likelihood",
+            lambda *_args: (0.0, -np.inf),
+        )
+
+        sigma2, ancestral, likelihood = service._fit_multi_rate(
+            np.array([1.0, 2.0]),
+            {"r1": np.eye(2), "r2": np.eye(2)},
+            ["r1", "r2"],
+        )
+
+        assert np.all(sigma2 > 0)
+        assert ancestral == 0.0
+        assert likelihood == -np.inf
+
 
 class TestLRT:
+    def test_bootstrap_returns_one_for_non_positive_null_rate(
+        self, service, monkeypatch
+    ):
+        monkeypatch.setattr(
+            service,
+            "_fit_single_rate",
+            lambda *_args: (0.0, 1.0, -1.0),
+        )
+
+        assert service._parametric_bootstrap(
+            np.array([1.0, 2.0]),
+            np.eye(2),
+            {"r1": np.eye(2), "r2": np.eye(2)},
+            ["r1", "r2"],
+            observed_lrt=1.0,
+            n_sim=3,
+            seed=1,
+        ) == (1.0, 3)
+
+    def test_bootstrap_adds_jitter_to_singular_covariance(
+        self, service, monkeypatch
+    ):
+        monkeypatch.setattr(
+            service,
+            "_fit_single_rate",
+            lambda *_args: (1.0, 0.0, 0.0),
+        )
+        monkeypatch.setattr(
+            service,
+            "_fit_multi_rate",
+            lambda *_args: (np.ones(2), 0.0, 0.0),
+        )
+
+        assert service._parametric_bootstrap(
+            np.array([1.0, 2.0]),
+            np.zeros((2, 2)),
+            {"r1": np.zeros((2, 2)), "r2": np.zeros((2, 2))},
+            ["r1", "r2"],
+            observed_lrt=0.0,
+            n_sim=1,
+            seed=1,
+        ) == (1.0, 1)
+
     def test_chi2_p_in_range(self, service):
         tree = service.read_tree_file()
         tree_tips = service.get_tip_names_from_tree(tree)
@@ -1286,6 +1592,71 @@ class TestRun:
         assert exc_info.value.messages == [
             "At least 2 distinct regimes are required."
         ]
+
+    def test_json_plot_run_handles_zero_single_rate(
+        self, default_args, tmp_path, monkeypatch
+    ):
+        default_args.json = True
+        default_args.plot = str(tmp_path / "regimes.png")
+        service = RateHeterogeneity(default_args)
+        tree = service.read_tree_file()
+        trait_values = {"A": 1.0, "B": 1.0, "C": 1.0}
+        regime_assignments = {"A": "r1", "B": "r1", "C": "r2"}
+        captured = {}
+        monkeypatch.setattr(service, "read_tree_file_unmodified", lambda: tree)
+        monkeypatch.setattr(
+            service,
+            "_parse_trait_file",
+            lambda *_args: trait_values,
+        )
+        monkeypatch.setattr(
+            service,
+            "_parse_regime_file",
+            lambda *_args: regime_assignments,
+        )
+        monkeypatch.setattr(
+            service,
+            "_prepare_shared_trait_regime_data",
+            lambda *_args: (
+                trait_values,
+                regime_assignments,
+                [],
+                ["A", "B", "C"],
+                ["r1", "r2"],
+            ),
+        )
+        monkeypatch.setattr(service, "_assign_branch_regimes", lambda *_args: {})
+        monkeypatch.setattr(
+            service,
+            "_build_per_regime_vcv",
+            lambda *_args: {"r1": np.eye(3), "r2": np.eye(3)},
+        )
+        monkeypatch.setattr(
+            service,
+            "_fit_single_rate",
+            lambda *_args: (0.0, 1.0, -2.0),
+        )
+        monkeypatch.setattr(
+            service,
+            "_fit_multi_rate",
+            lambda *_args: (np.array([1.0, 2.0]), 1.0, -1.5),
+        )
+        monkeypatch.setattr(
+            service,
+            "_plot_regime_tree",
+            lambda *args: captured.setdefault("plot_args", args),
+        )
+        monkeypatch.setattr(
+            rate_heterogeneity_module,
+            "print_json",
+            lambda result: captured.setdefault("result", result),
+        )
+
+        service.run()
+
+        assert captured["plot_args"][-1] == default_args.plot
+        assert captured["result"]["plot_output"] == default_args.plot
+        assert math.isnan(captured["result"]["r_squared_regime"])
 
     @patch("builtins.print")
     def test_text_output(self, mocked_print, default_args):
