@@ -90,6 +90,19 @@ def test_lazy_numpy_caches_resolved_attributes():
     assert lazy_np._module is not None
 
 
+def test_special_function_wrappers_cache_resolved_functions(monkeypatch):
+    monkeypatch.setattr(threshold_model_module, "_NDTR", None)
+    monkeypatch.setattr(threshold_model_module, "_NDTRI", None)
+
+    assert threshold_model_module.ndtr(0.0) == pytest.approx(0.5)
+    assert threshold_model_module.ndtri(0.5) == pytest.approx(0.0)
+    cached_ndtr = threshold_model_module._NDTR
+    cached_ndtri = threshold_model_module._NDTRI
+
+    assert threshold_model_module.ndtr(1.0) == cached_ndtr(1.0)
+    assert threshold_model_module.ndtri(0.75) == cached_ndtri(0.75)
+
+
 def test_vcv_inverse_and_logdet_cholesky_matches_inverse_and_slogdet():
     rng = np.random.default_rng(20260628)
     A = rng.normal(size=(8, 8))
@@ -137,6 +150,15 @@ def test_vcv_inverse_and_logdet_keeps_inverse_fallback():
 
     np.testing.assert_allclose(observed_inv, expected_inv)
     assert observed_logdet == pytest.approx(expected_logdet)
+
+
+def test_vcv_inverse_rejects_non_positive_definite_matrix():
+    matrix = np.array([[1.0, 2.0], [2.0, 1.0]])
+
+    with pytest.raises(PhykitUserError) as exc_info:
+        ThresholdModel._vcv_inverse_and_logdet(matrix)
+
+    assert exc_info.value.messages == ["VCV matrix is not positive definite."]
 
 
 def _make_tree():
@@ -747,6 +769,34 @@ class TestLogLikelihoodBivariateBM:
 
         assert ll_pos > ll_neg
 
+    @pytest.mark.parametrize(
+        ("stats", "sigma2_1", "sigma2_2", "r", "logdet_C"),
+        [
+            pytest.param((1.0, 0.0, 1.0, 0.0, 0.0, 1.0), np.nan, 1.0, 0.0, 0.0, id="non-finite-variance"),
+            pytest.param((1.0, 0.0, 1.0, 0.0, 0.0, 1.0), 0.0, 1.0, 0.0, 0.0, id="non-positive-variance"),
+            pytest.param((1.0, 0.0, 1.0, 0.0, 0.0, 1.0), 1.0, 1.0, 1.0, 0.0, id="singular-correlation"),
+            pytest.param((1.0, 0.0, 1.0, 0.0, 0.0, 1.0), 5e-324, 1.0, 0.5, 0.0, id="overflowing-inverse"),
+            pytest.param((np.nan, 0.0, 1.0, 0.0, 0.0, 1.0), 1.0, 1.0, 0.0, 0.0, id="non-finite-statistic"),
+            pytest.param((1e200, 0.0, 1.0, 0.0, 0.0, 1.0), 1e-200, 1.0, 0.0, 0.0, id="overflowing-quadratic"),
+            pytest.param((1.0, 0.0, 1.0, 0.0, 0.0, 1.0), 1.0, 1.0, 0.0, np.inf, id="non-finite-likelihood"),
+        ],
+    )
+    def test_invalid_parameters_and_statistics_return_negative_infinity(
+        self, stats, sigma2_1, sigma2_2, r, logdet_C
+    ):
+        observed = ThresholdModel._log_likelihood_bivariate_bm_from_stats(
+            stats,
+            sigma2_1,
+            sigma2_2,
+            r,
+            0.0,
+            0.0,
+            logdet_C,
+            1,
+        )
+
+        assert observed == -np.inf
+
 
 class TestSampleLiabilitiesGibbs:
     def test_inverse_cdf_truncated_normal_respects_bounds(self):
@@ -762,6 +812,119 @@ class TestSampleLiabilitiesGibbs:
 
         assert np.all(lower_samples <= 0.0)
         assert np.all(upper_samples >= 0.0)
+
+    def test_two_sided_truncated_normal_respects_bounds(self, monkeypatch):
+        monkeypatch.setattr(threshold_model_module, "_NDTRI", None)
+        rng = np.random.default_rng(20260717)
+
+        samples = np.array(
+            [
+                ThresholdModel._sample_truncated_normal(
+                    0.25,
+                    1.2,
+                    -0.5,
+                    1.0,
+                    rng,
+                )
+                for _ in range(100)
+            ]
+        )
+
+        assert np.all(samples >= -0.5)
+        assert np.all(samples <= 1.0)
+
+    def test_two_sided_truncated_normal_uses_scipy_fallback_for_empty_interval(
+        self, monkeypatch
+    ):
+        monkeypatch.setattr(
+            threshold_model_module,
+            "_truncnorm_rvs",
+            lambda *_args, **_kwargs: 12.5,
+        )
+
+        observed = ThresholdModel._sample_truncated_normal(
+            0.0,
+            1.0,
+            1.0,
+            -1.0,
+            np.random.default_rng(1),
+        )
+
+        assert observed == 12.5
+
+    def test_truncated_normal_helpers_clamp_extreme_probabilities(self, monkeypatch):
+        probabilities = []
+
+        class FixedRng:
+            def __init__(self, value):
+                self.value = value
+
+            def random(self):
+                return self.value
+
+        def capture_probability(value):
+            probabilities.append(value)
+            return 0.0
+
+        monkeypatch.setattr(threshold_model_module, "_NDTRI", capture_probability)
+
+        for random_value in (0.0, 1.0):
+            ThresholdModel._sample_truncated_normal(
+                0.0,
+                1.0,
+                -np.inf,
+                np.inf,
+                FixedRng(random_value),
+            )
+            ThresholdModel._sample_truncated_normal_below_zero(
+                -1_000.0,
+                1.0,
+                FixedRng(random_value),
+            )
+            ThresholdModel._sample_truncated_normal_above_zero(
+                1_000.0,
+                1.0,
+                FixedRng(random_value),
+            )
+
+        assert probabilities == [
+            ThresholdModel._FLOAT_TINY,
+            ThresholdModel._FLOAT_TINY,
+            ThresholdModel._FLOAT_TINY,
+            ThresholdModel._ONE_MINUS_EPS,
+            ThresholdModel._ONE_MINUS_EPS,
+            ThresholdModel._ONE_MINUS_EPS,
+        ]
+
+    @pytest.mark.parametrize(
+        ("sampler", "mu", "expected"),
+        [
+            pytest.param(
+                ThresholdModel._sample_truncated_normal_below_zero,
+                1_000.0,
+                -12.5,
+                id="below-zero",
+            ),
+            pytest.param(
+                ThresholdModel._sample_truncated_normal_above_zero,
+                -1_000.0,
+                12.5,
+                id="above-zero",
+            ),
+        ],
+    )
+    def test_one_sided_truncated_normal_uses_scipy_fallback(
+        self, monkeypatch, sampler, mu, expected
+    ):
+        monkeypatch.setattr(
+            threshold_model_module,
+            "_truncnorm_rvs",
+            lambda *_args, **_kwargs: expected,
+        )
+
+        observed = sampler(mu, 1.0, np.random.default_rng(1))
+
+        assert observed == expected
 
     def test_one_sided_truncated_normal_matches_inverse_cdf(self):
         def reference(mu, sd, lower, upper, rng):
@@ -1093,6 +1256,100 @@ class TestSampleLiabilitiesGibbs:
         assert np.all(observed[states == 0] <= 0.0)
         assert np.all(observed[states == 1] >= 0.0)
 
+    def test_gibbs_sampler_skips_invalid_conditionals(self):
+        liabilities = np.array([-0.5])
+        states = np.array([0])
+        matrix = np.array([[1.0]])
+        invalid_context = {
+            "c_inv_diag": np.array([1.0]),
+            "sd_cond": np.array([1.0]),
+            "valid": np.array([False]),
+        }
+
+        invalid_from_context = ThresholdModel._sample_liabilities_gibbs(
+            liabilities,
+            states,
+            matrix,
+            matrix,
+            1.0,
+            0.0,
+            liabilities,
+            1.0,
+            0.0,
+            0.0,
+            np.random.default_rng(1),
+            invalid_context,
+        )
+        zero_precision = ThresholdModel._sample_liabilities_gibbs(
+            liabilities,
+            states,
+            matrix,
+            np.array([[0.0]]),
+            1.0,
+            0.0,
+            liabilities,
+            1.0,
+            0.0,
+            0.0,
+            np.random.default_rng(1),
+        )
+        invalid_variance = ThresholdModel._sample_liabilities_gibbs(
+            liabilities,
+            states,
+            matrix,
+            matrix,
+            -1.0,
+            0.0,
+            liabilities,
+            1.0,
+            0.0,
+            0.0,
+            np.random.default_rng(1),
+        )
+
+        np.testing.assert_array_equal(invalid_from_context, liabilities)
+        np.testing.assert_array_equal(zero_precision, liabilities)
+        np.testing.assert_array_equal(invalid_variance, liabilities)
+
+    @pytest.mark.parametrize(
+        ("state", "cdf", "fallback_value"),
+        [
+            pytest.param(0, 0.0, -0.25, id="below-zero"),
+            pytest.param(1, 1.0, 0.25, id="above-zero"),
+        ],
+    )
+    def test_gibbs_sampler_uses_scipy_for_degenerate_tail(
+        self, monkeypatch, state, cdf, fallback_value
+    ):
+        monkeypatch.setattr(threshold_model_module, "_NDTR", lambda _value: cdf)
+        monkeypatch.setattr(
+            threshold_model_module,
+            "_truncnorm_rvs",
+            lambda *_args, **_kwargs: fallback_value,
+        )
+        liabilities = np.array([-0.5 if state == 0 else 0.5])
+
+        observed = ThresholdModel._sample_liabilities_gibbs(
+            liabilities,
+            np.array([state]),
+            np.eye(1),
+            np.eye(1),
+            1.0,
+            0.0,
+            liabilities,
+            1.0,
+            0.0,
+            0.0,
+            np.random.default_rng(1),
+        )
+
+        assert observed[0] == fallback_value
+
+    def test_prepare_gibbs_context_invalid_variance_disables_all_tips(self):
+        context = ThresholdModel._prepare_gibbs_context(np.eye(3), -1.0)
+
+        np.testing.assert_array_equal(context["valid"], [False, False, False])
+
 
 class TestComputeHPD:
     def test_known_normal_samples(self):
@@ -1185,6 +1442,22 @@ class TestComputeHPD:
         summary = ThresholdModel._summarize_posterior(mcmc_result)
 
         assert summary["r"]["mean"] == pytest.approx(float(samples.mean()))
+
+    def test_sample_mean_accepts_plain_sequences(self):
+        assert ThresholdModel._sample_mean([1.0, 2.0, 3.0]) == 2.0
+
+    def test_summarize_posterior_handles_empty_traces(self):
+        mcmc_result = {
+            param: np.array([])
+            for param in ("r", "sigma2_1", "sigma2_2", "a1", "a2")
+        }
+        mcmc_result["acceptance_rates"] = {"r": 0.0}
+
+        summary = ThresholdModel._summarize_posterior(mcmc_result)
+
+        for param in ("r", "sigma2_1", "sigma2_2", "a1", "a2"):
+            assert all(math.isnan(value) for value in summary[param].values())
+        assert summary["acceptance_rates"] == {"r": 0.0}
 
 
 class TestRunMCMC:
@@ -1412,6 +1685,73 @@ class TestRunMCMC:
         assert len(result["r"]) > 0
         assert np.all(result["sigma2_1"] > 0)
 
+    def test_continuous_discrete_updates_second_trait_liabilities(self):
+        tree = _make_tree()
+        names = sorted(tip.name for tip in tree.get_terminals())
+        C = ThresholdModel._build_vcv_matrix(tree, names)
+        trait1 = {"A": 0.2, "B": 1.0, "C": 0.4, "D": 1.2}
+        trait2 = {"A": 0.0, "B": 1.0, "C": 0.0, "D": 1.0}
+
+        result = ThresholdModel._run_mcmc(
+            trait1,
+            trait2,
+            "continuous",
+            "discrete",
+            names,
+            C,
+            5,
+            1,
+            0.0,
+            np.random.default_rng(20260717),
+        )
+
+        np.testing.assert_array_equal(result["sigma2_2"], np.ones(5))
+        np.testing.assert_array_equal(result["a2"], np.zeros(5))
+
+    def test_zero_generation_chain_returns_empty_samples(self):
+        names = ["A", "B"]
+        traits = {"A": 1.0, "B": 2.0}
+
+        result = ThresholdModel._run_mcmc(
+            traits,
+            traits,
+            "continuous",
+            "continuous",
+            names,
+            np.eye(2),
+            0,
+            1,
+            0.0,
+            np.random.default_rng(20260717),
+        )
+
+        assert result["r"].size == 0
+        assert all(rate == 0.0 for rate in result["acceptance_rates"].values())
+
+    def test_non_positive_mean_diagonal_uses_unit_scale(self, monkeypatch):
+        names = ["A", "B"]
+        traits = {"A": 1.0, "B": 2.0}
+        monkeypatch.setattr(
+            ThresholdModel,
+            "_vcv_inverse_and_logdet",
+            staticmethod(lambda _matrix: (np.eye(2), 0.0)),
+        )
+
+        result = ThresholdModel._run_mcmc(
+            traits,
+            traits,
+            "continuous",
+            "continuous",
+            names,
+            np.zeros((2, 2)),
+            1,
+            1,
+            0.0,
+            np.random.default_rng(20260717),
+        )
+
+        assert result["sigma2_1"].shape == (1,)
+
 
 class TestRun:
     @staticmethod
@@ -1586,6 +1926,20 @@ class TestRun:
             "sigma2_2=0.346, a1=0.457, a2=0.568"
         )
 
+    def test_output_text_ignores_broken_pipe(self, monkeypatch):
+        svc = ThresholdModel(self._make_args())
+        summary = {
+            param: {"mean": 0.0, "hpd_lower": -1.0, "hpd_upper": 1.0}
+            for param in ("r", "sigma2_1", "sigma2_2")
+        }
+        summary["acceptance_rates"] = {}
+        monkeypatch.setattr(
+            "builtins.print",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(BrokenPipeError),
+        )
+
+        assert svc._output_text(summary) is None
+
     def test_json_output(self, capsys):
         args = Namespace(
             tree=TREE_SIMPLE,
@@ -1631,6 +1985,32 @@ class TestRun:
         monkeypatch.setattr(Figure, "tight_layout", fail_tight_layout)
 
         output_path = tmp_path / "trace.png"
+        svc._plot_trace(mcmc_result, str(output_path))
+
+        assert output_path.exists()
+
+    def test_plot_trace_handles_fixed_parameters_without_titles(
+        self, monkeypatch, tmp_path
+    ):
+        pytest.importorskip("matplotlib")
+        import matplotlib
+        from matplotlib.axes import Axes
+
+        matplotlib.use("Agg")
+        svc = ThresholdModel(self._make_args())
+        svc.plot_config.show_title = False
+        mcmc_result = {
+            "r": np.array([-0.2, 0.0, 0.2, 0.4]),
+            "sigma2_1": np.ones(4),
+            "sigma2_2": np.full(4, 2.0),
+        }
+
+        def fail_set_title(*_args, **_kwargs):
+            raise AssertionError("titles should be disabled")
+
+        monkeypatch.setattr(Axes, "set_title", fail_set_title)
+
+        output_path = tmp_path / "fixed-trace.png"
         svc._plot_trace(mcmc_result, str(output_path))
 
         assert output_path.exists()
