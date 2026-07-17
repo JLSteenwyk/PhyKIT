@@ -39,6 +39,21 @@ reconstruction coverage batches. Relative to the baseline, the suite covers
 950 additional statements and 497 additional branches while retaining the
 full branch-enabled unit and integration runs.
 
+## Second progress checkpoint
+
+- Date: 2026-07-17
+- Commit: `f7de88e6`
+- Unit tests: 5,597 passed, 867 deselected
+- Integration tests: 859 passed, 5,605 deselected
+- Statements: 44,007 of 48,110 covered (91.47%)
+- Branches: 14,411 of 17,244 covered (83.57%)
+- Partial branches: 2,017
+- Combined statement-plus-branch coverage: 89.39%
+
+This checkpoint adds the OUwie and shared VCV utility coverage batches. Since
+the baseline, the suite covers 1,251 additional statements and 656 additional
+branches, increasing combined coverage by 2.92 percentage points.
+
 ## Reproduction
 
 Run the complete unit and integration suites and create an aggregate report:
