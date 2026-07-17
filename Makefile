@@ -127,6 +127,16 @@ test.fast:
 # used by GitHub actions during CI workflow
 test.coverage: coverage.unit coverage.integration
 
+# Reproduce a local aggregate comparable across coverage-improvement commits.
+coverage.combined:
+	python -m coverage erase
+	python -m pytest --cov=phykit --cov-branch -m "not (integration or validation)" --cov-report=
+	rm -rf output/
+	mkdir output/
+	python -m pytest --basetemp=output --cov=phykit --cov-branch --cov-append -m "integration" --cov-report=
+	python -m coverage report --precision=2
+	python -m coverage json -o output/combined.coverage.json
+
 coverage.unit:
 	python -m pytest --cov=phykit --cov-branch --cov-fail-under=80 -m "not (integration or validation)" --cov-report=xml:unit.coverage.xml
 
