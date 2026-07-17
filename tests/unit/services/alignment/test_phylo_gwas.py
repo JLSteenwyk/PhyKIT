@@ -2229,3 +2229,319 @@ class TestPhyloGwas:
         )
 
         assert result is None
+
+    def test_statistical_helpers_cover_boundaries_and_vector_bh(self, monkeypatch):
+        from scipy.special import chdtrc
+
+        assert phylo_gwas_module._bounded_ascii_count_dtype(0xFFFF) is np.uint16
+        assert phylo_gwas_module._bounded_ascii_count_dtype(0x10000) is np.uint32
+        assert phylo_gwas_module._bounded_ascii_count_dtype(
+            0x100000000
+        ) is np.uint64
+        assert phylo_gwas_module._chi2_sf_integer_df(0, 4.0) == 1.0
+
+        monkeypatch.setattr(phylo_gwas_module, "_CHDTRC", None)
+        observed = phylo_gwas_module._chi2_sf_integer_df(10, 4.0)
+        assert observed == pytest.approx(float(chdtrc(10, 4.0)))
+        assert phylo_gwas_module._CHDTRC is not None
+
+        cache = {}
+        assert phylo_gwas_module._fisher_exact_2x2_counts(
+            0, 0, 0, 0, cache
+        ) == 1.0
+        assert cache[(0, 0, 0, 0)] == 1.0
+
+        p_values = [0.04, 0.01, 0.20, 0.03, 0.8, 0.5, 0.002, 0.9]
+        adjusted = PhyloGwas._benjamini_hochberg(p_values)
+        scalar_reference = []
+        for index, p_value in enumerate(p_values):
+            rank = 1 + sum(value < p_value for value in p_values)
+            candidates = [
+                value * len(p_values) / (1 + offset)
+                for offset, value in enumerate(sorted(p_values))
+                if offset + 1 >= rank
+            ]
+            scalar_reference.append(min(1.0, min(candidates)))
+        np.testing.assert_allclose(adjusted, scalar_reference)
+
+    def test_ascii_prefilter_and_allele_helpers_cover_empty_and_sampled_inputs(self):
+        valid_empty = np.zeros(4, dtype=bool)
+        assert PhyloGwas._should_prefilter_biallelic_ascii_columns(
+            np.empty((3, 4), dtype=np.uint8),
+            valid_empty,
+        ) is False
+
+        column = np.array([ord("A"), ord("A"), ord("G"), ord("G")], dtype=np.uint8)
+        matrix = np.tile(column[:, None], (1, 600))
+        assert PhyloGwas._should_prefilter_biallelic_ascii_columns(
+            matrix,
+            np.ones(600, dtype=bool),
+        ) is False
+
+        assert PhyloGwas._major_minor_bytes(np.array([], dtype=np.uint8)) is None
+        assert PhyloGwas._major_minor_bytes(
+            np.array([ord("A"), ord("G"), ord("G")], dtype=np.uint8)
+        ) == (ord("G"), ord("A"), 1)
+        group_codes = np.array([0, 0, 1], dtype=np.intp)
+        assert PhyloGwas._major_minor_two_group_counts(
+            np.array([], dtype=np.uint8), group_codes[:0]
+        ) is None
+        assert PhyloGwas._major_minor_two_group_counts(
+            np.array([ord("A"), ord("A"), ord("A")], dtype=np.uint8),
+            group_codes,
+        ) is None
+        assert PhyloGwas._major_minor_two_group_counts(
+            np.array([ord("A"), ord("C"), ord("G")], dtype=np.uint8),
+            group_codes,
+        ) is None
+        assert PhyloGwas._major_minor_two_group_counts(
+            np.array([ord("A"), ord("G"), ord("G")], dtype=np.uint8),
+            group_codes,
+        ) == (ord("G"), ord("A"), (1, 0))
+
+    def test_categorical_degenerate_groups_and_late_unicode_fallback(self):
+        service = PhyloGwas.__new__(PhyloGwas)
+        assert service._starts_with_non_ascii_allele([]) is False
+
+        result = service._test_site_categorical(
+            ["A", "Ω", "A", "Ω"],
+            ["x", "x", "y", "y"],
+            ["x", "y"],
+        )
+        assert result is not None
+        assert {result[1], result[2]} == {"A", "Ω"}
+
+        assert service._test_site_categorical(
+            ["A", "G"],
+            ["x", "y"],
+            ["x", "y", "missing"],
+        ) is None
+
+        one_group = service._test_site_categorical(
+            ["A", "A", "G", "G"],
+            ["x", "x", "x", "x"],
+            ["x"],
+        )
+        assert one_group[0] == 1.0
+
+    def test_continuous_degenerate_perfect_and_nan_results(self):
+        service = PhyloGwas.__new__(PhyloGwas)
+        assert service._test_site_continuous(
+            ["A", "A", "G", "G"],
+            [1.0, 1.0, 1.0, 1.0],
+        ) is None
+
+        perfect = service._test_site_continuous(
+            ["A", "A", "G", "G"],
+            [1.0, 1.0, 2.0, 2.0],
+        )
+        assert perfect[0] == 0.0
+        assert abs(perfect[3]) == 1.0
+
+        late_unicode = service._test_site_continuous(
+            ["A", "Ω", "A", "Ω"],
+            [1.0, 3.0, 2.0, 4.0],
+        )
+        assert late_unicode is not None
+
+        nan_result = service._test_site_continuous(
+            ["A", "A", "G", "G"],
+            [1.0, 2.0, 3.0, 4.0],
+            phenotype_centered=np.full(4, np.nan),
+            phenotype_ss=1.0,
+        )
+        assert np.isnan(nan_result[0])
+        assert np.isnan(nan_result[3])
+
+    def test_phylo_pattern_legacy_traversal_and_error_fallbacks(self):
+        class Clade:
+            def __init__(self, name=None, children=None):
+                self.name = name
+                self.clades = children or []
+
+            def is_terminal(self):
+                return not self.clades
+
+        a = Clade("a")
+        b = Clade("b")
+        root = Clade(children=[a, b])
+
+        class LegacyTree:
+            def find_clades(self, order=None):
+                assert order == "postorder"
+                return [a, b, root]
+
+            def get_terminals(self):
+                return [a, b]
+
+            def common_ancestor(self, _taxa):
+                raise ValueError("unknown taxon")
+
+        tree = LegacyTree()
+        patterns = PhyloGwas._build_phylo_pattern_index(tree)
+
+        assert frozenset({"a", "b"}) in patterns
+        assert PhyloGwas._terminal_clades(tree) == [a, b]
+        assert PhyloGwas._classify_phylo_pattern(
+            tree,
+            ["a", "missing"],
+        ) == "polyphyletic"
+
+    def test_run_rejects_unequal_alignment_lengths(self, tmp_path, capsys):
+        args = _make_args(
+            tmp_path,
+            seqs={
+                "a": "AA",
+                "b": "AA",
+                "c": "AA",
+                "d": "A",
+            },
+            pheno={"a": "x", "b": "x", "c": "y", "d": "y"},
+        )
+
+        with pytest.raises(SystemExit) as exc_info:
+            PhyloGwas(args).run()
+
+        assert exc_info.value.code == 2
+        assert "sequences have unequal lengths" in capsys.readouterr().out
+
+    def test_unicode_run_skips_invalid_sites_and_marks_tree_nonsignificant(
+        self, tmp_path, monkeypatch
+    ):
+        seqs = {
+            "a": "AΩ-α",
+            "b": "AΩAβ",
+            "c": "AΨAγ",
+            "d": "AΨAα",
+        }
+        pheno = {"a": "x", "b": "x", "c": "y", "d": "y"}
+        args = _make_args(
+            tmp_path,
+            seqs=seqs,
+            pheno=pheno,
+            tree="((a,b),(c,d));",
+            alpha=0.0,
+        )
+        service = PhyloGwas(args)
+        captured = {}
+        monkeypatch.setattr(service, "_create_manhattan_plot", lambda *_args: None)
+
+        def capture_text(*call_args):
+            captured["site_results"] = call_args[6]
+
+        monkeypatch.setattr(service, "_print_text_output", capture_text)
+
+        service.run()
+
+        assert captured["site_results"]
+        assert all(
+            result["phylo_pattern"] is None
+            for result in captured["site_results"]
+        )
+
+    def test_continuous_run_skips_site_without_phenotype_variance(
+        self, tmp_path, monkeypatch
+    ):
+        args = _make_args(
+            tmp_path,
+            seqs={"a": "A", "b": "A", "c": "G", "d": "G"},
+            pheno={"a": "1", "b": "1", "c": "1", "d": "1"},
+        )
+        service = PhyloGwas(args)
+        monkeypatch.setattr(service, "_create_manhattan_plot", lambda *_args: None)
+        captured = {}
+        monkeypatch.setattr(
+            service,
+            "_print_text_output",
+            lambda *call_args: captured.setdefault("site_results", call_args[6]),
+        )
+
+        service.run()
+
+        assert captured["site_results"] == []
+
+    def test_continuous_significant_text_and_broken_pipe(self, tmp_path, mocker):
+        service = PhyloGwas(_make_args(tmp_path, pheno=PHENO_CONTINUOUS))
+        result = {
+            "position": 2,
+            "gene": None,
+            "allele_0": "A",
+            "allele_1": "G",
+            "correlation_r": 0.9,
+            "p_value": 0.001,
+            "fdr_p_value": 0.002,
+            "fdr_significant": True,
+            "phylo_pattern": None,
+        }
+        mocked_print = mocker.patch("builtins.print")
+
+        service._print_text_output(
+            8, 5, "continuous", True, [], None, [result], [result], 0, 0, False
+        )
+        assert "Top significant sites" in mocked_print.call_args.args[0]
+
+        mocked_print.side_effect = BrokenPipeError
+        service._print_text_output(
+            8, 5, "continuous", True, [], None, [result], [result], 0, 0, False
+        )
+
+    def test_empty_plot_missing_matplotlib_and_cache_edges(
+        self, tmp_path, monkeypatch
+    ):
+        service = PhyloGwas(_make_args(tmp_path))
+        service._create_manhattan_plot([], [], False)
+        assert Path(service.output_path).stat().st_size > 0
+
+        empty_key = service._manhattan_plot_cache_key([], [], False)
+        assert empty_key[0] == "empty"
+        monkeypatch.setattr(
+            phylo_gwas_module,
+            "_MANHATTAN_PLOT_CACHE_MAX_ROWS",
+            1,
+        )
+        assert service._manhattan_plot_cache_key(
+            [{"position": 1}, {"position": 2}], [], False
+        ) is None
+        service._store_manhattan_plot_cache(None)
+
+        rendered_output = service.output_path
+        service.output_path = str(tmp_path / "absent.png")
+        service._store_manhattan_plot_cache(("missing",))
+        service.output_path = rendered_output
+
+        phylo_gwas_module._MANHATTAN_PLOT_CACHE.clear()
+        phylo_gwas_module._MANHATTAN_PLOT_CACHE[("old",)] = b"old"
+        monkeypatch.setattr(phylo_gwas_module, "_MANHATTAN_PLOT_CACHE_MAX", 1)
+        service._store_manhattan_plot_cache(empty_key)
+        assert ("old",) not in phylo_gwas_module._MANHATTAN_PLOT_CACHE
+
+    def test_plot_reports_missing_matplotlib(self, tmp_path, monkeypatch, capsys):
+        service = PhyloGwas(_make_args(tmp_path))
+        original_import = builtins.__import__
+
+        def fake_import(name, globals=None, locals=None, fromlist=(), level=0):
+            if name.startswith("matplotlib"):
+                raise ImportError("matplotlib unavailable")
+            return original_import(name, globals, locals, fromlist, level)
+
+        monkeypatch.setattr(builtins, "__import__", fake_import)
+
+        with pytest.raises(SystemExit) as exc_info:
+            service._create_manhattan_plot(
+                [{"position": 1, "p_value": 0.5, "fdr_significant": False}],
+                [],
+                False,
+            )
+
+        assert exc_info.value.code == 2
+        assert "matplotlib is required for phylo_gwas" in capsys.readouterr().out
+
+    def test_write_continuous_csv_accepts_incomplete_rows(self, tmp_path):
+        csv_path = tmp_path / "incomplete.csv"
+        service = PhyloGwas(_make_args(tmp_path, csv=str(csv_path)))
+
+        service._write_csv([{"position": 1}], is_continuous=True)
+
+        rows = list(csv.reader(csv_path.open()))
+        assert rows[1][0] == "1"
+        assert rows[1][4] == ""

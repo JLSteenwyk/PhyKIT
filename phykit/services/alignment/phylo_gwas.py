@@ -1050,6 +1050,8 @@ class PhyloGwas(Alignment):
         pheno_values = [phenotypes[t] for t in shared_taxa]
         pheno_type = self._detect_phenotype_type(pheno_values)
         is_continuous = pheno_type == "continuous"
+        unique_groups = []
+        group_counts = None
 
         if is_continuous:
             from scipy.special import stdtr
