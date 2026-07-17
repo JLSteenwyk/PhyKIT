@@ -58,7 +58,8 @@ setup(
 
 ## push new version to pypi
 # rm -rf dist
-# python3 setup.py sdist bdist_wheel --universal
-# twine upload dist/* -r pypi
+# python3 -m build
+# python3 -m twine check dist/*
+# python3 -m twine upload dist/* -r pypi
 # then push to anaconda
 #
