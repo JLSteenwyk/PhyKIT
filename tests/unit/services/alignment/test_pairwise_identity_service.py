@@ -156,6 +156,93 @@ def test_small_value_summary_matches_shared_helper():
     ) == pytest.approx(calculate_summary_statistics_from_arr(values))
 
 
+def test_pairwise_identity_helper_edge_cases():
+    assert pairwise_identity_module._pair_ids_follow_taxa_upper_triangle(
+        ["a", "b", "c"],
+        [["a", "b"]],
+    ) is False
+    assert pairwise_identity_module._alignment_size(iter(())) is None
+    assert pairwise_identity_module._all_sequences_identical([]) is True
+    assert pairwise_identity_module._identity_for_identical_sequence(
+        "", False, True
+    ) == 0.0
+    assert pairwise_identity_module._identity_for_identical_sequence(
+        "AΩ-", False, True
+    ) == pytest.approx(2 / 3)
+
+    counts = np.zeros((2, 2), dtype=np.float32)
+    np.testing.assert_array_equal(
+        pairwise_identity_module._identity_values_from_count_matrix(counts, 0),
+        np.array([0.0]),
+    )
+    assert pairwise_identity_module._linear_percentile([0.2, 0.8], 1.0) == 0.8
+
+    empty_stats = pairwise_identity_module._summary_statistics_from_small_values([])
+    constant_stats = pairwise_identity_module._summary_statistics_from_small_values(
+        [0.75, 0.75, 0.75]
+    )
+    assert empty_stats is None
+    assert constant_stats["mean"] == 0.75
+    assert constant_stats["variance"] == 0.0
+    assert pairwise_identity_module._constant_identity_stats(0.5, 1) is None
+
+    matrix = np.full((2, 3), ord("A"), dtype=np.uint8)
+    observed = _clean_nucleotide_identity_counts(
+        matrix,
+        matrix.tobytes(),
+        is_protein=False,
+    )
+    np.testing.assert_array_equal(observed, np.full((2, 2), 3.0))
+
+
+def test_lazy_multiprocessing_pool_delegates_to_cached_module():
+    lazy_mp = pairwise_identity_module._LazyMultiprocessing()
+    sentinel = object()
+
+    with patch.object(multiprocessing, "Pool", return_value=sentinel) as pool:
+        assert lazy_mp.Pool(processes=3) is sentinel
+
+    pool.assert_called_once_with(processes=3)
+    assert lazy_mp._module is multiprocessing
+
+
+def test_print_summary_statistics_ignores_broken_pipe(mocker):
+    mocked_print = mocker.patch("builtins.print", side_effect=BrokenPipeError)
+
+    pairwise_identity_module.print_summary_statistics(
+        {
+            "mean": 0.5,
+            "median": 0.5,
+            "twenty_fifth": 0.25,
+            "seventy_fifth": 0.75,
+            "minimum": 0.0,
+            "maximum": 1.0,
+            "standard_deviation": 0.1,
+            "variance": 0.01,
+        }
+    )
+
+    mocked_print.assert_called_once()
+
+
+def test_tqdm_returns_iterable_when_optional_dependency_is_missing(monkeypatch):
+    original_import = builtins.__import__
+
+    def fake_import(name, globals=None, locals=None, fromlist=(), level=0):
+        if name == "tqdm":
+            raise ImportError("tqdm unavailable")
+        return original_import(name, globals, locals, fromlist, level)
+
+    monkeypatch.setattr(builtins, "__import__", fake_import)
+    values = [1, 2, 3]
+
+    assert pairwise_identity_module.tqdm(values) is values
+
+
+def test_tqdm_delegates_when_optional_dependency_is_available():
+    assert list(pairwise_identity_module.tqdm([1, 2], disable=True)) == [1, 2]
+
+
 def test_module_import_does_not_import_scipy_clustering(monkeypatch):
     module_name = "phykit.services.alignment.pairwise_identity"
     previous = sys.modules.pop(module_name, None)
@@ -1342,3 +1429,245 @@ assert "phykit.helpers.plot_config" not in sys.modules
         assert len(identities) == 2080
         assert 0.0 <= stats["mean"] <= 1.0
         mocked_pool.assert_not_called()
+
+    def test_scalar_helpers_cover_empty_oversized_and_uneven_inputs(
+        self, monkeypatch
+    ):
+        one_record = [SimpleNamespace(id="a", seq="ACGT")]
+        uneven_records = [
+            SimpleNamespace(id="a", seq="ACGT"),
+            SimpleNamespace(id="b", seq="ACG"),
+        ]
+        empty_records = [
+            SimpleNamespace(id="a", seq=""),
+            SimpleNamespace(id="b", seq=""),
+        ]
+
+        assert pairwise_identity_module._pairwise_identity_stats_scalar(
+            one_record, False, False
+        ) is None
+        assert pairwise_identity_module._pairwise_identities_scalar(
+            one_record, False, False
+        ) is None
+        assert pairwise_identity_module._pairwise_identities_scalar(
+            uneven_records, False, False
+        ) is None
+
+        monkeypatch.setattr(
+            pairwise_identity_module,
+            "_PAIRWISE_IDENTITY_SCALAR_STATS_MAX_CELLS",
+            1,
+        )
+        monkeypatch.setattr(
+            pairwise_identity_module,
+            "_PAIRWISE_IDENTITY_SCALAR_RESULT_MAX_CELLS",
+            1,
+        )
+        records = [
+            SimpleNamespace(id="a", seq="AA"),
+            SimpleNamespace(id="b", seq="AT"),
+        ]
+        assert pairwise_identity_module._pairwise_identity_stats_scalar(
+            records, False, False
+        ) is None
+        assert pairwise_identity_module._pairwise_identities_scalar(
+            records, False, False
+        ) is None
+
+        empty_result = pairwise_identity_module._pairwise_identities_scalar(
+            empty_records, False, False
+        )
+        assert empty_result[1] == {"a-b": 0.0}
+        assert empty_result[2] is None
+
+    def test_matrix_helpers_reject_invalid_and_unicode_alignments(self, args):
+        service = PairwiseIdentity(args)
+        one_record = [SimpleNamespace(id="a", seq="ACGT")]
+        uneven_records = [
+            SimpleNamespace(id="a", seq="ACGT"),
+            SimpleNamespace(id="b", seq="ACG"),
+        ]
+        unicode_records = [
+            SimpleNamespace(id="a", seq="AΩGT"),
+            SimpleNamespace(id="b", seq="TΩGT"),
+        ]
+
+        for records in (one_record, uneven_records, unicode_records):
+            assert service._calculate_pairwise_identities_matrix(
+                records, False, False
+            ) is None
+            assert service._calculate_pairwise_identity_stats_matrix(
+                records, False, False
+            ) is None
+
+    def test_protein_gap_lookup_and_unicode_gap_array(self, args):
+        service = PairwiseIdentity(args)
+        PairwiseIdentity._PROTEIN_GAP_LOOKUP = None
+
+        lookup = service._get_gap_lookup(is_protein=True)
+        unicode_sequence = service._sequence_to_array("AΩ-")
+        unicode_gaps = service._gap_chars_array_for_sequence(
+            unicode_sequence,
+            {"-", "Ω"},
+        )
+        byte_sequence = service._sequence_to_array("AC-")
+        unicode_fallback_gaps = service._gap_chars_array_for_sequence(
+            byte_sequence,
+            {"Ω"},
+        )
+
+        assert lookup[ord("-")]
+        assert lookup[ord("X")]
+        assert not lookup[ord("N")]
+        assert unicode_gaps.dtype.kind == "U"
+        assert unicode_fallback_gaps.dtype.kind == "U"
+        assert np.isin(unicode_sequence, unicode_gaps).tolist() == [
+            False,
+            True,
+            True,
+        ]
+
+    def test_process_pair_batch_builds_missing_gap_masks(self, args):
+        service = PairwiseIdentity(args)
+        alignment_data = [
+            {"id": "a", "seq": service._sequence_to_array("AC-T")},
+            {"id": "b", "seq": service._sequence_to_array("ACGT")},
+        ]
+
+        result = service._process_pair_batch(
+            alignment_data,
+            [(0, 1)],
+            exclude_gaps=True,
+            gap_chars={"-", "?", "*", "X", "N"},
+        )
+
+        assert result == [{"pair_id": ["a", "b"], "identity": 0.75}]
+
+    def test_stats_matrix_protein_fallback_matches_full_result(self, args):
+        service = PairwiseIdentity(args)
+        records = [
+            SimpleNamespace(id="a", seq="ARND"),
+            SimpleNamespace(id="b", seq="ARNE"),
+            SimpleNamespace(id="c", seq="TRNE"),
+        ]
+
+        stats = service._calculate_pairwise_identity_stats_matrix(
+            records,
+            is_protein=True,
+            exclude_gaps=False,
+        )
+        expected = pairwise_identity_module._pairwise_identities_scalar(
+            records,
+            is_protein=True,
+            exclude_gaps=False,
+        )[2]
+
+        assert stats == pytest.approx(expected)
+
+    @pytest.mark.parametrize("stderr_is_tty", [False, True])
+    def test_unicode_fallback_reaches_multiprocessing_backend(
+        self, args, mocker, monkeypatch, stderr_is_tty
+    ):
+        class ReiterableWithoutLength:
+            def __init__(self, records):
+                self.records = records
+
+            def __iter__(self):
+                return iter(self.records)
+
+            def __len__(self):
+                raise TypeError("length unavailable")
+
+        class FakePool:
+            def __init__(self, processes):
+                self.processes = processes
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                return False
+
+            def map(self, process_func, chunks):
+                return [process_func(chunk) for chunk in chunks]
+
+            def imap(self, process_func, chunks):
+                return (process_func(chunk) for chunk in chunks)
+
+        records = ReiterableWithoutLength(
+            [
+                SimpleNamespace(id="a", seq="AΩAA"),
+                SimpleNamespace(id="b", seq="AΩAT"),
+                SimpleNamespace(id="c", seq="CΩAT"),
+            ]
+        )
+        service = PairwiseIdentity(args)
+        mocker.patch.object(
+            PairwiseIdentity,
+            "_should_use_multiprocessing",
+            return_value=True,
+        )
+        mocker.patch(
+            "phykit.services.alignment.pairwise_identity.mp.Pool",
+            FakePool,
+        )
+        mocker.patch(
+            "phykit.services.alignment.pairwise_identity.mp.cpu_count",
+            return_value=2,
+        )
+        progress_calls = []
+        mocker.patch(
+            "phykit.services.alignment.pairwise_identity.tqdm",
+            side_effect=lambda iterable, **kwargs: (
+                progress_calls.append(kwargs) or iterable
+            ),
+        )
+        monkeypatch.setattr(
+            pairwise_identity_module.sys.stderr,
+            "isatty",
+            lambda: stderr_is_tty,
+        )
+
+        pair_ids, identities, stats = service.calculate_pairwise_identities(
+            records,
+            exclude_gaps=False,
+            is_protein=False,
+        )
+
+        assert pair_ids == [["a", "b"], ["a", "c"], ["b", "c"]]
+        assert identities == {"a-b": 0.75, "a-c": 0.5, "b-c": 0.75}
+        assert stats["mean"] == pytest.approx(2 / 3)
+        assert bool(progress_calls) is stderr_is_tty
+        if stderr_is_tty:
+            assert progress_calls[0]["total"] == 3
+
+    def test_stats_unicode_fallback_matches_pairwise_results(
+        self, args, mocker
+    ):
+        class ReiterableWithoutLength:
+            def __iter__(self):
+                return iter(
+                    [
+                        SimpleNamespace(id="a", seq="AΩAA"),
+                        SimpleNamespace(id="b", seq="AΩAT"),
+                        SimpleNamespace(id="c", seq="CΩAT"),
+                    ]
+                )
+
+            def __len__(self):
+                raise TypeError("length unavailable")
+
+        service = PairwiseIdentity(args)
+        mocker.patch.object(
+            PairwiseIdentity,
+            "_should_use_multiprocessing",
+            return_value=False,
+        )
+
+        stats = service.calculate_pairwise_identity_stats(
+            ReiterableWithoutLength(),
+            exclude_gaps=False,
+            is_protein=False,
+        )
+
+        assert stats["mean"] == pytest.approx(2 / 3)

@@ -1023,7 +1023,7 @@ class PairwiseIdentity(Alignment):
                 if sys.stderr.isatty():
                     chunk_results = list(tqdm(
                         pool.imap(process_func, pair_chunks),
-                        total=len(pair_chunks),
+                        total=(n_pairs + chunk_size - 1) // chunk_size,
                         desc="Calculating pairwise identities",
                         unit="batch"
                     ))
