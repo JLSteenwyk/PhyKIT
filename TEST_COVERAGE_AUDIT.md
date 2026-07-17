@@ -60,6 +60,7 @@ serialization contract. This avoids treating filenames as proof of a gap.
 | Critical | Installed entry points | Registry/spec/wheel metadata parity is checked, and 121 manually listed tests invoke `python -m phykit`; installed targets were not loaded. | Registry-derived checks require every handler and module wrapper to be callable, load all 318 entry points from an installed wheel, and run `--help` through all 109 canonical `pk_*` executables. | Completed and enforced in CI |
 | High | Concatenation integrity | Valid sequential/process workflows and output files were covered, but the paths handled duplicates differently. | Sequential, process-pool, and deterministic fallback paths now reject duplicate taxa and unequal within-locus lengths with identical context before writing; tests assert no FASTA, partition, occupancy, plot, or temporary artifacts. | Completed |
 | High | Codon dN/dS ML | NG86/LWL85/YN00 numerical references, argument forwarding, stop/gap behavior, JSON, and CLI errors are covered. | Real F1x4, F3x4, and F61 estimates now have numerical regressions; identical pairs return exact zeros; alternate-code and estimator-failure paths are covered; F61 runs through the CLI; and optional PAML `codeml` validation supplies an independent F3x4 oracle. Compatibility handling repairs F1x4/F61 on supported Biopython releases whose private ML implementation adds `dict_keys` to a list. | Completed |
+| High | Threshold MCMC proposals | Short chains covered bounds, sampling, reproducibility, and ordinary adaptive tuning, but no test reached prolonged high-acceptance adaptation. | A 100,000-generation phytools comparison exposed an effectively nonterminating repeated-reflection loop after proposal variance grew very large. Correlation proposals now use constant-time reflection, reject non-finite values, and cap proposal standard deviation at half the bounded domain width; huge-value and repeated-adaptation regressions cover the failure, and the unchanged external comparison completes. | Completed |
 | High | Shared trait parsing | Comments, filtering, widths, ordinary nonnumeric values, and optimized ordered paths were covered. | The shared parser now rejects duplicate/blank taxa, duplicate/blank trait headers, and `nan`/infinite values with logical row, taxon, trait, and raw-value context; a PGLS CLI regression verifies exit code 2 and rendering. | Completed |
 | High | Newick boundaries | Valid fast paths are compared with Bio.Phylo and malformed numbers fall back. | The shared loader now rejects empty or multiple documents, unmatched structure, missing terminators, trailing content, invalid/non-finite lengths, and duplicate/blank tips; valid quoted/commented/scientific-notation trees are compared with Bio.Phylo, and `tip_labels` verifies exit code 2 without result output or traceback. | Completed |
 | High | Branch-length domains | Missing lengths, defaults, minimum tips, valid zero-length cases, and comparative calculations are covered. | Shared analysis validation now rejects negative and non-finite non-root lengths for required and default-filled branch workflows, names the branch/value/context, preserves zero-length edges, covers standard and fallback trees, and prevents `phylogenetic_signal --json` from emitting a result. | Completed |
@@ -76,7 +77,8 @@ serialization contract. This avoids treating filenames as proof of a gap.
    dedicated `make test.validation` target, outside ordinary unit coverage;
    primary test targets use the active `python` environment consistently.
 3. **Completed:** threshold/phytools parsing ignores unrelated R output, checks
-   required keys, and shares each seeded 100,000-generation run across assertions.
+   required keys, and shares each seeded 100,000-generation run across assertions;
+   the complete PAML, phangorn, and phytools suite passes eight tests in 69.82s.
 4. **Completed:** broken-pipe integration tests now close an unbuffered
    producer's stdout directly and assert PhyKIT's own return code and stderr;
    this exposed and fixed uncaught completion output in concatenation and
@@ -100,7 +102,55 @@ serialization contract. This avoids treating filenames as proof of a gap.
   every installed target, run canonical help, and reserve real workflows for
   representative aliases and commands.
 
-## Final reporting
+## Final results
 
-This document will be updated after implementation with completed changes,
-remaining gaps, final coverage, supported-Python results, and CI evidence.
+Final package coverage was measured on Python 3.11.14 and macOS after the
+implementation commits. Validation tests that depend on external scientific
+software remain outside these percentages.
+
+| Selection | Baseline | Final | Statement coverage | Branch coverage |
+| --- | ---: | ---: | ---: | ---: |
+| Core unit | 5,183 passed | 5,289 passed | 87.76% -> 87.82% (+0.06 pp) | 78.34% -> 78.52% (+0.18 pp) |
+| Core unit + integration | 6,017 passed | 6,140 passed | 88.79% -> 88.86% (+0.08 pp) | 79.54% -> 79.72% (+0.18 pp) |
+| Integration alone | not comparably scoped | 851 passed | 61.86% | 47.38% |
+
+The combined suite covers 42,255 of 47,551 statements and 13,593 of
+17,050 branches. Relative to baseline, it covers 280 more statements and 154
+more branches while production code grew by 274 statements and 154 branches;
+missing statements decreased from 5,302 to 5,296 and missing branches remained
+at 3,457. The modest percentage movement reflects the added validation code as
+well as the 123 added tests; the audit targeted consequential behavior rather
+than maximizing a percentage.
+
+The final ordinary suite passed on every supported interpreter:
+
+| Environment | Evidence |
+| --- | --- |
+| Python 3.10 | Fresh local environment and final macOS CI job passed |
+| Python 3.11 | 6,140 local tests passed with combined branch coverage; final macOS CI job passed |
+| Python 3.12 | Fresh local environment and final macOS CI job passed |
+| Python 3.13 | 6,128 tests passed in a fresh local environment before the final focused regressions; the final macOS CI job passed the complete suite |
+| Installed wheel, Linux and Windows | All 318 entry-point targets loaded and all 109 canonical help commands passed in CI |
+| Documentation wheel, macOS | All 21 tutorial smoke workflows passed locally and the final docs CI job passed |
+| External scientific validation | All 8 available PAML, phangorn, and phytools comparisons passed locally |
+
+All seven jobs passed in the final implementation
+[GitHub Actions run](https://github.com/JLSteenwyk/PhyKIT/actions/runs/29545999899):
+Python 3.10-3.13, documentation, and installed-wheel smoke tests on Linux and
+Windows.
+
+## Remaining gaps
+
+- No unresolved critical or high-priority gap identified by this audit remains.
+- `concordance_asr`, `discordance_asymmetry`, `dtt`, `evo_tempo_map`, and
+  `version` remain `unit_only_documented`. Their service and output paths have
+  direct coverage; add another layer when a concrete parser, process,
+  filesystem, packaging, or serialization contract warrants it.
+- PAML, phytools, and phangorn comparisons remain opt-in validation tests
+  because they require external executables or R packages and can be much
+  slower than the ordinary suite. They should be run for relevant scientific
+  changes, not made a prerequisite for every commit.
+- The generated inventory remains the source for lower-priority command-layer
+  breadth. New public commands must update it and should include a direct unit
+  module plus integration or tutorial evidence when they cross a system
+  boundary.
