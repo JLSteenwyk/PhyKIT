@@ -124,6 +124,22 @@ class TestPolytomyTest(unittest.TestCase):
         self.assertTrue(math.isnan(zero_counts.statistic))
         self.assertTrue(math.isnan(zero_counts.pvalue))
 
+        zero_triplet = module.chisquare([0, 0, 0])
+        self.assertTrue(math.isnan(zero_triplet.statistic))
+        self.assertTrue(math.isnan(zero_triplet.pvalue))
+
+    def test_chisquare_fallback_handles_three_iterated_values(self):
+        class Values:
+            def __len__(self):
+                return 4
+
+            def __iter__(self):
+                return iter([1, 2, 3])
+
+        result = module.chisquare(Values())
+
+        self.assertEqual(result.pvalue, math.exp(-result.statistic / 2.0))
+
     def test_chisquare_recovers_when_length_lookup_fails(self):
         class Values:
             def __len__(self):
@@ -190,6 +206,24 @@ class TestPolytomyTest(unittest.TestCase):
 
         self.assertEqual(cache[id(tree.root)], frozenset({"A", "B", "C"}))
 
+        with patch.object(
+            PolytomyTest,
+            "_iter_postorder_clades",
+            return_value=None,
+        ):
+            fallback_cache = self.polytomy._build_clade_terminal_cache(tree)
+        self.assertEqual(
+            fallback_cache[id(tree.root)], frozenset({"A", "B", "C"})
+        )
+
+        class TupleRoot:
+            clades = ()
+
+        class TupleTree:
+            root = TupleRoot()
+
+        self.assertIsNone(self.polytomy._iter_postorder_clades(TupleTree()))
+
     def test_find_sister_pair_handles_binary_and_unresolved_assignments(self):
         tree = Phylo.read(StringIO("((A:1,B:1):1,C:1);"), "newick")
         cache = self.polytomy._build_clade_terminal_cache(tree)
@@ -227,6 +261,122 @@ class TestPolytomyTest(unittest.TestCase):
                 cache,
             )
         )
+
+    def test_path_cache_sister_detection_handles_missing_and_unresolved_lca(self):
+        tree = Phylo.read(StringIO("(A:1,B:1,C:1);"), "newick")
+        clade_cache = self.polytomy._build_clade_terminal_cache(tree)
+        path_cache = self.polytomy._build_tip_path_cache(tree)
+
+        self.assertIsNone(
+            self.polytomy._find_sister_pair_from_path_cache(
+                ("A", "B", "missing"),
+                clade_cache,
+                path_cache,
+            )
+        )
+        self.assertIsNone(
+            self.polytomy._find_sister_pair_from_path_cache(
+                ("A", "B", "C"),
+                clade_cache,
+                path_cache,
+            )
+        )
+
+        path = path_cache["A"]
+        self.assertIs(
+            self.polytomy._common_ancestor_from_path_cache(
+                ("A", "A", "A"),
+                {"A": path},
+            ),
+            path[-1],
+        )
+
+    def test_fast_triplet_evaluation_handles_empty_and_incomplete_groups(self):
+        tree = Phylo.read(StringIO("((A:1,B:1):1,C:1);"), "newick")
+
+        self.assertEqual(self.polytomy._evaluate_tree_triplets_fast(tree, {}), {})
+        self.assertEqual(
+            self.polytomy._evaluate_tree_triplets_fast(
+                tree,
+                {"empty": []},
+            ),
+            {},
+        )
+        self.assertEqual(
+            self.polytomy._evaluate_tree_triplets_fast(
+                tree,
+                {"missing": [["A"], ["B"], ["missing"]]},
+            ),
+            {},
+        )
+        self.assertEqual(
+            self.polytomy._evaluate_tree_triplets_fast(
+                Phylo.read(StringIO("(A:1,B:1,C:1);"), "newick"),
+                {"unresolved": [["A"], ["B"], ["C"]]},
+            ),
+            {},
+        )
+
+    def test_prepare_tree_for_triplets_roots_copy_on_outgroup(self):
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+
+        prepared = self.polytomy._prepare_tree_for_triplets(tree, ["D"])
+
+        self.assertIsNot(prepared, tree)
+        self.assertEqual(
+            {tip.name for tip in prepared.get_terminals()},
+            {"A", "B", "C", "D"},
+        )
+
+    def test_sequential_tree_loop_reports_missing_file(self):
+        with patch.object(
+            self.polytomy,
+            "_should_use_multiprocessing",
+            return_value=False,
+        ), patch.object(
+            module.Phylo,
+            "read",
+            side_effect=FileNotFoundError,
+        ), patch.object(
+            module.sys,
+            "exit",
+        ) as exit_mock, patch("builtins.print") as print_mock:
+            observed = self.polytomy.loop_through_trees_and_examine_sister_support_among_triplets(
+                ["missing.nwk"],
+                {"test": [["A"], ["B"], ["C"]]},
+                [],
+            )
+
+        self.assertEqual(observed, {})
+        exit_mock.assert_called_once_with(2)
+        self.assertEqual(print_mock.call_count, 2)
+
+    def test_malformed_tree_scans_use_generic_fallbacks(self):
+        class GenericTree:
+            def __init__(self):
+                self.root = Newick.Clade(clades=[object()])
+                self.clades = [
+                    Newick.Clade(name="A"),
+                    Newick.Clade(name="B"),
+                    Newick.Clade(name="C"),
+                ]
+
+            def find_clades(self):
+                return self.clades
+
+            def get_terminals(self):
+                return self.clades
+
+            def get_nonterminals(self):
+                return [self.root]
+
+        tree = GenericTree()
+
+        self.polytomy.set_branch_lengths_in_tree_to_one(tree)
+
+        self.assertTrue(all(clade.branch_length == 1 for clade in tree.clades))
+        self.assertTrue(self.polytomy._has_exactly_three_terminals(tree))
+        self.assertTrue(self.polytomy.check_if_triplet_is_a_polytomy(tree))
 
     def test_legacy_triplet_pass_aggregates_supported_relationship(self):
         groups = {"test": [["A"], ["B"], ["C"]]}
