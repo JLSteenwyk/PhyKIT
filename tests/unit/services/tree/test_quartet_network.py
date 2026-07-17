@@ -366,6 +366,12 @@ class TestTreeTest:
         monkeypatch.setattr(builtins, "sorted", original_sorted)
         assert abs(p - 0.0418) < 0.005
 
+    @pytest.mark.parametrize("counts", [[20, 45, 35], [20, 35, 45]])
+    def test_tree_test_is_invariant_to_dominant_topology(self, counts):
+        assert QuartetNetwork._tree_test(counts) == pytest.approx(
+            QuartetNetwork._tree_test([45, 35, 20])
+        )
+
 
 class TestClassifyQuartet:
     def test_tree_like(self):
@@ -479,6 +485,32 @@ class TestNanuqDistance:
         assert QuartetNetwork._top_two_topology_indices([4, 5, 5]) == (1, 2)
         assert QuartetNetwork._top_two_topology_indices([3, 5, 4]) == (1, 2)
 
+    @pytest.mark.parametrize(
+        ("topology", "expected"),
+        [
+            (0, [(0, 2), (0, 3), (1, 2), (1, 3)]),
+            (1, [(0, 1), (0, 3), (2, 1), (2, 3)]),
+            (2, [(0, 1), (0, 2), (3, 1), (3, 2)]),
+        ],
+    )
+    def test_cross_pair_helper_supports_every_topology(self, topology, expected):
+        assert QuartetNetwork._cross_pairs(topology, 0, 1, 2, 3) == expected
+
+    @pytest.mark.parametrize(
+        ("counts", "dominant", "top_two"),
+        [
+            ([0, 1, 2], 2, (2, 1)),
+            ([2, 1, 3], 2, (2, 0)),
+            ([2, 3, 1], 1, (1, 0)),
+            ([1, 2, 3], 2, (2, 1)),
+        ],
+    )
+    def test_topology_index_helpers_cover_strict_orderings(
+        self, counts, dominant, top_two
+    ):
+        assert QuartetNetwork._dominant_topology_index(counts) == dominant
+        assert QuartetNetwork._top_two_topology_indices(counts) == top_two
+
     def test_tree_quartet_adds_cross_pairs(self):
         """Tree-like quartet ab|cd should add 1 to cross-split pairs only."""
         all_taxa = frozenset({"A", "B", "C", "D"})
@@ -503,6 +535,35 @@ class TestNanuqDistance:
         # Same-side pairs (A,B), (C,D) stay 0
         assert dist[ia][ib] == 0.0
         assert dist[ic][id_] == 0.0
+
+    @pytest.mark.parametrize(
+        ("counts", "expected_pairs"),
+        [
+            ([0, 5, 0], {("A", "B"), ("A", "D"), ("B", "C"), ("C", "D")}),
+            ([0, 0, 5], {("A", "B"), ("A", "C"), ("B", "D"), ("C", "D")}),
+        ],
+    )
+    def test_tree_quartet_supports_other_dominant_topologies(
+        self, counts, expected_pairs
+    ):
+        all_taxa = frozenset({"A", "B", "C", "D"})
+        quartet_results = {
+            ("A", "B", "C", "D"): {
+                "classification": "tree",
+                "counts": counts,
+            }
+        }
+
+        taxa, dist, idx = QuartetNetwork._compute_nanuq_distance(
+            all_taxa, quartet_results
+        )
+        observed_pairs = {
+            (first, second)
+            for first, second in itertools.combinations(taxa, 2)
+            if dist[idx[first]][idx[second]] == 1.0
+        }
+
+        assert observed_pairs == expected_pairs
 
     def test_star_quartet_adds_all_pairs(self):
         """Unresolved quartet should add 1 to all 6 pairwise distances."""
@@ -820,6 +881,23 @@ class TestBuildSplitsGraph:
         assert split in directions
         assert split.iterations == 1
 
+    def test_circular_gap_positions_rejects_no_boundary_split(self):
+        ordering = ["A", "B", "C", "D"]
+
+        assert QuartetNetwork._circular_gap_positions(frozenset(ordering), ordering) is None
+
+    def test_compute_split_directions_handles_degenerate_gap_pair(self):
+        ordering = ["A", "B", "C", "D"]
+        split = frozenset({"A"})
+
+        directions = QuartetNetwork._compute_split_directions(
+            ordering,
+            [(split, 1, 1.0)],
+            {split: (0, 0)},
+        )
+
+        assert directions[split] == (1.0, 0.0)
+
     @staticmethod
     def _legacy_build_splits_graph(circular_splits, all_taxa):
         splits_list = [s[0] for s in circular_splits]
@@ -899,6 +977,39 @@ class TestBuildSplitsGraph:
         assert self._canonical_edges(observed[2]) == self._canonical_edges(expected[2])
         assert observed[3] == expected[3]
         assert observed[4] == expected[4]
+
+    def test_build_splits_graph_handles_no_splits(self):
+        assert QuartetNetwork._build_splits_graph([], frozenset({"A", "B"})) == (
+            {},
+            set(),
+            [],
+            [],
+            [],
+        )
+
+    @pytest.mark.parametrize(
+        "split_sets",
+        [
+            [{"A"}, {"A", "B"}],
+            [{"A", "B"}, {"A"}],
+            [{"A", "B"}, {"C", "D"}],
+        ],
+    )
+    def test_build_splits_graph_supports_nested_and_complementary_splits(
+        self, split_sets
+    ):
+        all_taxa = frozenset({"A", "B", "C", "D"})
+        circular_splits = [
+            (frozenset(split), 1, 1.0)
+            for split in split_sets
+        ]
+
+        observed = QuartetNetwork._build_splits_graph(circular_splits, all_taxa)
+        expected = self._legacy_build_splits_graph(circular_splits, all_taxa)
+
+        assert observed[0] == expected[0]
+        assert observed[1] == expected[1]
+        assert self._canonical_edges(observed[2]) == self._canonical_edges(expected[2])
 
 
 class TestNetworkPlot:
