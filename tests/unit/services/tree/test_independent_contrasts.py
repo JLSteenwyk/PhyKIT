@@ -84,6 +84,46 @@ class TestIndependentContrastsInit:
 
 
 class TestPICComputation:
+    def test_tree_scans_reject_legacy_and_malformed_shapes(self, args):
+        ic = IndependentContrasts(args)
+
+        assert ic._needs_default_branch_lengths(object()) is True
+        assert ic._has_polytomies(object()) is None
+        assert ic._postorder_clades_fast(object()) is None
+        assert ic._should_use_text_summary_path(object()) is False
+
+        class MalformedRoot:
+            clades = [object()]
+            branch_length = None
+
+        class MalformedTree:
+            root = MalformedRoot()
+
+        malformed = MalformedTree()
+        assert ic._needs_default_branch_lengths(malformed) is True
+        assert ic._has_polytomies(malformed) is None
+        assert ic._postorder_clades_fast(malformed) is None
+        assert ic._should_use_text_summary_path(malformed) is False
+
+    def test_text_summary_path_detects_deep_tree(self, args):
+        ic = IndependentContrasts(args)
+
+        class Clade:
+            def __init__(self, child=None):
+                self.clades = [] if child is None else [child]
+
+        root = Clade()
+        for _ in range(66):
+            root = Clade(root)
+
+        class DeepTree:
+            pass
+
+        tree = DeepTree()
+        tree.root = root
+
+        assert ic._should_use_text_summary_path(tree) is True
+
     def test_correct_number_of_contrasts(self, args):
         """n tips should produce n-1 contrasts."""
         ic = IndependentContrasts(args)
@@ -307,6 +347,82 @@ class TestPICComputation:
 
         assert ic._compute_pic(tree, tip_traits) == expected
 
+    def test_compute_pic_generic_fallback_matches_standard_tree(
+        self, monkeypatch, args
+    ):
+        from Bio import Phylo
+        from io import StringIO
+
+        newick = "((A:1,B:2):1,(C:3,D:4):2);"
+        tip_traits = {"A": 1.0, "B": 2.0, "C": 3.0, "D": 4.0}
+        ic = IndependentContrasts(args)
+        expected = ic._compute_pic(Phylo.read(StringIO(newick), "newick"), tip_traits)
+        tree = Phylo.read(StringIO(newick), "newick")
+        monkeypatch.setattr(ic, "_compute_pic_standard_tree", lambda *_args: None)
+
+        observed = ic._compute_pic(tree, tip_traits)
+
+        np.testing.assert_allclose(observed[0], expected[0])
+        assert observed[1] == expected[1]
+
+    def test_compute_pic_generic_fallback_skips_unresolved_or_missing_nodes(
+        self, monkeypatch, args
+    ):
+        from Bio import Phylo
+        from io import StringIO
+
+        ic = IndependentContrasts(args)
+        monkeypatch.setattr(ic, "_compute_pic_standard_tree", lambda *_args: None)
+        polytomy = Phylo.read(StringIO("(A:1,B:1,C:1);"), "newick")
+        missing_tip = Phylo.read(StringIO("(A:1,B:1);"), "newick")
+
+        assert ic._compute_pic(polytomy, {"A": 1.0}) == ([], [])
+        assert ic._compute_pic(missing_tip, {"A": 1.0}) == ([], [])
+
+    def test_text_summary_generic_fallback_matches_full_labels(
+        self, monkeypatch, args
+    ):
+        from Bio import Phylo
+        from io import StringIO
+
+        tree = Phylo.read(StringIO("((D:1,B:1):1,(C:1,A:1):1);"), "newick")
+        tip_traits = {"A": 1.0, "B": 2.0, "C": 3.0, "D": 4.0}
+        ic = IndependentContrasts(args)
+        full_contrasts, node_labels = ic._compute_pic(tree, tip_traits)
+        monkeypatch.setattr(
+            ic,
+            "_compute_pic_text_summaries_standard_tree",
+            lambda *_args: None,
+        )
+
+        contrasts, summaries = ic._compute_pic_text_summaries(tree, tip_traits)
+
+        assert contrasts == full_contrasts
+        assert summaries == [(tips[:3], len(tips)) for tips in node_labels]
+
+    def test_legacy_polytomy_resolution_fallbacks(self, args):
+        from Bio import Phylo
+        from io import StringIO
+
+        ic = IndependentContrasts(args)
+        tree = Phylo.read(StringIO("(A:1,B:1,C:1,D:1);"), "newick")
+
+        class LegacyTree:
+            def find_clades(self, *call_args, **kwargs):
+                return tree.find_clades(*call_args, **kwargs)
+
+        ic._resolve_polytomies(LegacyTree())
+
+        assert len(tree.root.clades) == 2
+        assert all(len(clade.clades) <= 2 for clade in tree.find_clades())
+
+        fallback_tree = Phylo.read(
+            StringIO("(A:1,B:1,C:1,D:1);"), "newick"
+        )
+        ic._resolve_polytomies_fallback(fallback_tree)
+        assert len(fallback_tree.root.clades) == 2
+        assert all(len(clade.clades) <= 2 for clade in fallback_tree.find_clades())
+
     def test_direct_postorder_preserves_left_to_right_order(self):
         from Bio import Phylo
         from io import StringIO
@@ -334,6 +450,12 @@ class TestPICComputation:
         assert ic._merge_sorted_labels(["A", "B"], ["C"]) == ["A", "B", "C"]
         assert ic._merge_sorted_labels(["D"], ["A", "C"]) == ["A", "C", "D"]
 
+    def test_merge_sorted_labels_handles_empty_inputs(self, args):
+        ic = IndependentContrasts(args)
+
+        assert ic._merge_sorted_labels([], ["A", "B"]) == ["A", "B"]
+        assert ic._merge_sorted_labels(["A", "B"], []) == ["A", "B"]
+
     def test_limited_label_merge_preserves_sorted_preview_and_count(self, args):
         ic = IndependentContrasts(args)
 
@@ -351,6 +473,32 @@ class TestPICComputation:
             12,
             3,
         ) == (["A", "B", "C"], 32)
+
+    @pytest.mark.parametrize(
+        ("left", "right", "limit", "expected"),
+        [
+            (["A"], ["B"], 0, []),
+            ([], ["A", "B"], 1, ["A"]),
+            (["A", "B"], [], 1, ["A"]),
+            (["A", "B"], ["C", "D"], 3, ["A", "B", "C"]),
+            (["C", "D"], ["A", "B"], 3, ["A", "B", "C"]),
+        ],
+    )
+    def test_limited_label_merge_boundary_cases(
+        self, args, left, right, limit, expected
+    ):
+        ic = IndependentContrasts(args)
+
+        preview, count = ic._merge_limited_sorted_labels(
+            left,
+            len(left),
+            right,
+            len(right),
+            limit,
+        )
+
+        assert preview == expected
+        assert count == len(left) + len(right)
 
     def test_compute_pic_text_summaries_match_full_label_output(self):
         from Bio import Phylo
