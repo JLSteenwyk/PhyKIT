@@ -510,3 +510,174 @@ assert "phykit.helpers.files" not in sys.modules
             service.run()
         assert excinfo.value.code == 2
         mocked_print.assert_called_with("GC content can't be calculated for protein sequences")
+
+    def test_lookup_count_dtype_and_long_invalid_scans(self, monkeypatch):
+        gc_content_module._PROTEIN_VALID_LOOKUP = None
+        gc_content_module._GC_LOOKUP = None
+        protein_lookup = gc_content_module._get_valid_lookup(is_protein=True)
+        assert gc_content_module._get_valid_lookup(is_protein=True) is protein_lookup
+        gc_lookup = gc_content_module._get_gc_lookup()
+
+        assert not protein_lookup[ord("X")]
+        assert protein_lookup[ord("N")]
+        assert gc_lookup[ord("G")]
+        assert gc_lookup[ord("c")]
+        assert not gc_lookup[ord("A")]
+        assert gc_content_module._bounded_ascii_count_dtype(
+            0x100000000
+        ) is gc_content_module.np.uint64
+
+        monkeypatch.setattr(gc_content_module, "_INVALID_SCAN_BYTES", 4)
+        assert gc_content_module._has_invalid_bytes(b"-AAAAAAAA", b"-") is True
+        assert gc_content_module._has_invalid_bytes(b"AAAAAAAA-", b"-") is True
+        assert gc_content_module._has_invalid_bytes(b"AAAA-AAAA", b"-") is True
+        assert gc_content_module._has_invalid_bytes(b"AAAAAAAAA", b"-") is False
+
+    def test_ascii_matrix_helper_handles_empty_uneven_and_unicode_records(self):
+        assert gc_content_module._gc_counts_from_ascii_matrix(
+            [], False
+        ) == ([], None, None)
+
+        uneven = [
+            SimpleNamespace(seq="ACGT", id="a"),
+            SimpleNamespace(seq="ACG", id="b"),
+        ]
+        record_data, valid_counts, gc_counts = (
+            gc_content_module._gc_counts_from_ascii_matrix(uneven, False)
+        )
+        assert [record_id for record_id, _ in record_data] == ["a", "b"]
+        assert valid_counts is None
+        assert gc_counts is None
+
+        unicode_records = [
+            SimpleNamespace(id="a", seq="AΩGT"),
+            SimpleNamespace(id="b", seq="TΩGC"),
+        ]
+        _, valid_counts, gc_counts = (
+            gc_content_module._gc_counts_from_ascii_matrix(
+                unicode_records,
+                False,
+            )
+        )
+        assert valid_counts is None
+        assert gc_counts is None
+
+    def test_forced_per_sequence_fallback_matches_scalar_counts(
+        self, args, monkeypatch
+    ):
+        service = GCContent(args)
+        monkeypatch.setattr(
+            gc_content_module,
+            "_GC_PER_SEQUENCE_SCALAR_MAX_BYTES",
+            0,
+        )
+        records = [
+            SimpleNamespace(id="unicode", seq="AΩGC"),
+            SimpleNamespace(id="invalid", seq="----"),
+        ]
+
+        rows = service.calculate_gc_per_sequence_data(records, is_protein=False)
+
+        assert rows == [("unicode", 0.5), ("invalid", 0.0)]
+        monkeypatch.setattr(
+            gc_content_module,
+            "_GC_PER_SEQUENCE_SCALAR_MAX_BYTES",
+            8192,
+        )
+        assert gc_content_module._gc_per_sequence_data_scalar(
+            [SimpleNamespace(id="invalid", seq="----")],
+            False,
+        ) == [("invalid", 0.0)]
+
+    def test_total_ascii_backends_match_expected_counts(self, monkeypatch):
+        assert gc_content_module._gc_total_from_ascii([], False) is None
+        records = _alignment(
+            [SeqRecord(Seq("ACGT"), id="a"), SeqRecord(Seq("TGCA"), id="b")]
+        )
+        monkeypatch.setattr(gc_content_module, "_GC_TOTAL_SCALAR_MAX_BYTES", 0)
+
+        assert gc_content_module._gc_total_from_ascii(records, False) == (8, 4)
+
+        invalid_records = _alignment(
+            [SeqRecord(Seq("AC-T"), id="a"), SeqRecord(Seq("TG?A"), id="b")]
+        )
+        monkeypatch.setattr(
+            gc_content_module,
+            "_GC_TOTAL_BYTE_COUNT_MIN_BYTES",
+            1,
+        )
+        assert gc_content_module._gc_total_from_ascii(
+            invalid_records, False
+        ) == (6, 2)
+
+        monkeypatch.setattr(
+            gc_content_module,
+            "_GC_TOTAL_BYTE_COUNT_MIN_BYTES",
+            1000,
+        )
+        assert gc_content_module._gc_total_from_ascii(
+            invalid_records, False
+        ) == (6, 2)
+
+    def test_run_text_dispatches_verbose_and_summary_paths(self, args, mocker):
+        records = _alignment(
+            [SeqRecord(Seq("ACGT"), id="a"), SeqRecord(Seq("AGGT"), id="b")]
+        )
+        service = GCContent(args)
+        mocker.patch(
+            "phykit.services.alignment.gc_content.get_alignment_and_format",
+            return_value=(records, "fasta", False),
+        )
+        verbose = mocker.patch.object(service, "calculate_gc_per_sequence")
+        summary = mocker.patch.object(service, "calculate_gc_total")
+
+        service.verbose = True
+        service.run()
+        verbose.assert_called_once()
+        summary.assert_not_called()
+
+        service.verbose = False
+        service.run()
+        summary.assert_called_once()
+
+    def test_per_sequence_text_handles_empty_and_broken_pipe(self, args, mocker):
+        service = GCContent(args)
+        mocker.patch.object(
+            service,
+            "calculate_gc_per_sequence_data",
+            return_value=[],
+        )
+        mocked_print = mocker.patch("builtins.print")
+
+        service.calculate_gc_per_sequence([], False)
+        mocked_print.assert_not_called()
+
+        mocker.patch.object(
+            service,
+            "calculate_gc_per_sequence_data",
+            return_value=[("a", 0.5)],
+        )
+        mocked_print.side_effect = BrokenPipeError
+        service.calculate_gc_per_sequence([], False)
+
+    def test_calculate_gc_total_prints_value(self, args, mocker):
+        service = GCContent(args)
+        mocked_print = mocker.patch("builtins.print")
+
+        service.calculate_gc_total(
+            _alignment([SeqRecord(Seq("ACGT"), id="a")]),
+            False,
+        )
+
+        mocked_print.assert_called_once_with(0.5)
+
+    def test_total_value_handles_unicode_only_and_empty_records(self, args):
+        service = GCContent(args)
+
+        assert service.calculate_gc_total_value(
+            [SimpleNamespace(id="unicode", seq="Ω")],
+            False,
+        ) == 0.0
+        with pytest.raises(SystemExit) as exc_info:
+            service.calculate_gc_total_value([], False)
+        assert exc_info.value.code == 2
