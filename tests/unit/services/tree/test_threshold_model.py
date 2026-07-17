@@ -1083,10 +1083,10 @@ class TestRunMCMC:
                 "r", variance, acceptance_rate=1.0
             )
 
-        assert variance == 4.0
+        assert variance == 1.0
         assert ThresholdModel._adapt_proposal_variance(
             "r", variance, acceptance_rate=0.0
-        ) == 2.0
+        ) == 0.5
 
     def test_run_mcmc_mean_diagonal_uses_trace(self, monkeypatch):
         tree = _make_tree()

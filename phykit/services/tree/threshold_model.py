@@ -33,7 +33,7 @@ _INF = math.inf
 _NEG_INF = -math.inf
 _LOG_2PI = math.log(2.0 * math.pi)
 _INV_SQRT2 = 1.0 / math.sqrt(2.0)
-_MAX_R_PROPOSAL_VARIANCE = 4.0
+_MAX_R_PROPOSAL_VARIANCE = 1.0
 _TEXT_REPORT_TEMPLATE = (
     "Trait 1: %s (%s%s)\n"
     "Trait 2: %s (%s%s)\n"
