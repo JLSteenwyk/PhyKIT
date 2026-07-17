@@ -1264,6 +1264,23 @@ class TestSmallSampleGuards:
 
 
 class TestTreeColorTrait:
+    def test_invalid_tree_color_sources_return_no_reconstruction(
+        self, default_args, tmp_path
+    ):
+        svc = PhylogeneticOrdination(default_args)
+        tree = svc.read_tree_file()
+        taxa = svc.get_tip_names_from_tree(tree)
+        Y = np.ones((len(taxa), 1))
+        nonnumeric = tmp_path / "nonnumeric.tsv"
+        nonnumeric.write_text("".join(f"{taxon}\tbad\n" for taxon in taxa))
+
+        assert svc._resolve_tree_color_trait(
+            "missing-column", ["trait"], Y, taxa, tree
+        ) == (None, None, None)
+        assert svc._resolve_tree_color_trait(
+            str(nonnumeric), ["trait"], Y, taxa, tree
+        ) == (None, None, None)
+
     def test_resolve_tree_color_trait_streams_color_file_once(self, monkeypatch):
         class StreamingOnlyFile:
             def __enter__(self):
@@ -1357,6 +1374,40 @@ class TestTreeColorTrait:
 
 
 class TestRun:
+    def test_generic_five_dimension_outputs(self, default_args, capsys):
+        svc = PhylogeneticOrdination(default_args)
+        svc.n_components = 5
+        labels = [f"PC{i}" for i in range(1, 6)]
+        eigenvalues = np.arange(5.0, 0.0, -1.0)
+        proportions = eigenvalues / eigenvalues.sum()
+        eigenvectors = np.arange(15.0).reshape(3, 5)
+        scores = np.arange(10.0).reshape(2, 5)
+
+        svc._print_pca_text_output(
+            eigenvalues,
+            proportions,
+            eigenvectors,
+            scores,
+            ["trait1", "trait2", "trait3"],
+            ["A", "B"],
+            labels,
+            None,
+            None,
+        )
+        pca_output = capsys.readouterr().out
+        assert "PC5" in pca_output
+        assert "trait3" in pca_output
+
+        result = svc._format_dimreduce_result(
+            scores, ["A", "B"], {}, None, None
+        )
+        svc._print_dimreduce_text_output(
+            scores, ["A", "B"], {}, None, None
+        )
+        dimreduce_output = capsys.readouterr().out
+
+        assert result["embedding"]["A"]["Dim5"] == 4.0
+        assert "Dim5" in dimreduce_output
     def test_run_uses_unmodified_tree_read(self, mocker):
         args = Namespace(
             tree="/some/path/to/file.tre",
@@ -2309,6 +2360,16 @@ class TestPlot:
 
 
 class TestReconstructAncestralScores:
+    @pytest.mark.parametrize(
+        "tree",
+        [
+            Namespace(root=object()),
+            Namespace(root=Namespace(clades=[object()])),
+        ],
+    )
+    def test_direct_preorder_rejects_generic_and_malformed_trees(self, tree):
+        assert PhylogeneticOrdination._preorder_clades_direct(tree) is None
+
     def test_prune_setup_uses_fast_tip_names_and_shared_prune_helper(
         self, default_args, mocker
     ):
@@ -2575,6 +2636,21 @@ class TestReconstructAncestralScores:
 
 
 class TestParseColorBy:
+    def test_file_missing_taxon_values_is_rejected(self, default_args, tmp_path):
+        svc = PhylogeneticOrdination(default_args)
+        color_file = tmp_path / "incomplete.tsv"
+        color_file.write_text("A\tgroup1\nB\tgroup2\n")
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            svc._parse_color_by(
+                str(color_file),
+                ["trait"],
+                np.ones((3, 1)),
+                ["A", "B", "C"],
+            )
+
+        assert "missing values for taxa: C" in exc_info.value.messages[0]
+
     def test_column_name_match(self, default_args):
         svc = PhylogeneticOrdination(default_args)
         tree = svc.read_tree_file()
