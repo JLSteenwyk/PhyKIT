@@ -171,6 +171,16 @@ def _wrap_binary_child_lists_no_reversed(clade):
 
 
 class TestBuildVcvMatrix:
+    def test_tip_name_helper_falls_back_to_get_terminals(self, monkeypatch):
+        tree = _make_tree("(A:1.0,B:1.0);")
+        monkeypatch.setattr(
+            vcv_utils.Tree,
+            "calculate_terminal_names_fast",
+            staticmethod(lambda _tree: None),
+        )
+
+        assert vcv_utils._get_tip_names(tree) == ["A", "B"]
+
     def test_symmetric(self):
         tree = _read_tree(TREE_SIMPLE)
         tips = sorted(t.name for t in tree.get_terminals())
@@ -229,6 +239,156 @@ class TestBuildVcvMatrix:
         assert vcv[1, 2] == pytest.approx(0.5, rel=1e-6)
         # A-B shared path = 0 (diverge at root)
         assert vcv[0, 1] == pytest.approx(0.0, abs=1e-6)
+
+    def test_distance_fallback_matches_expected_matrix(self, monkeypatch):
+        tree = _make_tree("(A:1.0,(B:0.5,C:0.5):0.5);")
+        monkeypatch.setattr(
+            vcv_utils,
+            "_build_vcv_matrix_fast",
+            lambda _tree, _names: None,
+        )
+
+        observed = build_vcv_matrix(tree, ["A", "B", "C"])
+
+        expected = np.array([
+            [1.0, 0.0, 0.0],
+            [0.0, 1.0, 0.5],
+            [0.0, 0.5, 1.0],
+        ])
+        np.testing.assert_allclose(observed, expected)
+
+    def test_parent_map_fallback_matches_expected_matrix(self, monkeypatch):
+        tree = _make_tree("(A:1.0,(B:0.5,C:0.5):0.5);")
+        monkeypatch.setattr(
+            vcv_utils,
+            "_build_vcv_from_descendant_indices",
+            lambda *_args: None,
+        )
+        monkeypatch.setattr(
+            tree,
+            "distance",
+            lambda *_args: pytest.fail("distance fallback should not be used"),
+        )
+
+        observed = build_vcv_matrix(tree, ["A", "B", "C"])
+
+        expected = np.array([
+            [1.0, 0.0, 0.0],
+            [0.0, 1.0, 0.5],
+            [0.0, 0.5, 1.0],
+        ])
+        np.testing.assert_allclose(observed, expected)
+
+    def test_branch_accumulation_rejects_disconnected_terminal(self):
+        tree = _make_tree("(A:1.0,B:1.0);")
+        terminals = {tip.name: tip for tip in tree.get_terminals()}
+
+        observed = vcv_utils._build_vcv_from_branch_accumulation(
+            ["A", "B"],
+            terminals,
+            tree.root,
+            {},
+            lambda clade: clade.branch_length or 0.0,
+        )
+
+        assert observed is None
+
+    def test_fast_builder_rejects_unsupported_tree_shapes(self, monkeypatch):
+        tree = _make_tree("(A:1.0,B:1.0);")
+        monkeypatch.setattr(
+            vcv_utils,
+            "_build_vcv_from_descendant_indices",
+            lambda *_args: None,
+        )
+
+        assert vcv_utils._build_vcv_matrix_fast(object(), ["A"]) is None
+
+        class RootOnlyTree:
+            root = object()
+
+        assert vcv_utils._build_vcv_matrix_fast(RootOnlyTree(), ["A"]) is None
+
+        monkeypatch.setattr(tree, "get_terminals", lambda: 1)
+        assert vcv_utils._build_vcv_matrix_fast(tree, ["A"]) is None
+
+    def test_fast_builder_rejects_missing_requested_tip(self, monkeypatch):
+        tree = _make_tree("(A:1.0,B:1.0);")
+        monkeypatch.setattr(
+            vcv_utils,
+            "_build_vcv_from_descendant_indices",
+            lambda *_args: None,
+        )
+
+        assert vcv_utils._build_vcv_matrix_fast(tree, ["C"]) is None
+
+    def test_descendant_builder_rejects_invalid_inputs(self):
+        tree = _make_tree("(A:1.0,B:1.0);")
+
+        def branch_length(clade):
+            return clade.branch_length or 0.0
+
+        assert (
+            vcv_utils._build_vcv_from_descendant_indices(
+                ["A", "A"], tree.root, branch_length
+            )
+            is None
+        )
+        assert (
+            vcv_utils._build_vcv_from_descendant_indices(
+                ["A"], object(), branch_length
+            )
+            is None
+        )
+
+        class MalformedRoot:
+            clades = [object()]
+
+        assert (
+            vcv_utils._build_vcv_from_descendant_indices(
+                ["A"], MalformedRoot(), branch_length
+            )
+            is None
+        )
+
+    def test_descendant_builder_handles_empty_and_subset_orders(self):
+        tree = _make_tree("(A:0.0,B:2.0,X:3.0);")
+
+        def branch_length(clade):
+            return clade.branch_length or 0.0
+
+        empty = vcv_utils._build_vcv_from_descendant_indices(
+            [], tree.root, branch_length
+        )
+        contiguous = vcv_utils._build_vcv_from_descendant_indices(
+            ["A", "B"], tree.root, branch_length
+        )
+        shuffled = vcv_utils._build_vcv_from_descendant_indices(
+            ["B", "A"], tree.root, branch_length
+        )
+
+        assert empty.shape == (0, 0)
+        np.testing.assert_allclose(contiguous, np.diag([0.0, 2.0]))
+        np.testing.assert_allclose(shuffled, np.diag([2.0, 0.0]))
+
+    def test_descendant_builder_rejects_duplicate_or_missing_tree_tips(self):
+        def branch_length(clade):
+            return clade.branch_length or 0.0
+
+        duplicate = _make_tree("(A:1.0,A:2.0);")
+        missing = _make_tree("(A:1.0,B:1.0);")
+
+        assert (
+            vcv_utils._build_vcv_from_descendant_indices(
+                ["A"], duplicate.root, branch_length
+            )
+            is None
+        )
+        assert (
+            vcv_utils._build_vcv_from_descendant_indices(
+                ["A", "C"], missing.root, branch_length
+            )
+            is None
+        )
 
     def test_real_tree_fast_path_does_not_call_distance(self, monkeypatch):
         tree = _make_tree("(A:1.0,(B:0.5,C:0.5):0.5);")
@@ -425,6 +585,141 @@ class TestBuildVcvMatrix:
         expected = build_vcv_matrix(transformed, tips)
 
         np.testing.assert_allclose(vcv, expected)
+
+    def test_transformed_vcv_copy_fallback_transforms_positive_branches(self):
+        tree = _make_tree("(A:1.0,(B:0.0,C):2.0);")
+
+        observed = vcv_utils._build_transformed_vcv_matrix_fallback(
+            tree,
+            ["A", "B", "C"],
+            lambda branch_length: branch_length + 1.0,
+        )
+
+        expected = np.array([
+            [2.0, 0.0, 0.0],
+            [0.0, 3.0, 3.0],
+            [0.0, 3.0, 3.0],
+        ])
+        np.testing.assert_allclose(observed, expected)
+        assert tree.find_any(name="A").branch_length == pytest.approx(1.0)
+
+    def test_transformed_vcv_uses_copy_fallback_for_legacy_tree(self, monkeypatch):
+        marker = np.array([[7.0]])
+        calls = []
+
+        def fallback(tree, names, transform):
+            calls.append((tree, names, transform(2.0)))
+            return marker
+
+        monkeypatch.setattr(
+            vcv_utils,
+            "_build_transformed_vcv_matrix_fallback",
+            fallback,
+        )
+        legacy_tree = object()
+
+        observed = build_transformed_vcv_matrix(
+            legacy_tree, ["A"], lambda value: value * 3.0
+        )
+
+        assert observed is marker
+        assert calls == [(legacy_tree, ["A"], 6.0)]
+
+    def test_transformed_vcv_falls_back_when_parent_map_is_unavailable(
+        self, monkeypatch
+    ):
+        tree = _make_tree("(A:1.0,B:1.0);")
+        marker = np.array([[8.0]])
+        monkeypatch.setattr(
+            vcv_utils,
+            "_build_vcv_from_descendant_indices",
+            lambda *_args: None,
+        )
+        monkeypatch.setattr(
+            vcv_utils,
+            "build_object_parent_map",
+            lambda _tree: (_ for _ in ()).throw(AttributeError),
+        )
+        monkeypatch.setattr(
+            vcv_utils,
+            "_build_transformed_vcv_matrix_fallback",
+            lambda *_args: marker,
+        )
+
+        observed = build_transformed_vcv_matrix(tree, ["A"], lambda value: value)
+
+        assert observed is marker
+
+    def test_transformed_vcv_parent_map_fallback_matches_expected_matrix(
+        self, monkeypatch
+    ):
+        tree = _make_tree("(A:0.0,(B:1.0,C:1.0):2.0);")
+        monkeypatch.setattr(
+            vcv_utils,
+            "_build_vcv_from_descendant_indices",
+            lambda *_args: None,
+        )
+
+        observed = build_transformed_vcv_matrix(
+            tree, ["A", "B", "C"], lambda value: value * 2.0
+        )
+
+        expected = np.array([
+            [0.0, 0.0, 0.0],
+            [0.0, 6.0, 4.0],
+            [0.0, 4.0, 6.0],
+        ])
+        np.testing.assert_allclose(observed, expected)
+
+    def test_transformed_vcv_falls_back_for_invalid_terminals(self, monkeypatch):
+        tree = _make_tree("(A:1.0,B:1.0);")
+        marker = np.array([[9.0]])
+        monkeypatch.setattr(
+            vcv_utils,
+            "_build_vcv_from_descendant_indices",
+            lambda *_args: None,
+        )
+        monkeypatch.setattr(tree, "get_terminals", lambda: 1)
+        monkeypatch.setattr(
+            vcv_utils,
+            "_build_transformed_vcv_matrix_fallback",
+            lambda *_args: marker,
+        )
+
+        observed = build_transformed_vcv_matrix(tree, ["A"], lambda value: value)
+
+        assert observed is marker
+
+    def test_transformed_vcv_falls_back_for_missing_or_disconnected_tip(
+        self, monkeypatch
+    ):
+        tree = _make_tree("(A:1.0,B:1.0);")
+        marker = np.array([[10.0]])
+        monkeypatch.setattr(
+            vcv_utils,
+            "_build_vcv_from_descendant_indices",
+            lambda *_args: None,
+        )
+        monkeypatch.setattr(
+            vcv_utils,
+            "_build_transformed_vcv_matrix_fallback",
+            lambda *_args: marker,
+        )
+
+        missing = build_transformed_vcv_matrix(
+            tree, ["C"], lambda value: value
+        )
+        monkeypatch.setattr(
+            vcv_utils,
+            "_build_vcv_from_branch_accumulation",
+            lambda *_args: None,
+        )
+        disconnected = build_transformed_vcv_matrix(
+            tree, ["A"], lambda value: value
+        )
+
+        assert missing is marker
+        assert disconnected is marker
 
     def test_explicit_root_branch_length_matches_distance_formula(self):
         tree = _make_tree("(A:1.0,(B:0.5,C:0.5):0.5):2.0;")
