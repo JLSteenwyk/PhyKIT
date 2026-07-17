@@ -1050,6 +1050,48 @@ class TestSpeciesTree:
         assert coords.shape == (11, 2)
 
 
+class TestVisualization:
+    def test_scatter_plot_marks_species_tree_and_skips_empty_cluster(
+        self, tmp_path, default_args
+    ):
+        output = tmp_path / "tree-space-species.png"
+        svc = TreeSpace(default_args)
+        coords = np.array(
+            [
+                [0.0, 0.0],
+                [1.0, 1.0],
+                [0.5, 0.5],
+            ]
+        )
+        labels = np.array([0, 0, 1])
+
+        svc._plot(coords, labels, k=2, species_tree_idx=2, output_path=str(output))
+
+        assert output.exists()
+        assert output.stat().st_size > 0
+
+    def test_heatmap_writes_clustered_distance_plot(self, tmp_path, default_args):
+        output = tmp_path / "tree-space-heatmap.png"
+        svc = TreeSpace(default_args)
+        dist = np.array(
+            [
+                [0.0, 0.1, 0.8, 0.9],
+                [0.1, 0.0, 0.7, 0.8],
+                [0.8, 0.7, 0.0, 0.2],
+                [0.9, 0.8, 0.2, 0.0],
+            ]
+        )
+
+        svc._plot_heatmap(
+            dist,
+            ["tree_1", "tree_2", "tree_3", "tree_4"],
+            str(output),
+        )
+
+        assert output.exists()
+        assert output.stat().st_size > 0
+
+
 class TestEndToEnd:
     @patch("builtins.print")
     def test_creates_png(self, mocked_print, tmp_path):
@@ -1140,6 +1182,53 @@ class TestEndToEnd:
         assert "coordinates" in payload
         assert len(payload["coordinates"]) == 10
         assert payload["output_file"] == str(output)
+
+    def test_rejects_fewer_than_three_gene_trees(self, tmp_path):
+        tree_file = tmp_path / "two-trees.nwk"
+        tree_file.write_text("((A,B),(C,D));\n((A,C),(B,D));\n")
+        svc = TreeSpace(
+            _base_args(
+                trees=str(tree_file),
+                output=str(tmp_path / "unused.png"),
+            )
+        )
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            svc.run()
+
+        assert exc_info.value.messages == [
+            "At least 3 gene trees are required for tree space analysis.",
+            "Only 2 tree(s) found.",
+        ]
+
+    @patch("builtins.print")
+    def test_heatmap_species_tree_distance_matrix_and_json_output(
+        self, mocked_print, tmp_path
+    ):
+        output = tmp_path / "tree-space-heatmap.png"
+        distance_matrix = tmp_path / "tree-distances.csv"
+        svc = TreeSpace(
+            _base_args(
+                output=str(output),
+                species_tree=TREE_SIMPLE,
+                heatmap=True,
+                distance_matrix=str(distance_matrix),
+                json=True,
+                k=2,
+                seed=42,
+            )
+        )
+
+        svc.run()
+
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload["n_trees"] == 10
+        assert payload["n_clusters"] == 2
+        assert payload["species_tree_cluster"] in {1, 2}
+        assert output.exists()
+        csv_lines = distance_matrix.read_text().splitlines()
+        assert csv_lines[0].endswith(",species_tree")
+        assert len(csv_lines) == 12
 
     def test_json_coordinates_vectorizes_rounding(self, monkeypatch):
         def fail_round(*_args, **_kwargs):
