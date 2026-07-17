@@ -70,6 +70,23 @@ stochastic-character-map, and tree-space coverage batches. Since the baseline,
 the suite covers 1,660 additional statements and 869 additional branches,
 increasing combined coverage by 3.87 percentage points.
 
+## Fourth progress checkpoint
+
+- Date: 2026-07-17
+- Commit: `0e5c734f`
+- Unit tests: 5,898 passed, 867 deselected
+- Integration tests: 859 passed, 5,906 deselected
+- Statements: 44,846 of 48,110 covered (93.22%)
+- Branches: 14,906 of 17,244 covered (86.44%)
+- Partial branches: 1,734
+- Combined statement-plus-branch coverage: 91.43%
+
+This checkpoint adds tree-base, internal-branch-statistics, LTT,
+threshold-model, quartet-network, concordance-ASR, and rate-heterogeneity
+coverage batches. Since the baseline, the suite covers 2,090 additional
+statements and 1,151 additional branches, increasing combined coverage by
+4.96 percentage points.
+
 ## Reproduction
 
 Run the complete unit and integration suites and create an aggregate report:
