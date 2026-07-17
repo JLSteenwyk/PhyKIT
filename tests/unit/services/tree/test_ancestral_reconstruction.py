@@ -332,6 +332,53 @@ class TestTraitParsing:
                 str(trait_file), ["raccoon", "bear", "weasel"]
             )
 
+    def test_single_trait_rejects_non_numeric_values(self, default_args, tmp_path):
+        trait_file = tmp_path / "traits.tsv"
+        trait_file.write_text("raccoon\t1.04\nbear\theavy\nweasel\t-0.30\n")
+        svc = AncestralReconstruction(default_args)
+
+        with pytest.raises(PhykitUserError) as excinfo:
+            svc._parse_single_trait_data(
+                str(trait_file), ["raccoon", "bear", "weasel"]
+            )
+
+        assert excinfo.value.messages == [
+            "Non-numeric trait value 'heavy' for taxon 'bear' on line 2."
+        ]
+
+    def test_single_trait_reports_taxon_mismatches(
+        self, default_args, tmp_path, capsys
+    ):
+        trait_file = tmp_path / "traits.tsv"
+        trait_file.write_text("A\t1\nB\t2\nC\t3\nX\t4\n")
+        svc = AncestralReconstruction(default_args)
+
+        traits = svc._parse_single_trait_data(
+            str(trait_file), ["A", "B", "C", "D"]
+        )
+
+        assert traits == {"A": 1.0, "B": 2.0, "C": 3.0}
+        assert capsys.readouterr().err.splitlines() == [
+            "Warning: 1 taxa in tree but not in trait file: D",
+            "Warning: 1 taxa in trait file but not in tree: X",
+        ]
+
+    def test_single_trait_requires_three_shared_taxa(
+        self, default_args, tmp_path, capsys
+    ):
+        trait_file = tmp_path / "traits.tsv"
+        trait_file.write_text("A\t1\nB\t2\nX\t3\n")
+        svc = AncestralReconstruction(default_args)
+
+        with pytest.raises(PhykitUserError) as excinfo:
+            svc._parse_single_trait_data(str(trait_file), ["A", "B", "C"])
+
+        assert excinfo.value.messages == [
+            "Only 2 shared taxa between tree and trait file.",
+            "At least 3 shared taxa are required.",
+        ]
+        assert "tree but not in trait file: C" in capsys.readouterr().err
+
     def test_multi_trait_format(self, default_args):
         svc = AncestralReconstruction(default_args)
         tree = svc.read_tree_file()
@@ -436,6 +483,88 @@ class TestTraitParsing:
 
         assert traits == {"raccoon": 1.04, "bear": 2.39, "weasel": -0.30}
         assert builtins.set is fail_set
+
+    @pytest.mark.parametrize(
+        ("contents", "expected_message"),
+        [
+            (
+                "# comment only\n\n",
+                "Multi-trait file must have a header row and at least one data row.",
+            ),
+            (
+                "taxon\nA\n",
+                "Header must have at least 2 columns (taxon + at least 1 trait).",
+            ),
+            (
+                "taxon\tbody_mass\n",
+                "Multi-trait file must have a header row and at least one data row.",
+            ),
+            (
+                "taxon\tbody_mass\nA\theavy\nB\t2\nC\t3\n",
+                "Non-numeric trait value 'heavy' for taxon 'A' "
+                "(trait 'body_mass') on line 2.",
+            ),
+        ],
+    )
+    def test_multi_trait_rejects_invalid_files(
+        self, default_args, tmp_path, contents, expected_message
+    ):
+        trait_file = tmp_path / "traits.tsv"
+        trait_file.write_text(contents)
+        svc = AncestralReconstruction(default_args)
+
+        with pytest.raises(PhykitUserError) as excinfo:
+            svc._parse_multi_trait_data(
+                str(trait_file), ["A", "B", "C"], "body_mass"
+            )
+
+        assert expected_message in excinfo.value.messages
+
+    def test_multi_trait_reports_taxon_mismatches(
+        self, default_args, tmp_path, capsys
+    ):
+        trait_file = tmp_path / "traits.tsv"
+        trait_file.write_text(
+            "taxon\tbody_mass\nA\t1\nB\t2\nC\t3\nX\t4\n"
+        )
+        svc = AncestralReconstruction(default_args)
+
+        traits = svc._parse_multi_trait_data(
+            str(trait_file), ["A", "B", "C", "D"], "body_mass"
+        )
+
+        assert traits == {"A": 1.0, "B": 2.0, "C": 3.0}
+        assert capsys.readouterr().err.splitlines() == [
+            "Warning: 1 taxa in tree but not in trait file: D",
+            "Warning: 1 taxa in trait file but not in tree: X",
+        ]
+
+    def test_multi_trait_requires_three_shared_taxa(
+        self, default_args, tmp_path
+    ):
+        trait_file = tmp_path / "traits.tsv"
+        trait_file.write_text("taxon\tbody_mass\nA\t1\nB\t2\nX\t3\n")
+        svc = AncestralReconstruction(default_args)
+
+        with pytest.raises(PhykitUserError) as excinfo:
+            svc._parse_multi_trait_data(
+                str(trait_file), ["A", "B", "C"], "body_mass"
+            )
+
+        assert excinfo.value.messages == [
+            "Only 2 shared taxa between tree and trait file.",
+            "At least 3 shared taxa are required.",
+        ]
+
+    def test_multi_trait_file_not_found(self, default_args, tmp_path):
+        svc = AncestralReconstruction(default_args)
+
+        with pytest.raises(PhykitUserError) as excinfo:
+            svc._parse_multi_trait_data(
+                str(tmp_path / "missing.tsv"), ["A", "B", "C"], "body_mass"
+            )
+
+        assert "corresponds to no such file or directory" in excinfo.value.messages[0]
 
     def test_file_not_found(self, default_args):
         svc = AncestralReconstruction(default_args)
@@ -1017,6 +1146,24 @@ class TestNodeLabeling:
         assert labels[id(left)] == "left"
         assert labels[id(right)] == "N2"
 
+    def test_label_internal_nodes_supports_legacy_tree_interface(self, default_args):
+        svc = AncestralReconstruction(default_args)
+        tree = Phylo.read(
+            StringIO("((A:1,B:1)left:1,(C:1,D:1):1)root;"),
+            "newick",
+        )
+
+        class LegacyTree:
+            def find_clades(self, *args, **kwargs):
+                return tree.find_clades(*args, **kwargs)
+
+        labels = svc._label_internal_nodes(LegacyTree())
+
+        left, right = tree.root.clades
+        assert labels[id(tree.root)] == "root"
+        assert labels[id(left)] == "left"
+        assert labels[id(right)] == "N1"
+
     def test_build_parent_map_uses_direct_preorder_traversal(
         self, default_args, monkeypatch
     ):
@@ -1065,6 +1212,21 @@ class TestNodeLabeling:
             parent_map[id(child)] is trifurcating for child in trifurcating.clades
         )
 
+    def test_build_parent_map_supports_legacy_tree_interface(self, default_args):
+        svc = AncestralReconstruction(default_args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,C:1);"), "newick")
+
+        class LegacyTree:
+            def find_clades(self, *args, **kwargs):
+                return tree.find_clades(*args, **kwargs)
+
+        parent_map = svc._build_parent_map(LegacyTree())
+
+        internal, terminal = tree.root.clades
+        assert parent_map[id(internal)] is tree.root
+        assert parent_map[id(terminal)] is tree.root
+        assert all(parent_map[id(child)] is internal for child in internal.clades)
+
     def test_get_descendant_tips_uses_direct_clade_traversal(
         self, default_args, monkeypatch
     ):
@@ -1077,6 +1239,33 @@ class TestNodeLabeling:
         monkeypatch.setattr(TreeMixin, "get_terminals", fail_get_terminals)
 
         assert svc._get_descendant_tips(tree, tree.root) == ["A", "B", "C", "D"]
+
+    def test_get_descendant_tips_falls_back_to_tree_mixin(
+        self, default_args, monkeypatch
+    ):
+        svc = AncestralReconstruction(default_args)
+        tree = Phylo.read(StringIO("((B:1,A:1):1,C:1);"), "newick")
+        monkeypatch.setattr(
+            ancestral_module.Tree,
+            "calculate_terminal_names_fast",
+            staticmethod(lambda _node: None),
+        )
+
+        assert svc._get_descendant_tips(tree, tree.root) == ["A", "B", "C"]
+
+    def test_descendant_collectors_reject_missing_root(self, default_args):
+        svc = AncestralReconstruction(default_args)
+
+        assert svc._collect_descendant_tip_counts(object()) is None
+        assert svc._collect_descendant_tip_names(object()) is None
+
+    def test_descendant_name_collection_rejects_unsortable_names(
+        self, default_args
+    ):
+        svc = AncestralReconstruction(default_args)
+        tree = Phylo.read(StringIO("(:1,A:1);"), "newick")
+
+        assert svc._collect_descendant_tip_names(tree) is None
 
     def test_collect_descendant_tip_counts_uses_direct_traversal(
         self, default_args, monkeypatch
@@ -1131,6 +1320,24 @@ class TestNodeLabeling:
         names = svc._collect_descendant_tip_names(tree)
 
         assert list(names[id(tree.root)]) == ["A", "B", "C", "D"]
+
+    @pytest.mark.parametrize(
+        ("newick", "expected"),
+        [
+            ("((C:1,D:1):1,(A:1,B:1):1);", ["A", "B", "C", "D"]),
+            ("(A:1,B:1,C:1);", ["A", "B", "C"]),
+            ("(C:1,A:1,B:1);", ["A", "B", "C"]),
+        ],
+    )
+    def test_collect_descendant_tip_names_orders_child_ranges(
+        self, default_args, newick, expected
+    ):
+        svc = AncestralReconstruction(default_args)
+        tree = Phylo.read(StringIO(newick), "newick")
+
+        names = svc._collect_descendant_tip_names(tree)
+
+        assert list(names[id(tree.root)]) == expected
 
 
 class TestRun:
