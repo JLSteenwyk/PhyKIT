@@ -1,0 +1,371 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alignment outlier regions &mdash; phykit 2.4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=ae8b8648" />
+
+  
+    <link rel="shortcut icon" href="../../_static/flavicon.png"/>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=4d935f96"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Alignment outlier taxa" href="alignment_outlier_taxa.html" />
+    <link rel="prev" title="Alignment length no gaps" href="alignment_length_no_gaps.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html">
+            
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started/index.html">Installation and first analysis</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Command reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../index.html#choose-by-task">Choose by task</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#all-commands">All commands</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../categories/alignment-dataset-utilities.html">Alignment &amp; dataset utilities</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../categories/alignment-quality-statistics.html">Alignment quality &amp; statistics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../categories/evolutionary-rate-analysis.html">Evolutionary rate analysis</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../categories/homology-assessment.html">Homology assessment</a><ul class="current">
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Alignment outlier regions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hidden_paralogy_check.html">Hidden paralogy check</a></li>
+<li class="toctree-l4"><a class="reference internal" href="spurious_sequence.html">Spurious homolog identification</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../categories/introgression-gene-flow.html">Introgression &amp; gene flow</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../categories/other-utilities.html">Other utilities</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../categories/phylogenetic-comparative-methods.html">Phylogenetic comparative methods</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../categories/phylogenetic-signal.html">Phylogenetic signal</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../categories/saturation-model-adequacy.html">Saturation &amp; model adequacy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../categories/trait-evolution.html">Trait evolution</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../categories/tree-comparison-consensus.html">Tree comparison &amp; consensus</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../categories/tree-manipulation-utilities.html">Tree manipulation &amp; utilities</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../categories/tree-summary-statistics.html">Tree summary statistics</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../formats/index.html">Input formats and shared conventions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../glossary/index.html">Glossary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../troubleshooting/index.html">Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../frequently_asked_questions/index.html">Frequently asked questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/index.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../about/index.html">About</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../change_log/index.html">Change log</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../other_software/index.html">Other software</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">phykit</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Command reference</a></li>
+          <li class="breadcrumb-item"><a href="../categories/alignment-quality-statistics.html">Alignment quality &amp; statistics</a></li>
+      <li class="breadcrumb-item active">Alignment outlier regions</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="alignment-outlier-regions">
+<span id="command-alignment-outlier-regions"></span><span id="cmd-alignment-outlier-regions"></span><h1>Alignment outlier regions<a class="headerlink" href="#alignment-outlier-regions" title="Link to this heading"></a></h1>
+<p>Detect localized outlier regions in multiple sequence alignments</p>
+<section id="command-identity">
+<h2>Command identity<a class="headerlink" href="#command-identity" title="Link to this heading"></a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">Canonical command<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">alignment_outlier_regions</span></code></p>
+</dd>
+<dt class="field-even">Handler<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">alignment_outlier_regions</span></code></p>
+</dd>
+<dt class="field-odd">Aliases<span class="colon">:</span></dt>
+<dd class="field-odd"><p>aor, outlier_regions</p>
+</dd>
+<dt class="field-even">Standalone executables<span class="colon">:</span></dt>
+<dd class="field-even"><p>pk_alignment_outlier_regions, pk_aor, pk_outlier_regions</p>
+</dd>
+<dt class="field-odd">Categories<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Alignment quality &amp; statistics, Homology assessment</p>
+</dd>
+</dl>
+</section>
+<section id="runtime-interface">
+<h2>Runtime interface<a class="headerlink" href="#runtime-interface" title="Link to this heading"></a></h2>
+<section id="synopsis">
+<h3>Synopsis<a class="headerlink" href="#synopsis" title="Link to this heading"></a></h3>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>phykit alignment_outlier_regions &lt;alignment&gt; [--cutoff &lt;cutoff&gt;] [--report &lt;report&gt;] [--mask-output &lt;mask_output&gt;] [--mask-character &lt;mask_character&gt;] [--json]
+</pre></div>
+</div>
+</section>
+<section id="arguments">
+<h3>Arguments<a class="headerlink" href="#arguments" title="Link to this heading"></a></h3>
+<p>This table is generated from the live command parser. It is the authoritative
+source for accepted spellings, required arguments, types, defaults, and choices.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 31.8%" />
+<col style="width: 11.4%" />
+<col style="width: 13.6%" />
+<col style="width: 20.5%" />
+<col style="width: 22.7%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Argument</p></th>
+<th class="head"><p>Required</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Default</p></th>
+<th class="head"><p>Choices</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">alignment</span></code></p></td>
+<td><p>true</p></td>
+<td><p>str</p></td>
+<td><p>required</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--cutoff</span></code></p></td>
+<td><p>false</p></td>
+<td><p>float</p></td>
+<td><p>3.0</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--report</span></code></p></td>
+<td><p>false</p></td>
+<td><p>str</p></td>
+<td><p>none</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--mask-output</span></code></p></td>
+<td><p>false</p></td>
+<td><p>str</p></td>
+<td><p>none</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--mask-character</span></code></p></td>
+<td><p>false</p></td>
+<td><p>str</p></td>
+<td><p>?</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--json</span></code></p></td>
+<td><p>false</p></td>
+<td><p>boolean</p></td>
+<td><p>false</p></td>
+<td><p>any</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="output-and-errors">
+<h3>Output and errors<a class="headerlink" href="#output-and-errors" title="Link to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">--json</span></code> provides the command's structured JSON representation. Output-file options: <code class="docutils literal notranslate"><span class="pre">--mask-output</span></code>. Invalid command syntax exits with status 2. Input
+validation and scientific limitations are described in the guidance below.</p>
+</section>
+</section>
+<section id="guidance-interpretation-and-examples">
+<h2>Guidance, interpretation, and examples<a class="headerlink" href="#guidance-interpretation-and-examples" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">alignment_outlier_regions</span></code> identifies localized stretches that are unusually
+divergent in both dimensions of a multiple sequence alignment: relative to the
+other characters in the same alignment columns and relative to other regions in
+the same sequence. These stretches can result from sequencing, assembly, gene
+prediction, contamination, or alignment errors.</p>
+<p>The command reports individual taxon-region combinations. It does not remove an
+entire sequence or alignment column. With <code class="docutils literal notranslate"><span class="pre">--mask-output</span></code>, only flagged
+characters are replaced, while gaps, existing ambiguous characters, unaffected
+taxa, and unaffected columns are retained.</p>
+<section id="method">
+<h3>Method<a class="headerlink" href="#method" title="Link to this heading"></a></h3>
+<p>PhyKIT uses a two-dimensional procedure inspired by TAPER:</p>
+<ol class="arabic simple">
+<li><p>Each valid character <code class="docutils literal notranslate"><span class="pre">x</span></code> in column <code class="docutils literal notranslate"><span class="pre">i</span></code> receives the divergence score
+<code class="docutils literal notranslate"><span class="pre">1</span> <span class="pre">/</span> <span class="pre">(u_i</span> <span class="pre">*</span> <span class="pre">p_i,x)</span></code>, where <code class="docutils literal notranslate"><span class="pre">u_i</span></code> is the number of unique valid character
+states and <code class="docutils literal notranslate"><span class="pre">p_i,x</span></code> is the frequency of <code class="docutils literal notranslate"><span class="pre">x</span></code> among valid characters in the
+column. Rare characters in otherwise conserved columns therefore receive
+high scores.</p></li>
+<li><p>Scores are summarized within overlapping windows along each ungapped
+sequence.</p></li>
+<li><p>A two-class Jenks natural break separates ordinary and high-scoring windows
+within each sequence.</p></li>
+<li><p>Across-taxon, within-sequence, and absolute score thresholds prevent every
+sequence from being forced to contain an outlier.</p></li>
+<li><p>Dynamic programming smooths window classifications into contiguous regions.</p></li>
+</ol>
+<p>The analysis combines the published TAPER scale settings: window sizes 5, 9,
+and 17; taxon-tail proportions 0.25, 0.25, and 0.10; and sequence-tail
+proportions 0.10, 0.25, and 0.50. Calls from the three scales are combined.
+Regions longer than 30 or 54 valid characters are ignored at window sizes 5 or
+9, respectively; the window-size-17 analysis has no upper limit.</p>
+<p>This is an independent implementation of the method described in the TAPER
+paper, not a wrapper around the TAPER software. Exact calls can differ between
+the programs. Cite TAPER when using this command:</p>
+<blockquote>
+<div><p>Zhang C, Zhao Y, Braun EL, and Mirarab S. 2021. TAPER: Pinpointing errors in
+multiple sequence alignments despite varying rates of evolution. <em>Methods in
+Ecology and Evolution</em> 12:2145-2158.
+<a class="reference external" href="https://doi.org/10.1111/2041-210X.13696">https://doi.org/10.1111/2041-210X.13696</a></p>
+</div></blockquote>
+</section>
+<section id="input-and-missing-data">
+<h3>Input and missing data<a class="headerlink" href="#input-and-missing-data" title="Link to this heading"></a></h3>
+<p>The input must be a multiple sequence alignment. PhyKIT accepts the alignment
+formats supported elsewhere in the toolkit, including FASTA, PHYLIP, Clustal,
+MAF, and Stockholm.</p>
+<p>For nucleotide alignments, <code class="docutils literal notranslate"><span class="pre">-</span></code>, <code class="docutils literal notranslate"><span class="pre">?</span></code>, <code class="docutils literal notranslate"><span class="pre">*</span></code>, <code class="docutils literal notranslate"><span class="pre">X</span></code>, and <code class="docutils literal notranslate"><span class="pre">N</span></code> are treated as
+missing. For protein alignments, <code class="docutils literal notranslate"><span class="pre">-</span></code>, <code class="docutils literal notranslate"><span class="pre">?</span></code>, <code class="docutils literal notranslate"><span class="pre">*</span></code>, and <code class="docutils literal notranslate"><span class="pre">X</span></code> are treated as
+missing. Missing characters do not contribute to column frequencies, window
+scores, or sequence coordinates.</p>
+</section>
+<section id="output">
+<h3>Output<a class="headerlink" href="#output" title="Link to this heading"></a></h3>
+<p>The default tab-separated report contains one row per detected region:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">taxon</span></code></dt><dd><p>Sequence identifier.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">alignment_start</span></code> and <code class="docutils literal notranslate"><span class="pre">alignment_end</span></code></dt><dd><p>One-based, closed coordinates in the original alignment.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">sequence_start</span></code> and <code class="docutils literal notranslate"><span class="pre">sequence_end</span></code></dt><dd><p>One-based, closed coordinates among valid characters after gaps and ambiguous
+characters are excluded.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">length</span></code></dt><dd><p>Number of valid characters in the region.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">mean_divergence_score</span></code> and <code class="docutils literal notranslate"><span class="pre">max_divergence_score</span></code></dt><dd><p>Character-level divergence summaries for the region.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">window_sizes</span></code></dt><dd><p>TAPER-inspired scales that supported at least part of the reported region.</p>
+</dd>
+</dl>
+<p>If no region is detected, the tabular output contains only its header. JSON
+output additionally records the citation, parameters, alignment dimensions,
+number of affected taxa, and number of masked characters.</p>
+</section>
+<section id="examples">
+<h3>Examples<a class="headerlink" href="#examples" title="Link to this heading"></a></h3>
+<p>Print a tab-separated region report:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>alignment_outlier_regions<span class="w"> </span>alignment.fa
+</pre></div>
+</div>
+<p>Write the report and a masked FASTA alignment:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>alignment_outlier_regions<span class="w"> </span>alignment.fa<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--report<span class="w"> </span>suspicious_regions.tsv<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--mask-output<span class="w"> </span>alignment.masked.fa
+</pre></div>
+</div>
+<p>Use <code class="docutils literal notranslate"><span class="pre">N</span></code> for masked nucleotide characters and write JSON metadata:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>alignment_outlier_regions<span class="w"> </span>alignment.fa<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--mask-output<span class="w"> </span>alignment.masked.fa<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--mask-character<span class="w"> </span>N<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--json
+</pre></div>
+</div>
+<p>Increase sensitivity by lowering the absolute cutoff while keeping it greater
+than 1:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>alignment_outlier_regions<span class="w"> </span>alignment.fa<span class="w"> </span>--cutoff<span class="w"> </span><span class="m">2</span>.5
+</pre></div>
+</div>
+</section>
+<section id="interpretation-and-limitations">
+<h3>Interpretation and limitations<a class="headerlink" href="#interpretation-and-limitations" title="Link to this heading"></a></h3>
+<p>A reported region is a statistical outlier, not proof that the underlying
+characters are nonhomologous. Inspect important calls and compare downstream
+results with and without masking. Highly divergent but valid biological regions
+can be flagged, especially when taxon sampling is sparse.</p>
+<p>As discussed for TAPER, two-dimensional detection has limited power for very
+short errors. Very long errors, or the same error occurring in many taxa, can
+look like normal biological variation rather than an outlier. The method also
+assumes that the alignment mostly represents the same homologous locus; resolve
+clear paralogy before interpreting localized calls.</p>
+<p>Lower finite <code class="docutils literal notranslate"><span class="pre">--cutoff</span></code> values greater than 1 are more aggressive and can
+increase false positives.
+The default value of 3.0 follows the TAPER recommendation. Masking should be
+treated as a sensitivity-analysis step rather than an automatic guarantee of a
+better phylogenetic estimate.</p>
+</section>
+<section id="related-commands">
+<h3>Related commands<a class="headerlink" href="#related-commands" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><a class="reference internal" href="alignment_outlier_taxa.html"><span class="doc">Alignment outlier taxa</span></a> evaluates whole-sequence quality features.</p></li>
+<li><p><a class="reference internal" href="spurious_sequence.html"><span class="doc">Spurious homolog identification</span></a> detects tree-based long-branch and diameter-impact
+outliers.</p></li>
+<li><p><a class="reference internal" href="hidden_paralogy_check.html"><span class="doc">Hidden paralogy check</span></a> tests expected monophyletic groups for evidence
+of hidden paralogy.</p></li>
+<li><p><a class="reference internal" href="mask_alignment.html"><span class="doc">Mask alignment</span></a> removes complete alignment columns using occupancy,
+gap, or entropy thresholds.</p></li>
+</ul>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="alignment_length_no_gaps.html" class="btn btn-neutral float-left" title="Alignment length no gaps" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="alignment_outlier_taxa.html" class="btn btn-neutral float-right" title="Alignment outlier taxa" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020-2026 Jacob L. Steenwyk.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

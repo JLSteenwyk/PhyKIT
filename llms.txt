@@ -33,6 +33,7 @@ Documentation version: 2.4.0
 - [alignment_entropy](https://jlsteenwyk.github.io/PhyKIT/reference/commands/alignment_entropy.html): Shannon entropy across alignment sites
 - [alignment_length](https://jlsteenwyk.github.io/PhyKIT/reference/commands/alignment_length.html): Length of an input alignment
 - [alignment_length_no_gaps](https://jlsteenwyk.github.io/PhyKIT/reference/commands/alignment_length_no_gaps.html): Alignment length excluding gapped sites
+- [alignment_outlier_regions](https://jlsteenwyk.github.io/PhyKIT/reference/commands/alignment_outlier_regions.html): Detect localized outlier regions in multiple sequence alignments
 - [alignment_outlier_taxa](https://jlsteenwyk.github.io/PhyKIT/reference/commands/alignment_outlier_taxa.html): Identify outlier taxa in alignments
 - [codon_dnds](https://jlsteenwyk.github.io/PhyKIT/reference/commands/codon_dnds.html): Pairwise synonymous and nonsynonymous substitution-rate estimates
 - [column_score](https://jlsteenwyk.github.io/PhyKIT/reference/commands/column_score.html): Column score for alignment quality
@@ -54,6 +55,7 @@ Documentation version: 2.4.0
 - [covarying_evolutionary_rates](https://jlsteenwyk.github.io/PhyKIT/reference/commands/covarying_evolutionary_rates.html): Detect covariation in evolutionary rates
 - [relative_rate_test](https://jlsteenwyk.github.io/PhyKIT/reference/commands/relative_rate_test.html): Relative rate test between lineages
 ### Homology assessment
+- [alignment_outlier_regions](https://jlsteenwyk.github.io/PhyKIT/reference/commands/alignment_outlier_regions.html): Detect localized outlier regions in multiple sequence alignments
 - [hidden_paralogy_check](https://jlsteenwyk.github.io/PhyKIT/reference/commands/hidden_paralogy_check.html): Check for hidden paralogy in gene trees
 - [spurious_sequence](https://jlsteenwyk.github.io/PhyKIT/reference/commands/spurious_sequence.html): Detect long-branch and high-diameter-impact sequence outliers
 ### Introgression & gene flow

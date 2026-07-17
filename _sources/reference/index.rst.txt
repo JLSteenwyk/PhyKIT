@@ -9,9 +9,9 @@ Choose by task
 --------------
 
 - :doc:`Alignment & dataset utilities <categories/alignment-dataset-utilities>` (9 commands)
-- :doc:`Alignment quality & statistics <categories/alignment-quality-statistics>` (19 commands)
+- :doc:`Alignment quality & statistics <categories/alignment-quality-statistics>` (20 commands)
 - :doc:`Evolutionary rate analysis <categories/evolutionary-rate-analysis>` (3 commands)
-- :doc:`Homology assessment <categories/homology-assessment>` (2 commands)
+- :doc:`Homology assessment <categories/homology-assessment>` (3 commands)
 - :doc:`Introgression & gene flow <categories/introgression-gene-flow>` (4 commands)
 - :doc:`Other utilities <categories/other-utilities>` (1 commands)
 - :doc:`Phylogenetic comparative methods <categories/phylogenetic-comparative-methods>` (8 commands)
