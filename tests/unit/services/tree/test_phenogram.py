@@ -69,6 +69,89 @@ class TestProcessArgs:
 
 
 class TestTraitParsing:
+    def test_missing_file_reports_path(self, tmp_path):
+        missing_path = tmp_path / "missing-traits.tsv"
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=str(missing_path),
+            output="plot.png",
+            json=False,
+        )
+        svc = Phenogram(args)
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            svc._parse_single_trait_data(str(missing_path), ["A", "B", "C"])
+
+        assert f"{missing_path} corresponds to no such file or directory." in (
+            exc_info.value.messages
+        )
+
+    def test_reordered_complete_trait_file_is_accepted(self, tmp_path):
+        trait_file = tmp_path / "traits.tsv"
+        trait_file.write_text("C\t3.0\nA\t1.0\nB\t2.0\n")
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=str(trait_file),
+            output="plot.png",
+            json=False,
+        )
+        svc = Phenogram(args)
+
+        traits = svc._parse_single_trait_data(
+            str(trait_file),
+            ["A", "B", "C"],
+        )
+
+        assert traits == {"C": 3.0, "A": 1.0, "B": 2.0}
+
+    def test_partial_taxon_overlap_warns_and_keeps_shared_values(
+        self, tmp_path, capsys
+    ):
+        trait_file = tmp_path / "traits.tsv"
+        trait_file.write_text("B\t2.0\nC\t3.0\nD\t4.0\nE\t5.0\n")
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=str(trait_file),
+            output="plot.png",
+            json=False,
+        )
+        svc = Phenogram(args)
+
+        traits = svc._parse_single_trait_data(
+            str(trait_file),
+            ["A", "B", "C", "D"],
+        )
+
+        assert traits == {"B": 2.0, "C": 3.0, "D": 4.0}
+        assert capsys.readouterr().err.splitlines() == [
+            "Warning: 1 taxa in tree but not in trait file: A",
+            "Warning: 1 taxa in trait file but not in tree: E",
+        ]
+
+    def test_fewer_than_three_shared_taxa_is_rejected(
+        self, tmp_path, capsys
+    ):
+        trait_file = tmp_path / "traits.tsv"
+        trait_file.write_text("A\t1.0\nB\t2.0\nD\t4.0\n")
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=str(trait_file),
+            output="plot.png",
+            json=False,
+        )
+        svc = Phenogram(args)
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            svc._parse_single_trait_data(
+                str(trait_file),
+                ["A", "B", "C"],
+            )
+
+        assert "Only 2 shared taxa between tree and trait file." in (
+            exc_info.value.messages
+        )
+        assert "Warning:" in capsys.readouterr().err
+
     def test_comments_and_blanks(self, tmp_path):
         trait_file = tmp_path / "traits.tsv"
         trait_file.write_text(
