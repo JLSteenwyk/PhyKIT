@@ -279,6 +279,17 @@ class TestTraitParsing:
 
 
 class TestPhyloHeatmapPlot:
+    def test_clustered_columns_render_dendrogram(self, args):
+        pytest.importorskip("matplotlib")
+        pytest.importorskip("scipy")
+        args.cluster_columns = True
+        ph = PhyloHeatmap(args)
+
+        ph.run()
+
+        assert Path(args.output).exists()
+        assert Path(args.output).stat().st_size > 0
+
     @pytest.mark.parametrize(
         "tree",
         [
