@@ -9,10 +9,13 @@ from phykit.helpers.plot_config import (
     PlotConfig,
     _assign_internal_y_from_children,
     _mean_child_y,
+    _preorder_clades,
     _preorder_clades_direct,
+    _terminal_clades,
     _terminal_clades_direct,
     add_plot_arguments,
     build_parent_map,
+    cleanup_tree_axes,
     compute_node_positions,
     draw_tree_branches,
     draw_tip_labels,
@@ -210,6 +213,31 @@ class TestResolve:
         config.resolve(n_rows=500, n_cols=500)
         assert config.fig_height == first_height  # not overwritten
 
+    def test_resolve_uses_square_dimensions_for_circular_tree(self):
+        config = PlotConfig(circular=True)
+
+        config.resolve(n_rows=200)
+
+        assert config.fig_width == 14.0
+        assert config.fig_height == 14.0
+
+    @pytest.mark.parametrize(
+        ("dimensions", "expected_width", "expected_height"),
+        [
+            ({"fig_width": 11.0}, 11.0, 5.0),
+            ({"fig_height": 9.0}, 14.0, 9.0),
+        ],
+    )
+    def test_resolve_preserves_partial_circular_dimensions(
+        self, dimensions, expected_width, expected_height
+    ):
+        config = PlotConfig(circular=True, **dimensions)
+
+        config.resolve(n_rows=10)
+
+        assert config.fig_width == expected_width
+        assert config.fig_height == expected_height
+
 
 class TestAddPlotArguments:
     def _make_parser(self):
@@ -354,6 +382,15 @@ class TestComputeNodePositions:
         assert iterable.iterations == 1
         assert _mean_child_y([object()], {}) == 0.0
 
+    def test_assign_internal_y_averages_available_binary_child(self):
+        left = object()
+        right = object()
+        parent = type("Clade", (), {"clades": [left, right]})()
+
+        assert _assign_internal_y_from_children(
+            parent, {id(left): 3.0}
+        ) == pytest.approx(3.0)
+
     def test_build_parent_map_uses_direct_tree_traversal(self, monkeypatch):
         tree = self._make_tree()
 
@@ -481,6 +518,24 @@ class TestComputeNodePositions:
         assert node_y[id(tree.root)] == pytest.approx(1.25)
 
     @pytest.mark.parametrize("cladogram", [False, True])
+    def test_tree_layout_supports_non_list_child_sequences(self, cladogram):
+        tree = self._make_tree()
+        expected_parent_map = build_parent_map(tree)
+        expected_x, expected_y = compute_node_positions(
+            tree, expected_parent_map, cladogram=cladogram
+        )
+        tree.root.clades = tuple(tree.root.clades)
+
+        parent_map = build_parent_map(tree)
+        node_x, node_y = compute_node_positions(
+            tree, parent_map, cladogram=cladogram
+        )
+
+        assert parent_map == expected_parent_map
+        assert node_x == pytest.approx(expected_x)
+        assert node_y == pytest.approx(expected_y)
+
+    @pytest.mark.parametrize("cladogram", [False, True])
     def test_compute_node_positions_reuses_precomputed_preorder(self, cladogram):
         tree = self._make_tree()
         parent_map = build_parent_map(tree)
@@ -501,6 +556,30 @@ class TestComputeNodePositions:
         assert observed_x == pytest.approx(expected_x)
         assert observed_y == pytest.approx(expected_y)
 
+    @pytest.mark.parametrize("cladogram", [False, True])
+    def test_precomputed_layout_ignores_clades_without_parents(self, cladogram):
+        tree = self._make_tree()
+        parent_map = build_parent_map(tree)
+        orphan = type(
+            "Clade",
+            (),
+            {"clades": [], "branch_length": 2.0},
+        )()
+        preorder_clades = list(tree.find_clades(order="preorder")) + [orphan]
+
+        node_x, node_y = compute_node_positions(
+            tree,
+            parent_map,
+            cladogram=cladogram,
+            preorder_clades=preorder_clades,
+        )
+
+        assert id(orphan) in node_y
+        if cladogram:
+            assert node_x[id(orphan)] == pytest.approx(1.0)
+        else:
+            assert id(orphan) not in node_x
+
     def test_direct_clade_helpers_preserve_mixed_child_order(self, monkeypatch):
         tree = Phylo.read(
             StringIO("(A:1,(B:1,C:1):1,(D:1,E:1,F:1):1,G:1);"),
@@ -518,6 +597,121 @@ class TestComputeNodePositions:
         assert _preorder_clades_direct(tree) == expected_preorder
         assert _terminal_clades_direct(tree) == expected_terminals
 
+    def test_clade_helpers_fall_back_for_legacy_tree_interface(self):
+        tip = object()
+
+        class LegacyTree:
+            def get_terminals(self):
+                return [tip]
+
+            def find_clades(self, order):
+                assert order == "preorder"
+                return iter([tip])
+
+        tree = LegacyTree()
+
+        assert _terminal_clades(tree) == [tip]
+        assert _preorder_clades(tree) == [tip]
+
+    def test_clade_helpers_fall_back_for_incomplete_child_interface(self):
+        tip = object()
+        root = type("Root", (), {"clades": [tip]})()
+
+        class Tree:
+            def __init__(self):
+                self.root = root
+
+            def get_terminals(self):
+                return [tip]
+
+            def find_clades(self, order):
+                assert order == "preorder"
+                return iter([root, tip])
+
+        tree = Tree()
+
+        assert _terminal_clades(tree) == [tip]
+        assert _preorder_clades(tree) == [root, tip]
+
+    def test_draw_tree_branches_skips_incomplete_coordinates(self):
+        tree = self._make_tree()
+        parent_map = build_parent_map(tree)
+        node_x, node_y = compute_node_positions(tree, parent_map)
+        missing_parent = tree.root.clades[1]
+        missing_x = tree.root.clades[0].clades[0]
+        parent_map.pop(id(missing_parent))
+        node_x.pop(id(missing_x))
+        colored_clades = []
+
+        class Axes:
+            def __init__(self):
+                self.calls = []
+
+            def plot(self, *args, **kwargs):
+                self.calls.append((args, kwargs))
+
+        def branch_color(clade):
+            colored_clades.append(clade)
+            return "red"
+
+        ax = Axes()
+        draw_tree_branches(
+            ax, tree, node_x, node_y, parent_map, color=branch_color
+        )
+
+        assert len(ax.calls) == 4
+        assert len(colored_clades) == 2
+        assert [call[1]["color"] for call in ax.calls[::2]] == ["red", "red"]
+
+    def test_batched_tree_branches_skip_incomplete_coordinates(self):
+        pytest.importorskip("matplotlib")
+        import matplotlib
+
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+
+        tree = self._make_tree()
+        parent_map = build_parent_map(tree)
+        node_x, node_y = compute_node_positions(tree, parent_map)
+        parent_map.pop(id(tree.root.clades[1]))
+        node_x.pop(id(tree.root.clades[0].clades[0]))
+        colored_clades = []
+        fig, ax = plt.subplots()
+
+        try:
+            draw_tree_branches(
+                ax,
+                tree,
+                node_x,
+                node_y,
+                parent_map,
+                color=lambda clade: colored_clades.append(clade) or "red",
+            )
+
+            assert len(ax.collections) == 2
+            assert all(len(collection.get_segments()) == 2 for collection in ax.collections)
+            assert len(colored_clades) == 2
+        finally:
+            plt.close(fig)
+
+    def test_batched_tree_branches_allow_empty_parent_map(self):
+        pytest.importorskip("matplotlib")
+        import matplotlib
+
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+
+        tree = self._make_tree()
+        node_x, node_y = compute_node_positions(tree, build_parent_map(tree))
+        fig, ax = plt.subplots()
+
+        try:
+            draw_tree_branches(ax, tree, node_x, node_y, {})
+
+            assert len(ax.collections) == 0
+        finally:
+            plt.close(fig)
+
     def test_draw_tip_labels_uses_direct_terminal_traversal(self, monkeypatch):
         tree = self._make_tree()
         parent_map = build_parent_map(tree)
@@ -533,6 +727,36 @@ class TestComputeNodePositions:
                 return None
 
         draw_tip_labels(Ax(), tree, node_x, node_y)
+
+    def test_draw_tip_labels_suppresses_nonpositive_font_size(self):
+        class Axes:
+            def text(self, *args, **kwargs):
+                raise AssertionError("suppressed labels should not be drawn")
+
+        draw_tip_labels(Axes(), self._make_tree(), {}, {}, fontsize=0)
+
+    @pytest.mark.parametrize("show_xlabel", [False, True])
+    def test_cleanup_tree_axes(self, show_xlabel):
+        pytest.importorskip("matplotlib")
+        import matplotlib
+
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+
+        fig, ax = plt.subplots()
+        ax.set_xlabel("Existing label")
+
+        try:
+            cleanup_tree_axes(ax, show_xlabel=show_xlabel)
+
+            assert len(ax.get_yticks()) == 0
+            assert not ax.spines["top"].get_visible()
+            assert not ax.spines["right"].get_visible()
+            assert not ax.spines["left"].get_visible()
+            expected = "Branch length" if show_xlabel else "Existing label"
+            assert ax.get_xlabel() == expected
+        finally:
+            plt.close(fig)
 
 
 class TestApplyToFigure:
@@ -585,6 +809,44 @@ class TestApplyToFigure:
         config.apply_to_figure(fig, ax, default_title="T", default_colors=["red"])
         legend = ax.get_legend()
         assert legend is None or not legend.get_visible()
+        plt.close(fig)
+
+    def test_repositions_existing_legend_and_applies_font_sizes(self):
+        import matplotlib.pyplot as plt
+
+        fig, ax = self._make_fig_ax()
+        ax.lines[0].set_label("observed")
+        ax.legend(loc="upper right")
+        ax.set_xlabel("X")
+        ax.set_ylabel("Y")
+        ax.set_xticks([0, 1])
+        ax.set_yticks([0, 1])
+        config = PlotConfig(
+            legend_position="lower left",
+            axis_fontsize=11.0,
+            ylabel_fontsize=6.0,
+            xlabel_fontsize=5.0,
+        )
+
+        config.apply_to_figure(fig, ax, default_title="T", default_colors=["red"])
+
+        assert ax.get_legend()._loc == 3
+        assert ax.xaxis.label.get_fontsize() == 11.0
+        assert ax.yaxis.label.get_fontsize() == 11.0
+        assert all(label.get_fontsize() == 6.0 for label in ax.get_yticklabels())
+        assert all(label.get_fontsize() == 5.0 for label in ax.get_xticklabels())
+        plt.close(fig)
+
+    @pytest.mark.parametrize("legend_position", ["none", "upper right"])
+    def test_legend_options_allow_axes_without_legend(self, legend_position):
+        import matplotlib.pyplot as plt
+
+        fig, ax = self._make_fig_ax()
+        config = PlotConfig(legend_position=legend_position)
+
+        config.apply_to_figure(fig, ax, default_title="T", default_colors=["red"])
+
+        assert ax.get_legend() is None
         plt.close(fig)
 
     def test_returns_merged_colors(self):
