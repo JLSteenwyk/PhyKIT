@@ -98,6 +98,36 @@ class TestWithPlot:
         assert os.path.exists(output)
         assert os.path.getsize(output) > 0
 
+    @pytest.mark.parametrize("circular", [False, True])
+    def test_with_color_annotations(self, tmp_path, circular):
+        output = str(tmp_path / f"hybrid_colored_{circular}.png")
+        color_file = tmp_path / "colors.tsv"
+        color_file.write_text(
+            "bear\tlabel\t#ff0000\n"
+            "bear,raccoon\trange\t#ffe0e0\tUrsids\n"
+        )
+        from phykit.phykit import Phykit
+
+        sys.argv = [
+            "phykit",
+            "hybridization",
+            "-t",
+            TREE_SIMPLE,
+            "-g",
+            GENE_TREES,
+            "--plot",
+            output,
+            "--color-file",
+            str(color_file),
+        ]
+        if circular:
+            sys.argv.append("--circular")
+
+        Phykit()
+
+        assert os.path.exists(output)
+        assert os.path.getsize(output) > 0
+
 
 class TestWithAlphaArg:
     def test_with_alpha(self, capsys):
