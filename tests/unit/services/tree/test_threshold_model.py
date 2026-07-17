@@ -2,7 +2,6 @@ import builtins
 import importlib
 import json
 import math
-import os
 import subprocess
 import sys
 from argparse import Namespace
@@ -15,6 +14,7 @@ from Bio import Phylo
 from Bio.Phylo.BaseTree import TreeMixin
 
 import phykit.services.tree.threshold_model as threshold_model_module
+from phykit.services.tree.base import Tree
 from phykit.services.tree.threshold_model import ThresholdModel
 from phykit.errors import PhykitUserError
 
@@ -206,6 +206,47 @@ class TestProcessArgs:
         with pytest.raises(SystemExit):
             ThresholdModel(args)
 
+    @pytest.mark.parametrize("traits", ["one", "one,two,three"])
+    def test_requires_exactly_two_trait_names(self, traits):
+        args = Namespace(
+            tree="t.tre",
+            trait_data="traits.tsv",
+            traits=traits,
+            types="discrete,continuous",
+        )
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            ThresholdModel(args)
+
+        assert "Expected exactly 2 trait names" in exc_info.value.messages[0]
+
+    def test_missing_types_raises(self):
+        args = Namespace(
+            tree="t.tre",
+            trait_data="traits.tsv",
+            traits="one,two",
+            types=None,
+        )
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            ThresholdModel(args)
+
+        assert "Two trait types must be specified" in exc_info.value.messages[0]
+
+    @pytest.mark.parametrize("types", ["continuous", "continuous,discrete,continuous"])
+    def test_requires_exactly_two_trait_types(self, types):
+        args = Namespace(
+            tree="t.tre",
+            trait_data="traits.tsv",
+            traits="one,two",
+            types=types,
+        )
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            ThresholdModel(args)
+
+        assert "Expected exactly 2 trait types" in exc_info.value.messages[0]
+
     def test_invalid_type_raises(self):
         args = Namespace(
             tree="t.tre",
@@ -235,6 +276,63 @@ class TestParseMultiTraitFile:
         assert t1["A"] == 0.0
         assert t1["B"] == 1.0
         assert abs(t2["A"] - 1.5) < 1e-10
+
+    @pytest.mark.parametrize(
+        ("contents", "trait1", "trait2", "expected_message"),
+        [
+            pytest.param("", "t1", "t2", "Trait file is empty", id="empty-file"),
+            pytest.param(
+                "taxon\nA\n",
+                "t1",
+                "t2",
+                "at least 2 tab-separated columns",
+                id="short-header",
+            ),
+            pytest.param(
+                "taxon\tt1\tt2\nA\t0\t1\n",
+                "missing",
+                "t2",
+                "Trait 'missing' not found",
+                id="first-trait-missing",
+            ),
+            pytest.param(
+                "taxon\tt1\tt2\nA\tnot-a-number\t1\n",
+                "t1",
+                "t2",
+                "Non-numeric value 'not-a-number' for trait 't1'",
+                id="first-trait-nonnumeric",
+            ),
+            pytest.param(
+                "taxon\tt1\tt2\nA\t0\tnot-a-number\n",
+                "t1",
+                "t2",
+                "Non-numeric value 'not-a-number' for trait 't2'",
+                id="second-trait-nonnumeric",
+            ),
+        ],
+    )
+    def test_trait_file_validation_errors(
+        self,
+        tmp_path,
+        contents,
+        trait1,
+        trait2,
+        expected_message,
+    ):
+        trait_file = tmp_path / "invalid-traits.tsv"
+        trait_file.write_text(contents)
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            ThresholdModel._parse_multi_trait_file(
+                str(trait_file),
+                trait1,
+                trait2,
+                "continuous",
+                "continuous",
+                ["A", "B", "C"],
+            )
+
+        assert expected_message in exc_info.value.messages[0]
 
     def test_comments_blanks_and_extra_columns(self, tmp_path):
         trait_file = tmp_path / "traits.tsv"
@@ -430,6 +528,40 @@ class TestBuildVCVMatrix:
         ThresholdModel._prune_tree_to_taxa(tree, {"A", "C"})
 
         assert {tip.name for tip in original_get_terminals(tree)} == {"A", "C"}
+
+    def test_prune_tree_to_taxa_uses_generic_tree_fallback(self, monkeypatch):
+        tree = _make_tree()
+        monkeypatch.setattr(Tree, "_terminal_by_name_fast", lambda _tree: None)
+
+        ThresholdModel._prune_tree_to_taxa(tree, {"A", "C"})
+
+        assert {tip.name for tip in tree.get_terminals()} == {"A", "C"}
+
+    def test_prune_tree_to_taxa_is_noop_when_all_taxa_are_retained(self, monkeypatch):
+        tree = _make_tree()
+        monkeypatch.setattr(
+            TreeMixin,
+            "prune",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(
+                AssertionError("no tips should be pruned")
+            ),
+        )
+
+        ThresholdModel._prune_tree_to_taxa(tree, {"A", "B", "C", "D"})
+
+        assert {tip.name for tip in tree.get_terminals()} == {"A", "B", "C", "D"}
+
+    def test_prune_tree_to_taxa_falls_back_to_individual_pruning(self, monkeypatch):
+        tree = _make_tree()
+        monkeypatch.setattr(
+            Tree,
+            "_prune_terminal_objects_batch_standard_tree",
+            lambda *_args, **_kwargs: False,
+        )
+
+        ThresholdModel._prune_tree_to_taxa(tree, {"A", "C"})
+
+        assert {tip.name for tip in tree.get_terminals()} == {"A", "C"}
 
 
 class TestInitializeLiabilities:
