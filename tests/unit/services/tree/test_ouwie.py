@@ -1306,6 +1306,104 @@ class TestVCV:
         np.testing.assert_allclose(observed["r1"], [[2.0, 2.0], [2.0, 2.0]])
         np.testing.assert_allclose(observed["r2"], [[1.0, 0.0], [0.0, 3.0]])
 
+    def test_per_regime_vcv_handles_unknown_and_unrecognized_regimes(self, svc):
+        lineage_info = {
+            "A": [("A_tip", 1.0, "unknown", 0.0, 1.0)],
+            "B": [("B_tip", 2.0, "not-selected", 0.0, 2.0)],
+        }
+
+        observed = svc._build_per_regime_vcv_from_lineage_info(
+            ["A", "B"], ["r1"], lineage_info
+        )
+
+        np.testing.assert_array_equal(observed["r1"], [[1.0, 0.0], [0.0, 0.0]])
+
+    def test_terminal_map_supports_legacy_tree_interface(self, svc):
+        terminals = [Clade(name="A"), Clade(name="B"), Clade(name="C")]
+
+        class LegacyTree:
+            def get_terminals(self):
+                return terminals
+
+        tip_map = svc._terminal_map_for_ordered_names(
+            LegacyTree(), ["A", "C"]
+        )
+
+        assert tip_map == {"A": terminals[0], "C": terminals[2]}
+
+    def test_weight_builders_ignore_unknown_regimes_and_support_bm_limits(
+        self, svc
+    ):
+        ordered_names = ["A"]
+        unknown_lineage = {
+            "A": [("tip", 1.0, "unknown", 0.0, 1.0)]
+        }
+        known_lineage = {"A": [("tip", 2.0, "r1", 0.0, 2.0)]}
+
+        unknown = svc._build_weight_matrix_single_alpha(
+            ordered_names, unknown_lineage, ["r1"], 0.0, "missing"
+        )
+        bm_limit = svc._build_weight_matrix_single_alpha(
+            ordered_names, known_lineage, ["r1"], 0.0, "r1"
+        )
+        cache = svc._prepare_single_alpha_weight_cache(
+            ordered_names, unknown_lineage, ["r1"], "missing"
+        )
+
+        np.testing.assert_array_equal(unknown, [[0.0]])
+        np.testing.assert_array_equal(bm_limit, [[1.0]])
+        assert cache["rows"].size == 0
+        assert cache["root_col"] is None
+
+    def test_multi_alpha_weights_handle_sparse_lineages(self, svc):
+        lineage_info = {
+            "A": [
+                ("unknown", 1.0, "unknown", 0.0, 1.0),
+                ("known", 2.0, "r1", 1.0, 3.0),
+            ],
+            "B": [],
+        }
+
+        without_root = svc._build_weight_matrix_multi_alpha(
+            ["A", "B"], lineage_info, ["r1"], {"r1": 0.0}, "missing"
+        )
+        with_root = svc._build_weight_matrix_multi_alpha(
+            ["A", "B"], lineage_info, ["r1"], {"r1": 0.0}, "r1"
+        )
+
+        np.testing.assert_array_equal(without_root, [[2.0], [0.0]])
+        np.testing.assert_allclose(with_root, [[2.0 + np.exp(-0.01)], [1.0]])
+
+    def test_ou_covariance_builders_support_bm_limits(self, svc):
+        ordered_names = ["A", "B"]
+        lineage_info = {
+            "A": [
+                ("shared", 1.0, "r1", 0.0, 1.0),
+                ("A_tip", 1.0, "r1", 1.0, 2.0),
+            ],
+            "B": [
+                ("shared", 1.0, "r1", 0.0, 1.0),
+                ("B_tip", 2.0, "r2", 1.0, 3.0),
+            ],
+        }
+        cache = svc._prepare_single_alpha_ou_cache(ordered_names, lineage_info)
+
+        single = svc._build_ou_vcv_single_alpha_from_cache(cache, 0.0, 2.0)
+        per_regime = svc._build_ou_H_matrices(
+            ordered_names, lineage_info, ["r1", "r2"], 0.0
+        )
+        multi = svc._build_ou_vcv_multi_alpha(
+            ordered_names,
+            lineage_info,
+            ["r1", "r2"],
+            {"r1": 0.0, "r2": 0.0},
+            {"r1": 2.0, "r2": 2.0},
+        )
+
+        np.testing.assert_allclose(single, 2.0 * cache["shared_paths"])
+        np.testing.assert_allclose(sum(per_regime.values()), cache["shared_paths"])
+        np.testing.assert_allclose(multi, single)
+
     def test_single_alpha_cache_uses_shared_branch_lengths(self, svc):
         ordered_names = ["A", "B", "C"]
         lineage_info = {
@@ -1707,6 +1805,283 @@ class TestBM1:
         fast = d["svc"]._concentrated_ll_bm_cholesky(d["x"], d["vcv_total"])
         inverse = d["svc"]._concentrated_ll_bm_inverse(d["x"], d["vcv_total"])
         np.testing.assert_allclose(fast, inverse)
+
+
+class TestNumericalFallbacks:
+    def test_gls_theta_uses_least_squares_for_singular_information(self, svc):
+        x = np.array([1.0, 2.0, 3.0])
+        W = np.ones((3, 2))
+
+        theta = svc._gls_theta_hat(x, W, np.eye(3))
+
+        np.testing.assert_allclose(W @ theta, np.full(3, 2.0))
+
+    def test_ou_log_likelihood_rejects_invalid_covariances(
+        self, svc, monkeypatch
+    ):
+        x = np.array([1.0, 2.0])
+        W = np.ones((2, 1))
+        theta = np.array([1.5])
+
+        assert np.isfinite(svc._ou_log_likelihood(x, W, np.eye(2), theta))
+        assert svc._ou_log_likelihood(
+            x, W, np.diag([1.0, -1.0]), theta
+        ) == float("-inf")
+
+        def fail_inverse(_matrix):
+            raise np.linalg.LinAlgError("singular")
+
+        monkeypatch.setattr(ouwie_module.np.linalg, "inv", fail_inverse)
+        assert svc._ou_log_likelihood(x, W, np.eye(2), theta) == float("-inf")
+
+    def test_concentrated_bm_falls_back_to_inverse(
+        self, svc, monkeypatch
+    ):
+        x = np.array([1.0, 2.0, 4.0])
+        C = np.diag([1.0, 2.0, 3.0])
+        expected = svc._concentrated_ll_bm_inverse(x, C)
+
+        def fail_cholesky(_x, _C):
+            raise ValueError("not positive definite")
+
+        monkeypatch.setattr(svc, "_concentrated_ll_bm_cholesky", fail_cholesky)
+
+        np.testing.assert_allclose(svc._concentrated_ll_bm(x, C), expected)
+
+    def test_concentrated_bm_cholesky_rejects_zero_precision(
+        self, svc, monkeypatch
+    ):
+        monkeypatch.setattr(
+            ouwie_module,
+            "cho_factor",
+            lambda matrix, **_kwargs: (matrix, True),
+        )
+        monkeypatch.setattr(
+            ouwie_module,
+            "cho_solve",
+            lambda _factor, rhs, **_kwargs: np.zeros_like(rhs),
+        )
+
+        result = svc._concentrated_ll_bm_cholesky(
+            np.array([1.0, 2.0]), np.eye(2)
+        )
+
+        assert result == (float("-inf"), 0.0, 0.0)
+
+    def test_concentrated_bm_rejects_nonpositive_variance(self, svc):
+        x = np.array([2.0, 2.0, 2.0])
+
+        assert svc._concentrated_ll_bm_cholesky(x, np.eye(3)) == (
+            float("-inf"),
+            0.0,
+            2.0,
+        )
+        assert svc._concentrated_ll_bm_inverse(x, np.eye(3)) == (
+            float("-inf"),
+            0.0,
+            2.0,
+        )
+
+    def test_concentrated_bm_inverse_rejects_singular_and_indefinite_inputs(
+        self, svc, monkeypatch
+    ):
+        singular = svc._concentrated_ll_bm_inverse(
+            np.array([1.0, 2.0]), np.zeros((2, 2))
+        )
+        assert singular == (float("-inf"), 0.0, 0.0)
+
+        monkeypatch.setattr(
+            ouwie_module.np.linalg, "slogdet", lambda _matrix: (-1.0, 0.0)
+        )
+        indefinite = svc._concentrated_ll_bm_inverse(
+            np.array([1.0, 2.0]), np.eye(2)
+        )
+        assert indefinite[0] == float("-inf")
+        assert indefinite[1] > 0
+
+    def test_bm_vcv_likelihood_falls_back_to_inverse(self, svc, monkeypatch):
+        x = np.array([1.0, 2.0, 4.0])
+        V = np.diag([1.0, 2.0, 3.0])
+        ones = np.ones(3)
+        expected = svc._bm_log_likelihood_from_vcv_inverse(x, V, ones)
+
+        def fail_cholesky(_x, _V, _ones):
+            raise np.linalg.LinAlgError("not positive definite")
+
+        monkeypatch.setattr(
+            svc, "_bm_log_likelihood_from_vcv_cholesky", fail_cholesky
+        )
+
+        np.testing.assert_allclose(
+            svc._bm_log_likelihood_from_vcv(x, V, ones), expected
+        )
+
+    def test_bm_vcv_likelihood_rejects_zero_precision(
+        self, svc, monkeypatch
+    ):
+        monkeypatch.setattr(
+            ouwie_module,
+            "cho_factor",
+            lambda matrix, **_kwargs: (matrix, True),
+        )
+        monkeypatch.setattr(
+            ouwie_module,
+            "cho_solve",
+            lambda _factor, rhs, **_kwargs: np.zeros_like(rhs),
+        )
+
+        result = svc._bm_log_likelihood_from_vcv_cholesky(
+            np.array([1.0, 2.0]), np.eye(2), np.ones(2)
+        )
+
+        assert result == (0.0, float("-inf"))
+
+    @pytest.mark.parametrize(
+        "matrix",
+        [np.diag([1.0, -1.0]), np.zeros((2, 2))],
+    )
+    def test_bm_vcv_inverse_rejects_invalid_covariances(self, svc, matrix):
+        result = svc._bm_log_likelihood_from_vcv_inverse(
+            np.array([1.0, 2.0]), matrix, np.ones(2)
+        )
+
+        assert result == (0.0, float("-inf"))
+
+    def test_ou_profile_likelihood_falls_back_to_inverse(
+        self, svc, monkeypatch
+    ):
+        x = np.array([1.0, 2.0, 4.0])
+        W = np.ones((3, 1))
+        V = np.diag([1.0, 2.0, 3.0])
+        expected = svc._ou_profile_likelihood_inverse(x, W, V)
+
+        def fail_cholesky(_x, _W, _V):
+            raise FloatingPointError("factorization failed")
+
+        monkeypatch.setattr(svc, "_ou_profile_likelihood_cholesky", fail_cholesky)
+        observed = svc._ou_profile_likelihood(x, W, V)
+
+        np.testing.assert_allclose(observed[0], expected[0])
+        assert observed[1] == pytest.approx(expected[1])
+        assert observed[2] == pytest.approx(expected[2])
+
+    def test_ou_profile_cholesky_handles_singular_design_and_zero_variance(
+        self, svc
+    ):
+        W = np.ones((3, 2))
+        theta, sigma2, ll = svc._ou_profile_likelihood_cholesky(
+            np.array([1.0, 2.0, 3.0]), W, np.eye(3)
+        )
+        np.testing.assert_allclose(W @ theta, np.full(3, 2.0))
+        assert sigma2 > 0
+        assert np.isfinite(ll)
+
+        _, sigma2, ll = svc._ou_profile_likelihood_cholesky(
+            np.ones(3), np.ones((3, 1)), np.eye(3)
+        )
+        assert sigma2 == 0.0
+        assert ll == float("-inf")
+
+    @pytest.mark.parametrize(
+        "matrix",
+        [np.diag([1.0, -1.0]), np.zeros((2, 2))],
+    )
+    def test_ou_profile_inverse_rejects_invalid_covariances(
+        self, svc, matrix
+    ):
+        theta, sigma2, ll = svc._ou_profile_likelihood_inverse(
+            np.array([1.0, 2.0]), np.ones((2, 1)), matrix
+        )
+
+        np.testing.assert_array_equal(theta, [0.0])
+        assert sigma2 == 0.0
+        assert ll == float("-inf")
+
+    def test_ou_profile_inverse_rejects_zero_variance(self, svc):
+        _, sigma2, ll = svc._ou_profile_likelihood_inverse(
+            np.ones(3), np.ones((3, 1)), np.eye(3)
+        )
+
+        assert sigma2 == 0.0
+        assert ll == float("-inf")
+
+    def test_ou_gls_likelihood_falls_back_to_inverse(self, svc, monkeypatch):
+        x = np.array([1.0, 2.0, 4.0])
+        W = np.ones((3, 1))
+        V = np.diag([1.0, 2.0, 3.0])
+        expected = svc._ou_gls_log_likelihood_inverse(x, W, V)
+
+        def fail_cholesky(_x, _W, _V):
+            raise ValueError("factorization failed")
+
+        monkeypatch.setattr(svc, "_ou_gls_log_likelihood_cholesky", fail_cholesky)
+        observed = svc._ou_gls_log_likelihood(x, W, V)
+
+        np.testing.assert_allclose(observed[0], expected[0])
+        assert observed[1] == pytest.approx(expected[1])
+
+    def test_ou_gls_cholesky_uses_least_squares_for_singular_design(self, svc):
+        x = np.array([1.0, 2.0, 3.0])
+        W = np.ones((3, 2))
+
+        theta, ll = svc._ou_gls_log_likelihood_cholesky(x, W, np.eye(3))
+
+        np.testing.assert_allclose(W @ theta, np.full(3, 2.0))
+        assert np.isfinite(ll)
+
+    @pytest.mark.parametrize(
+        "matrix",
+        [np.diag([1.0, -1.0]), np.zeros((2, 2))],
+    )
+    def test_ou_gls_inverse_rejects_invalid_covariances(self, svc, matrix):
+        theta, ll = svc._ou_gls_log_likelihood_inverse(
+            np.array([1.0, 2.0]), np.ones((2, 1)), matrix
+        )
+
+        np.testing.assert_array_equal(theta, [0.0])
+        assert ll == float("-inf")
+
+    def test_fit_model_rejects_unknown_internal_model(self, svc, precomputed):
+        d = precomputed
+
+        with pytest.raises(PhykitUserError) as excinfo:
+            svc._fit_model(
+                "UNKNOWN",
+                d["x"],
+                d["vcv_total"],
+                d["per_regime_vcv"],
+                d["ordered_names"],
+                d["regimes"],
+                d["lineage_info"],
+                d["root_regime"],
+                d["tree_height"],
+                len(d["regimes"]),
+            )
+
+        assert excinfo.value.messages == ["Unknown model: UNKNOWN"]
+
+    def test_optimize_parameter_handles_invalid_slices_and_failures(
+        self, svc, monkeypatch
+    ):
+        calls = 0
+
+        def fail_minimize(*_args, **_kwargs):
+            nonlocal calls
+            calls += 1
+            raise RuntimeError("optimizer failed")
+
+        monkeypatch.setattr(ouwie_module, "minimize_scalar", fail_minimize)
+
+        assert svc._optimize_parameter(lambda value: value, (1.0, 1.0)) == (
+            1.0,
+            -np.inf,
+        )
+        assert calls == 0
+        assert svc._optimize_parameter(lambda value: value, (0.0, 1.0)) == (
+            0.5,
+            -np.inf,
+        )
+        assert calls == 10
 
     def test_cholesky_bm_likelihood_uses_single_solve(
         self, precomputed, monkeypatch
