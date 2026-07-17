@@ -54,6 +54,22 @@ This checkpoint adds the OUwie and shared VCV utility coverage batches. Since
 the baseline, the suite covers 1,251 additional statements and 656 additional
 branches, increasing combined coverage by 2.92 percentage points.
 
+## Third progress checkpoint
+
+- Date: 2026-07-17
+- Commit: `2a0e5ebb`
+- Unit tests: 5,712 passed, 867 deselected
+- Integration tests: 859 passed, 5,720 deselected
+- Statements: 44,416 of 48,110 covered (92.32%)
+- Branches: 14,624 of 17,244 covered (84.81%)
+- Partial branches: 1,916
+- Combined statement-plus-branch coverage: 90.34%
+
+This checkpoint includes the discrete-model, independent-contrast, polytomy,
+stochastic-character-map, and tree-space coverage batches. Since the baseline,
+the suite covers 1,660 additional statements and 869 additional branches,
+increasing combined coverage by 3.87 percentage points.
+
 ## Reproduction
 
 Run the complete unit and integration suites and create an aggregate report:
