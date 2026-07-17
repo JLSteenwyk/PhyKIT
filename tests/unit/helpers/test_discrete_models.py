@@ -268,6 +268,106 @@ class TestMatrixExp:
         Q = build_q_matrix(np.array([0.0]), 2, "ER")
         np.testing.assert_array_equal(matrix_exp(Q, 10.0), np.eye(2))
 
+    def test_matrix_shape_and_rate_validation_rejects_invalid_inputs(self):
+        import phykit.helpers.discrete_models as discrete_models
+
+        assert discrete_models._is_exact_symmetric_matrix(np.zeros((2, 3))) is False
+        assert discrete_models._is_exact_symmetric_matrix(object()) is False
+        assert discrete_models._two_state_ctmc_rates(object()) is None
+        assert (
+            discrete_models._two_state_ctmc_rates(
+                np.array([[-1.0, -1.0], [1.0, -1.0]])
+            )
+            is None
+        )
+        assert (
+            discrete_models._two_state_ctmc_rates(
+                np.array([[-2.0, 1.0], [1.0, -1.0]])
+            )
+            is None
+        )
+
+    def test_q_matrix_index_helpers_reuse_cached_indices(self):
+        import phykit.helpers.discrete_models as discrete_models
+
+        discrete_models._SYM_INDEX_CACHE.clear()
+        discrete_models._ARD_MASK_CACHE.clear()
+
+        sym_indices = discrete_models._sym_offdiag_indices(4)
+        ard_mask = discrete_models._ard_offdiag_mask(4)
+
+        assert discrete_models._sym_offdiag_indices(4) is sym_indices
+        assert discrete_models._ard_offdiag_mask(4) is ard_mask
+
+    def test_symmetric_eigendecomposition_rejects_nonfinite_result(self, monkeypatch):
+        import phykit.helpers.discrete_models as discrete_models
+
+        monkeypatch.setattr(
+            discrete_models.np.linalg,
+            "eigh",
+            lambda _matrix: (np.array([np.nan]), np.eye(1)),
+        )
+
+        assert discrete_models._matrix_exp_eigendecomp_context(np.eye(3)) is None
+
+    def test_symmetric_eigendecomposition_failure_returns_none(self, monkeypatch):
+        import phykit.helpers.discrete_models as discrete_models
+
+        def fail_eigh(_matrix):
+            raise np.linalg.LinAlgError("eigendecomposition failed")
+
+        monkeypatch.setattr(discrete_models.np.linalg, "eigh", fail_eigh)
+
+        assert discrete_models._matrix_exp_eigendecomp_context(np.eye(3)) is None
+
+    def test_generic_eigendecomposition_rejects_complex_inverse(self, monkeypatch):
+        import phykit.helpers.discrete_models as discrete_models
+
+        matrix = np.array(
+            [[-1.0, 1.0, 0.0], [0.0, -1.0, 1.0], [1.0, 0.0, -1.0]]
+        )
+        monkeypatch.setattr(
+            discrete_models.np.linalg,
+            "eig",
+            lambda _matrix: (np.array([0.0, -1.0, -2.0]), np.eye(3)),
+        )
+        monkeypatch.setattr(
+            discrete_models.np.linalg,
+            "inv",
+            lambda _matrix: np.eye(3, dtype=complex),
+        )
+
+        assert discrete_models._matrix_exp_eigendecomp_context(matrix) is None
+
+    def test_generic_eigendecomposition_failure_returns_none(self, monkeypatch):
+        import phykit.helpers.discrete_models as discrete_models
+
+        matrix = np.array(
+            [[-1.0, 1.0, 0.0], [0.0, -1.0, 1.0], [1.0, 0.0, -1.0]]
+        )
+
+        def fail_eig(_matrix):
+            raise ValueError("eigendecomposition failed")
+
+        monkeypatch.setattr(discrete_models.np.linalg, "eig", fail_eig)
+
+        assert discrete_models._matrix_exp_eigendecomp_context(matrix) is None
+
+    def test_generic_eigendecomposition_rejects_nonfinite_result(self, monkeypatch):
+        import phykit.helpers.discrete_models as discrete_models
+
+        matrix = np.array(
+            [[-1.0, 1.0, 0.0], [0.0, -1.0, 1.0], [1.0, 0.0, -1.0]]
+        )
+        monkeypatch.setattr(
+            discrete_models.np.linalg,
+            "eig",
+            lambda _matrix: (np.array([np.nan, -1.0, -2.0]), np.eye(3)),
+        )
+        monkeypatch.setattr(discrete_models.np.linalg, "inv", lambda _matrix: np.eye(3))
+
+        assert discrete_models._matrix_exp_eigendecomp_context(matrix) is None
+
     def test_rows_sum_to_one(self):
         Q = build_q_matrix(np.array([0.5]), 3, "ER")
         P = matrix_exp(Q, 1.0)
@@ -413,6 +513,216 @@ class TestFelsensteinPruning:
         pi = np.ones(2) / 2.0
         _, loglik = felsenstein_pruning(tree_simple, tip_states, Q, pi, states)
         assert loglik < 0
+
+    def test_legacy_postorder_fallback_matches_direct_traversal(
+        self, tree_simple, monkeypatch
+    ):
+        import phykit.helpers.discrete_models as discrete_models
+
+        states = ["0", "1"]
+        tip_states = {
+            tip.name: states[index % 2]
+            for index, tip in enumerate(tree_simple.get_terminals())
+        }
+        Q = build_q_matrix(np.array([0.5]), 2, "ER")
+        pi = np.array([0.5, 0.5])
+        expected = felsenstein_pruning(tree_simple, tip_states, Q, pi, states)[1]
+        monkeypatch.setattr(
+            discrete_models,
+            "_postorder_clades_direct",
+            lambda _tree: None,
+        )
+
+        observed = felsenstein_pruning(tree_simple, tip_states, Q, pi, states)[1]
+
+        assert observed == pytest.approx(expected)
+
+    def test_eigendecomposition_transition_failure_uses_matrix_exp(
+        self, tree_simple, monkeypatch
+    ):
+        import phykit.helpers.discrete_models as discrete_models
+
+        states = ["0", "1", "2"]
+        tip_states = {
+            tip.name: states[index % 3]
+            for index, tip in enumerate(tree_simple.get_terminals())
+        }
+        Q = build_q_matrix(np.array([0.2]), 3, "ER")
+        pi = np.ones(3) / 3.0
+        calls = 0
+        real_matrix_exp = discrete_models.matrix_exp
+
+        def counting_matrix_exp(matrix, branch_length):
+            nonlocal calls
+            calls += 1
+            return real_matrix_exp(matrix, branch_length)
+
+        monkeypatch.setattr(
+            discrete_models,
+            "_matrix_exp_from_eigendecomp",
+            lambda *_args: None,
+        )
+        monkeypatch.setattr(discrete_models, "matrix_exp", counting_matrix_exp)
+
+        _, loglik = felsenstein_pruning(tree_simple, tip_states, Q, pi, states)
+
+        assert calls > 0
+        assert np.isfinite(loglik)
+
+    def test_pruning_returns_floor_for_impossible_root_likelihood(self, tree_simple):
+        Q = build_q_matrix(np.array([0.5]), 2, "ER")
+
+        _, loglik = felsenstein_pruning(
+            tree_simple,
+            {},
+            Q,
+            np.array([0.5, 0.5]),
+            ["0", "1"],
+        )
+
+        assert loglik == -1e20
+
+    def test_prepared_legacy_context_matches_indexed_context(self, tree_simple):
+        states = ["0", "1"]
+        tip_states = {
+            tip.name: states[index % 2]
+            for index, tip in enumerate(tree_simple.get_terminals())
+        }
+        context = _prepare_felsenstein_context(tree_simple, tip_states, states)
+        Q = build_q_matrix(np.array([0.5]), 2, "ER")
+        pi = np.array([0.5, 0.5])
+        expected = _felsenstein_loglik_prepared(context, Q, pi)
+        legacy_context = context.copy()
+        for key in (
+            "tip_liks",
+            "internal_entries",
+            "internal_entries_by_length_index",
+            "unique_branch_lengths",
+        ):
+            legacy_context.pop(key)
+
+        observed = _felsenstein_loglik_prepared(legacy_context, Q, pi)
+
+        assert observed == pytest.approx(expected)
+
+    def test_prepared_zero_rate_uses_identity_transitions(self, tree_simple):
+        states = ["0", "1"]
+        tip_states = {tip.name: "0" for tip in tree_simple.get_terminals()}
+        context = _prepare_felsenstein_context(tree_simple, tip_states, states)
+        context.pop("internal_entries_by_length_index")
+        context.pop("unique_branch_lengths")
+        Q = build_q_matrix(np.array([0.0]), 2, "ER")
+
+        observed = _felsenstein_loglik_prepared(
+            context, Q, np.array([0.5, 0.5])
+        )
+
+        assert observed == pytest.approx(math.log(0.5))
+
+    @pytest.mark.parametrize("state_count", [2, 3])
+    def test_prepared_likelihood_returns_floor_for_zero_tip_likelihoods(
+        self, tree_simple, state_count
+    ):
+        states = [str(index) for index in range(state_count)]
+        tip_states = {
+            tip.name: states[index % state_count]
+            for index, tip in enumerate(tree_simple.get_terminals())
+        }
+        context = _prepare_felsenstein_context(tree_simple, tip_states, states)
+        context["tip_liks"] = np.zeros_like(context["tip_liks"])
+        Q = build_q_matrix(np.array([0.5]), state_count, "ER")
+
+        observed = _felsenstein_loglik_prepared(
+            context,
+            Q,
+            np.ones(state_count) / state_count,
+        )
+
+        assert observed == -1e20
+
+    def test_two_state_er_rate_legacy_context_delegates_to_prepared_likelihood(
+        self, tree_simple
+    ):
+        import phykit.helpers.discrete_models as discrete_models
+
+        states = ["0", "1"]
+        tip_states = {
+            tip.name: states[index % 2]
+            for index, tip in enumerate(tree_simple.get_terminals())
+        }
+        context = _prepare_felsenstein_context(tree_simple, tip_states, states)
+        pi = np.array([0.5, 0.5])
+        expected = discrete_models._felsenstein_loglik_two_state_er_rate(
+            context, 0.5, pi
+        )
+        legacy_context = context.copy()
+        legacy_context.pop("tip_liks")
+        legacy_context.pop("internal_entries")
+
+        observed = discrete_models._felsenstein_loglik_two_state_er_rate(
+            legacy_context, 0.5, pi
+        )
+
+        assert observed == pytest.approx(expected)
+
+    @pytest.mark.parametrize("state_count", [2, 3, 4, 5])
+    def test_er_rate_returns_floor_for_zero_tip_likelihoods(
+        self, tree_simple, state_count
+    ):
+        states = [str(index) for index in range(state_count)]
+        tip_states = {
+            tip.name: states[index % state_count]
+            for index, tip in enumerate(tree_simple.get_terminals())
+        }
+        context = _prepare_felsenstein_context(tree_simple, tip_states, states)
+        context["tip_liks"] = np.zeros_like(context["tip_liks"])
+
+        observed = _felsenstein_loglik_er_rate(
+            context,
+            0.5,
+            np.ones(state_count) / state_count,
+        )
+
+        assert observed == -1e20
+
+    @pytest.mark.parametrize("state_count", [3, 4])
+    def test_er_rate_nonindexed_context_matches_indexed_context(
+        self, tree_simple, state_count
+    ):
+        states = [str(index) for index in range(state_count)]
+        tip_states = {
+            tip.name: states[index % state_count]
+            for index, tip in enumerate(tree_simple.get_terminals())
+        }
+        context = _prepare_felsenstein_context(tree_simple, tip_states, states)
+        pi = np.ones(state_count) / state_count
+        expected = _felsenstein_loglik_er_rate(context, 0.5, pi)
+        nonindexed_context = context.copy()
+        nonindexed_context.pop("internal_entries_by_length_index")
+        nonindexed_context.pop("unique_branch_lengths")
+
+        observed = _felsenstein_loglik_er_rate(nonindexed_context, 0.5, pi)
+
+        assert observed == pytest.approx(expected)
+
+    def test_er_rate_legacy_context_delegates_to_prepared_likelihood(
+        self, tree_simple
+    ):
+        states = ["0", "1", "2"]
+        tip_states = {
+            tip.name: states[index % 3]
+            for index, tip in enumerate(tree_simple.get_terminals())
+        }
+        context = _prepare_felsenstein_context(tree_simple, tip_states, states)
+        pi = np.ones(3) / 3.0
+        expected = _felsenstein_loglik_er_rate(context, 0.5, pi)
+        legacy_context = context.copy()
+        legacy_context.pop("tip_liks")
+        legacy_context.pop("internal_entries")
+
+        observed = _felsenstein_loglik_er_rate(legacy_context, 0.5, pi)
+
+        assert observed == pytest.approx(expected)
 
     def test_perfect_data_high_loglik(self, tree_simple):
         """All tips same state should give high likelihood."""
