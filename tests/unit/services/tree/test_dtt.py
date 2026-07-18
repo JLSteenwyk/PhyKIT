@@ -83,6 +83,44 @@ def test_observed_postorder_disparity_threshold_targets_larger_work():
     assert _should_use_observed_postorder_disparities(np.empty((8192, 2)))
 
 
+def test_observed_postorder_disparities_reject_incomplete_contexts():
+    data = np.array([[1.0, 2.0]])
+
+    assert _observed_avg_sq_clade_disparities(data, {}) is None
+
+    context = {
+        "postorder_clade_ids": [10, 20, 30],
+        "terminal_index_by_clade_id": {20: 0},
+        "child_clade_ids": {10: (999,), 30: (20, 999)},
+        "clade_index_arrays": {},
+    }
+
+    assert _observed_avg_sq_clade_disparities(data, context) == {}
+
+
+def test_tree_depth_and_traversal_helpers_reject_incompatible_objects():
+    class MissingRootDepth:
+        root = object()
+
+        @staticmethod
+        def depths():
+            return {}
+
+    class MalformedChild:
+        branch_length = 1.0
+
+    class MalformedRoot:
+        clades = [MalformedChild()]
+
+    class MalformedTree:
+        root = MalformedRoot()
+
+    assert Dtt._root_relative_depths(object()) is None
+    assert Dtt._root_relative_depths(MissingRootDepth()) is None
+    assert Dtt._standard_dtt_traversal_context(object()) is None
+    assert Dtt._standard_dtt_traversal_context(MalformedTree()) is None
+
+
 def test_permutation_p_value_ge_counts_extreme_permutations(monkeypatch):
     permutations = np.array([0.5, 1.5, 2.5, 3.5])
     original_count_nonzero = dtt_module.np.count_nonzero
@@ -341,6 +379,67 @@ class TestComputeDisparity:
 
 
 class TestComputeDtt:
+    def test_prepare_context_supports_generic_tree_traversal(self, monkeypatch):
+        svc = Dtt(_make_args())
+        tree = Phylo.read(StringIO("((A:1,B:1):1,C:2);"), "newick")
+        monkeypatch.setattr(
+            svc,
+            "_standard_dtt_traversal_context",
+            lambda _tree: None,
+        )
+
+        context = svc._prepare_dtt_context(tree, ["A", "B", "C"])
+
+        assert not context["zero_height"]
+        assert context["times"][0] == pytest.approx(0.0)
+        assert context["clade_index_arrays"]
+
+    def test_prepare_context_can_compute_depths_from_distances(self, monkeypatch):
+        svc = Dtt(_make_args())
+        tree = Phylo.read(StringIO("((A:1,B:1):1,C:2);"), "newick")
+        monkeypatch.setattr(
+            svc,
+            "_standard_dtt_traversal_context",
+            lambda _tree: None,
+        )
+        monkeypatch.setattr(svc, "_root_relative_depths", lambda _tree: None)
+
+        context = svc._prepare_dtt_context(tree, ["A", "B", "C"])
+
+        assert not context["zero_height"]
+        assert context["times"][0] == pytest.approx(0.0)
+        assert context["clade_index_arrays"]
+
+    def test_identical_traits_return_boundary_curve(self):
+        svc = Dtt(_make_args())
+        tree = Phylo.read(StringIO("((A:1,B:1):1,C:2);"), "newick")
+        data = np.ones((3, 1))
+
+        times, values = svc._compute_dtt(tree, data, ["A", "B", "C"])
+
+        assert times == [0.0, 1.0]
+        assert values == [1.0, 0.0]
+
+    def test_positive_terminal_disparity_adds_zero_boundary(self):
+        svc = Dtt(_make_args())
+        data = np.array([[0.0], [1.0], [3.0]])
+        context = {
+            "zero_height": False,
+            "times": [0.0, 0.5],
+            "lineage_clade_ids": [[1]],
+            "clade_index_arrays": {1: np.asarray([0, 1], dtype=np.intp)},
+        }
+
+        times, values = svc._compute_dtt(
+            None,
+            data,
+            ["A", "B", "C"],
+            context=context,
+        )
+
+        assert times == [0.0, 0.5, 1.0]
+        assert values[-1] == pytest.approx(0.0)
+
     def test_dtt_starts_at_one(self):
         """DTT curve should start with relative disparity = 1.0 at time 0."""
         args = _make_args()
@@ -1017,6 +1116,41 @@ class TestRun:
 
 
 class TestSimulateNull:
+    @pytest.mark.parametrize(
+        "data",
+        [
+            np.array([[0.0], [1.0], [2.0], [4.0]]),
+            np.array(
+                [[0.0, 1.0], [1.0, 0.0], [2.0, 3.0], [4.0, 2.0]]
+            ),
+        ],
+        ids=["single-trait", "multi-trait"],
+    )
+    def test_manhattan_simulation_handles_singular_covariance(
+        self, data, monkeypatch
+    ):
+        svc = Dtt(_make_args(index="avg_manhattan", nsim=3, seed=7))
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        ordered_names = ["A", "B", "C", "D"]
+        obs_times, obs_values = svc._compute_dtt(tree, data, ordered_names)
+        monkeypatch.setattr(
+            "phykit.services.tree.vcv_utils.build_vcv_matrix",
+            lambda _tree, _names: np.zeros((4, 4)),
+        )
+
+        sim_dtt, mdi, mdi_p = svc._simulate_null(
+            tree,
+            data,
+            ordered_names,
+            obs_times,
+            obs_values,
+        )
+
+        assert sim_dtt.shape == (3, len(obs_times))
+        assert np.isfinite(sim_dtt).all()
+        assert np.isfinite(mdi)
+        assert 0.0 <= mdi_p <= 1.0
+
     def test_avg_sq_batch_simulation_matches_scalar_loop(self):
         args = _make_args(trait="body_mass", nsim=5, seed=42)
         svc = Dtt(args)

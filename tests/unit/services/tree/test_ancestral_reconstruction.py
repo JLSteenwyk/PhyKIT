@@ -332,6 +332,53 @@ class TestTraitParsing:
                 str(trait_file), ["raccoon", "bear", "weasel"]
             )
 
+    def test_single_trait_rejects_non_numeric_values(self, default_args, tmp_path):
+        trait_file = tmp_path / "traits.tsv"
+        trait_file.write_text("raccoon\t1.04\nbear\theavy\nweasel\t-0.30\n")
+        svc = AncestralReconstruction(default_args)
+
+        with pytest.raises(PhykitUserError) as excinfo:
+            svc._parse_single_trait_data(
+                str(trait_file), ["raccoon", "bear", "weasel"]
+            )
+
+        assert excinfo.value.messages == [
+            "Non-numeric trait value 'heavy' for taxon 'bear' on line 2."
+        ]
+
+    def test_single_trait_reports_taxon_mismatches(
+        self, default_args, tmp_path, capsys
+    ):
+        trait_file = tmp_path / "traits.tsv"
+        trait_file.write_text("A\t1\nB\t2\nC\t3\nX\t4\n")
+        svc = AncestralReconstruction(default_args)
+
+        traits = svc._parse_single_trait_data(
+            str(trait_file), ["A", "B", "C", "D"]
+        )
+
+        assert traits == {"A": 1.0, "B": 2.0, "C": 3.0}
+        assert capsys.readouterr().err.splitlines() == [
+            "Warning: 1 taxa in tree but not in trait file: D",
+            "Warning: 1 taxa in trait file but not in tree: X",
+        ]
+
+    def test_single_trait_requires_three_shared_taxa(
+        self, default_args, tmp_path, capsys
+    ):
+        trait_file = tmp_path / "traits.tsv"
+        trait_file.write_text("A\t1\nB\t2\nX\t3\n")
+        svc = AncestralReconstruction(default_args)
+
+        with pytest.raises(PhykitUserError) as excinfo:
+            svc._parse_single_trait_data(str(trait_file), ["A", "B", "C"])
+
+        assert excinfo.value.messages == [
+            "Only 2 shared taxa between tree and trait file.",
+            "At least 3 shared taxa are required.",
+        ]
+        assert "tree but not in trait file: C" in capsys.readouterr().err
+
     def test_multi_trait_format(self, default_args):
         svc = AncestralReconstruction(default_args)
         tree = svc.read_tree_file()
@@ -436,6 +483,88 @@ class TestTraitParsing:
 
         assert traits == {"raccoon": 1.04, "bear": 2.39, "weasel": -0.30}
         assert builtins.set is fail_set
+
+    @pytest.mark.parametrize(
+        ("contents", "expected_message"),
+        [
+            (
+                "# comment only\n\n",
+                "Multi-trait file must have a header row and at least one data row.",
+            ),
+            (
+                "taxon\nA\n",
+                "Header must have at least 2 columns (taxon + at least 1 trait).",
+            ),
+            (
+                "taxon\tbody_mass\n",
+                "Multi-trait file must have a header row and at least one data row.",
+            ),
+            (
+                "taxon\tbody_mass\nA\theavy\nB\t2\nC\t3\n",
+                "Non-numeric trait value 'heavy' for taxon 'A' "
+                "(trait 'body_mass') on line 2.",
+            ),
+        ],
+    )
+    def test_multi_trait_rejects_invalid_files(
+        self, default_args, tmp_path, contents, expected_message
+    ):
+        trait_file = tmp_path / "traits.tsv"
+        trait_file.write_text(contents)
+        svc = AncestralReconstruction(default_args)
+
+        with pytest.raises(PhykitUserError) as excinfo:
+            svc._parse_multi_trait_data(
+                str(trait_file), ["A", "B", "C"], "body_mass"
+            )
+
+        assert expected_message in excinfo.value.messages
+
+    def test_multi_trait_reports_taxon_mismatches(
+        self, default_args, tmp_path, capsys
+    ):
+        trait_file = tmp_path / "traits.tsv"
+        trait_file.write_text(
+            "taxon\tbody_mass\nA\t1\nB\t2\nC\t3\nX\t4\n"
+        )
+        svc = AncestralReconstruction(default_args)
+
+        traits = svc._parse_multi_trait_data(
+            str(trait_file), ["A", "B", "C", "D"], "body_mass"
+        )
+
+        assert traits == {"A": 1.0, "B": 2.0, "C": 3.0}
+        assert capsys.readouterr().err.splitlines() == [
+            "Warning: 1 taxa in tree but not in trait file: D",
+            "Warning: 1 taxa in trait file but not in tree: X",
+        ]
+
+    def test_multi_trait_requires_three_shared_taxa(
+        self, default_args, tmp_path
+    ):
+        trait_file = tmp_path / "traits.tsv"
+        trait_file.write_text("taxon\tbody_mass\nA\t1\nB\t2\nX\t3\n")
+        svc = AncestralReconstruction(default_args)
+
+        with pytest.raises(PhykitUserError) as excinfo:
+            svc._parse_multi_trait_data(
+                str(trait_file), ["A", "B", "C"], "body_mass"
+            )
+
+        assert excinfo.value.messages == [
+            "Only 2 shared taxa between tree and trait file.",
+            "At least 3 shared taxa are required.",
+        ]
+
+    def test_multi_trait_file_not_found(self, default_args, tmp_path):
+        svc = AncestralReconstruction(default_args)
+
+        with pytest.raises(PhykitUserError) as excinfo:
+            svc._parse_multi_trait_data(
+                str(tmp_path / "missing.tsv"), ["A", "B", "C"], "body_mass"
+            )
+
+        assert "corresponds to no such file or directory" in excinfo.value.messages[0]
 
     def test_file_not_found(self, default_args):
         svc = AncestralReconstruction(default_args)
@@ -555,6 +684,78 @@ class TestFastAnc:
         assert sigma2 > 0
         assert np.isfinite(ll)
 
+    def test_fast_anc_falls_back_when_direct_preorder_is_unavailable(
+        self, ci_args, monkeypatch
+    ):
+        svc = AncestralReconstruction(ci_args)
+        tree = Phylo.read(StringIO("((A:1,B:2):1,C:2):0;"), "newick")
+        ordered_names = ["A", "B", "C"]
+        x = np.array([0.0, 1.0, 3.0])
+        node_labels = svc._label_internal_nodes(tree)
+        expected = svc._fast_anc(tree, x, ordered_names, node_labels)
+        original_iter_preorder = svc._iter_preorder
+        call_count = 0
+
+        def fail_first_preorder(root):
+            nonlocal call_count
+            call_count += 1
+            if call_count == 1:
+                raise AttributeError("direct traversal unavailable")
+            return original_iter_preorder(root)
+
+        monkeypatch.setattr(svc, "_iter_preorder", fail_first_preorder)
+
+        observed = svc._fast_anc(tree, x, ordered_names, node_labels)
+
+        assert observed[0] == pytest.approx(expected[0])
+        assert observed[1] == pytest.approx(expected[1])
+        assert observed[2] == pytest.approx(expected[2])
+        assert observed[3] == pytest.approx(expected[3])
+
+    def test_fast_anc_handles_an_unobserved_subtree(self, ci_args):
+        svc = AncestralReconstruction(ci_args)
+        tree = Phylo.read(
+            StringIO("((X:1,Y:1):1,(A:1,B:1):1):0;"),
+            "newick",
+        )
+        observed_internal = tree.root.clades[1]
+        node_labels = svc._label_internal_nodes(tree)
+        del node_labels[id(tree.root)]
+
+        estimates, cis, sigma2, ll = svc._fast_anc(
+            tree,
+            np.array([1.0, 2.0]),
+            ["A", "B"],
+            node_labels,
+        )
+
+        observed_label = node_labels[id(observed_internal)]
+        assert estimates == {observed_label: pytest.approx(1.5)}
+        assert observed_label in cis
+        assert sigma2 == pytest.approx(0.5)
+        assert np.isfinite(ll)
+
+    def test_fast_anc_handles_zero_length_branches(self, ci_args):
+        svc = AncestralReconstruction(ci_args)
+        tree = Phylo.read(StringIO("((A:0,B:0):0,C:0):0;"), "newick")
+        node_labels = svc._label_internal_nodes(tree)
+
+        estimates, cis, sigma2, ll = svc._fast_anc(
+            tree,
+            np.array([1.0, 2.0, 3.0]),
+            ["A", "B", "C"],
+            node_labels,
+        )
+
+        assert all(np.isfinite(value) for value in estimates.values())
+        assert all(
+            np.isfinite(lower) and lower < estimates[label] < upper
+            for label, (lower, upper) in cis.items()
+        )
+        assert np.isfinite(sigma2)
+        assert sigma2 > 0
+        assert ll == float("-inf")
+
     def test_sigma2_from_contrasts_streams_polytomy_children(self, ci_args):
         svc = AncestralReconstruction(ci_args)
         tree = Phylo.read(StringIO("(A:1,B:1,C:1);"), "newick")
@@ -578,6 +779,44 @@ class TestFastAnc:
         combined_var = 0.5
         second = ((3.0 - combined_est) ** 2) / (1.0 + combined_var)
         assert sigma2 == pytest.approx((first + second) / 2.0)
+
+    def test_sigma2_from_contrasts_skips_unobserved_children(self, ci_args):
+        svc = AncestralReconstruction(ci_args)
+        tree = Phylo.read(StringIO("(A:1,B:1,C:1);"), "newick")
+        a, _, c = tree.root.clades
+        node_estimates = {id(a): 1.0, id(c): 3.0}
+        node_variances = {id(a): 0.0, id(c): 0.0}
+
+        sigma2 = svc._compute_sigma2_from_contrasts(
+            tree,
+            np.array([1.0, 3.0]),
+            node_estimates,
+            node_variances,
+            ["A", "C"],
+        )
+
+        assert sigma2 == pytest.approx(2.0)
+
+    def test_sigma2_from_contrasts_returns_zero_without_valid_contrasts(
+        self, ci_args
+    ):
+        svc = AncestralReconstruction(ci_args)
+        tree = Phylo.read(StringIO("(A:0,B:0,C:0);"), "newick")
+        node_estimates = {
+            id(tip): float(index)
+            for index, tip in enumerate(tree.root.clades, start=1)
+        }
+        node_variances = {id(tip): 0.0 for tip in tree.root.clades}
+
+        sigma2 = svc._compute_sigma2_from_contrasts(
+            tree,
+            np.array([1.0, 2.0, 3.0]),
+            node_estimates,
+            node_variances,
+            ["A", "B", "C"],
+        )
+
+        assert sigma2 == 0.0
 
 
 class TestAncML:
@@ -635,6 +874,24 @@ class TestAncML:
         )
         assert ll < 0  # Log-likelihood should be negative for real data
 
+    def test_singular_vcv_matrix_is_reported_to_the_user(self, ml_args, mocker):
+        svc = AncestralReconstruction(ml_args)
+        tree = Phylo.read(StringIO("(A:1,B:1,C:1);"), "newick")
+        mocker.patch.object(svc, "_build_vcv_matrix", return_value=np.zeros((3, 3)))
+
+        with pytest.raises(PhykitUserError) as excinfo:
+            svc._anc_ml(
+                tree,
+                np.array([1.0, 2.0, 3.0]),
+                ["A", "B", "C"],
+                svc._label_internal_nodes(tree),
+            )
+
+        assert excinfo.value.messages == [
+            "Singular VCV matrix: cannot invert.",
+            "Check that the tree has valid branch lengths.",
+        ]
+
     def test_cross_covariance_fast_path_does_not_call_distance_get_path_or_mrca(
         self, ml_args, monkeypatch
     ):
@@ -666,6 +923,87 @@ class TestAncML:
         assert observed[1] == pytest.approx(expected[1])
         assert observed[2] == pytest.approx(expected[2])
         assert observed[3] == pytest.approx(expected[3])
+
+    def test_ml_falls_back_to_root_paths_when_direct_covariances_fail(
+        self, ml_args, mocker
+    ):
+        svc = AncestralReconstruction(ml_args)
+        tree = Phylo.read(StringIO("((A:1,B:2):1,C:3):0;"), "newick")
+        ordered_names = ["A", "B", "C"]
+        x = np.array([0.0, 1.0, 3.0])
+        node_labels = svc._label_internal_nodes(tree)
+        expected = svc._anc_ml(tree, x, ordered_names, node_labels)
+        mocker.patch.object(
+            svc, "_prepare_ml_cross_covariances_direct", return_value=None
+        )
+
+        observed = svc._anc_ml(tree, x, ordered_names, node_labels)
+
+        assert observed[0] == pytest.approx(expected[0])
+        assert observed[1] == pytest.approx(expected[1])
+        assert observed[2] == pytest.approx(expected[2])
+        assert observed[3] == pytest.approx(expected[3])
+
+    def test_ml_falls_back_to_distance_covariances_without_depths(
+        self, ml_args, mocker
+    ):
+        svc = AncestralReconstruction(ml_args)
+        tree = Phylo.read(StringIO("((A:1,B:2):1,C:3):0;"), "newick")
+        ordered_names = ["A", "B", "C"]
+        x = np.array([0.0, 1.0, 3.0])
+        node_labels = svc._label_internal_nodes(tree)
+        expected = svc._anc_ml(tree, x, ordered_names, node_labels)
+        mocker.patch.object(tree, "depths", side_effect=TypeError("no depths"))
+
+        observed = svc._anc_ml(tree, x, ordered_names, node_labels)
+
+        assert observed[0] == pytest.approx(expected[0])
+        assert observed[1] == pytest.approx(expected[1])
+        assert observed[2] == pytest.approx(expected[2])
+        assert observed[3] == pytest.approx(expected[3])
+
+    def test_ml_returns_no_node_estimates_without_node_labels(self, ml_args):
+        svc = AncestralReconstruction(ml_args)
+        tree = Phylo.read(StringIO("((A:1,B:2):1,C:3):0;"), "newick")
+
+        estimates, cis, sigma2, ll = svc._anc_ml(
+            tree,
+            np.array([0.0, 1.0, 3.0]),
+            ["A", "B", "C"],
+            {},
+        )
+
+        assert estimates == {}
+        assert cis == {}
+        assert sigma2 > 0
+        assert np.isfinite(ll)
+
+    def test_ml_clamps_negative_conditional_variance(self, ml_args, mocker):
+        svc = AncestralReconstruction(ml_args)
+        tree = Phylo.read(StringIO("((A:1,B:2):1,C:3):0;"), "newick")
+        internal = tree.root.clades[0]
+        node_labels = {id(internal): "internal"}
+        mocker.patch.object(
+            svc,
+            "_prepare_ml_cross_covariances_direct",
+            return_value=(
+                [internal],
+                ["internal"],
+                np.array([0.0]),
+                np.array([[10.0, 0.0, 0.0]]),
+            ),
+        )
+
+        estimates, cis, _, _ = svc._anc_ml(
+            tree,
+            np.array([0.0, 1.0, 3.0]),
+            ["A", "B", "C"],
+            node_labels,
+        )
+
+        assert cis["internal"] == pytest.approx(
+            (estimates["internal"], estimates["internal"])
+        )
 
     def test_ml_cross_covariance_uses_direct_tree_traversal(
         self, ml_args, monkeypatch
@@ -782,6 +1120,130 @@ class TestAncML:
         )
 
         assert np.isfinite(observed)
+
+    @pytest.mark.parametrize(
+        ("ordered_names", "sigma2"),
+        [(["A"], 0.0), ([], 1.0)],
+    )
+    def test_compute_log_likelihood_rejects_empty_or_nonpositive_inputs(
+        self, ml_args, mocker, ordered_names, sigma2
+    ):
+        svc = AncestralReconstruction(ml_args)
+        build_vcv = mocker.patch.object(svc, "_build_vcv_matrix")
+
+        observed = svc._compute_log_likelihood(
+            object(), np.zeros(len(ordered_names)), ordered_names, sigma2
+        )
+
+        assert observed == float("-inf")
+        build_vcv.assert_not_called()
+
+    def test_compute_log_likelihood_falls_back_to_matrix_inverse(
+        self, ml_args, mocker
+    ):
+        svc = AncestralReconstruction(ml_args)
+        tree = Phylo.read(StringIO("((A:1,B:2):1,C:3):0;"), "newick")
+        ordered_names = ["A", "B", "C"]
+        x = np.array([0.0, 1.0, 3.0])
+        expected = svc._compute_log_likelihood(tree, x, ordered_names, 0.75)
+        mocker.patch.object(
+            ancestral_module, "cho_factor", side_effect=ValueError("not positive")
+        )
+
+        observed = svc._compute_log_likelihood(tree, x, ordered_names, 0.75)
+
+        assert observed == pytest.approx(expected)
+
+    def test_compute_log_likelihood_rejects_indefinite_covariance(
+        self, ml_args, mocker
+    ):
+        svc = AncestralReconstruction(ml_args)
+        mocker.patch.object(
+            svc,
+            "_build_vcv_matrix",
+            return_value=np.diag([1.0, -1.0]),
+        )
+        mocker.patch.object(
+            ancestral_module, "cho_factor", side_effect=ValueError("not positive")
+        )
+
+        observed = svc._compute_log_likelihood(
+            object(), np.array([0.0, 1.0]), ["A", "B"], 1.0
+        )
+
+        assert observed == float("-inf")
+
+    def test_compute_log_likelihood_handles_inverse_failure(
+        self, ml_args, mocker
+    ):
+        svc = AncestralReconstruction(ml_args)
+        mocker.patch.object(svc, "_build_vcv_matrix", return_value=np.eye(2))
+        mocker.patch.object(
+            ancestral_module, "cho_factor", side_effect=ValueError("not positive")
+        )
+        mocker.patch.object(
+            ancestral_module.np.linalg,
+            "inv",
+            side_effect=np.linalg.LinAlgError("singular"),
+        )
+
+        observed = svc._compute_log_likelihood(
+            object(), np.array([0.0, 1.0]), ["A", "B"], 1.0
+        )
+
+        assert observed == float("-inf")
+
+    @pytest.mark.parametrize(
+        ("tree_newick", "ordered_names"),
+        [
+            ("(A:1,B:1);", ["A", "A"]),
+            ("(A:1,A:1,B:1);", ["A", "B"]),
+            ("(A:1,B:1);", ["A", "B", "C"]),
+        ],
+    )
+    def test_direct_ml_covariances_reject_ambiguous_tip_mappings(
+        self, ml_args, tree_newick, ordered_names
+    ):
+        svc = AncestralReconstruction(ml_args)
+        tree = Phylo.read(StringIO(tree_newick), "newick")
+
+        result = svc._prepare_ml_cross_covariances_direct(
+            tree,
+            ordered_names,
+            svc._label_internal_nodes(tree),
+            tree.depths(),
+            tree.depths()[tree.root],
+        )
+
+        assert result is None
+
+    def test_direct_ml_covariances_ignore_unrequested_tips(self, ml_args):
+        svc = AncestralReconstruction(ml_args)
+        tree = Phylo.read(StringIO("(A:1,B:1,X:1);"), "newick")
+
+        clades, labels, distances, covariances = (
+            svc._prepare_ml_cross_covariances_direct(
+                tree,
+                ["A", "B"],
+                svc._label_internal_nodes(tree),
+                tree.depths(),
+                tree.depths()[tree.root],
+            )
+        )
+
+        assert clades == [tree.root]
+        assert labels == ["N1"]
+        np.testing.assert_array_equal(distances, [0.0])
+        np.testing.assert_array_equal(covariances, [[0.0, 0.0]])
+
+    def test_direct_ml_covariances_require_a_root(self, ml_args):
+        svc = AncestralReconstruction(ml_args)
+
+        result = svc._prepare_ml_cross_covariances_direct(
+            object(), ["A"], {}, {}, 0.0
+        )
+
+        assert result is None
 
     def test_ml_reuses_inverse_weighted_residuals(self, ml_args, monkeypatch):
         args = Namespace(**vars(ml_args))
@@ -1017,6 +1479,24 @@ class TestNodeLabeling:
         assert labels[id(left)] == "left"
         assert labels[id(right)] == "N2"
 
+    def test_label_internal_nodes_supports_legacy_tree_interface(self, default_args):
+        svc = AncestralReconstruction(default_args)
+        tree = Phylo.read(
+            StringIO("((A:1,B:1)left:1,(C:1,D:1):1)root;"),
+            "newick",
+        )
+
+        class LegacyTree:
+            def find_clades(self, *args, **kwargs):
+                return tree.find_clades(*args, **kwargs)
+
+        labels = svc._label_internal_nodes(LegacyTree())
+
+        left, right = tree.root.clades
+        assert labels[id(tree.root)] == "root"
+        assert labels[id(left)] == "left"
+        assert labels[id(right)] == "N1"
+
     def test_build_parent_map_uses_direct_preorder_traversal(
         self, default_args, monkeypatch
     ):
@@ -1065,6 +1545,21 @@ class TestNodeLabeling:
             parent_map[id(child)] is trifurcating for child in trifurcating.clades
         )
 
+    def test_build_parent_map_supports_legacy_tree_interface(self, default_args):
+        svc = AncestralReconstruction(default_args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,C:1);"), "newick")
+
+        class LegacyTree:
+            def find_clades(self, *args, **kwargs):
+                return tree.find_clades(*args, **kwargs)
+
+        parent_map = svc._build_parent_map(LegacyTree())
+
+        internal, terminal = tree.root.clades
+        assert parent_map[id(internal)] is tree.root
+        assert parent_map[id(terminal)] is tree.root
+        assert all(parent_map[id(child)] is internal for child in internal.clades)
+
     def test_get_descendant_tips_uses_direct_clade_traversal(
         self, default_args, monkeypatch
     ):
@@ -1077,6 +1572,33 @@ class TestNodeLabeling:
         monkeypatch.setattr(TreeMixin, "get_terminals", fail_get_terminals)
 
         assert svc._get_descendant_tips(tree, tree.root) == ["A", "B", "C", "D"]
+
+    def test_get_descendant_tips_falls_back_to_tree_mixin(
+        self, default_args, monkeypatch
+    ):
+        svc = AncestralReconstruction(default_args)
+        tree = Phylo.read(StringIO("((B:1,A:1):1,C:1);"), "newick")
+        monkeypatch.setattr(
+            ancestral_module.Tree,
+            "calculate_terminal_names_fast",
+            staticmethod(lambda _node: None),
+        )
+
+        assert svc._get_descendant_tips(tree, tree.root) == ["A", "B", "C"]
+
+    def test_descendant_collectors_reject_missing_root(self, default_args):
+        svc = AncestralReconstruction(default_args)
+
+        assert svc._collect_descendant_tip_counts(object()) is None
+        assert svc._collect_descendant_tip_names(object()) is None
+
+    def test_descendant_name_collection_rejects_unsortable_names(
+        self, default_args
+    ):
+        svc = AncestralReconstruction(default_args)
+        tree = Phylo.read(StringIO("(:1,A:1);"), "newick")
+
+        assert svc._collect_descendant_tip_names(tree) is None
 
     def test_collect_descendant_tip_counts_uses_direct_traversal(
         self, default_args, monkeypatch
@@ -1131,6 +1653,24 @@ class TestNodeLabeling:
         names = svc._collect_descendant_tip_names(tree)
 
         assert list(names[id(tree.root)]) == ["A", "B", "C", "D"]
+
+    @pytest.mark.parametrize(
+        ("newick", "expected"),
+        [
+            ("((C:1,D:1):1,(A:1,B:1):1);", ["A", "B", "C", "D"]),
+            ("(A:1,B:1,C:1);", ["A", "B", "C"]),
+            ("(C:1,A:1,B:1);", ["A", "B", "C"]),
+        ],
+    )
+    def test_collect_descendant_tip_names_orders_child_ranges(
+        self, default_args, newick, expected
+    ):
+        svc = AncestralReconstruction(default_args)
+        tree = Phylo.read(StringIO(newick), "newick")
+
+        names = svc._collect_descendant_tip_names(tree)
+
+        assert list(names[id(tree.root)]) == expected
 
 
 class TestRun:
@@ -1359,6 +1899,53 @@ class TestRun:
             "D",
         ]
 
+    def test_continuous_output_omits_unlabeled_and_unestimated_nodes(
+        self, default_args, mocker
+    ):
+        svc = AncestralReconstruction(default_args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        left, _ = tree.root.clades
+        node_labels = {id(tree.root): "root", id(left): "left"}
+        node_estimates = {"root": 1.5}
+
+        result = svc._format_result(
+            method="fast",
+            trait_name="trait",
+            n_tips=4,
+            sigma2=1.0,
+            log_likelihood=-1.0,
+            node_estimates=node_estimates,
+            node_cis={},
+            node_labels=node_labels,
+            tree=tree,
+            trait_values={"A": 1.0, "B": 1.0, "C": 2.0, "D": 2.0},
+        )
+
+        assert result["ancestral_estimates"] == {
+            "root": {
+                "estimate": 1.5,
+                "descendants": ["A", "B", "C", "D"],
+                "is_root": True,
+            }
+        }
+
+        mocked_print = mocker.patch("builtins.print")
+        for node_cis in ({}, {"root": (1.0, 2.0)}):
+            svc._print_text_output(
+                method="fast",
+                trait_name="trait",
+                n_tips=4,
+                sigma2=1.0,
+                log_likelihood=-1.0,
+                node_estimates=node_estimates,
+                node_cis=node_cis,
+                node_labels=node_labels,
+                tree=tree,
+            )
+
+        assert mocked_print.call_count == 2
+        assert all("left" not in call.args[0] for call in mocked_print.call_args_list)
+
     @patch("builtins.print")
     def test_multi_trait_run(self, mocked_print, multi_trait_args):
         svc = AncestralReconstruction(multi_trait_args)
@@ -1409,6 +1996,49 @@ class TestPlot:
         assert values.iterations == 1
         assert _value_range([]) is None
         assert _value_range([2.0, 2.0]) == (2.0, 2.0)
+
+    def test_contmap_returns_without_estimates(self, default_args, tmp_path):
+        svc = AncestralReconstruction(default_args)
+        tree = Phylo.read(StringIO("(A:1,B:1,C:1);"), "newick")
+        output_path = tmp_path / "empty.png"
+
+        svc._plot_contmap(
+            tree,
+            node_estimates={},
+            node_labels={},
+            trait_values={},
+            trait_name="trait",
+            output_path=str(output_path),
+        )
+
+        assert not output_path.exists()
+
+    def test_contmap_reports_missing_matplotlib(
+        self, default_args, monkeypatch, capsys, tmp_path
+    ):
+        svc = AncestralReconstruction(default_args)
+        tree = Phylo.read(StringIO("(A:1,B:1,C:1);"), "newick")
+        original_import = builtins.__import__
+
+        def reject_matplotlib(name, *args, **kwargs):
+            if name == "matplotlib" or name.startswith("matplotlib."):
+                raise ImportError("matplotlib unavailable")
+            return original_import(name, *args, **kwargs)
+
+        monkeypatch.setattr(builtins, "__import__", reject_matplotlib)
+
+        with pytest.raises(SystemExit) as excinfo:
+            svc._plot_contmap(
+                tree,
+                node_estimates={"root": 1.0},
+                node_labels={id(tree.root): "root"},
+                trait_values={"A": 1.0, "B": 2.0, "C": 3.0},
+                trait_name="trait",
+                output_path=str(tmp_path / "plot.png"),
+            )
+
+        assert excinfo.value.code == 2
+        assert "matplotlib is required for contMap plotting" in capsys.readouterr().out
 
     @pytest.mark.parametrize("circular", [False, True])
     def test_contmap_plot_uses_direct_tree_traversal(
@@ -2142,6 +2772,38 @@ class TestDiscreteTraitParsing:
                 str(trait_file), ["raccoon", "bear", "weasel"]
             )
 
+    def test_single_col_reports_taxon_mismatches(
+        self, discrete_args, tmp_path, capsys
+    ):
+        svc = AncestralReconstruction(discrete_args)
+        trait_file = tmp_path / "states.tsv"
+        trait_file.write_text("A\tx\nB\tx\nC\ty\nX\ty\n")
+
+        traits = svc._parse_discrete_trait_data_single(
+            str(trait_file), ["A", "B", "C", "D"]
+        )
+
+        assert traits == {"A": "x", "B": "x", "C": "y"}
+        assert capsys.readouterr().err.splitlines() == [
+            "Warning: 1 taxa in tree but not in trait file: D",
+            "Warning: 1 taxa in trait file but not in tree: X",
+        ]
+
+    def test_single_col_requires_three_shared_taxa(self, discrete_args, tmp_path):
+        svc = AncestralReconstruction(discrete_args)
+        trait_file = tmp_path / "states.tsv"
+        trait_file.write_text("A\tx\nB\tx\nX\ty\n")
+
+        with pytest.raises(PhykitUserError) as excinfo:
+            svc._parse_discrete_trait_data_single(
+                str(trait_file), ["A", "B", "C"]
+            )
+
+        assert excinfo.value.messages == [
+            "Only 2 shared taxa between tree and trait file.",
+            "At least 3 shared taxa are required.",
+        ]
+
     def test_missing_column_error(self, discrete_args):
         svc = AncestralReconstruction(discrete_args)
         tree = svc.read_tree_file()
@@ -2247,6 +2909,79 @@ class TestDiscreteTraitParsing:
                 ["raccoon", "bear", "weasel"],
                 "activity",
             )
+
+    @pytest.mark.parametrize(
+        ("contents", "expected_message"),
+        [
+            (
+                "# comment only\n\n",
+                "Multi-trait file must have a header row and at least one data row.",
+            ),
+            (
+                "taxon\nA\n",
+                "Header must have at least 2 columns (taxon + at least 1 trait).",
+            ),
+            (
+                "taxon\tdiet\n",
+                "Multi-trait file must have a header row and at least one data row.",
+            ),
+        ],
+    )
+    def test_multi_col_rejects_invalid_files(
+        self, discrete_args, tmp_path, contents, expected_message
+    ):
+        svc = AncestralReconstruction(discrete_args)
+        trait_file = tmp_path / "states.tsv"
+        trait_file.write_text(contents)
+
+        with pytest.raises(PhykitUserError) as excinfo:
+            svc._parse_discrete_trait_data_multi(
+                str(trait_file), ["A", "B", "C"], "diet"
+            )
+
+        assert expected_message in excinfo.value.messages
+
+    def test_multi_col_reports_taxon_mismatches(
+        self, discrete_args, tmp_path, capsys
+    ):
+        svc = AncestralReconstruction(discrete_args)
+        trait_file = tmp_path / "states.tsv"
+        trait_file.write_text("taxon\tdiet\nA\tx\nB\tx\nC\ty\nX\ty\n")
+
+        traits = svc._parse_discrete_trait_data_multi(
+            str(trait_file), ["A", "B", "C", "D"], "diet"
+        )
+
+        assert traits == {"A": "x", "B": "x", "C": "y"}
+        assert capsys.readouterr().err.splitlines() == [
+            "Warning: 1 taxa in tree but not in trait file: D",
+            "Warning: 1 taxa in trait file but not in tree: X",
+        ]
+
+    def test_multi_col_requires_three_shared_taxa(self, discrete_args, tmp_path):
+        svc = AncestralReconstruction(discrete_args)
+        trait_file = tmp_path / "states.tsv"
+        trait_file.write_text("taxon\tdiet\nA\tx\nB\tx\nX\ty\n")
+
+        with pytest.raises(PhykitUserError) as excinfo:
+            svc._parse_discrete_trait_data_multi(
+                str(trait_file), ["A", "B", "C"], "diet"
+            )
+
+        assert excinfo.value.messages == [
+            "Only 2 shared taxa between tree and trait file.",
+            "At least 3 shared taxa are required.",
+        ]
+
+    def test_multi_col_file_not_found(self, discrete_args, tmp_path):
+        svc = AncestralReconstruction(discrete_args)
+
+        with pytest.raises(PhykitUserError) as excinfo:
+            svc._parse_discrete_trait_data_multi(
+                str(tmp_path / "missing.tsv"), ["A", "B", "C"], "diet"
+            )
+
+        assert "corresponds to no such file or directory" in excinfo.value.messages[0]
 
     def test_file_not_found(self, discrete_args):
         svc = AncestralReconstruction(discrete_args)
@@ -2419,6 +3154,58 @@ class TestDiscreteMarginalPosteriors:
         for node_id in expected:
             np.testing.assert_allclose(observed[node_id], expected[node_id])
 
+    def test_discrete_posteriors_fall_back_when_direct_preorder_fails(
+        self, discrete_args, monkeypatch
+    ):
+        svc = AncestralReconstruction(discrete_args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,C:1);"), "newick")
+        tip_states = {"A": "x", "B": "x", "C": "y"}
+        states = ["x", "y"]
+        Q = np.array([[-1.0, 1.0], [1.0, -1.0]])
+        expected = svc._discrete_marginal_posteriors(tree, tip_states, Q, states)
+        original_iter_preorder = svc._iter_preorder
+        call_count = 0
+
+        def fail_first_preorder(root):
+            nonlocal call_count
+            call_count += 1
+            if call_count == 1:
+                raise AttributeError("direct traversal unavailable")
+            return original_iter_preorder(root)
+
+        monkeypatch.setattr(svc, "_iter_preorder", fail_first_preorder)
+
+        observed = svc._discrete_marginal_posteriors(tree, tip_states, Q, states)
+
+        assert observed.keys() == expected.keys()
+        for node_id in expected:
+            np.testing.assert_allclose(observed[node_id], expected[node_id])
+
+    def test_discrete_posteriors_use_uniform_fallback_for_zero_likelihoods(
+        self, discrete_args, mocker
+    ):
+        svc = AncestralReconstruction(discrete_args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,C:1);"), "newick")
+        clades = list(svc._iter_preorder(tree.root))
+        zero_likelihoods = {id(clade): np.zeros(2) for clade in clades}
+        mocker.patch.object(
+            svc,
+            "_felsenstein_pruning",
+            return_value=(zero_likelihoods, float("-inf")),
+        )
+        mocker.patch.object(svc, "_matrix_exp", return_value=np.eye(2))
+
+        posteriors = svc._discrete_marginal_posteriors(
+            tree,
+            {"A": "x", "B": "x", "C": "y"},
+            np.array([[-1.0, 1.0], [1.0, -1.0]]),
+            ["x", "y"],
+        )
+
+        assert posteriors
+        for posterior in posteriors.values():
+            np.testing.assert_array_equal(posterior, [0.5, 0.5])
+
 
 class TestDiscreteRun:
     @patch("builtins.print")
@@ -2573,6 +3360,34 @@ class TestDiscreteRun:
         prune.assert_called_once_with(tree_copy, ["D"])
         assert fit_q.call_args.args[0] is pruned_tree
 
+    def test_discrete_run_supports_single_column_traits_and_ladderizing(
+        self, discrete_args, mocker
+    ):
+        discrete_args.trait = None
+        discrete_args.ladderize = True
+        svc = AncestralReconstruction(discrete_args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        tree_copy = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        states_by_tip = {"A": "x", "B": "x", "C": "y", "D": "y"}
+        parse_single = mocker.patch.object(
+            svc, "_parse_discrete_trait_data_single", return_value=states_by_tip
+        )
+        mocker.patch.object(svc, "_fast_copy", return_value=tree_copy)
+        ladderize = mocker.spy(tree_copy, "ladderize")
+        mocker.patch.object(svc, "_label_internal_nodes", return_value={})
+        mocker.patch.object(svc, "_fit_q_matrix", return_value=(np.eye(2), -1.0))
+        mocker.patch.object(svc, "_discrete_marginal_posteriors", return_value={})
+        format_result = mocker.patch.object(
+            svc, "_format_discrete_result", return_value={"ok": True}
+        )
+        mocker.patch.object(svc, "_print_discrete_text_output")
+
+        svc._run_discrete(tree, ["A", "B", "C", "D"])
+
+        parse_single.assert_called_once()
+        ladderize.assert_called_once_with()
+        assert format_result.call_args.kwargs["trait_name"] == "trait"
+
     def test_discrete_text_output_uses_cached_descendant_counts(
         self, discrete_args, monkeypatch, mocker
     ):
@@ -2672,6 +3487,49 @@ class TestDiscreteRun:
             "C",
             "D",
         ]
+
+    def test_discrete_output_omits_unlabeled_and_unestimated_nodes(
+        self, discrete_args, mocker
+    ):
+        svc = AncestralReconstruction(discrete_args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        left, _ = tree.root.clades
+        node_labels = {id(tree.root): "root", id(left): "left"}
+        node_posteriors = {id(tree.root): np.array([0.25, 0.75])}
+        states = ["x", "y"]
+        Q = np.array([[-1.0, 1.0], [1.0, -1.0]])
+
+        result = svc._format_discrete_result(
+            model="ER",
+            trait_name="trait",
+            n_tips=4,
+            log_likelihood=-1.0,
+            states=states,
+            Q=Q,
+            node_posteriors=node_posteriors,
+            node_labels=node_labels,
+            tree=tree,
+            tip_states={"A": "x", "B": "x", "C": "y", "D": "y"},
+        )
+
+        assert list(result["ancestral_states"]) == ["root"]
+
+        mocked_print = mocker.patch("builtins.print")
+        svc._print_discrete_text_output(
+            model="ER",
+            trait_name="trait",
+            n_tips=4,
+            log_likelihood=-1.0,
+            states=states,
+            Q=Q,
+            node_posteriors=node_posteriors,
+            node_labels=node_labels,
+            tree=tree,
+        )
+
+        output = mocked_print.call_args.args[0]
+        assert "root (root)" in output
+        assert "left" not in output
 
     @patch("builtins.print")
     def test_continuous_regression(self, mocked_print):
@@ -2835,6 +3693,123 @@ class TestDiscretePlot:
         )
 
         assert second_path.read_bytes() == first_bytes
+
+    def test_discrete_plot_reports_missing_matplotlib(
+        self, discrete_args, monkeypatch, capsys, tmp_path
+    ):
+        svc = AncestralReconstruction(discrete_args)
+        tree = Phylo.read(StringIO("(A:1,B:1,C:1);"), "newick")
+        original_import = builtins.__import__
+
+        def reject_matplotlib(name, *args, **kwargs):
+            if name == "matplotlib" or name.startswith("matplotlib."):
+                raise ImportError("matplotlib unavailable")
+            return original_import(name, *args, **kwargs)
+
+        monkeypatch.setattr(builtins, "__import__", reject_matplotlib)
+
+        with pytest.raises(SystemExit) as excinfo:
+            svc._plot_discrete_asr(
+                tree,
+                {id(tree.root): np.array([0.5, 0.5])},
+                {id(tree.root): "root"},
+                ["x", "y"],
+                {"A": "x", "B": "x", "C": "y"},
+                str(tmp_path / "plot.png"),
+            )
+
+        assert excinfo.value.code == 2
+        assert "matplotlib is required for discrete ASR plotting" in (
+            capsys.readouterr().out
+        )
+
+    @pytest.mark.parametrize("circular", [False, True])
+    def test_discrete_plot_supports_large_sparse_state_sets(
+        self, discrete_args, tmp_path, circular
+    ):
+        discrete_args.circular = circular
+        discrete_args.no_title = True
+        discrete_args.ylabel_fontsize = 0
+        svc = AncestralReconstruction(discrete_args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,C:1);"), "newick")
+        states = [f"state_{index}" for index in range(11)]
+        posterior = np.zeros(len(states))
+        posterior[0] = 1.0
+        node_posteriors = {
+            id(clade): posterior
+            for clade in svc._iter_preorder(tree.root)
+            if clade.clades
+        }
+        output_path = tmp_path / f"large_states_{circular}.png"
+
+        svc._plot_discrete_asr(
+            tree,
+            node_posteriors,
+            {},
+            states,
+            {"A": states[0], "B": states[1], "C": states[2]},
+            str(output_path),
+        )
+
+        assert output_path.exists()
+
+    def test_discrete_plot_cache_rejects_unsafe_keys(
+        self, discrete_args, monkeypatch, tmp_path
+    ):
+        svc = AncestralReconstruction(discrete_args)
+        tree = Phylo.read(StringIO("(A:1,B:1,C:1);"), "newick")
+        clades = list(svc._iter_preorder(tree.root))
+        tips = [clade for clade in clades if not clade.clades]
+        node_posteriors = {id(tree.root): np.array([0.5, 0.5])}
+        common_args = (
+            tree,
+            clades,
+            tips,
+            node_posteriors,
+            {id(tree.root): "root"},
+            ["x", "y"],
+            {"A": "x", "B": "x", "C": "y"},
+            str(tmp_path / "plot.png"),
+        )
+        monkeypatch.setattr(
+            ancestral_module, "_DISCRETE_ASR_PLOT_CACHE_MAX_NODES", 0
+        )
+
+        assert svc._discrete_asr_plot_cache_key(*common_args) is None
+
+        monkeypatch.setattr(
+            ancestral_module, "_DISCRETE_ASR_PLOT_CACHE_MAX_NODES", 5000
+        )
+        monkeypatch.setattr(svc, "_collect_descendant_tip_names", lambda _tree: None)
+        assert svc._discrete_asr_plot_cache_key(*common_args) is None
+
+        discrete_args.color_file = str(tmp_path / "missing-colors.tsv")
+        svc = AncestralReconstruction(discrete_args)
+        assert svc._discrete_asr_plot_cache_key(*common_args) is None
+
+    def test_discrete_plot_cache_handles_storage_failures_and_eviction(
+        self, discrete_args, tmp_path
+    ):
+        svc = AncestralReconstruction(discrete_args)
+        missing_path = tmp_path / "missing.png"
+
+        svc._store_discrete_asr_plot_cache(None, str(missing_path))
+        svc._store_discrete_asr_plot_cache("missing", str(missing_path))
+        assert not ancestral_module._DISCRETE_ASR_PLOT_CACHE
+
+        for index in range(ancestral_module._DISCRETE_ASR_PLOT_CACHE_MAX + 1):
+            plot_path = tmp_path / f"plot-{index}.png"
+            plot_path.write_bytes(f"plot-{index}".encode("ascii"))
+            svc._store_discrete_asr_plot_cache(f"key-{index}", str(plot_path))
+
+        assert len(ancestral_module._DISCRETE_ASR_PLOT_CACHE) == (
+            ancestral_module._DISCRETE_ASR_PLOT_CACHE_MAX
+        )
+        assert "key-0" not in ancestral_module._DISCRETE_ASR_PLOT_CACHE
+        last_index = ancestral_module._DISCRETE_ASR_PLOT_CACHE_MAX
+        assert ancestral_module._DISCRETE_ASR_PLOT_CACHE[
+            f"key-{last_index}"
+        ] == f"plot-{last_index}".encode("ascii")
 
     def test_discrete_plot_skips_explicit_tight_layout(
         self, discrete_args, monkeypatch, tmp_path

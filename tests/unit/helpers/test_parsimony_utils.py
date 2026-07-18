@@ -46,6 +46,16 @@ def _make_tree(newick):
     return Phylo.read(StringIO(newick), "newick")
 
 
+def _make_balanced_tree(tip_names):
+    def build(names):
+        if len(names) == 1:
+            return f"{names[0]}:1"
+        midpoint = len(names) // 2
+        return f"({build(names[:midpoint])},{build(names[midpoint:])}):1"
+
+    return _make_tree(f"{build(tip_names)};")
+
+
 # ---------------------------------------------------------------------------
 # build_parent_map
 # ---------------------------------------------------------------------------
@@ -110,6 +120,57 @@ class TestBuildParentMap:
         assert pm[id(trifurcation.clades[0])] is trifurcation
         assert pm[id(trifurcation.clades[1])] is trifurcation
         assert pm[id(trifurcation.clades[2])] is trifurcation
+
+    def test_legacy_tree_falls_back_to_find_clades(self):
+        source_tree = _make_tree("((A:1,B:1):1,C:1);")
+        clades = list(source_tree.find_clades(order="preorder"))
+
+        class LegacyTree:
+            root = object()
+
+            @staticmethod
+            def find_clades(order):
+                assert order == "preorder"
+                return clades
+
+        parent_map = build_parent_map(LegacyTree())
+
+        assert len(parent_map) == len(clades) - 1
+        assert parent_map[id(source_tree.root.clades[0])] is source_tree.root
+
+    @pytest.mark.parametrize(
+        "helper",
+        [
+            parsimony_module._build_parent_map_direct,
+            parsimony_module._preorder_clades_direct,
+            parsimony_module._postorder_clades_direct,
+        ],
+    )
+    def test_direct_traversal_helpers_reject_legacy_roots(self, helper):
+        class LegacyTree:
+            root = object()
+
+        assert helper(LegacyTree()) is None
+
+    @pytest.mark.parametrize(
+        "helper",
+        [
+            parsimony_module._build_parent_map_direct,
+            parsimony_module._preorder_clades_direct,
+            parsimony_module._postorder_clades_direct,
+        ],
+    )
+    def test_direct_traversal_helpers_reject_legacy_children(self, helper):
+        from Bio.Phylo.BaseTree import Clade, Tree
+
+        class LegacyChild:
+            @property
+            def clades(self):
+                raise AttributeError("legacy child")
+
+        tree = Tree(root=Clade(clades=[LegacyChild()]))
+
+        assert helper(tree) is None
 
 
 # ---------------------------------------------------------------------------
@@ -220,6 +281,28 @@ class TestResolvePolytomies:
         Phylo.write(expected, expected_out, "newick")
         Phylo.write(actual, actual_out, "newick")
         assert actual_out.getvalue() == expected_out.getvalue()
+
+    def test_legacy_tree_resolves_polytomy_through_find_clades(self):
+        source_tree = _make_tree("(A:1,B:1,C:1,D:1);")
+        clades = list(source_tree.find_clades(order="postorder"))
+
+        class LegacyTree:
+            root = object()
+
+            @staticmethod
+            def find_clades(order):
+                assert order == "postorder"
+                return clades
+
+        resolve_polytomies(LegacyTree())
+
+        assert all(len(clade.clades) <= 2 for clade in clades)
+        assert sorted(tip.name for tip in source_tree.get_terminals()) == [
+            "A",
+            "B",
+            "C",
+            "D",
+        ]
 
 
 # ---------------------------------------------------------------------------
@@ -647,6 +730,82 @@ class TestFitchDownpass:
             {"A", "G", "T"},
             {"T"},
         ]
+
+    @pytest.mark.parametrize(
+        ("tip_states", "expected_root", "expected_score"),
+        [
+            ({"A": ["?"], "B": ["-"], "C": ["?"]}, set(), 0),
+            ({"A": ["0"], "B": ["?"], "C": ["0"]}, {"0"}, 0),
+            ({"A": ["0"], "B": ["1"], "C": ["2"]}, {"0", "1", "2"}, 1),
+        ],
+    )
+    def test_unresolved_multifurcation_uses_generic_fitch_semantics(
+        self,
+        tip_states,
+        expected_root,
+        expected_score,
+    ):
+        tree = _make_tree("(A:1,B:1,C:1);")
+
+        node_state_sets, scores = fitch_downpass(tree, tip_states)
+
+        assert node_state_sets[id(tree.root)] == [expected_root]
+        assert scores == [expected_score]
+
+    def test_unary_tree_inherits_its_child_state(self):
+        from Bio.Phylo.BaseTree import Clade, Tree
+
+        tip = Clade(name="A")
+        tree = Tree(root=Clade(name="root", clades=[tip]))
+
+        node_state_sets, scores = fitch_downpass(tree, {"A": ["present"]})
+
+        assert scores == [0]
+        assert node_state_sets[id(tree.root)] == [{"present"}]
+
+    def test_large_mask_lookup_declines_unsupported_state_count(self):
+        states = tuple(f"S{index}" for index in range(7))
+        assert parsimony_module._build_small_mask_set_lookup(states) is None
+
+    @pytest.mark.parametrize(
+        "mode",
+        [
+            "all_large",
+            "all_large_cached",
+            "mixed",
+            "mixed_cached",
+        ],
+    )
+    def test_bitmask_state_conversion_matches_generic_fitch(self, mode, monkeypatch):
+        cached = mode.endswith("cached")
+        mixed = mode.startswith("mixed")
+        tip_count = 28 if cached else 8
+        character_count = 16 if cached else (2 if mixed else 1)
+        tip_names = [f"T{index}" for index in range(tip_count)]
+        tree = _make_balanced_tree(tip_names)
+        tip_states = {}
+
+        for index, name in enumerate(tip_names):
+            pattern = index % 7 if cached else index
+            states = []
+            for character in range(character_count):
+                if mixed and character % 2 == 0:
+                    states.append(str(pattern % 2))
+                else:
+                    states.append(f"S{pattern}")
+            tip_states[name] = states
+
+        optimized_sets, optimized_scores = fitch_downpass(tree, tip_states)
+
+        monkeypatch.setattr(
+            parsimony_module,
+            "_postorder_clades_direct",
+            lambda _tree: None,
+        )
+        generic_sets, generic_scores = fitch_downpass(tree, tip_states)
+
+        assert optimized_scores == generic_scores
+        assert optimized_sets == generic_sets
 
     def test_polytomy_tree_after_resolve(self):
         """Works on a resolved polytomy tree."""
@@ -1343,6 +1502,60 @@ class TestRetentionIndex:
 
         assert ri_per_char == [1.0, 0.0]
         assert ri_overall == pytest.approx(0.5)
+
+    def test_empty_matrix_has_no_retention_index(self):
+        assert retention_index([], []) == ([], None)
+
+    def test_large_ascii_matrix_uses_vectorized_retention_index(self):
+        informative = ["0", "0", "1", "1"] * 16
+        constant = ["0"] * 64
+        missing = ["?", "-"] * 32
+        columns = [informative] * 32 + [constant] * 16 + [missing] * 16
+        observed = [1] * 32 + [0] * 32
+
+        ri_per_char, ri_overall = retention_index(columns, observed)
+
+        assert ri_per_char[:32] == [1.0] * 32
+        assert ri_per_char[32:] == [None] * 32
+        assert ri_overall == 1.0
+
+    def test_large_all_missing_matrix_has_no_retention_index(self):
+        columns = [["?", "-"] * 32 for _ in range(64)]
+
+        ri_per_char, ri_overall = retention_index(columns, [0] * 64)
+
+        assert ri_per_char == [None] * 64
+        assert ri_overall is None
+
+    def test_large_constant_matrix_has_no_retention_index(self):
+        columns = [["0"] * 64 for _ in range(64)]
+
+        ri_per_char, ri_overall = retention_index(columns, [0] * 64)
+
+        assert ri_per_char == [None] * 64
+        assert ri_overall is None
+
+    @pytest.mark.parametrize("states", [("α", "β"), ("AA", "BB")])
+    def test_large_non_single_ascii_states_use_counter_fallback(self, states):
+        first, second = states
+        informative = [first, first, second, second] * 16
+        columns = [informative for _ in range(64)]
+
+        ri_per_char, ri_overall = retention_index(columns, [1] * 64)
+
+        assert ri_per_char == [1.0] * 64
+        assert ri_overall == 1.0
+
+    def test_unequal_large_columns_use_counter_fallback(self):
+        columns = [
+            ["0", "0", "1", "1"] * 16,
+            ["0", "1", "0", "1"] * 15,
+        ]
+
+        ri_per_char, ri_overall = retention_index(columns, [1, 2])
+
+        assert ri_per_char == [1.0, pytest.approx(28 / 29)]
+        assert ri_overall == pytest.approx(59 / 60)
 
 
 # ---------------------------------------------------------------------------

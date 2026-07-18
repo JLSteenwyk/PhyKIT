@@ -119,8 +119,117 @@ class TestMappingParsing:
         with pytest.raises(PhykitUserError):
             svc._parse_mapping_file(str(mapping_file))
 
+    def test_mapping_file_reports_missing_path(self, tmp_path):
+        svc = Cophylo.__new__(Cophylo)
+        missing = tmp_path / "missing.tsv"
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            svc._parse_mapping_file(str(missing))
+
+        assert "no such file or directory" in exc_info.value.messages[0]
+
 
 class TestRun:
+    def test_run_reports_second_tree_read_failure(self, mocker):
+        svc = Cophylo(
+            Namespace(
+                tree1=TREE1,
+                tree2="missing.tre",
+                output="out.png",
+                mapping=None,
+                json=False,
+            )
+        )
+        mocker.patch.object(
+            svc,
+            "_read_prepared_tree",
+            side_effect=[object(), ValueError("invalid tree")],
+        )
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            svc.run()
+
+        assert "missing.tre" in exc_info.value.messages[0]
+
+    def test_run_filters_mapping_and_ladderizes_both_trees(self, mocker):
+        svc = Cophylo(
+            Namespace(
+                tree1=TREE1,
+                tree2=TREE2,
+                output="out.png",
+                mapping="mapping.tsv",
+                json=False,
+                ladderize=True,
+            )
+        )
+        tree1 = mocker.Mock()
+        tree2 = mocker.Mock()
+        mocker.patch.object(
+            svc,
+            "_read_prepared_tree",
+            side_effect=[tree1, tree2],
+        )
+        mocker.patch.object(
+            svc,
+            "get_tip_names_from_tree",
+            side_effect=[["A", "B"], ["X", "Y"]],
+        )
+        mocker.patch.object(
+            svc,
+            "_parse_mapping_file",
+            return_value={"A": "X", "B": "Y", "missing": "Y"},
+        )
+        optimize = mocker.patch.object(
+            svc,
+            "_optimize_tip_order",
+            return_value=({"A": 0, "B": 1}, {"X": 0, "Y": 1}),
+        )
+        plot = mocker.patch.object(svc, "_plot_cophylo")
+        mocker.patch.object(svc, "_print_text_output")
+
+        svc.run()
+
+        tree1.ladderize.assert_called_once_with()
+        tree2.ladderize.assert_called_once_with()
+        optimize.assert_called_once_with(
+            tree1,
+            tree2,
+            {"A": "X", "B": "Y"},
+            mutate_tree2=True,
+        )
+        plot.assert_called_once()
+
+    def test_run_rejects_mapping_with_too_few_valid_taxa(self, mocker):
+        svc = Cophylo(
+            Namespace(
+                tree1=TREE1,
+                tree2=TREE2,
+                output="out.png",
+                mapping="mapping.tsv",
+                json=False,
+            )
+        )
+        mocker.patch.object(
+            svc,
+            "_read_prepared_tree",
+            side_effect=[object(), object()],
+        )
+        mocker.patch.object(
+            svc,
+            "get_tip_names_from_tree",
+            side_effect=[["A", "B"], ["X", "Y"]],
+        )
+        mocker.patch.object(
+            svc,
+            "_parse_mapping_file",
+            return_value={"A": "X", "B": "missing"},
+        )
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            svc.run()
+
+        assert exc_info.value.messages[0].startswith("Only 1 valid mapped taxa")
+
     def test_run_prepares_both_trees_without_forcing_rectangular_copies(self, mocker):
         args = Namespace(
             tree1=TREE1,
@@ -325,6 +434,104 @@ class TestRun:
         assert Cophylo._validate_standard_tree(tree) == 6
         assert tree.root.branch_length is None
         assert tree.root.clades[1].clades[1].branch_length == 1.0
+
+    def test_validate_tree_supports_generic_tree_protocol(self):
+        class GenericClade:
+            def __init__(self, name, branch_length=None, children=()):
+                self.name = name
+                self.branch_length = branch_length
+                self.clades = list(children)
+
+        tips = [GenericClade("A"), GenericClade("B", branch_length=2.0)]
+
+        class GenericTree:
+            root = object()
+
+            def get_terminals(self):
+                return tips
+
+            def find_clades(self, order=None):
+                return iter(tips)
+
+        tree = GenericTree()
+        svc = Cophylo.__new__(Cophylo)
+
+        assert svc._validate_tree(tree, "generic tree") is True
+        assert tips[0].branch_length == 1.0
+        assert tips[1].branch_length == 2.0
+        assert Cophylo._validate_standard_tree(tree) is None
+
+    def test_validate_tree_rejects_generic_single_tip_tree(self):
+        tip = Namespace(name="A", branch_length=1.0, clades=[])
+
+        class GenericTree:
+            root = object()
+
+            def get_terminals(self):
+                return [tip]
+
+            def find_clades(self, order=None):
+                return iter([tip])
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            Cophylo.__new__(Cophylo)._validate_tree(GenericTree(), "tree")
+
+        assert "at least 2 tips" in exc_info.value.messages[0]
+
+    def test_standard_tree_validation_handles_malformed_child(self):
+        malformed = Namespace(root=Namespace(clades=[object()]))
+
+        assert Cophylo._validate_standard_tree(malformed) is None
+
+    def test_traversal_helpers_fall_back_for_generic_tree(self):
+        tip_a = Namespace(name="A", clades=[])
+        tip_b = Namespace(name="B", clades=[])
+        internal = Namespace(name=None, clades=[tip_a, tip_b])
+
+        class GenericTree:
+            root = object()
+
+            def find_clades(self, order=None):
+                if order == "postorder":
+                    return iter([tip_a, tip_b, internal])
+                return iter([internal, tip_a, tip_b])
+
+            def get_terminals(self):
+                return [tip_a, tip_b]
+
+        tree = GenericTree()
+        svc = Cophylo.__new__(Cophylo)
+
+        assert svc._build_parent_map(tree) == {
+            id(tip_a): internal,
+            id(tip_b): internal,
+        }
+        assert Cophylo._preorder_clades(tree) == [internal, tip_a, tip_b]
+        assert Cophylo._postorder_clades(tree) == [tip_a, tip_b, internal]
+        assert Cophylo._terminal_clades(tree) == [tip_a, tip_b]
+
+    @pytest.mark.parametrize(
+        ("helper", "expected"),
+        [
+            (Cophylo._preorder_clades, "preorder"),
+            (Cophylo._postorder_clades, "postorder"),
+            (Cophylo._terminal_clades, "terminals"),
+        ],
+    )
+    def test_traversal_helpers_recover_from_malformed_child(self, helper, expected):
+        root = Namespace(clades=[object()])
+
+        class MalformedTree:
+            def __init__(self):
+                self.root = root
+
+            def find_clades(self, order=None):
+                return [expected]
+
+            def get_terminals(self):
+                return [expected]
+
+        assert helper(MalformedTree()) == [expected]
 
     def test_get_tip_order_uses_fast_terminal_names_for_parsed_tree(
         self, monkeypatch

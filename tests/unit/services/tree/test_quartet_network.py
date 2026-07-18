@@ -33,6 +33,7 @@ def test_position_extent_scans_positions_once():
     assert _position_extent(positions) == 5.0
     assert positions.iterations == 1
     assert _position_extent([]) == 0
+    assert _position_extent([(0.0, -3.0), (1.0, 3.0)]) == 6.0
 
 
 def _write(path, content):
@@ -103,6 +104,29 @@ def test_shared_tip_set_stops_when_empty():
     assert quartet_network_module._shared_tip_set(
         [{"A", "B"}, {"C", "D"}, FailIfScanned({"A"})]
     ) == set()
+
+
+def test_all_tip_sets_identical_accepts_empty_input():
+    assert quartet_network_module._all_tip_sets_identical([]) is True
+
+
+def test_chi_squared_survival_function_supports_other_degrees_of_freedom():
+    from scipy.stats import chi2
+
+    assert quartet_network_module._chi2_sf(4.5, 3) == pytest.approx(
+        chi2.sf(4.5, 3)
+    )
+
+
+def test_lazy_json_output_delegates_to_helper(monkeypatch):
+    calls = []
+    monkeypatch.setattr(
+        "phykit.helpers.json_output.print_json",
+        lambda *args, **kwargs: calls.append((args, kwargs)) or "printed",
+    )
+
+    assert quartet_network_module.print_json({"result": 1}, indent=2) == "printed"
+    assert calls == [(({"result": 1},), {"indent": 2})]
 
 
 def test_lazy_phylo_caches_resolved_read(monkeypatch):
@@ -181,6 +205,65 @@ class TestExtractBipartitions:
         assert frozenset({"A", "B"}) in all_sides
         assert frozenset({"C", "D"}) in all_sides
         assert frozenset({"E", "F"}) in all_sides
+
+    def test_extract_bipartitions_supports_legacy_tree_interface(self):
+        parsed = _make_tree("((A,B),(C,D));")
+
+        class LegacyTree:
+            def find_clades(self, *args, **kwargs):
+                return parsed.find_clades(*args, **kwargs)
+
+            def get_nonterminals(self):
+                return parsed.get_nonterminals()
+
+        observed = QuartetNetwork._extract_bipartitions(
+            LegacyTree(),
+            frozenset({"A", "B", "C", "D"}),
+        )
+
+        assert any(side == {"A", "B"} for side, _complement in observed)
+
+    def test_direct_bipartition_extraction_rejects_unsupported_objects(self):
+        assert QuartetNetwork._extract_bipartitions_direct(
+            object(), frozenset({"A", "B", "C", "D"})
+        ) is None
+
+        malformed = Namespace(root=Namespace(clades=[object()]))
+        assert QuartetNetwork._extract_bipartitions_direct(
+            malformed, frozenset({"A", "B", "C", "D"})
+        ) is None
+
+    def test_direct_bipartition_extraction_handles_unary_clades(self):
+        tree = _make_tree("(((A),B),(C,D));")
+
+        observed = QuartetNetwork._extract_bipartitions_direct(
+            tree,
+            frozenset({"A", "B", "C", "D"}),
+        )
+
+        assert observed is not None
+        assert any(side == {"A", "B"} for side, _complement in observed)
+
+    def test_postorder_direct_rejects_unsupported_objects(self):
+        assert QuartetNetwork._postorder_clades_direct(object()) is None
+        malformed = Namespace(root=Namespace(clades=[object()]))
+        assert QuartetNetwork._postorder_clades_direct(malformed) is None
+
+    def test_mask_extraction_falls_back_to_tree_postorder(self, monkeypatch):
+        tree = _make_tree("((A,B),(C,D));")
+        monkeypatch.setattr(
+            QuartetNetwork,
+            "_postorder_clades_direct",
+            staticmethod(lambda _tree: None),
+        )
+
+        masks = QuartetNetwork._extract_bipartition_masks(
+            tree,
+            frozenset({"A", "B", "C", "D"}),
+            {"A": 0, "B": 1, "C": 2, "D": 3},
+        )
+
+        assert masks
 
 
 class TestDetermineQuartetTopology:
@@ -282,6 +365,12 @@ class TestTreeTest:
 
         monkeypatch.setattr(builtins, "sorted", original_sorted)
         assert abs(p - 0.0418) < 0.005
+
+    @pytest.mark.parametrize("counts", [[20, 45, 35], [20, 35, 45]])
+    def test_tree_test_is_invariant_to_dominant_topology(self, counts):
+        assert QuartetNetwork._tree_test(counts) == pytest.approx(
+            QuartetNetwork._tree_test([45, 35, 20])
+        )
 
 
 class TestClassifyQuartet:
@@ -396,6 +485,32 @@ class TestNanuqDistance:
         assert QuartetNetwork._top_two_topology_indices([4, 5, 5]) == (1, 2)
         assert QuartetNetwork._top_two_topology_indices([3, 5, 4]) == (1, 2)
 
+    @pytest.mark.parametrize(
+        ("topology", "expected"),
+        [
+            (0, [(0, 2), (0, 3), (1, 2), (1, 3)]),
+            (1, [(0, 1), (0, 3), (2, 1), (2, 3)]),
+            (2, [(0, 1), (0, 2), (3, 1), (3, 2)]),
+        ],
+    )
+    def test_cross_pair_helper_supports_every_topology(self, topology, expected):
+        assert QuartetNetwork._cross_pairs(topology, 0, 1, 2, 3) == expected
+
+    @pytest.mark.parametrize(
+        ("counts", "dominant", "top_two"),
+        [
+            ([0, 1, 2], 2, (2, 1)),
+            ([2, 1, 3], 2, (2, 0)),
+            ([2, 3, 1], 1, (1, 0)),
+            ([1, 2, 3], 2, (2, 1)),
+        ],
+    )
+    def test_topology_index_helpers_cover_strict_orderings(
+        self, counts, dominant, top_two
+    ):
+        assert QuartetNetwork._dominant_topology_index(counts) == dominant
+        assert QuartetNetwork._top_two_topology_indices(counts) == top_two
+
     def test_tree_quartet_adds_cross_pairs(self):
         """Tree-like quartet ab|cd should add 1 to cross-split pairs only."""
         all_taxa = frozenset({"A", "B", "C", "D"})
@@ -420,6 +535,35 @@ class TestNanuqDistance:
         # Same-side pairs (A,B), (C,D) stay 0
         assert dist[ia][ib] == 0.0
         assert dist[ic][id_] == 0.0
+
+    @pytest.mark.parametrize(
+        ("counts", "expected_pairs"),
+        [
+            ([0, 5, 0], {("A", "B"), ("A", "D"), ("B", "C"), ("C", "D")}),
+            ([0, 0, 5], {("A", "B"), ("A", "C"), ("B", "D"), ("C", "D")}),
+        ],
+    )
+    def test_tree_quartet_supports_other_dominant_topologies(
+        self, counts, expected_pairs
+    ):
+        all_taxa = frozenset({"A", "B", "C", "D"})
+        quartet_results = {
+            ("A", "B", "C", "D"): {
+                "classification": "tree",
+                "counts": counts,
+            }
+        }
+
+        taxa, dist, idx = QuartetNetwork._compute_nanuq_distance(
+            all_taxa, quartet_results
+        )
+        observed_pairs = {
+            (first, second)
+            for first, second in itertools.combinations(taxa, 2)
+            if dist[idx[first]][idx[second]] == 1.0
+        }
+
+        assert observed_pairs == expected_pairs
 
     def test_star_quartet_adds_all_pairs(self):
         """Unresolved quartet should add 1 to all 6 pairwise distances."""
@@ -737,6 +881,23 @@ class TestBuildSplitsGraph:
         assert split in directions
         assert split.iterations == 1
 
+    def test_circular_gap_positions_rejects_no_boundary_split(self):
+        ordering = ["A", "B", "C", "D"]
+
+        assert QuartetNetwork._circular_gap_positions(frozenset(ordering), ordering) is None
+
+    def test_compute_split_directions_handles_degenerate_gap_pair(self):
+        ordering = ["A", "B", "C", "D"]
+        split = frozenset({"A"})
+
+        directions = QuartetNetwork._compute_split_directions(
+            ordering,
+            [(split, 1, 1.0)],
+            {split: (0, 0)},
+        )
+
+        assert directions[split] == (1.0, 0.0)
+
     @staticmethod
     def _legacy_build_splits_graph(circular_splits, all_taxa):
         splits_list = [s[0] for s in circular_splits]
@@ -816,6 +977,39 @@ class TestBuildSplitsGraph:
         assert self._canonical_edges(observed[2]) == self._canonical_edges(expected[2])
         assert observed[3] == expected[3]
         assert observed[4] == expected[4]
+
+    def test_build_splits_graph_handles_no_splits(self):
+        assert QuartetNetwork._build_splits_graph([], frozenset({"A", "B"})) == (
+            {},
+            set(),
+            [],
+            [],
+            [],
+        )
+
+    @pytest.mark.parametrize(
+        "split_sets",
+        [
+            [{"A"}, {"A", "B"}],
+            [{"A", "B"}, {"A"}],
+            [{"A", "B"}, {"C", "D"}],
+        ],
+    )
+    def test_build_splits_graph_supports_nested_and_complementary_splits(
+        self, split_sets
+    ):
+        all_taxa = frozenset({"A", "B", "C", "D"})
+        circular_splits = [
+            (frozenset(split), 1, 1.0)
+            for split in split_sets
+        ]
+
+        observed = QuartetNetwork._build_splits_graph(circular_splits, all_taxa)
+        expected = self._legacy_build_splits_graph(circular_splits, all_taxa)
+
+        assert observed[0] == expected[0]
+        assert observed[1] == expected[1]
+        assert self._canonical_edges(observed[2]) == self._canonical_edges(expected[2])
 
 
 class TestNetworkPlot:
@@ -1157,8 +1351,133 @@ class TestPruneToTaxa:
         assert [tip.name for tip in tree.get_terminals()] == ["B", "D"]
         assert [tip.branch_length for tip in tree.get_terminals()] == [5.0, 11.0]
 
+    def test_tip_collection_falls_back_to_public_tree_api(self, monkeypatch):
+        tree = Namespace(
+            get_terminals=lambda: [Namespace(name="A"), Namespace(name="B")]
+        )
+        monkeypatch.setattr(
+            quartet_network_module.Tree,
+            "calculate_terminal_names_fast",
+            staticmethod(lambda _tree: None),
+        )
+
+        assert QuartetNetwork._tips(tree) == {"A", "B"}
+
+    def test_pruning_falls_back_to_individual_public_calls(self, monkeypatch):
+        class LegacyTree:
+            def __init__(self):
+                self.terminals = [Namespace(name=name) for name in "ABCD"]
+
+            def get_terminals(self):
+                return list(self.terminals)
+
+            def prune(self, terminal):
+                self.terminals.remove(terminal)
+
+        tree = LegacyTree()
+        monkeypatch.setattr(
+            quartet_network_module.Tree,
+            "calculate_terminal_clades_fast",
+            staticmethod(lambda _tree: None),
+        )
+        monkeypatch.setattr(
+            quartet_network_module.Tree,
+            "_prune_terminal_objects_batch_standard_tree",
+            staticmethod(lambda _tree, _target_ids: False),
+        )
+
+        observed = QuartetNetwork._prune_to_taxa(tree, {"A", "C"})
+
+        assert observed is tree
+        assert [terminal.name for terminal in tree.terminals] == ["A", "C"]
+
+    def test_shared_taxa_mode_requires_four_shared_taxa(self):
+        svc = QuartetNetwork(
+            Namespace(
+                trees="unused",
+                alpha=0.05,
+                beta=0.95,
+                missing_taxa="shared",
+                plot_output=None,
+                json=False,
+            )
+        )
+        trees = [
+            _make_tree("((A,B),(C,D));"),
+            _make_tree("((A,B),(C,E));"),
+        ]
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            svc._normalize_taxa(trees)
+
+        assert exc_info.value.messages == [
+            "Unable to compute quartet network after pruning to shared taxa.",
+            "At least 4 shared taxa are required.",
+        ]
+
 
 class TestQuartetNetworkRun:
+    @staticmethod
+    def _make_service(trees, missing_taxa="error"):
+        return QuartetNetwork(
+            Namespace(
+                trees=str(trees),
+                alpha=0.05,
+                beta=0.95,
+                missing_taxa=missing_taxa,
+                plot_output=None,
+                json=False,
+            )
+        )
+
+    def test_parse_trees_reports_missing_source(self, tmp_path):
+        missing = tmp_path / "missing-trees.nwk"
+        svc = self._make_service(missing)
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            svc._parse_trees_from_source(str(missing))
+
+        assert exc_info.value.messages[0] == (
+            f"{missing} corresponds to no such file or directory."
+        )
+
+    def test_parse_trees_rejects_empty_source(self, tmp_path):
+        tree_file = tmp_path / "empty.nwk"
+        _write(tree_file, "\n# comment only\n")
+        svc = self._make_service(tree_file)
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            svc._parse_trees_from_source(str(tree_file))
+
+        assert exc_info.value.messages == ["No trees found in input."]
+
+    def test_parse_trees_wraps_inline_newick_errors(self, tmp_path, monkeypatch):
+        tree_file = tmp_path / "trees.nwk"
+        _write(tree_file, "((A,B),(C,D));\n")
+        svc = self._make_service(tree_file)
+        monkeypatch.setattr(
+            quartet_network_module.Phylo,
+            "read",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(ValueError("invalid")),
+        )
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            svc._parse_trees_from_source(str(tree_file))
+
+        assert exc_info.value.messages == ["Failed to parse Newick trees: invalid"]
+
+    def test_parse_tree_list_reports_missing_entry(self, tmp_path):
+        tree_list = tmp_path / "tree-list.txt"
+        _write(tree_list, "missing-tree.nwk\n")
+        svc = self._make_service(tree_list)
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            svc._parse_trees_from_source(str(tree_list))
+
+        assert exc_info.value.messages[0] == (
+            f"{tmp_path / 'missing-tree.nwk'} corresponds to no such file or directory."
+        )
+
     def test_parse_trees_skips_comments_and_blank_lines(self, tmp_path):
         tree_file = tmp_path / "trees.nwk"
         _write(

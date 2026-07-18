@@ -91,6 +91,18 @@ class TestTipToTipNodeDistance:
             service.check_leaves(_Tree(), "missing", "b")
         assert excinfo.value.code == 2
 
+    def test_check_leaves_exits_when_second_missing(self, mocker, args):
+        service = TipToTipNodeDistance(args)
+        mocker.patch(
+            "phykit.services.tree.tip_to_tip_node_distance.TreeMixin.find_any",
+            side_effect=[object(), None],
+        )
+
+        with pytest.raises(SystemExit) as excinfo:
+            service.check_leaves(_Tree(), "a", "missing")
+
+        assert excinfo.value.code == 2
+
     def test_run_text_output(self, mocker):
         args = Namespace(tree_zero="/some/path/to/file.tre", tip_1="a", tip_2="b", json=False)
         service = TipToTipNodeDistance(args)
@@ -135,6 +147,24 @@ class TestTipToTipNodeDistance:
 
         assert service.calculate_tip_to_tip_node_distance(tree, "A", "C") == 3
 
+    def test_fast_node_distance_supports_multifurcations(self, args):
+        tree = Phylo.read(StringIO("(A:1,B:1,C:1,D:1);"), "newick")
+        service = TipToTipNodeDistance(args)
+
+        observed = service.calculate_tip_to_tip_node_distance(tree, "A", "D")
+
+        assert observed == len(TreeMixin.trace(tree, "A", "D"))
+
+    def test_fast_node_distance_reports_missing_first_tip(self, args, capsys):
+        tree = Phylo.read(StringIO("((A:1,B:1):1,C:1);"), "newick")
+        service = TipToTipNodeDistance(args)
+
+        with pytest.raises(SystemExit) as excinfo:
+            service.calculate_tip_to_tip_node_distance(tree, "missing", "B")
+
+        assert excinfo.value.code == 2
+        assert "missing not on tree" in capsys.readouterr().out
+
     def test_fast_node_distance_does_not_build_root_paths(self, args, mocker):
         tree = Phylo.read(StringIO("(((A:1,B:1):1,C:2):1,D:3);"), "newick")
         service = TipToTipNodeDistance(args)
@@ -175,6 +205,44 @@ class TestTipToTipNodeDistance:
         )
 
         assert service.calculate_tip_to_tip_node_distance(tree, "C", "C") == 0
+
+    def test_fast_same_tip_supports_multifurcations(self, args):
+        tree = Phylo.read(StringIO("(A:1,B:1,C:1,D:1);"), "newick")
+        service = TipToTipNodeDistance(args)
+
+        assert service.calculate_tip_to_tip_node_distance(tree, "D", "D") == 0
+
+    def test_fast_same_tip_returns_none_for_incomplete_clade_interface(self):
+        root = _ChildListClade(clades=[object()])
+
+        observed = TipToTipNodeDistance._calculate_same_tip_node_distance_fast(
+            root, "A"
+        )
+
+        assert observed is None
+
+    def test_fast_same_tip_reports_missing_taxon(self, args, capsys):
+        tree = Phylo.read(StringIO("((A:1,B:1):1,C:1);"), "newick")
+        service = TipToTipNodeDistance(args)
+
+        with pytest.raises(SystemExit) as excinfo:
+            service.calculate_tip_to_tip_node_distance(
+                tree, "missing", "missing"
+            )
+
+        assert excinfo.value.code == 2
+        assert "missing not on tree" in capsys.readouterr().out
+
+    def test_path_to_root_returns_nodes_in_root_first_order(self, args):
+        tree = Phylo.read(StringIO("((A:1,B:1):1,C:1);"), "newick")
+        service = TipToTipNodeDistance(args)
+        leaf = next(tree.find_clades(name="A"))
+        parent = tree.root.clades[0]
+        parent_map = {leaf: parent, parent: tree.root}
+
+        path = service._path_to_root(leaf, tree.root, parent_map)
+
+        assert path == [tree.root, parent, leaf]
 
     def test_run_standard_tree_avoids_trace(self, mocker):
         tree = Phylo.read(StringIO("((A:1,B:1):1,C:2);"), "newick")

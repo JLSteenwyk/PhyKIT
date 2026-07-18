@@ -69,6 +69,89 @@ class TestProcessArgs:
 
 
 class TestTraitParsing:
+    def test_missing_file_reports_path(self, tmp_path):
+        missing_path = tmp_path / "missing-traits.tsv"
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=str(missing_path),
+            output="plot.png",
+            json=False,
+        )
+        svc = Phenogram(args)
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            svc._parse_single_trait_data(str(missing_path), ["A", "B", "C"])
+
+        assert f"{missing_path} corresponds to no such file or directory." in (
+            exc_info.value.messages
+        )
+
+    def test_reordered_complete_trait_file_is_accepted(self, tmp_path):
+        trait_file = tmp_path / "traits.tsv"
+        trait_file.write_text("C\t3.0\nA\t1.0\nB\t2.0\n")
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=str(trait_file),
+            output="plot.png",
+            json=False,
+        )
+        svc = Phenogram(args)
+
+        traits = svc._parse_single_trait_data(
+            str(trait_file),
+            ["A", "B", "C"],
+        )
+
+        assert traits == {"C": 3.0, "A": 1.0, "B": 2.0}
+
+    def test_partial_taxon_overlap_warns_and_keeps_shared_values(
+        self, tmp_path, capsys
+    ):
+        trait_file = tmp_path / "traits.tsv"
+        trait_file.write_text("B\t2.0\nC\t3.0\nD\t4.0\nE\t5.0\n")
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=str(trait_file),
+            output="plot.png",
+            json=False,
+        )
+        svc = Phenogram(args)
+
+        traits = svc._parse_single_trait_data(
+            str(trait_file),
+            ["A", "B", "C", "D"],
+        )
+
+        assert traits == {"B": 2.0, "C": 3.0, "D": 4.0}
+        assert capsys.readouterr().err.splitlines() == [
+            "Warning: 1 taxa in tree but not in trait file: A",
+            "Warning: 1 taxa in trait file but not in tree: E",
+        ]
+
+    def test_fewer_than_three_shared_taxa_is_rejected(
+        self, tmp_path, capsys
+    ):
+        trait_file = tmp_path / "traits.tsv"
+        trait_file.write_text("A\t1.0\nB\t2.0\nD\t4.0\n")
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=str(trait_file),
+            output="plot.png",
+            json=False,
+        )
+        svc = Phenogram(args)
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            svc._parse_single_trait_data(
+                str(trait_file),
+                ["A", "B", "C"],
+            )
+
+        assert "Only 2 shared taxa between tree and trait file." in (
+            exc_info.value.messages
+        )
+        assert "Warning:" in capsys.readouterr().err
+
     def test_comments_and_blanks(self, tmp_path):
         trait_file = tmp_path / "traits.tsv"
         trait_file.write_text(
@@ -464,6 +547,14 @@ class TestRun:
 
 
 class TestFastAnc:
+    def test_label_internal_nodes_preserves_existing_labels(self):
+        svc = Phenogram.__new__(Phenogram)
+        tree = Phylo.read(StringIO("((A:1,B:1)Named:1,C:2);"), "newick")
+
+        labels = svc._label_internal_nodes(tree)
+
+        assert "Named" in labels.values()
+
     def test_iter_preorder_matches_biopython_order(self):
         svc = Phenogram.__new__(Phenogram)
         tree = Phylo.read(
@@ -575,8 +666,126 @@ class TestFastAnc:
         expected_second = ((3.0 - combined_est) ** 2) / (1.0 + combined_var)
         assert sigma2 == pytest.approx((expected_first + expected_second) / 2.0)
 
+    def test_fast_anc_skips_terminals_without_trait_values(self):
+        svc = Phenogram.__new__(Phenogram)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,C:2);"), "newick")
+        labels = svc._label_internal_nodes(tree)
+
+        estimates, sigma2 = svc._fast_anc(
+            tree,
+            np.array([1.0, 2.0]),
+            ["A", "B"],
+            labels,
+        )
+
+        assert estimates
+        assert np.isfinite(sigma2)
+
+    def test_fast_anc_stabilizes_zero_length_branches(self):
+        svc = Phenogram.__new__(Phenogram)
+        tree = Phylo.read(
+            StringIO("((A:0,B:0):0,(C:0,D:0):0);"),
+            "newick",
+        )
+        labels = svc._label_internal_nodes(tree)
+
+        estimates, sigma2 = svc._fast_anc(
+            tree,
+            np.array([1.0, 2.0, 3.0, 4.0]),
+            ["A", "B", "C", "D"],
+            labels,
+        )
+
+        assert set(estimates) == set(labels.values())
+        assert np.isfinite(sigma2)
+
+    def test_sigma2_returns_zero_without_valid_contrasts(self):
+        svc = Phenogram.__new__(Phenogram)
+        tree = Phylo.read(StringIO("(A:0,B:0);"), "newick")
+
+        assert svc._compute_sigma2_from_contrasts(
+            tree,
+            np.array([1.0, 2.0]),
+            {},
+            {},
+            ["A", "B"],
+        ) == pytest.approx(0.0)
+
+    def test_sigma2_handles_zero_variance_contrast(self):
+        svc = Phenogram.__new__(Phenogram)
+        tree = Phylo.read(StringIO("(A:0,B:0);"), "newick")
+        estimates = {id(tip): float(idx) for idx, tip in enumerate(tree.root.clades)}
+        variances = {id(tip): 0.0 for tip in tree.root.clades}
+
+        assert svc._compute_sigma2_from_contrasts(
+            tree,
+            np.array([0.0, 1.0]),
+            estimates,
+            variances,
+            ["A", "B"],
+        ) == pytest.approx(0.0)
+
 
 class TestPlotPhenogram:
+    def test_plot_phenogram_reports_missing_matplotlib(
+        self, monkeypatch, capsys
+    ):
+        svc = Phenogram.__new__(Phenogram)
+        real_import = builtins.__import__
+
+        def fail_matplotlib_import(name, *args, **kwargs):
+            if name == "matplotlib":
+                raise ImportError("matplotlib unavailable")
+            return real_import(name, *args, **kwargs)
+
+        monkeypatch.setattr(builtins, "__import__", fail_matplotlib_import)
+
+        with pytest.raises(SystemExit) as exc_info:
+            svc._plot_phenogram(None, {}, {}, {}, "trait", "unused.png")
+
+        assert exc_info.value.code == 2
+        assert "matplotlib is required" in capsys.readouterr().out
+
+    def test_plot_phenogram_skips_empty_estimate_range(self, tmp_path):
+        pytest.importorskip("matplotlib")
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=TRAITS_FILE,
+            output=str(tmp_path / "empty.png"),
+            json=False,
+        )
+        svc = Phenogram(args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,C:2);"), "newick")
+
+        svc._plot_phenogram(tree, {}, {}, {}, "trait", args.output)
+
+        assert not Path(args.output).exists()
+
+    def test_plot_phenogram_expands_constant_estimate_range(self, tmp_path):
+        pytest.importorskip("matplotlib")
+        args = Namespace(
+            tree=TREE_SIMPLE,
+            trait_data=TRAITS_FILE,
+            output=str(tmp_path / "constant.png"),
+            json=False,
+        )
+        svc = Phenogram(args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,C:2);"), "newick")
+        node_labels = svc._label_internal_nodes(tree)
+        node_estimates = {label: 1.0 for label in node_labels.values()}
+        trait_values = {"A": 1.0, "B": 1.0, "C": 1.0}
+
+        svc._plot_phenogram(
+            tree,
+            node_estimates,
+            node_labels,
+            trait_values,
+            "trait",
+            args.output,
+        )
+
+        assert Path(args.output).exists()
+
     def test_value_range_scans_values_once(self):
         class SinglePassValues:
             def __init__(self, values):

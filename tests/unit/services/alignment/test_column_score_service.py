@@ -73,6 +73,12 @@ def test_lazy_alignio_caches_resolved_read():
         real_alignio.read = original_read
 
 
+def test_column_score_helpers_clean_wrapped_sequences_and_unknown_sizes():
+    assert module._clean_fasta_sequence(["ac ", "g\r"]) == "ACG"
+    assert module._alignment_size(iter(())) is None
+    assert module._alignment_length(object()) is None
+
+
 @pytest.fixture
 def args():
     return Namespace(fasta="/some/path/to/query.fa", reference="/some/path/to/ref.fa")
@@ -485,3 +491,162 @@ class TestColumnScore:
         mocked_json = mocker.patch("phykit.services.alignment.column_score.print_json")
         service.run()
         mocked_json.assert_called_once_with({"column_score": 0.5})
+
+    def test_run_unicode_alignment_uses_column_string_fallback(
+        self, args, mocker
+    ):
+        service = ColumnScore(args)
+        query = [SimpleNamespace(seq="AΩ"), SimpleNamespace(seq="TΩ")]
+        reference = [SimpleNamespace(seq="AΩ"), SimpleNamespace(seq="GΩ")]
+        mocker.patch(
+            "phykit.services.alignment.column_score.get_alignment_and_format",
+            side_effect=[
+                (query, "fasta", False),
+                (reference, "fasta", False),
+            ],
+        )
+        mocked_print = mocker.patch("builtins.print")
+
+        service.run()
+
+        mocked_print.assert_called_once_with(0.5)
+
+    def test_run_direct_fasta_json_output(self, tmp_path, mocker):
+        query = tmp_path / "query.fa"
+        reference = tmp_path / "reference.fa"
+        query.write_text(">a\nACGT\n>b\nTGCA\n")
+        reference.write_text(">a\nACGA\n>b\nTGCT\n")
+        service = ColumnScore(
+            Namespace(
+                fasta=str(query),
+                reference=str(reference),
+                json=True,
+            )
+        )
+        mocked_json = mocker.patch(
+            "phykit.services.alignment.column_score.print_json"
+        )
+
+        service.run()
+
+        mocked_json.assert_called_once_with({"column_score": 0.75})
+
+    @pytest.mark.parametrize(
+        "contents",
+        [
+            "",
+            "ACGT\n>a\nACGT\n",
+            ">a\nACGT\n>b\nACG\n>c\nACGT\n",
+            ">a\nACGT\n>b\nACG\n",
+        ],
+    )
+    def test_fasta_reader_rejects_empty_malformed_and_ragged_input(
+        self, tmp_path, contents
+    ):
+        path = tmp_path / "input.fa"
+        path.write_text(contents)
+
+        assert ColumnScore._read_fasta_sequences_upper(str(path)) is None
+
+    def test_fasta_reader_cleans_wrapped_sequences(self, tmp_path):
+        path = tmp_path / "wrapped.fa"
+        path.write_bytes(b">a\nac \ng\r\n>b\nAC\nG\n")
+
+        assert ColumnScore._read_fasta_sequences_upper(str(path)) == [
+            "ACG",
+            "ACG",
+        ]
+
+    def test_direct_fasta_path_reuses_query_and_handles_io_failures(self, tmp_path):
+        path = tmp_path / "same.fa"
+        path.write_text(">a\nACGT\n>b\nTGCA\n")
+
+        assert ColumnScore._calculate_fasta_paths_direct(
+            str(path), str(path)
+        ) == (4, 4)
+        assert ColumnScore._calculate_fasta_paths_direct(
+            str(tmp_path / "missing.fa"), str(path)
+        ) is None
+        assert ColumnScore._calculate_fasta_paths_direct(
+            str(path), str(tmp_path / "missing.fa")
+        ) is None
+
+    def test_direct_fasta_path_rejects_malformed_reference(self, tmp_path):
+        query = tmp_path / "query.fa"
+        reference = tmp_path / "reference.fa"
+        query.write_text(">a\nACGT\n")
+        reference.write_text("not fasta\n")
+
+        assert ColumnScore._calculate_fasta_paths_direct(
+            str(reference), str(query)
+        ) is None
+
+    def test_sequence_list_helpers_cover_large_and_unicode_inputs(self):
+        sequences = [
+            "".join("A" if (idx >> bit) & 1 else "C" for bit in range(4))
+            for idx in range(9)
+        ]
+        query_sequences = [sequence[:-1] + "G" for sequence in sequences]
+        expected = (
+            len(set(zip(*sequences)).intersection(set(zip(*query_sequences)))),
+            4,
+        )
+
+        assert ColumnScore._small_ascii_column_set(sequences) is None
+        assert ColumnScore._unique_column_count_ascii(sequences, 4) == len(
+            set(zip(*sequences))
+        )
+        assert ColumnScore._calculate_matches_between_sequence_lists(
+            sequences,
+            query_sequences,
+        ) == expected
+        assert ColumnScore._calculate_matches_between_sequence_lists([], []) is None
+        assert ColumnScore._calculate_matches_between_sequence_lists(
+            ["AA"],
+            ["AA", "AA"],
+        ) == (0, 2)
+        assert ColumnScore._unique_column_count_ascii(["AΩ"] * 9, 2) is None
+        assert ColumnScore._calculate_matches_between_sequence_lists(
+            ["AΩ"] * 9,
+            ["TΩ"] * 9,
+        ) is None
+
+    def test_repeated_sequence_symbol_helper_rejects_mixed_and_unicode_rows(self):
+        assert ColumnScore._repeated_sequence_symbols_ascii(
+            ["AAAA", "AAAT"]
+        ) is None
+        assert ColumnScore._repeated_sequence_symbols_ascii(
+            ["AΩ", "AΩ"]
+        ) is None
+
+    def test_alignment_direct_helper_rejects_empty_and_ragged_inputs(self, args):
+        service = ColumnScore(args)
+        empty = MultipleSeqAlignment([])
+        ragged = [
+            SimpleNamespace(seq="ACGT"),
+            SimpleNamespace(seq="ACG"),
+        ]
+
+        assert service._calculate_matches_between_alignments_direct(
+            empty, empty
+        ) is None
+        assert service._calculate_matches_between_alignments_direct(
+            ragged, ragged
+        ) is None
+        assert service._calculate_matches_between_alignments_direct(
+            ragged,
+            [SimpleNamespace(seq="ACGT"), SimpleNamespace(seq="TGCA")],
+        ) is None
+        assert service._calculate_matches_between_alignments_direct(
+            [], [SimpleNamespace(seq="ACGT")]
+        ) is None
+
+    def test_alignment_direct_helper_handles_unknown_size_taxon_mismatch(
+        self, args
+    ):
+        service = ColumnScore(args)
+
+        assert service._calculate_matches_between_alignments_direct(
+            iter([SimpleNamespace(seq="ACGT"), SimpleNamespace(seq="TGCA")]),
+            iter([SimpleNamespace(seq="ACGT")]),
+        ) == (0, 4)

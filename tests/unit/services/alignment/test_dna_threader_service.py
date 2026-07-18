@@ -135,6 +135,11 @@ assert "Bio.AlignIO" not in sys.modules
         service = DNAThreader(args)
         assert service.create_mask(6) == [True] * 6
 
+    def test_clipkit_log_data_is_none_without_log(self, args):
+        service = DNAThreader(args)
+
+        assert service.clipkit_log_data is None
+
     def test_create_mask_reads_clipkit_log_once(self, args, mocker):
         args.clipkit_log_file = "clipkit.log"
         service = DNAThreader(args)
@@ -242,6 +247,17 @@ assert "Bio.AlignIO" not in sys.modules
 
         assert threaded == "AAACCCGGG"
 
+    def test_thread_sequence_terminal_stop_with_gap_restores_stop_codon(self, args):
+        service = DNAThreader(args)
+
+        threaded = service._thread_sequence(
+            "A-*",
+            "AAATAG",
+            [True] * 9,
+        )
+
+        assert threaded == "AAA---TAG"
+
     def test_thread_sequence_accepts_plain_strings(self, args):
         service = DNAThreader(args)
 
@@ -295,6 +311,39 @@ assert "Bio.AlignIO" not in sys.modules
         )
 
         assert observed == thread_codons_oracle(protein, nucleotide, keep_mask)
+
+    @pytest.mark.parametrize(
+        ("protein", "oracle_protein"),
+        [
+            ("A-C", "A-C"),
+            ("A-*", "A-!"),
+        ],
+    )
+    def test_thread_sequence_legacy_grouped_plan_matches_codon_oracle(
+        self, args, protein, oracle_protein
+    ):
+        service = DNAThreader(args)
+        nucleotide = "AAACCC"
+        keep_mask = [
+            True, False, False,
+            True, True, True,
+            True, True, True,
+        ]
+        grouped_keep_bits = [(1,), (7,), (7,)]
+        legacy_plan = (9, False, [1, 7, 7], grouped_keep_bits)
+
+        observed = service._thread_sequence(
+            protein,
+            nucleotide,
+            keep_mask,
+            keep_mask_plan=legacy_plan,
+        )
+
+        assert observed == thread_codons_oracle(
+            oracle_protein,
+            nucleotide,
+            keep_mask,
+        )
 
     def test_has_gap_char_detects_threading_gap_symbols(self):
         assert DNAThreader._has_gap_char("ACD") is False
@@ -459,6 +508,111 @@ assert "Bio.AlignIO" not in sys.modules
 
         assert observed == "CCC"
 
+    @pytest.mark.parametrize(
+        ("protein", "nucleotide", "keep_mask"),
+        [
+            (
+                "A-CD",
+                "AAACCCGGG",
+                [False] * 3
+                + [True, False, False]
+                + [False, True, False]
+                + [False, False, True],
+            ),
+            ("A-C", "AAACCC", [False] * 9),
+            ("A-C", "AAACCC", [False] * 6 + [True, False, False]),
+            ("A-C", "AAACCC", [True] * 6 + [True, False, False]),
+            (
+                "ABC",
+                "AAAC",
+                [True, False, True] * 2 + [True, False, False],
+            ),
+        ],
+    )
+    def test_emit_plans_match_codon_oracle_for_mask_shapes(
+        self, args, protein, nucleotide, keep_mask
+    ):
+        service = DNAThreader(args)
+        plan = service._create_thread_mask_plan(keep_mask, len(protein))
+
+        observed = service._thread_sequence(
+            protein,
+            nucleotide,
+            keep_mask,
+            keep_mask_plan=plan,
+        )
+
+        assert observed == thread_codons_oracle(protein, nucleotide, keep_mask)
+
+    @pytest.mark.parametrize(
+        "keep_mask",
+        [
+            [True, False, True] * 3,
+            [True, False, True] * 2 + [True, False, False],
+        ],
+    )
+    def test_terminal_stop_emit_plans_match_restored_stop_oracle(
+        self, args, keep_mask
+    ):
+        service = DNAThreader(args)
+        protein = "AC*"
+        nucleotide = "AAACCCTAG"
+        plan = service._create_thread_mask_plan(keep_mask, len(protein))
+
+        observed = service._thread_sequence(
+            protein,
+            nucleotide,
+            keep_mask,
+            keep_mask_plan=plan,
+        )
+
+        assert observed == thread_codons_oracle("AC!", nucleotide, keep_mask)
+
+    @pytest.mark.parametrize(
+        ("keep_mask", "expected"),
+        [
+            ([True, False, True] * 2 + [False] * 3, "AA--"),
+            ([True, False, True] * 2 + [True] * 3, "AA--CCC"),
+            ([True, False, True] * 2 + [True, False, False], "AACC-"),
+        ],
+    )
+    def test_uniform_prefix_tail_emitters_preserve_gap_and_trim_semantics(
+        self, args, keep_mask, expected
+    ):
+        service = DNAThreader(args)
+        protein = "A-C" if expected != "AACC-" else "AB-"
+        nucleotide = "AAACCC"
+        plan = service._create_thread_mask_plan(keep_mask, len(protein))
+
+        observed = service._thread_sequence(
+            protein,
+            nucleotide,
+            keep_mask,
+            keep_mask_plan=plan,
+        )
+
+        assert observed == expected
+        assert observed == thread_codons_oracle(protein, nucleotide, keep_mask)
+
+    def test_uniform_full_segment_helper_matches_codon_oracle(self, args):
+        service = DNAThreader(args)
+        protein = "A-C"
+        nucleotide = "AAACCC"
+        keep_mask = [True] * 9
+        emitters = service._create_thread_mask_plan(
+            keep_mask,
+            len(protein),
+        )[4]
+
+        observed = service._thread_uniform_emit_plan(
+            protein,
+            nucleotide,
+            emitters,
+            emitters.uniform_selectors,
+        )
+
+        assert observed == thread_codons_oracle(protein, nucleotide, keep_mask)
+
     def test_thread_sequence_emit_plan_matches_terminal_stop_path(self, args):
         class NoIndexMask(list):
             def __getitem__(self, item):
@@ -588,6 +742,17 @@ assert "Bio.AlignIO" not in sys.modules
             "AAACCC"
         )
 
+    def test_thread_all_sites_kept_pads_truncated_codons(self, args):
+        service = DNAThreader(args)
+
+        threaded = service._thread_sequence(
+            "AA-C",
+            "AAAC",
+            [True] * 12,
+        )
+
+        assert threaded == thread_codons_oracle("AA-C", "AAAC", [True] * 12)
+
     def test_thread_sequence_all_keep_hint_skips_mask_scan(self, args):
         class NoScanMask(list):
             def __iter__(self):
@@ -627,6 +792,24 @@ assert "Bio.AlignIO" not in sys.modules
 
         pal2nal = service.thread(iter(prot_records))
         assert pal2nal["gene1"] == "AAACCC"
+
+    def test_thread_exits_when_nucleotide_sequence_is_missing(
+        self, mocker, args, capsys
+    ):
+        service = DNAThreader(args)
+        prot_records = [SeqRecord(Seq("AC"), id="gene1")]
+        mocker.patch(
+            "phykit.services.alignment.dna_threader.SeqIO.parse",
+            return_value=iter([]),
+        )
+
+        with pytest.raises(SystemExit) as excinfo:
+            service.thread(iter(prot_records))
+
+        assert excinfo.value.code == 2
+        assert capsys.readouterr().out == (
+            "Nucleotide sequence for gene1 not found.\n"
+        )
 
     def test_thread_reuses_precomputed_mask_plan(self, mocker, args):
         args.clipkit_log_file = "clipkit.log"

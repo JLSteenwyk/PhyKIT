@@ -51,6 +51,22 @@ def test_lazy_numpy_caches_resolved_attributes():
     assert lazy_np._module is not None
 
 
+def test_color_annotation_wrappers_delegate(mocker):
+    draw_rect = mocker.patch(
+        "phykit.helpers.color_annotations.draw_range_rect",
+        return_value="rect",
+    )
+    draw_wedge = mocker.patch(
+        "phykit.helpers.color_annotations.draw_range_wedge",
+        return_value="wedge",
+    )
+
+    assert module.draw_range_rect("axis", color="red") == "rect"
+    assert module.draw_range_wedge("axis", color="blue") == "wedge"
+    draw_rect.assert_called_once_with("axis", color="red")
+    draw_wedge.assert_called_once_with("axis", color="blue")
+
+
 def _make_args(**overrides):
     defaults = dict(
         tree=TREE, root_age=70.0, plot_output=None, timescale="auto",
@@ -66,6 +82,29 @@ def _make_args(**overrides):
 
 
 class TestChronogram:
+    @pytest.mark.parametrize("circular", [False, True])
+    def test_color_annotations_render_in_both_layouts(self, tmp_path, circular):
+        pytest.importorskip("matplotlib")
+        color_file = tmp_path / "colors.tsv"
+        color_file.write_text(
+            "bear,raccoon\trange\t#ffcc00\tRange\n"
+            "bear,raccoon\tclade\t#cc0033\tClade\n"
+            "bear\tlabel\t#0033cc\n"
+        )
+        output = tmp_path / f"chronogram-{circular}.png"
+        svc = Chronogram(
+            _make_args(
+                plot_output=str(output),
+                circular=circular,
+                color_file=str(color_file),
+            )
+        )
+
+        svc.run()
+
+        assert output.exists()
+        assert output.stat().st_size > 0
+
     def test_run_reuses_unmodified_tree(self, mocker, tmp_path):
         out = str(tmp_path / "chrono.png")
         svc = Chronogram(_make_args(plot_output=out))
@@ -149,6 +188,63 @@ class TestChronogram:
         intervals = Chronogram._parse_hpd_intervals(tree, 70.0, 1.0)
 
         assert intervals == {}
+
+    def test_parse_hpd_intervals_supports_generic_tree_and_ci_pattern(self):
+        internal = Clade(clades=[Clade(name="A"), Clade(name="B")])
+        internal.comment = "[&CI={8.5,3.25}]"
+
+        class GenericTree:
+            root = object()
+
+            def find_clades(self, order=None):
+                assert order == "preorder"
+                return [internal]
+
+        intervals = Chronogram._parse_hpd_intervals(
+            GenericTree(), 70.0, 1.0
+        )
+
+        assert intervals[id(internal)] == (3.25, 8.5)
+
+    @pytest.mark.parametrize(
+        "helper",
+        [
+            Chronogram._preorder_clades_direct,
+            Chronogram._postorder_clades_direct,
+        ],
+    )
+    def test_direct_traversals_reject_generic_and_malformed_trees(self, helper):
+        assert helper(Namespace(root=object())) is None
+        assert helper(Namespace(root=Namespace(clades=[object()]))) is None
+
+    @pytest.mark.parametrize(
+        ("root_age", "expected"),
+        [
+            (10, 2),
+            (50, 10),
+            (150, 20),
+            (300, 50),
+            (301, 100),
+        ],
+    )
+    def test_nice_tick_interval_boundaries(self, root_age, expected):
+        assert Chronogram._nice_tick_interval(root_age) == expected
+
+    def test_descendant_cache_supports_generic_tree_protocol(self):
+        tip_a = Clade(name="A")
+        tip_b = Clade(name="B")
+        internal = Clade(clades=[tip_a, tip_b])
+
+        class GenericTree:
+            root = object()
+
+            def find_clades(self, order=None):
+                assert order == "postorder"
+                return [tip_a, tip_b, internal]
+
+        cache = Chronogram._build_descendant_tip_name_cache(GenericTree())
+
+        assert cache[id(internal)] == ("A", "B")
 
     @pytest.mark.parametrize("circular", [False, True])
     def test_plot_uses_direct_tree_traversal(self, monkeypatch, tmp_path, circular):

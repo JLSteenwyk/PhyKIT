@@ -330,6 +330,88 @@ class TestTreeParsing:
         with pytest.raises(PhykitUserError):
             svc._parse_trees_from_source("no_such_file.nwk")
 
+    def test_path_list_rejects_missing_tree(self, tmp_path, default_args):
+        tree_list = tmp_path / "tree-list.txt"
+        tree_list.write_text("missing-tree.nwk\n")
+        svc = TreeSpace(default_args)
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            svc._parse_trees_from_source(str(tree_list))
+
+        assert exc_info.value.code == 2
+        assert "missing-tree.nwk" in exc_info.value.messages[0]
+
+    def test_empty_tree_source_is_rejected(self, tmp_path, default_args):
+        tree_file = tmp_path / "empty.nwk"
+        tree_file.write_text("\n# no trees\n")
+        svc = TreeSpace(default_args)
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            svc._parse_trees_from_source(str(tree_file))
+
+        assert exc_info.value.code == 2
+        assert exc_info.value.messages == ["No trees found in input."]
+
+    def test_malformed_newick_is_reported_as_user_error(
+        self, tmp_path, default_args, monkeypatch
+    ):
+        tree_file = tmp_path / "malformed.nwk"
+        tree_file.write_text("((A,B),(C,D));\n")
+        svc = TreeSpace(default_args)
+        monkeypatch.setattr(
+            tree_space_module.Phylo,
+            "read",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(ValueError("bad tree")),
+        )
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            svc._parse_trees_from_source(str(tree_file))
+
+        assert exc_info.value.messages == ["Failed to parse Newick trees: bad tree"]
+
+    def test_tip_lookup_falls_back_to_tree_api(self, default_args, monkeypatch):
+        svc = TreeSpace(default_args)
+        tree = Phylo.read(StringIO("((A,B),(C,D));"), "newick")
+        monkeypatch.setattr(Tree, "calculate_terminal_names_fast", lambda _tree: None)
+
+        assert svc._tips(tree) == {"A", "B", "C", "D"}
+
+    def test_prune_to_taxa_falls_back_to_individual_pruning(
+        self, default_args, monkeypatch
+    ):
+        svc = TreeSpace(default_args)
+        tree = Phylo.read(StringIO("((A,B),(C,D));"), "newick")
+        monkeypatch.setattr(Tree, "calculate_terminal_clades_fast", lambda _tree: None)
+        monkeypatch.setattr(
+            Tree,
+            "_prune_terminal_objects_batch_standard_tree",
+            lambda *_args: False,
+        )
+
+        pruned = svc._prune_to_taxa(tree, {"A", "C", "D"})
+
+        assert {tip.name for tip in pruned.get_terminals()} == {"A", "C", "D"}
+
+    def test_shared_taxa_requires_gene_trees(self, default_args):
+        svc = TreeSpace(default_args)
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            svc._get_shared_taxa([])
+
+        assert exc_info.value.messages == ["No gene trees provided."]
+
+    def test_shared_taxa_requires_at_least_four_taxa(self, default_args):
+        svc = TreeSpace(default_args)
+        trees = [
+            Phylo.read(StringIO("((A,B),C);"), "newick"),
+            Phylo.read(StringIO("((A,C),B);"), "newick"),
+        ]
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            svc._get_shared_taxa(trees)
+
+        assert "Only 3 shared taxa found." in exc_info.value.messages
+
     def test_shared_taxa(self, default_args):
         svc = TreeSpace(default_args)
         trees = svc._parse_trees_from_source(GENE_TREES)
@@ -487,6 +569,72 @@ class TestDistanceMatrix:
         assert observed == [
             "A", "B", "internal", "C", "D", "internal", "internal",
         ]
+
+    def test_direct_postorder_rejects_nonstandard_tree_objects(self):
+        class MissingRoot:
+            pass
+
+        class MissingChildClades:
+            root = type("Root", (), {"clades": [object()]})()
+
+        assert TreeSpace._postorder_clades_direct(MissingRoot()) is None
+        assert TreeSpace._postorder_clades_direct(MissingChildClades()) is None
+
+    def test_split_extractors_fall_back_to_find_clades(
+        self, monkeypatch, default_args, kf_args
+    ):
+        tree = Phylo.read(StringIO("((A:1,B:1):2,(C:1,D:1):3);"), "newick")
+        all_taxa = frozenset({"A", "B", "C", "D"})
+        monkeypatch.setattr(
+            TreeSpace,
+            "_postorder_clades_direct",
+            lambda _self, _tree: None,
+        )
+
+        assert TreeSpace(default_args)._extract_splits(tree, all_taxa) == {
+            frozenset({"A", "B"})
+        }
+        assert TreeSpace(kf_args)._extract_splits_with_lengths(tree, all_taxa) == {
+            frozenset({"A", "B"}): 3.0
+        }
+
+    def test_split_extractors_ignore_nonshared_and_multifurcating_clades(
+        self, default_args, kf_args
+    ):
+        tree = Phylo.read(
+            StringIO("((A:1,B:1,C:1):2,(D:1,E:1):3,(F:1,G:1):4,H:1);"),
+            "newick",
+        )
+        all_taxa = frozenset({"A", "B", "C", "D", "E", "F", "G"})
+
+        splits = TreeSpace(default_args)._extract_splits(tree, all_taxa)
+        split_lengths = TreeSpace(kf_args)._extract_splits_with_lengths(tree, all_taxa)
+
+        assert frozenset({"A", "B", "C"}) not in splits
+        assert frozenset({"A", "B", "C"}) not in split_lengths
+        assert frozenset({"D", "E"}) in splits
+        assert split_lengths[frozenset({"D", "E"})] == 3.0
+
+    def test_distance_helpers_handle_minimal_and_empty_inputs(self, default_args):
+        svc = TreeSpace(default_args)
+
+        assert svc._compute_rf_distance(set(), set(), n_taxa=3) == 0.0
+        np.testing.assert_array_equal(
+            svc._build_rf_distance_matrix_from_splits([], n_taxa=4),
+            np.zeros((0, 0)),
+        )
+        np.testing.assert_array_equal(
+            svc._build_rf_distance_matrix_from_splits([set(), set()], n_taxa=4),
+            np.zeros((2, 2)),
+        )
+        np.testing.assert_array_equal(
+            svc._build_kf_distance_matrix_from_splits([]),
+            np.zeros((0, 0)),
+        )
+        np.testing.assert_array_equal(
+            svc._build_kf_distance_matrix_from_splits([{}, {}]),
+            np.zeros((2, 2)),
+        )
 
     def test_extract_splits_uses_direct_postorder_for_standard_tree(
         self, monkeypatch, default_args
@@ -710,6 +858,44 @@ class TestDimensionalityReduction:
         coords = svc._reduce_dimensions(dist, "tsne", 42)
         assert coords.shape == (10, 2)
 
+    def test_umap_reports_missing_optional_dependency(
+        self, default_args, monkeypatch
+    ):
+        svc = TreeSpace(default_args)
+        monkeypatch.setitem(sys.modules, "umap", None)
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            svc._reduce_dimensions(np.zeros((4, 4)), "umap", 42)
+
+        assert "umap-learn is required" in exc_info.value.messages[0]
+
+    def test_umap_uses_precomputed_distances(self, default_args, monkeypatch):
+        calls = {}
+
+        class FakeUMAP:
+            def __init__(self, **kwargs):
+                calls["kwargs"] = kwargs
+
+            def fit_transform(self, matrix):
+                calls["matrix"] = matrix
+                return np.ones((len(matrix), 2))
+
+        fake_module = type("FakeUmapModule", (), {"UMAP": FakeUMAP})()
+        monkeypatch.setitem(sys.modules, "umap", fake_module)
+        matrix = np.zeros((4, 4))
+
+        coords = TreeSpace(default_args)._reduce_dimensions(matrix, "umap", 7)
+
+        np.testing.assert_array_equal(coords, np.ones((4, 2)))
+        assert calls == {
+            "kwargs": {
+                "n_components": 2,
+                "metric": "precomputed",
+                "random_state": 7,
+            },
+            "matrix": matrix,
+        }
+
 
 class TestClustering:
     def test_clustering_labels_valid(self, default_args):
@@ -719,7 +905,7 @@ class TestClustering:
         dist = svc._build_distance_matrix(trees, shared, "rf")
         labels, k = svc._spectral_cluster(dist, None, 42)
         assert len(labels) == 10
-        assert all(0 <= l < k for l in labels)
+        assert all(0 <= label < k for label in labels)
         assert k >= 2
 
     def test_spectral_cluster_uses_condensed_distances(
@@ -791,6 +977,21 @@ class TestClustering:
         # k should be a reasonable number
         assert 2 <= k <= len(trees) // 2
 
+    def test_auto_k_handles_two_samples(self, default_args):
+        affinity = np.eye(2)
+
+        assert TreeSpace(default_args)._auto_detect_k(affinity) == 2
+
+    def test_spectral_cluster_handles_all_zero_distances(self, default_args):
+        labels, k = TreeSpace(default_args)._spectral_cluster(
+            np.zeros((4, 4)),
+            2,
+            None,
+        )
+
+        assert len(labels) == 4
+        assert k == 2
+
     def test_auto_detect_k_matches_dense_laplacian_reference(
         self, default_args, monkeypatch
     ):
@@ -847,6 +1048,48 @@ class TestSpeciesTree:
         coords = svc._reduce_dimensions(dist, "mds", 42)
         # Should have 11 points (10 gene trees + 1 species tree)
         assert coords.shape == (11, 2)
+
+
+class TestVisualization:
+    def test_scatter_plot_marks_species_tree_and_skips_empty_cluster(
+        self, tmp_path, default_args
+    ):
+        output = tmp_path / "tree-space-species.png"
+        svc = TreeSpace(default_args)
+        coords = np.array(
+            [
+                [0.0, 0.0],
+                [1.0, 1.0],
+                [0.5, 0.5],
+            ]
+        )
+        labels = np.array([0, 0, 1])
+
+        svc._plot(coords, labels, k=2, species_tree_idx=2, output_path=str(output))
+
+        assert output.exists()
+        assert output.stat().st_size > 0
+
+    def test_heatmap_writes_clustered_distance_plot(self, tmp_path, default_args):
+        output = tmp_path / "tree-space-heatmap.png"
+        svc = TreeSpace(default_args)
+        dist = np.array(
+            [
+                [0.0, 0.1, 0.8, 0.9],
+                [0.1, 0.0, 0.7, 0.8],
+                [0.8, 0.7, 0.0, 0.2],
+                [0.9, 0.8, 0.2, 0.0],
+            ]
+        )
+
+        svc._plot_heatmap(
+            dist,
+            ["tree_1", "tree_2", "tree_3", "tree_4"],
+            str(output),
+        )
+
+        assert output.exists()
+        assert output.stat().st_size > 0
 
 
 class TestEndToEnd:
@@ -939,6 +1182,53 @@ class TestEndToEnd:
         assert "coordinates" in payload
         assert len(payload["coordinates"]) == 10
         assert payload["output_file"] == str(output)
+
+    def test_rejects_fewer_than_three_gene_trees(self, tmp_path):
+        tree_file = tmp_path / "two-trees.nwk"
+        tree_file.write_text("((A,B),(C,D));\n((A,C),(B,D));\n")
+        svc = TreeSpace(
+            _base_args(
+                trees=str(tree_file),
+                output=str(tmp_path / "unused.png"),
+            )
+        )
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            svc.run()
+
+        assert exc_info.value.messages == [
+            "At least 3 gene trees are required for tree space analysis.",
+            "Only 2 tree(s) found.",
+        ]
+
+    @patch("builtins.print")
+    def test_heatmap_species_tree_distance_matrix_and_json_output(
+        self, mocked_print, tmp_path
+    ):
+        output = tmp_path / "tree-space-heatmap.png"
+        distance_matrix = tmp_path / "tree-distances.csv"
+        svc = TreeSpace(
+            _base_args(
+                output=str(output),
+                species_tree=TREE_SIMPLE,
+                heatmap=True,
+                distance_matrix=str(distance_matrix),
+                json=True,
+                k=2,
+                seed=42,
+            )
+        )
+
+        svc.run()
+
+        payload = json.loads(mocked_print.call_args.args[0])
+        assert payload["n_trees"] == 10
+        assert payload["n_clusters"] == 2
+        assert payload["species_tree_cluster"] in {1, 2}
+        assert output.exists()
+        csv_lines = distance_matrix.read_text().splitlines()
+        assert csv_lines[0].endswith(",species_tree")
+        assert len(csv_lines) == 12
 
     def test_json_coordinates_vectorizes_rounding(self, monkeypatch):
         def fail_round(*_args, **_kwargs):

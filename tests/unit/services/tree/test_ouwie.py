@@ -445,6 +445,47 @@ class TestProcessArgs:
         assert ordered_names == ["B", "C", "D"]
         assert regime_names == ["r1", "r2"]
 
+    @pytest.mark.parametrize(
+        ("traits", "regimes"),
+        [
+            ({"A": 1.0, "B": 2.0}, {"A": "r1", "B": "r2"}),
+            (
+                {"A": 1.0, "B": 2.0, "trait_only": 3.0},
+                {"A": "r1", "B": "r2", "regime_only": "r3"},
+            ),
+        ],
+    )
+    def test_prepare_shared_trait_regime_data_requires_three_taxa(
+        self, traits, regimes
+    ):
+        with pytest.raises(PhykitUserError) as excinfo:
+            OUwie._prepare_shared_trait_regime_data(
+                ["A", "B", "C"], traits, regimes
+            )
+
+        assert excinfo.value.messages == [
+            "Only 2 shared taxa among tree, trait, and regime files.",
+            "At least 3 shared taxa are required.",
+        ]
+
+    def test_prepare_shared_trait_regime_data_reuses_reordered_complete_mappings(
+        self,
+    ):
+        traits = {"A": 1.0, "B": 2.0, "C": 3.0}
+        regimes = {"C": "r1", "B": "r2", "A": "r1"}
+
+        shared_traits, shared_regimes, tips_to_prune, ordered_names, regime_names = (
+            OUwie._prepare_shared_trait_regime_data(
+                ["A", "B", "C", "D"], traits, regimes
+            )
+        )
+
+        assert shared_traits is traits
+        assert shared_regimes is regimes
+        assert tips_to_prune == ["D"]
+        assert ordered_names == ["A", "B", "C"]
+        assert regime_names == ["r1", "r2"]
+
 
 class TestTraitAndRegimeParsing:
     def test_trait_file_skips_comments_and_blanks(self, tmp_path, default_args):
@@ -528,6 +569,46 @@ class TestTraitAndRegimeParsing:
             in exc_info.value.messages
         )
 
+    def test_trait_file_not_found(self, tmp_path, default_args):
+        svc = OUwie(default_args)
+
+        with pytest.raises(PhykitUserError) as excinfo:
+            svc._parse_trait_file(
+                str(tmp_path / "missing.tsv"), ["A", "B", "C"]
+            )
+
+        assert "corresponds to no such file or directory" in excinfo.value.messages[0]
+
+    def test_trait_file_reports_taxon_mismatches(
+        self, tmp_path, default_args, capsys
+    ):
+        trait_file = tmp_path / "traits.tsv"
+        trait_file.write_text("A\t1\nB\t2\nC\t3\nX\t4\n")
+        svc = OUwie(default_args)
+
+        traits = svc._parse_trait_file(
+            str(trait_file), ["A", "B", "C", "D"]
+        )
+
+        assert traits == {"A": 1.0, "B": 2.0, "C": 3.0}
+        assert capsys.readouterr().err.splitlines() == [
+            "Warning: 1 taxa in tree but not in trait file: D",
+            "Warning: 1 taxa in trait file but not in tree: X",
+        ]
+
+    def test_trait_file_requires_three_shared_taxa(self, tmp_path, default_args):
+        trait_file = tmp_path / "traits.tsv"
+        trait_file.write_text("A\t1\nB\t2\nX\t3\n")
+        svc = OUwie(default_args)
+
+        with pytest.raises(PhykitUserError) as excinfo:
+            svc._parse_trait_file(str(trait_file), ["A", "B", "C"])
+
+        assert excinfo.value.messages == [
+            "Only 2 shared taxa between tree and trait file.",
+            "At least 3 shared taxa are required.",
+        ]
+
     def test_all_shared_regime_file_emits_no_warnings(
         self, tmp_path, default_args, capsys
     ):
@@ -578,6 +659,48 @@ class TestTraitAndRegimeParsing:
             "Line 5 in regime file has 3 columns; expected 2."
             in exc_info.value.messages
         )
+
+    def test_regime_file_not_found(self, tmp_path, default_args):
+        svc = OUwie(default_args)
+
+        with pytest.raises(PhykitUserError) as excinfo:
+            svc._parse_regime_file(
+                str(tmp_path / "missing.tsv"), ["A", "B", "C"]
+            )
+
+        assert "corresponds to no such file or directory" in excinfo.value.messages[0]
+
+    def test_regime_file_reports_taxon_mismatches(
+        self, tmp_path, default_args, capsys
+    ):
+        regime_file = tmp_path / "regimes.tsv"
+        regime_file.write_text("A\tr1\nB\tr1\nC\tr2\nX\tr2\n")
+        svc = OUwie(default_args)
+
+        regimes = svc._parse_regime_file(
+            str(regime_file), ["A", "B", "C", "D"]
+        )
+
+        assert regimes == {"A": "r1", "B": "r1", "C": "r2"}
+        assert capsys.readouterr().err.splitlines() == [
+            "Warning: 1 taxa in tree but not in regime file: D",
+            "Warning: 1 taxa in regime file but not in tree: X",
+        ]
+
+    def test_regime_file_requires_three_shared_taxa(
+        self, tmp_path, default_args
+    ):
+        regime_file = tmp_path / "regimes.tsv"
+        regime_file.write_text("A\tr1\nB\tr1\nX\tr2\n")
+        svc = OUwie(default_args)
+
+        with pytest.raises(PhykitUserError) as excinfo:
+            svc._parse_regime_file(str(regime_file), ["A", "B", "C"])
+
+        assert excinfo.value.messages == [
+            "Only 2 shared taxa between tree and regime file.",
+            "At least 3 shared taxa are required.",
+        ]
 
 
 # ── TestWeightMatrix ─────────────────────────────────────────────────
@@ -763,6 +886,29 @@ class TestRegimeAssignment:
         assert parent_map[id(trifurcation.clades[2])] is trifurcation
         assert id(tree.root) not in parent_map
 
+    def test_parent_map_supports_legacy_tree_interface(self, svc):
+        tree = NewickTree(
+            root=Clade(
+                clades=[
+                    Clade(
+                        clades=[Clade(name="A"), Clade(name="B")],
+                    ),
+                    Clade(name="C"),
+                ]
+            )
+        )
+
+        class LegacyTree:
+            def find_clades(self, *args, **kwargs):
+                return tree.find_clades(*args, **kwargs)
+
+        parent_map = svc._build_parent_map(LegacyTree())
+
+        internal, terminal = tree.root.clades
+        assert parent_map[id(internal)] is tree.root
+        assert parent_map[id(terminal)] is tree.root
+        assert all(parent_map[id(child)] is internal for child in internal.clades)
+
     def test_combined_branch_and_root_regime_uses_direct_traversal(
         self, svc, monkeypatch
     ):
@@ -873,6 +1019,110 @@ class TestRegimeAssignment:
         assert root_regime == "alpha"
         assert branch_regimes[id(left)] == "beta"
         assert branch_regimes[id(right)] == "alpha"
+
+    def test_regime_assignment_falls_back_when_reversed_is_unavailable(
+        self, svc, monkeypatch
+    ):
+        tree = NewickTree(
+            root=Clade(
+                clades=[
+                    Clade(name="A", branch_length=1.0),
+                    Clade(name="B", branch_length=1.0),
+                    Clade(name="C", branch_length=1.0),
+                ]
+            )
+        )
+        parent_map = svc._build_parent_map(tree)
+        expected = svc._assign_branch_regimes_and_root(
+            tree, {"A": "r1", "B": "r2", "C": "r1"}, parent_map
+        )
+        original_reversed = reversed
+        call_count = 0
+
+        def fail_first_reversed(values):
+            nonlocal call_count
+            call_count += 1
+            if call_count == 1:
+                raise AttributeError("reversed traversal unavailable")
+            return original_reversed(values)
+
+        monkeypatch.setattr(builtins, "reversed", fail_first_reversed)
+
+        observed = svc._assign_branch_regimes_and_root(
+            tree, {"A": "r1", "B": "r2", "C": "r1"}, parent_map
+        )
+
+        assert observed == expected
+
+    @pytest.mark.parametrize(
+        ("tip_regimes", "expected_root"),
+        [({"A": "r1"}, "r1"), ({"B": "r2"}, "r2"), ({}, "unknown")],
+    )
+    def test_regime_assignment_handles_missing_tip_annotations(
+        self, svc, tip_regimes, expected_root
+    ):
+        tree = NewickTree(
+            root=Clade(
+                clades=[
+                    Clade(
+                        clades=[
+                            Clade(name="A", branch_length=1.0),
+                            Clade(name="B", branch_length=1.0),
+                        ],
+                        branch_length=1.0,
+                    ),
+                    Clade(name="C", branch_length=1.0),
+                ]
+            )
+        )
+        parent_map = svc._build_parent_map(tree)
+
+        branch_regimes, root_regime = svc._assign_branch_regimes_and_root(
+            tree, tip_regimes, parent_map
+        )
+
+        assert root_regime == expected_root
+        assert set(branch_regimes.values()) == {expected_root}
+
+    def test_regime_assignment_uses_node_state_without_parent_map(self, svc):
+        tree = NewickTree(
+            root=Clade(
+                clades=[
+                    Clade(name="A", branch_length=1.0),
+                    Clade(name="B", branch_length=1.0),
+                    Clade(name="C", branch_length=1.0),
+                ]
+            )
+        )
+
+        branch_regimes, root_regime = svc._assign_branch_regimes_and_root(
+            tree, {"A": "r1", "B": "r2", "C": "r1"}, {}
+        )
+
+        assert root_regime == "r1"
+        assert branch_regimes[id(tree.root.clades[0])] == "r1"
+        assert branch_regimes[id(tree.root.clades[1])] == "r2"
+
+
+class TestRunValidation:
+    def test_run_requires_two_distinct_regimes(
+        self, tmp_path, default_args
+    ):
+        regime_file = tmp_path / "regimes.tsv"
+        regime_file.write_text(
+            "raccoon\tA\nbear\tA\nsea_lion\tA\nseal\tA\n"
+            "monkey\tA\ncat\tA\nweasel\tA\ndog\tA\n"
+        )
+        default_args.regime_data = str(regime_file)
+        default_args.models = "BM1"
+        svc = OUwie(default_args)
+
+        with pytest.raises(PhykitUserError) as excinfo:
+            svc.run()
+
+        assert excinfo.value.messages == [
+            "At least 2 distinct regimes are required for OUwie models."
+        ]
 
 
 class TestVCV:
@@ -1055,6 +1305,145 @@ class TestVCV:
 
         np.testing.assert_allclose(observed["r1"], [[2.0, 2.0], [2.0, 2.0]])
         np.testing.assert_allclose(observed["r2"], [[1.0, 0.0], [0.0, 3.0]])
+
+    def test_per_regime_vcv_handles_unknown_and_unrecognized_regimes(self, svc):
+        lineage_info = {
+            "A": [("A_tip", 1.0, "unknown", 0.0, 1.0)],
+            "B": [("B_tip", 2.0, "not-selected", 0.0, 2.0)],
+        }
+
+        observed = svc._build_per_regime_vcv_from_lineage_info(
+            ["A", "B"], ["r1"], lineage_info
+        )
+
+        np.testing.assert_array_equal(observed["r1"], [[1.0, 0.0], [0.0, 0.0]])
+
+    def test_terminal_map_supports_legacy_tree_interface(self, svc):
+        terminals = [Clade(name="A"), Clade(name="B"), Clade(name="C")]
+
+        class LegacyTree:
+            def get_terminals(self):
+                return terminals
+
+        tip_map = svc._terminal_map_for_ordered_names(
+            LegacyTree(), ["A", "C"]
+        )
+
+        assert tip_map == {"A": terminals[0], "C": terminals[2]}
+
+    def test_terminal_map_falls_back_after_direct_traversal_fails(self, svc):
+        terminals = [Clade(name="A"), Clade(name="B")]
+
+        class FlakyRoot:
+            accesses = 0
+
+            @property
+            def clades(self):
+                self.accesses += 1
+                if self.accesses > 1:
+                    raise AttributeError("direct traversal unavailable")
+                return terminals
+
+        class FlakyTree:
+            root = FlakyRoot()
+
+            def get_terminals(self):
+                return terminals
+
+        tip_map = svc._terminal_map_for_ordered_names(FlakyTree(), ["B"])
+
+        assert tip_map == {"B": terminals[1]}
+
+    def test_path_vcv_ignores_unselected_branch_regimes(self, svc, monkeypatch):
+        monkeypatch.setattr(
+            svc,
+            "_build_root_to_tip_paths",
+            lambda *_args: {"A": [("tip", 1.0)]},
+        )
+
+        observed = svc._build_per_regime_vcv(
+            object(), ["A"], ["r1"], {"tip": "not-selected"}, {}
+        )
+
+        np.testing.assert_array_equal(observed["r1"], [[0.0]])
+
+    def test_weight_builders_ignore_unknown_regimes_and_support_bm_limits(
+        self, svc
+    ):
+        ordered_names = ["A"]
+        unknown_lineage = {
+            "A": [("tip", 1.0, "unknown", 0.0, 1.0)]
+        }
+        known_lineage = {"A": [("tip", 2.0, "r1", 0.0, 2.0)]}
+
+        unknown = svc._build_weight_matrix_single_alpha(
+            ordered_names, unknown_lineage, ["r1"], 0.0, "missing"
+        )
+        bm_limit = svc._build_weight_matrix_single_alpha(
+            ordered_names, known_lineage, ["r1"], 0.0, "r1"
+        )
+        cache = svc._prepare_single_alpha_weight_cache(
+            ordered_names, unknown_lineage, ["r1"], "missing"
+        )
+
+        np.testing.assert_array_equal(unknown, [[0.0]])
+        np.testing.assert_array_equal(bm_limit, [[1.0]])
+        assert cache["rows"].size == 0
+        assert cache["root_col"] is None
+
+    def test_multi_alpha_weights_handle_sparse_lineages(self, svc):
+        lineage_info = {
+            "A": [
+                ("unknown", 1.0, "unknown", 0.0, 1.0),
+                ("known", 2.0, "r1", 1.0, 3.0),
+            ],
+            "B": [],
+        }
+
+        without_root = svc._build_weight_matrix_multi_alpha(
+            ["A", "B"], lineage_info, ["r1"], {"r1": 0.0}, "missing"
+        )
+        with_root = svc._build_weight_matrix_multi_alpha(
+            ["A", "B"], lineage_info, ["r1"], {"r1": 0.0}, "r1"
+        )
+
+        np.testing.assert_array_equal(without_root, [[2.0], [0.0]])
+        np.testing.assert_allclose(with_root, [[2.0 + np.exp(-0.01)], [1.0]])
+
+    def test_ou_covariance_builders_support_bm_limits(self, svc):
+        ordered_names = ["A", "B"]
+        lineage_info = {
+            "A": [
+                ("shared", 1.0, "r1", 0.0, 1.0),
+                ("A_tip", 1.0, "r1", 1.0, 2.0),
+            ],
+            "B": [
+                ("shared", 1.0, "r1", 0.0, 1.0),
+                ("B_tip", 2.0, "r2", 1.0, 3.0),
+            ],
+        }
+        cache = svc._prepare_single_alpha_ou_cache(ordered_names, lineage_info)
+
+        single = svc._build_ou_vcv_single_alpha_from_cache(cache, 0.0, 2.0)
+        per_regime = svc._build_ou_H_matrices(
+            ordered_names, lineage_info, ["r1", "r2"], 0.0
+        )
+        multi = svc._build_ou_vcv_multi_alpha(
+            ordered_names,
+            lineage_info,
+            ["r1", "r2"],
+            {"r1": 0.0, "r2": 0.0},
+            {"r1": 2.0, "r2": 2.0},
+        )
+
+        np.testing.assert_allclose(single, 2.0 * cache["shared_paths"])
+        np.testing.assert_allclose(sum(per_regime.values()), cache["shared_paths"])
+        np.testing.assert_allclose(multi, single)
+
+        unknown = svc._build_ou_H_matrices(
+            ["A"], {"A": [("tip", 1.0, "unknown", 0.0, 1.0)]}, ["r1"], 0.5
+        )
+        np.testing.assert_array_equal(unknown["r1"], [[0.0]])
 
     def test_single_alpha_cache_uses_shared_branch_lengths(self, svc):
         ordered_names = ["A", "B", "C"]
@@ -1457,6 +1846,410 @@ class TestBM1:
         fast = d["svc"]._concentrated_ll_bm_cholesky(d["x"], d["vcv_total"])
         inverse = d["svc"]._concentrated_ll_bm_inverse(d["x"], d["vcv_total"])
         np.testing.assert_allclose(fast, inverse)
+
+
+class TestNumericalFallbacks:
+    def test_gls_theta_uses_least_squares_for_singular_information(self, svc):
+        x = np.array([1.0, 2.0, 3.0])
+        W = np.ones((3, 2))
+
+        theta = svc._gls_theta_hat(x, W, np.eye(3))
+
+        np.testing.assert_allclose(W @ theta, np.full(3, 2.0))
+
+    def test_ou_log_likelihood_rejects_invalid_covariances(
+        self, svc, monkeypatch
+    ):
+        x = np.array([1.0, 2.0])
+        W = np.ones((2, 1))
+        theta = np.array([1.5])
+
+        assert np.isfinite(svc._ou_log_likelihood(x, W, np.eye(2), theta))
+        assert svc._ou_log_likelihood(
+            x, W, np.diag([1.0, -1.0]), theta
+        ) == float("-inf")
+
+        def fail_inverse(_matrix):
+            raise np.linalg.LinAlgError("singular")
+
+        monkeypatch.setattr(ouwie_module.np.linalg, "inv", fail_inverse)
+        assert svc._ou_log_likelihood(x, W, np.eye(2), theta) == float("-inf")
+
+    def test_concentrated_bm_falls_back_to_inverse(
+        self, svc, monkeypatch
+    ):
+        x = np.array([1.0, 2.0, 4.0])
+        C = np.diag([1.0, 2.0, 3.0])
+        expected = svc._concentrated_ll_bm_inverse(x, C)
+
+        def fail_cholesky(_x, _C):
+            raise ValueError("not positive definite")
+
+        monkeypatch.setattr(svc, "_concentrated_ll_bm_cholesky", fail_cholesky)
+
+        np.testing.assert_allclose(svc._concentrated_ll_bm(x, C), expected)
+
+    def test_concentrated_bm_cholesky_rejects_zero_precision(
+        self, svc, monkeypatch
+    ):
+        monkeypatch.setattr(
+            ouwie_module,
+            "cho_factor",
+            lambda matrix, **_kwargs: (matrix, True),
+        )
+        monkeypatch.setattr(
+            ouwie_module,
+            "cho_solve",
+            lambda _factor, rhs, **_kwargs: np.zeros_like(rhs),
+        )
+
+        result = svc._concentrated_ll_bm_cholesky(
+            np.array([1.0, 2.0]), np.eye(2)
+        )
+
+        assert result == (float("-inf"), 0.0, 0.0)
+
+    def test_concentrated_bm_rejects_nonpositive_variance(self, svc):
+        x = np.array([2.0, 2.0, 2.0])
+
+        assert svc._concentrated_ll_bm_cholesky(x, np.eye(3)) == (
+            float("-inf"),
+            0.0,
+            2.0,
+        )
+        assert svc._concentrated_ll_bm_inverse(x, np.eye(3)) == (
+            float("-inf"),
+            0.0,
+            2.0,
+        )
+
+    def test_concentrated_bm_inverse_rejects_singular_and_indefinite_inputs(
+        self, svc, monkeypatch
+    ):
+        singular = svc._concentrated_ll_bm_inverse(
+            np.array([1.0, 2.0]), np.zeros((2, 2))
+        )
+        assert singular == (float("-inf"), 0.0, 0.0)
+
+        monkeypatch.setattr(
+            ouwie_module.np.linalg, "slogdet", lambda _matrix: (-1.0, 0.0)
+        )
+        indefinite = svc._concentrated_ll_bm_inverse(
+            np.array([1.0, 2.0]), np.eye(2)
+        )
+        assert indefinite[0] == float("-inf")
+        assert indefinite[1] > 0
+
+    def test_inverse_likelihoods_reject_zero_total_precision(
+        self, svc, monkeypatch
+    ):
+        zero_precision_inverse = np.array([[1.0, -1.0], [-1.0, 1.0]])
+        monkeypatch.setattr(
+            ouwie_module.np.linalg,
+            "inv",
+            lambda _matrix: zero_precision_inverse,
+        )
+
+        assert svc._concentrated_ll_bm_inverse(
+            np.array([1.0, 2.0]), np.eye(2)
+        ) == (float("-inf"), 0.0, 0.0)
+        assert svc._bm_log_likelihood_from_vcv_inverse(
+            np.array([1.0, 2.0]), np.eye(2), np.ones(2)
+        ) == (0.0, float("-inf"))
+
+    def test_bm_vcv_likelihood_falls_back_to_inverse(self, svc, monkeypatch):
+        x = np.array([1.0, 2.0, 4.0])
+        V = np.diag([1.0, 2.0, 3.0])
+        ones = np.ones(3)
+        expected = svc._bm_log_likelihood_from_vcv_inverse(x, V, ones)
+
+        def fail_cholesky(_x, _V, _ones):
+            raise np.linalg.LinAlgError("not positive definite")
+
+        monkeypatch.setattr(
+            svc, "_bm_log_likelihood_from_vcv_cholesky", fail_cholesky
+        )
+
+        np.testing.assert_allclose(
+            svc._bm_log_likelihood_from_vcv(x, V, ones), expected
+        )
+
+    def test_bm_vcv_likelihood_rejects_zero_precision(
+        self, svc, monkeypatch
+    ):
+        monkeypatch.setattr(
+            ouwie_module,
+            "cho_factor",
+            lambda matrix, **_kwargs: (matrix, True),
+        )
+        monkeypatch.setattr(
+            ouwie_module,
+            "cho_solve",
+            lambda _factor, rhs, **_kwargs: np.zeros_like(rhs),
+        )
+
+        result = svc._bm_log_likelihood_from_vcv_cholesky(
+            np.array([1.0, 2.0]), np.eye(2), np.ones(2)
+        )
+
+        assert result == (0.0, float("-inf"))
+
+    @pytest.mark.parametrize(
+        "matrix",
+        [np.diag([1.0, -1.0]), np.zeros((2, 2))],
+    )
+    def test_bm_vcv_inverse_rejects_invalid_covariances(self, svc, matrix):
+        result = svc._bm_log_likelihood_from_vcv_inverse(
+            np.array([1.0, 2.0]), matrix, np.ones(2)
+        )
+
+        assert result == (0.0, float("-inf"))
+
+    def test_ou_profile_likelihood_falls_back_to_inverse(
+        self, svc, monkeypatch
+    ):
+        x = np.array([1.0, 2.0, 4.0])
+        W = np.ones((3, 1))
+        V = np.diag([1.0, 2.0, 3.0])
+        expected = svc._ou_profile_likelihood_inverse(x, W, V)
+
+        def fail_cholesky(_x, _W, _V):
+            raise FloatingPointError("factorization failed")
+
+        monkeypatch.setattr(svc, "_ou_profile_likelihood_cholesky", fail_cholesky)
+        observed = svc._ou_profile_likelihood(x, W, V)
+
+        np.testing.assert_allclose(observed[0], expected[0])
+        assert observed[1] == pytest.approx(expected[1])
+        assert observed[2] == pytest.approx(expected[2])
+
+    def test_ou_profile_cholesky_handles_singular_design_and_zero_variance(
+        self, svc
+    ):
+        W = np.ones((3, 2))
+        theta, sigma2, ll = svc._ou_profile_likelihood_cholesky(
+            np.array([1.0, 2.0, 3.0]), W, np.eye(3)
+        )
+        np.testing.assert_allclose(W @ theta, np.full(3, 2.0))
+        assert sigma2 > 0
+        assert np.isfinite(ll)
+
+        _, sigma2, ll = svc._ou_profile_likelihood_cholesky(
+            np.ones(3), np.ones((3, 1)), np.eye(3)
+        )
+        assert sigma2 == 0.0
+        assert ll == float("-inf")
+
+    @pytest.mark.parametrize(
+        "matrix",
+        [np.diag([1.0, -1.0]), np.zeros((2, 2))],
+    )
+    def test_ou_profile_inverse_rejects_invalid_covariances(
+        self, svc, matrix
+    ):
+        theta, sigma2, ll = svc._ou_profile_likelihood_inverse(
+            np.array([1.0, 2.0]), np.ones((2, 1)), matrix
+        )
+
+        np.testing.assert_array_equal(theta, [0.0])
+        assert sigma2 == 0.0
+        assert ll == float("-inf")
+
+    def test_ou_profile_inverse_rejects_zero_variance(self, svc):
+        _, sigma2, ll = svc._ou_profile_likelihood_inverse(
+            np.ones(3), np.ones((3, 1)), np.eye(3)
+        )
+
+        assert sigma2 == 0.0
+        assert ll == float("-inf")
+
+    def test_ou_gls_likelihood_falls_back_to_inverse(self, svc, monkeypatch):
+        x = np.array([1.0, 2.0, 4.0])
+        W = np.ones((3, 1))
+        V = np.diag([1.0, 2.0, 3.0])
+        expected = svc._ou_gls_log_likelihood_inverse(x, W, V)
+
+        def fail_cholesky(_x, _W, _V):
+            raise ValueError("factorization failed")
+
+        monkeypatch.setattr(svc, "_ou_gls_log_likelihood_cholesky", fail_cholesky)
+        observed = svc._ou_gls_log_likelihood(x, W, V)
+
+        np.testing.assert_allclose(observed[0], expected[0])
+        assert observed[1] == pytest.approx(expected[1])
+
+    def test_ou_gls_cholesky_uses_least_squares_for_singular_design(self, svc):
+        x = np.array([1.0, 2.0, 3.0])
+        W = np.ones((3, 2))
+
+        theta, ll = svc._ou_gls_log_likelihood_cholesky(x, W, np.eye(3))
+
+        np.testing.assert_allclose(W @ theta, np.full(3, 2.0))
+        assert np.isfinite(ll)
+
+    @pytest.mark.parametrize(
+        "matrix",
+        [np.diag([1.0, -1.0]), np.zeros((2, 2))],
+    )
+    def test_ou_gls_inverse_rejects_invalid_covariances(self, svc, matrix):
+        theta, ll = svc._ou_gls_log_likelihood_inverse(
+            np.array([1.0, 2.0]), np.ones((2, 1)), matrix
+        )
+
+        np.testing.assert_array_equal(theta, [0.0])
+        assert ll == float("-inf")
+
+    def test_inverse_ou_likelihoods_handle_inverse_failure(
+        self, svc, monkeypatch
+    ):
+        def fail_inverse(_matrix):
+            raise np.linalg.LinAlgError("singular")
+
+        monkeypatch.setattr(ouwie_module.np.linalg, "inv", fail_inverse)
+        x = np.array([1.0, 2.0])
+        W = np.ones((2, 1))
+
+        profile = svc._ou_profile_likelihood_inverse(x, W, np.eye(2))
+        gls = svc._ou_gls_log_likelihood_inverse(x, W, np.eye(2))
+        bm = svc._bm_log_likelihood_from_vcv_inverse(x, np.eye(2), np.ones(2))
+
+        np.testing.assert_array_equal(profile[0], [0.0])
+        assert profile[1:] == (0.0, float("-inf"))
+        np.testing.assert_array_equal(gls[0], [0.0])
+        assert gls[1] == float("-inf")
+        assert bm == (0.0, float("-inf"))
+
+    def test_fit_model_rejects_unknown_internal_model(self, svc, precomputed):
+        d = precomputed
+
+        with pytest.raises(PhykitUserError) as excinfo:
+            svc._fit_model(
+                "UNKNOWN",
+                d["x"],
+                d["vcv_total"],
+                d["per_regime_vcv"],
+                d["ordered_names"],
+                d["regimes"],
+                d["lineage_info"],
+                d["root_regime"],
+                d["tree_height"],
+                len(d["regimes"]),
+            )
+
+        assert excinfo.value.messages == ["Unknown model: UNKNOWN"]
+
+    def test_optimize_parameter_handles_invalid_slices_and_failures(
+        self, svc, monkeypatch
+    ):
+        calls = 0
+
+        def fail_minimize(*_args, **_kwargs):
+            nonlocal calls
+            calls += 1
+            raise RuntimeError("optimizer failed")
+
+        monkeypatch.setattr(ouwie_module, "minimize_scalar", fail_minimize)
+
+        assert svc._optimize_parameter(lambda value: value, (1.0, 1.0)) == (
+            1.0,
+            -np.inf,
+        )
+        assert calls == 0
+        assert svc._optimize_parameter(lambda value: value, (0.0, 1.0)) == (
+            0.5,
+            -np.inf,
+        )
+        assert calls == 10
+
+    def test_all_models_return_stable_results_when_optimization_fails(
+        self, precomputed, monkeypatch
+    ):
+        d = precomputed
+
+        def exercise_objective_then_fail(objective, initial, **_kwargs):
+            assert objective(initial) == 1e20
+            raise ValueError("optimizer failed")
+
+        monkeypatch.setattr(ouwie_module, "minimize", exercise_objective_then_fail)
+        monkeypatch.setattr(
+            d["svc"],
+            "_bm_log_likelihood_from_vcv",
+            lambda *_args: (0.0, float("-inf")),
+        )
+        monkeypatch.setattr(
+            d["svc"],
+            "_ou_profile_likelihood",
+            lambda _x, W, _V: (
+                np.zeros(W.shape[1]),
+                0.0,
+                float("-inf"),
+            ),
+        )
+        monkeypatch.setattr(
+            d["svc"],
+            "_ou_gls_log_likelihood",
+            lambda _x, W, _V: (np.zeros(W.shape[1]), float("-inf")),
+        )
+
+        def exercise_scalar_objective(objective, _bounds, niter=10):
+            assert niter == 10
+            assert objective(0.1) == 1e20
+            return 0.1, -np.inf
+
+        monkeypatch.setattr(
+            d["svc"], "_optimize_parameter", exercise_scalar_objective
+        )
+
+        results = [
+            d["svc"]._fit_bms(
+                d["x"], d["per_regime_vcv"], d["regimes"]
+            ),
+            d["svc"]._fit_ou1(
+                d["x"], d["ordered_names"], d["lineage_info"], 0.0
+            ),
+            d["svc"]._fit_oum(
+                d["x"],
+                d["ordered_names"],
+                d["lineage_info"],
+                d["regimes"],
+                d["root_regime"],
+                0.0,
+            ),
+            d["svc"]._fit_oumv(
+                d["x"],
+                d["ordered_names"],
+                d["lineage_info"],
+                d["regimes"],
+                d["root_regime"],
+                0.0,
+            ),
+            d["svc"]._fit_ouma(
+                d["x"],
+                d["ordered_names"],
+                d["lineage_info"],
+                d["regimes"],
+                d["root_regime"],
+                0.0,
+            ),
+            d["svc"]._fit_oumva(
+                d["x"],
+                d["ordered_names"],
+                d["lineage_info"],
+                d["regimes"],
+                d["root_regime"],
+                0.0,
+            ),
+        ]
+
+        assert [result["model"] for result in results] == [
+            "BMS",
+            "OU1",
+            "OUM",
+            "OUMV",
+            "OUMA",
+            "OUMVA",
+        ]
+        assert all(result["log_likelihood"] == float("-inf") for result in results)
 
     def test_cholesky_bm_likelihood_uses_single_solve(
         self, precomputed, monkeypatch
@@ -1973,6 +2766,27 @@ class TestModelComparison:
         for r in results:
             assert np.isfinite(r["log_likelihood"]), f"{r['model']} LL not finite"
 
+    def test_undefined_model_comparison_values_use_stable_sentinels(self, svc):
+        results = [
+            {
+                "model": "custom",
+                "k_params": 2,
+                "log_likelihood": -1.0,
+                "params": {},
+            }
+        ]
+
+        compared = svc._compute_model_comparison(
+            results,
+            n=2,
+            regime_assignments={"A": None},
+            ordered_names=["A"],
+        )
+
+        assert compared[0]["aicc"] == float("inf")
+        assert compared[0]["aicc_weight"] == 0.0
+        assert np.isnan(compared[0]["r_squared"])
+
 
 # ── TestRun ──────────────────────────────────────────────────────────
 
@@ -2060,6 +2874,29 @@ class TestRun:
             "    aquatic: 0.0500\n"
             "    terrestrial: 0.0600"
         )
+
+    def test_print_text_output_formats_scalar_ou_parameters(self, svc, mocker):
+        printed = mocker.patch("builtins.print")
+        result = {
+            "model": "OU1",
+            "k_params": 3,
+            "log_likelihood": -2.0,
+            "aic": 10.0,
+            "aicc": 11.0,
+            "delta_aicc": 0.0,
+            "aicc_weight": 1.0,
+            "bic": 12.0,
+            "delta_bic": 0.0,
+            "r_squared": 0.5,
+            "params": {"theta": 1.5, "alpha": 0.2, "sigma2": 0.3},
+        }
+
+        svc._print_text_output([result], 8, ["r1", "r2"])
+
+        output = printed.call_args.args[0]
+        assert "Theta: 1.5000" in output
+        assert "Alpha: 0.2000" in output
+        assert "Sigma-squared: 0.3000" in output
 
     @patch("builtins.print")
     def test_json_output(self, mocked_print):

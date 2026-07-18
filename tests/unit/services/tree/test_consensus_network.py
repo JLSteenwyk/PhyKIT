@@ -106,6 +106,10 @@ def test_shared_tip_set_stops_when_empty():
     ) == set()
 
 
+def test_empty_tip_set_collection_is_vacuously_identical():
+    assert consensus_network_module._all_tip_sets_identical([])
+
+
 def test_lazy_phylo_caches_resolved_read(monkeypatch):
     calls = []
 
@@ -872,6 +876,33 @@ class TestNetworkPlot:
 
 
 class TestPruneToTaxa:
+    def test_falls_back_to_generic_terminal_pruning(self, monkeypatch):
+        tree = _make_tree("((A,B),(C,D));")
+        original_prune = tree.prune
+        pruned_names = []
+
+        monkeypatch.setattr(
+            consensus_network_module.Tree,
+            "calculate_terminal_clades_fast",
+            lambda _tree: None,
+        )
+        monkeypatch.setattr(
+            consensus_network_module.Tree,
+            "_prune_terminal_objects_batch_standard_tree",
+            lambda _tree, _target_ids: False,
+        )
+
+        def tracking_prune(tip):
+            pruned_names.append(tip.name)
+            return original_prune(tip)
+
+        monkeypatch.setattr(tree, "prune", tracking_prune)
+
+        ConsensusNetwork._prune_to_taxa(tree, {"A", "C"})
+
+        assert pruned_names == ["B", "D"]
+        assert {tip.name for tip in tree.get_terminals()} == {"A", "C"}
+
     def test_avoids_generic_terminal_collection(self, monkeypatch):
         tree = _make_tree("((A,B),(C,D));")
         original_get_terminals = tree.get_terminals
@@ -906,6 +937,132 @@ class TestPruneToTaxa:
 
 
 class TestConsensusNetworkRun:
+    def test_parse_trees_reports_missing_source(self, tmp_path):
+        missing_path = tmp_path / "missing-trees.nwk"
+        svc = ConsensusNetwork(
+            Namespace(
+                trees=str(missing_path),
+                threshold=0.1,
+                missing_taxa="error",
+                plot_output=None,
+                json=False,
+            )
+        )
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            svc._parse_trees_from_source(str(missing_path))
+
+        assert f"{missing_path} corresponds to no such file or directory." in (
+            exc_info.value.messages
+        )
+
+    def test_parse_trees_rejects_empty_source(self, tmp_path):
+        tree_file = tmp_path / "empty-trees.nwk"
+        _write(tree_file, "\n# comments only\n")
+        svc = ConsensusNetwork(
+            Namespace(
+                trees=str(tree_file),
+                threshold=0.1,
+                missing_taxa="error",
+                plot_output=None,
+                json=False,
+            )
+        )
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            svc._parse_trees_from_source(str(tree_file))
+
+        assert "No trees found in input." in exc_info.value.messages
+
+    def test_parse_trees_wraps_newick_parser_errors(self, tmp_path, monkeypatch):
+        tree_file = tmp_path / "malformed-trees.nwk"
+        _write(tree_file, "(not-valid);\n")
+        svc = ConsensusNetwork(
+            Namespace(
+                trees=str(tree_file),
+                threshold=0.1,
+                missing_taxa="error",
+                plot_output=None,
+                json=False,
+            )
+        )
+        monkeypatch.setattr(
+            consensus_network_module.Phylo,
+            "read",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(ValueError("bad tree")),
+        )
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            svc._parse_trees_from_source(str(tree_file))
+
+        assert "Failed to parse Newick trees: bad tree" in exc_info.value.messages
+
+    def test_parse_tree_list_reports_missing_entry(self, tmp_path):
+        tree_list = tmp_path / "tree-list.txt"
+        _write(tree_list, "missing-tree.nwk\n")
+        svc = ConsensusNetwork(
+            Namespace(
+                trees=str(tree_list),
+                threshold=0.1,
+                missing_taxa="error",
+                plot_output=None,
+                json=False,
+            )
+        )
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            svc._parse_trees_from_source(str(tree_list))
+
+        expected_path = tmp_path / "missing-tree.nwk"
+        assert f"{expected_path} corresponds to no such file or directory." in (
+            exc_info.value.messages
+        )
+
+    def test_tip_collection_falls_back_for_nonstandard_tree(self, monkeypatch):
+        tree = _make_tree("((A,B),C);")
+        monkeypatch.setattr(
+            consensus_network_module.Tree,
+            "calculate_terminal_names_fast",
+            lambda _tree: None,
+        )
+
+        assert ConsensusNetwork._tips(tree) == {"A", "B", "C"}
+
+    @pytest.mark.parametrize(
+        ("missing_taxa", "newicks", "message"),
+        [
+            (
+                "allow",
+                ["(A,B);", "A;"],
+                "Fewer than 3 taxa found across all trees.",
+            ),
+            (
+                "shared",
+                ["((A,B),C);", "((A,B),D);"],
+                "At least 3 shared taxa are required.",
+            ),
+        ],
+        ids=["allow-union", "shared-intersection"],
+    )
+    def test_normalize_taxa_requires_three_taxa(
+        self, missing_taxa, newicks, message
+    ):
+        svc = ConsensusNetwork(
+            Namespace(
+                trees="unused",
+                threshold=0.1,
+                missing_taxa=missing_taxa,
+                plot_output=None,
+                json=False,
+            )
+        )
+        trees = [_make_tree(newick) for newick in newicks]
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            svc._normalize_taxa(trees)
+
+        assert message in exc_info.value.messages
+
     def test_parse_trees_skips_comments_and_blank_lines(self, tmp_path):
         tree_file = tmp_path / "trees.nwk"
         _write(

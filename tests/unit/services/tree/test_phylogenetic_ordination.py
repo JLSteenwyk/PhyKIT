@@ -659,6 +659,87 @@ class TestPhylogeneticPCALambda:
     REF_LOG_LIKELIHOOD = -6.016939
     REF_EIGENVALUES = [0.076301214816, 0.002241847818, 0.000315397635]
 
+    def test_centering_and_likelihood_use_inverse_fallbacks(
+        self, lambda_args, monkeypatch
+    ):
+        svc = PhylogeneticOrdination(lambda_args)
+        Y = np.arange(12.0).reshape(4, 3)
+        C = np.eye(4)
+        expected_center = (np.ones_like(Y), None)
+
+        def fail_center(*_args, **_kwargs):
+            raise np.linalg.LinAlgError("cholesky failed")
+
+        def fail_likelihood(*_args, **_kwargs):
+            raise np.linalg.LinAlgError("cholesky failed")
+
+        monkeypatch.setattr(svc, "_center_traits_by_vcv_cholesky", fail_center)
+        monkeypatch.setattr(
+            svc, "_center_traits_by_vcv_inverse", lambda *_args: expected_center
+        )
+        monkeypatch.setattr(
+            svc, "_multi_trait_log_likelihood_cholesky", fail_likelihood
+        )
+        monkeypatch.setattr(
+            svc, "_multi_trait_log_likelihood_inverse", lambda *_args: -12.5
+        )
+
+        assert svc._center_traits_by_vcv(Y, C) is expected_center
+        assert svc._multi_trait_log_likelihood(Y, C) == -12.5
+
+    def test_centering_without_weighted_matrix(self, lambda_args):
+        svc = PhylogeneticOrdination(lambda_args)
+        Y = np.arange(12.0).reshape(4, 3)
+        C = np.eye(4)
+
+        centered_cholesky, weighted_cholesky = (
+            svc._center_traits_by_vcv_cholesky(Y, C, include_weighted=False)
+        )
+        centered_inverse, weighted_inverse = svc._center_traits_by_vcv_inverse(
+            Y, C, include_weighted=False
+        )
+
+        np.testing.assert_allclose(centered_cholesky, centered_inverse)
+        assert weighted_cholesky is None
+        assert weighted_inverse is None
+
+    def test_likelihood_rejects_singular_trait_covariance(self, lambda_args):
+        svc = PhylogeneticOrdination(lambda_args)
+        Y = np.ones((4, 2))
+        C = np.eye(4)
+
+        assert svc._multi_trait_log_likelihood_cholesky(Y, C) == -1e20
+        assert svc._multi_trait_log_likelihood_inverse(Y, C) == -1e20
+
+    def test_lambda_search_penalizes_failed_candidates(
+        self, lambda_args, monkeypatch
+    ):
+        svc = PhylogeneticOrdination(lambda_args)
+        calls = 0
+
+        def likelihood(_Y, _C):
+            nonlocal calls
+            calls += 1
+            if calls <= 10:
+                raise np.linalg.LinAlgError("invalid candidate")
+            return -7.0
+
+        def minimize(fn, bounds, method):
+            midpoint = sum(bounds) / 2.0
+            return Namespace(x=midpoint, fun=fn(midpoint))
+
+        monkeypatch.setattr(svc, "_multi_trait_log_likelihood", likelihood)
+        monkeypatch.setattr(
+            phylogenetic_ordination_module, "minimize_scalar", minimize
+        )
+
+        lambda_value, log_likelihood = svc._multi_trait_lambda(
+            np.ones((3, 2)), np.eye(3), 1.0
+        )
+
+        assert 0.0 <= lambda_value <= 1.0
+        assert log_likelihood == -7.0
+
     def test_multi_trait_log_likelihood_cholesky_matches_inverse(self, lambda_args):
         rng = np.random.default_rng(20260623)
         svc = PhylogeneticOrdination(lambda_args)
@@ -940,6 +1021,15 @@ class TestPhylogeneticPCALambda:
 
 
 class TestTSNEEmbedding:
+    def test_explicit_perplexity_below_one_is_rejected(self, tsne_args):
+        tsne_args.perplexity = 0.5
+        svc = PhylogeneticOrdination(tsne_args)
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            svc._embed_tsne(np.ones((4, 2)), 4)
+
+        assert "perplexity >= 1" in exc_info.value.messages[0]
+
     def test_shape(self, tsne_args):
         svc = PhylogeneticOrdination(tsne_args)
         tree = svc.read_tree_file()
@@ -1001,6 +1091,15 @@ class TestTSNEEmbedding:
 
 
 class TestUMAPEmbedding:
+    def test_explicit_neighbor_count_below_two_is_rejected(self, umap_args):
+        umap_args.n_neighbors = 1
+        svc = PhylogeneticOrdination(umap_args)
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            svc._embed_umap(np.ones((3, 2)), 3)
+
+        assert "n_neighbors >= 2" in exc_info.value.messages[0]
+
     def test_shape(self, umap_args):
         svc = PhylogeneticOrdination(umap_args)
         tree = svc.read_tree_file()
@@ -1165,6 +1264,23 @@ class TestSmallSampleGuards:
 
 
 class TestTreeColorTrait:
+    def test_invalid_tree_color_sources_return_no_reconstruction(
+        self, default_args, tmp_path
+    ):
+        svc = PhylogeneticOrdination(default_args)
+        tree = svc.read_tree_file()
+        taxa = svc.get_tip_names_from_tree(tree)
+        Y = np.ones((len(taxa), 1))
+        nonnumeric = tmp_path / "nonnumeric.tsv"
+        nonnumeric.write_text("".join(f"{taxon}\tbad\n" for taxon in taxa))
+
+        assert svc._resolve_tree_color_trait(
+            "missing-column", ["trait"], Y, taxa, tree
+        ) == (None, None, None)
+        assert svc._resolve_tree_color_trait(
+            str(nonnumeric), ["trait"], Y, taxa, tree
+        ) == (None, None, None)
+
     def test_resolve_tree_color_trait_streams_color_file_once(self, monkeypatch):
         class StreamingOnlyFile:
             def __enter__(self):
@@ -1258,6 +1374,40 @@ class TestTreeColorTrait:
 
 
 class TestRun:
+    def test_generic_five_dimension_outputs(self, default_args, capsys):
+        svc = PhylogeneticOrdination(default_args)
+        svc.n_components = 5
+        labels = [f"PC{i}" for i in range(1, 6)]
+        eigenvalues = np.arange(5.0, 0.0, -1.0)
+        proportions = eigenvalues / eigenvalues.sum()
+        eigenvectors = np.arange(15.0).reshape(3, 5)
+        scores = np.arange(10.0).reshape(2, 5)
+
+        svc._print_pca_text_output(
+            eigenvalues,
+            proportions,
+            eigenvectors,
+            scores,
+            ["trait1", "trait2", "trait3"],
+            ["A", "B"],
+            labels,
+            None,
+            None,
+        )
+        pca_output = capsys.readouterr().out
+        assert "PC5" in pca_output
+        assert "trait3" in pca_output
+
+        result = svc._format_dimreduce_result(
+            scores, ["A", "B"], {}, None, None
+        )
+        svc._print_dimreduce_text_output(
+            scores, ["A", "B"], {}, None, None
+        )
+        dimreduce_output = capsys.readouterr().out
+
+        assert result["embedding"]["A"]["Dim5"] == 4.0
+        assert "Dim5" in dimreduce_output
     def test_run_uses_unmodified_tree_read(self, mocker):
         args = Namespace(
             tree="/some/path/to/file.tre",
@@ -2210,6 +2360,16 @@ class TestPlot:
 
 
 class TestReconstructAncestralScores:
+    @pytest.mark.parametrize(
+        "tree",
+        [
+            Namespace(root=object()),
+            Namespace(root=Namespace(clades=[object()])),
+        ],
+    )
+    def test_direct_preorder_rejects_generic_and_malformed_trees(self, tree):
+        assert PhylogeneticOrdination._preorder_clades_direct(tree) is None
+
     def test_prune_setup_uses_fast_tip_names_and_shared_prune_helper(
         self, default_args, mocker
     ):
@@ -2476,6 +2636,21 @@ class TestReconstructAncestralScores:
 
 
 class TestParseColorBy:
+    def test_file_missing_taxon_values_is_rejected(self, default_args, tmp_path):
+        svc = PhylogeneticOrdination(default_args)
+        color_file = tmp_path / "incomplete.tsv"
+        color_file.write_text("A\tgroup1\nB\tgroup2\n")
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            svc._parse_color_by(
+                str(color_file),
+                ["trait"],
+                np.ones((3, 1)),
+                ["A", "B", "C"],
+            )
+
+        assert "missing values for taxa: C" in exc_info.value.messages[0]
+
     def test_column_name_match(self, default_args):
         svc = PhylogeneticOrdination(default_args)
         tree = svc.read_tree_file()

@@ -83,6 +83,15 @@ class TestProcessArgs:
 
 
 class TestSingleTraitParsing:
+    def test_missing_file_reports_path(self, tmp_path):
+        missing = tmp_path / "missing.tsv"
+        svc = TraitRateMap.__new__(TraitRateMap)
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            svc._parse_single_trait_data(str(missing), ["A", "B", "C"])
+
+        assert str(missing) in exc_info.value.messages[0]
+
     def test_comments_and_blanks(self, tmp_path):
         trait_file = tmp_path / "traits.tsv"
         trait_file.write_text(
@@ -214,8 +223,95 @@ class TestTextOutput:
             "Output: trait_rate.png"
         )
 
+    def test_print_text_output_handles_empty_rates(self, mocker):
+        svc = TraitRateMap.__new__(TraitRateMap)
+        svc.output_path = "empty.png"
+        printed = mocker.patch("builtins.print")
+
+        svc._print_text_output(3, "mass", 0.0, None, None)
+
+        printed.assert_called_once_with(
+            "Trait Rate Map\n"
+            "Taxa: 3\n"
+            "Trait: mass\n"
+            "Mean rate: 0.0000\n"
+            "Output: empty.png"
+        )
+
 
 class TestTraitDataParsing:
+    @pytest.mark.parametrize(
+        ("contents", "column", "message"),
+        [
+            ("# comment\n\n", "mass", "must have a header row"),
+            (
+                "taxon\tmass\nA\t1\nB\t2\nC\t3\n",
+                "height",
+                "Column 'height' not found",
+            ),
+            ("taxon\tmass\nA\n", "mass", "too few columns"),
+            ("taxon\tmass\n# no data\n", "mass", "must have a header row"),
+        ],
+    )
+    def test_multi_trait_parser_reports_structural_errors(
+        self, tmp_path, contents, column, message
+    ):
+        trait_file = tmp_path / "traits.tsv"
+        trait_file.write_text(contents)
+        svc = TraitRateMap.__new__(TraitRateMap)
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            svc._parse_multi_trait_data(
+                str(trait_file), ["A", "B", "C"], column
+            )
+
+        assert message in exc_info.value.messages[0]
+
+    def test_multi_trait_parser_reports_missing_path(self, tmp_path):
+        missing = tmp_path / "missing.tsv"
+        svc = TraitRateMap.__new__(TraitRateMap)
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            svc._parse_multi_trait_data(
+                str(missing), ["A", "B", "C"], "mass"
+            )
+
+        assert str(missing) in exc_info.value.messages[0]
+
+    def test_intersect_traits_accepts_unordered_exact_taxa(self, capsys):
+        svc = TraitRateMap.__new__(TraitRateMap)
+        traits = {"C": 3.0, "A": 1.0, "B": 2.0}
+
+        assert svc._intersect_traits(traits, ["A", "B", "C"]) is traits
+        assert capsys.readouterr().err == ""
+
+    def test_intersect_traits_warns_for_both_mismatch_directions(self, capsys):
+        svc = TraitRateMap.__new__(TraitRateMap)
+
+        shared = svc._intersect_traits(
+            {"A": 1.0, "B": 2.0, "C": 3.0, "extra": 4.0},
+            ["A", "B", "C", "missing"],
+        )
+
+        assert shared == {"A": 1.0, "B": 2.0, "C": 3.0}
+        stderr = capsys.readouterr().err
+        assert "missing" in stderr
+        assert "extra" in stderr
+
+    def test_intersect_traits_rejects_too_few_shared_taxa(self, capsys):
+        svc = TraitRateMap.__new__(TraitRateMap)
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            svc._intersect_traits(
+                {"A": 1.0, "B": 2.0, "extra": 3.0},
+                ["A", "B", "missing"],
+            )
+
+        assert "Only 2 shared taxa" in exc_info.value.messages[0]
+        stderr = capsys.readouterr().err
+        assert "missing" in stderr
+        assert "extra" in stderr
+
     def test_multi_trait_parser_streams_without_readlines(self, monkeypatch):
         class StreamingOnlyFile(StringIO):
             def __enter__(self):
@@ -337,8 +433,26 @@ class TestAncestralReconstruction:
             if os.path.exists(tmppath):
                 os.unlink(tmppath)
 
+    def test_missing_tip_values_are_ignored(self):
+        svc = TraitRateMap.__new__(TraitRateMap)
+        tree = Phylo.read(StringIO("(A:1,B:1);"), "newick")
+
+        one_value = svc._ancestral_reconstruction(tree, {"A": 4.0})
+        no_values = svc._ancestral_reconstruction(tree, {})
+
+        assert one_value[id(tree.root)] == pytest.approx(4.0)
+        assert id(tree.root) not in no_values
+
 
 class TestBranchRates:
+    def test_internal_labels_preserve_existing_names(self):
+        svc = TraitRateMap.__new__(TraitRateMap)
+        tree = Phylo.read(StringIO("(A:1,B:1)ancestor;"), "newick")
+
+        labels = svc._label_internal_nodes(tree)
+
+        assert labels[id(tree.root)] == "ancestor"
+
     def test_rate_pipeline_uses_direct_tree_traversal(self, monkeypatch):
         svc = TraitRateMap.__new__(TraitRateMap)
         tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
@@ -458,6 +572,52 @@ class TestBranchRates:
 
         assert len(branch_rates) == 6
         assert {entry["child"] for entry in branch_rates} >= {"A", "B", "C", "D"}
+
+    def test_branch_rate_boundaries_and_missing_values(self):
+        svc = TraitRateMap.__new__(TraitRateMap)
+        valid_tip = Clade(name="A", branch_length=0.0)
+        internal = Clade(
+            name=None,
+            branch_length=-1.0,
+            clades=[Clade(name="descendant")],
+        )
+        root = Clade(name=None, clades=[valid_tip, internal])
+        tree = Namespace(root=root)
+        orphan = Clade(name="orphan", branch_length=1.0)
+        no_parent_value = Clade(name="no-parent-value", branch_length=1.0)
+        no_child_value = Clade(name="no-child-value", branch_length=1.0)
+        missing_parent = Clade(name="missing-parent")
+        parent_map = {
+            id(valid_tip): root,
+            id(internal): root,
+            id(no_parent_value): missing_parent,
+            id(no_child_value): root,
+        }
+        node_values = {
+            id(root): 1.0,
+            id(valid_tip): 2.0,
+            id(internal): 3.0,
+            id(no_parent_value): 4.0,
+        }
+
+        rates = svc._compute_branch_rates(
+            tree,
+            node_values,
+            parent_map,
+            {},
+            [
+                root,
+                orphan,
+                no_parent_value,
+                no_child_value,
+                valid_tip,
+                internal,
+            ],
+        )
+
+        assert [entry["child"] for entry in rates] == ["A", "unknown"]
+        assert all(entry["parent"] == "root" for entry in rates)
+        assert all(entry["branch_length"] > 0 for entry in rates)
 
     def test_ancestral_reconstruction_weighted_polytomy(self):
         svc = TraitRateMap.__new__(TraitRateMap)
@@ -878,6 +1038,28 @@ class TestPlotRateMap:
 
 
 class TestRun:
+    @pytest.mark.parametrize("circular", [False, True])
+    def test_color_annotations_render_in_both_layouts(self, tmp_path, circular):
+        pytest.importorskip("matplotlib")
+        color_file = tmp_path / "colors.tsv"
+        color_file.write_text(
+            "raccoon,bear\trange\t#ffcc00\tHighlighted taxa\n"
+            "raccoon\tlabel\t#0033cc\n"
+        )
+        output = tmp_path / f"trait-rate-{circular}.png"
+        svc = TraitRateMap(
+            _make_args(
+                output=str(output),
+                color_file=str(color_file),
+                circular=circular,
+            )
+        )
+
+        svc.run()
+
+        assert output.exists()
+        assert output.stat().st_size > 0
+
     def test_creates_png(self):
         try:
             import matplotlib

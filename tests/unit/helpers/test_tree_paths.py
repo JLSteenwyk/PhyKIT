@@ -78,6 +78,23 @@ def test_build_object_parent_map_handles_mixed_child_counts(monkeypatch):
     assert parent_map[trifurcation.clades[2]] is trifurcation
 
 
+def test_build_object_parent_map_falls_back_for_legacy_tree():
+    root = Clade(name="root", clades=[Clade(name="A"), Clade(name="B")])
+
+    class LegacyTree:
+        root = object()
+
+        @staticmethod
+        def find_clades(order):
+            assert order == "preorder"
+            return [root, *root.clades]
+
+    parent_map = build_object_parent_map(LegacyTree())
+
+    assert parent_map[root.clades[0]] is root
+    assert parent_map[root.clades[1]] is root
+
+
 def test_build_root_path_map_uses_direct_traversal(monkeypatch):
     tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
 
@@ -115,6 +132,69 @@ def test_build_root_path_map_binary_children_do_not_call_reversed():
     right = tree.root.clades[1]
     assert paths[left.clades[0]] == [tree.root, left, left.clades[0]]
     assert paths[right.clades[1]] == [tree.root, right, right.clades[1]]
+
+
+def test_build_root_path_map_handles_multifurcations():
+    tree = NewickTree(
+        root=Clade(
+            name="root",
+            clades=[Clade(name="A"), Clade(name="B"), Clade(name="C")],
+        )
+    )
+
+    paths = build_root_path_map(tree)
+
+    for child in tree.root.clades:
+        assert paths[child] == [tree.root, child]
+
+
+def test_build_root_path_map_uses_legacy_traversal_for_alternate_root():
+    root = Clade(name="root", clades=[Clade(name="A"), Clade(name="B")])
+
+    class LegacyTree:
+        root = object()
+
+        @staticmethod
+        def find_clades(order):
+            assert order == "preorder"
+            return [root, *root.clades]
+
+    paths = build_root_path_map(LegacyTree(), root=root)
+
+    assert paths[root] == [root]
+    assert paths[root.clades[0]] == [root, root.clades[0]]
+    assert paths[root.clades[1]] == [root, root.clades[1]]
+
+
+def test_build_root_path_map_rejects_disconnected_legacy_traversal():
+    requested_root = Clade(name="requested")
+    disconnected = Clade(name="disconnected")
+
+    class LegacyTree:
+        root = object()
+
+        @staticmethod
+        def find_clades(order):
+            assert order == "preorder"
+            return [disconnected]
+
+    assert build_root_path_map(LegacyTree(), root=requested_root) == {}
+
+
+def test_build_root_path_map_falls_back_when_root_has_no_children_attribute():
+    class LegacyRoot:
+        pass
+
+    class LegacyTree:
+        root = LegacyRoot()
+
+        @staticmethod
+        def find_clades(order):
+            assert order == "preorder"
+            return []
+
+    root = LegacyTree.root
+    assert build_root_path_map(LegacyTree()) == {root: [root]}
 
 
 def test_path_from_root_returns_none_for_incomplete_parent_map():

@@ -95,6 +95,17 @@ def json_args():
 
 
 class TestProcessArgs:
+    def test_print_json_wrapper_delegates(self, monkeypatch):
+        calls = []
+        monkeypatch.setattr(
+            "phykit.helpers.json_output.print_json",
+            lambda *args, **kwargs: calls.append((args, kwargs)),
+        )
+
+        scm_module.print_json({"value": 1}, indent=2)
+
+        assert calls == [(({"value": 1},), {"indent": 2})]
+
     def test_defaults(self):
         args = Namespace(
             tree="t.tre",
@@ -183,6 +194,20 @@ class TestDiscreteTraitParsing:
 
 
 class TestTreePruning:
+    def test_missing_tip_count_rejects_legacy_and_malformed_trees(self):
+        assert StochasticCharacterMap._count_missing_tip_states(object(), {}) is None
+
+        class MalformedRoot:
+            clades = [object()]
+
+        class MalformedTree:
+            root = MalformedRoot()
+
+        assert (
+            StochasticCharacterMap._count_missing_tip_states(MalformedTree(), {})
+            is None
+        )
+
     def test_count_missing_tip_states_uses_direct_traversal(self, monkeypatch):
         tree = Phylo.read(
             StringIO("((A:1,B:1):1,(C:1,D:1):1);"),
@@ -264,8 +289,134 @@ class TestTreePruning:
         assert removed == 1
         assert {tip.name for tip in tree.get_terminals()} == {"A"}
 
+    def test_prune_tree_to_tip_states_uses_per_tip_standard_fallback(
+        self, monkeypatch
+    ):
+        tree = Phylo.read(StringIO("(A:1,B:1,C:1);"), "newick")
+        monkeypatch.setattr(
+            scm_module.Tree,
+            "_prune_terminal_objects_batch_standard_tree",
+            staticmethod(lambda *_args: False),
+        )
+
+        removed = StochasticCharacterMap._prune_tree_to_tip_states(
+            tree, {"A": "x", "B": "y"}
+        )
+
+        assert removed == 1
+        assert {tip.name for tip in tree.get_terminals()} == {"A", "B"}
+
+    def test_prune_tree_to_tip_states_supports_legacy_tree(self):
+        class Tip:
+            def __init__(self, name):
+                self.name = name
+
+        class LegacyTree:
+            def __init__(self):
+                self.tips = [Tip("A"), Tip("B"), Tip("C")]
+
+            def get_terminals(self):
+                return self.tips
+
+            def prune(self, tip):
+                self.tips.remove(tip)
+
+        tree = LegacyTree()
+
+        removed = StochasticCharacterMap._prune_tree_to_tip_states(
+            tree, {"A": "x", "B": "y"}
+        )
+
+        assert removed == 1
+        assert [tip.name for tip in tree.get_terminals()] == ["A", "B"]
+
+    def test_prune_tree_to_tip_states_recovers_from_malformed_root(self):
+        class Tip:
+            def __init__(self, name):
+                self.name = name
+
+        class MalformedRoot:
+            clades = [object()]
+
+        class MalformedTree:
+            root = MalformedRoot()
+
+            def __init__(self):
+                self.tips = [Tip("A"), Tip("B"), Tip("C")]
+
+            def get_terminals(self):
+                return self.tips
+
+            def prune(self, tip):
+                self.tips.remove(tip)
+
+        tree = MalformedTree()
+
+        removed = StochasticCharacterMap._prune_tree_to_tip_states(
+            tree, {"A": "x", "B": "y"}
+        )
+
+        assert removed == 1
+        assert [tip.name for tip in tree.get_terminals()] == ["A", "B"]
+
 
 class TestTraversalHelpers:
+    def test_build_parent_map_supports_legacy_and_malformed_trees(
+        self, default_args
+    ):
+        svc = StochasticCharacterMap(default_args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,C:1);"), "newick")
+
+        class LegacyTree:
+            def find_clades(self, *args, **kwargs):
+                return tree.find_clades(*args, **kwargs)
+
+        legacy_map = svc._build_parent_map(LegacyTree())
+        assert len(legacy_map) == len(list(tree.find_clades())) - 1
+
+        class MalformedRoot:
+            clades = [object()]
+
+        class MalformedTree(LegacyTree):
+            root = MalformedRoot()
+
+        malformed_map = svc._build_parent_map(MalformedTree())
+        assert len(malformed_map) == len(list(tree.find_clades())) - 1
+
+    def test_get_parent_supports_lookup_map_and_generic_traversal(self, default_args):
+        svc = StochasticCharacterMap(default_args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,C:1);"), "newick")
+        tip = tree.find_any(name="A")
+        parent_map = svc._build_parent_map(tree)
+
+        assert svc._get_parent(tree, tip, parent_map) is parent_map[id(tip)]
+        assert svc._get_parent(tree, tip) is parent_map[id(tip)]
+        assert svc._get_parent(tree, object()) is None
+
+    def test_build_simulation_metadata_uses_generic_tree_fallback(self, default_args):
+        svc = StochasticCharacterMap(default_args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,C:1);"), "newick")
+
+        class MalformedRoot:
+            clades = [object()]
+
+        class MalformedTree:
+            root = MalformedRoot()
+
+            def find_clades(self, *args, **kwargs):
+                return tree.find_clades(*args, **kwargs)
+
+        parent_map = svc._build_parent_map(tree)
+        simulation_nodes, branch_nodes = svc._build_simulation_metadata(
+            MalformedTree(),
+            {"A": "x", "B": "y", "C": "x"},
+            ["x", "y"],
+            parent_map,
+        )
+
+        assert len(simulation_nodes) == len(branch_nodes)
+        assert len(simulation_nodes) == len(list(tree.find_clades())) - 1
+
     def test_build_parent_map_uses_direct_traversal(self, default_args, monkeypatch):
         tree = Phylo.read(
             StringIO("((A:1,B:1):1,(C:1,D:1):1);"),
@@ -402,6 +553,28 @@ class TestTraversalHelpers:
 class TestQMatrixFitting:
     """Validated against R 4.4.0 with phytools::fitMk on same tree and traits."""
 
+    def test_shared_discrete_model_wrappers(self, default_args):
+        svc = StochasticCharacterMap(default_args)
+        tree = Phylo.read(StringIO("(A:1,B:1,C:1);"), "newick")
+        tip_states = {"A": "0", "B": "1", "C": "0"}
+        states = ["0", "1"]
+        Q = svc._build_q_matrix(np.array([0.5]), 2, "ER")
+        pi = np.array([0.5, 0.5])
+
+        transition = svc._matrix_exp(Q, 0.25)
+        conditional, loglik = svc._felsenstein_pruning(
+            tree, tip_states, Q, pi, states
+        )
+        fitted, fitted_loglik = svc._fit_q_matrix(
+            tree, tip_states, states, "ER"
+        )
+
+        assert transition.shape == (2, 2)
+        assert id(tree.root) in conditional
+        assert np.isfinite(loglik)
+        assert fitted.shape == (2, 2)
+        assert np.isfinite(fitted_loglik)
+
     def test_er_model_loglik(self, default_args):
         svc = StochasticCharacterMap(default_args)
         tree = svc.read_tree_file()
@@ -532,6 +705,124 @@ class TestFelsensteinPruning:
 
 
 class TestStochasticMapping:
+    def test_sample_categorical_cdf_clamps_large_state_upper_boundary(self):
+        class UpperBoundaryRng:
+            @staticmethod
+            def random():
+                return 1.0
+
+        observed = StochasticCharacterMap._sample_categorical_cdf(
+            np.linspace(0.1, 1.0, 10), UpperBoundaryRng()
+        )
+
+        assert observed == 9
+
+    def test_simulate_branch_history_handles_nonpositive_branch(self, default_args):
+        svc = StochasticCharacterMap(default_args)
+        Q = np.array([[-1.0, 1.0], [1.0, -1.0]])
+
+        assert svc._simulate_branch_history(
+            Q, 0, 1, 0.0, 2, np.random.default_rng(1)
+        ) == [(0.0, 0)]
+
+    def test_simulate_branch_history_fallbacks_after_exhausted_attempts(
+        self, default_args
+    ):
+        svc = StochasticCharacterMap(default_args)
+        Q = np.array([[-1.0, 1.0], [1.0, -1.0]])
+        rng = np.random.default_rng(1)
+
+        assert svc._simulate_branch_history(
+            Q, 0, 0, 2.0, 2, rng, max_attempts=0
+        ) == [(0.0, 0)]
+        assert svc._simulate_branch_history(
+            Q, 0, 1, 2.0, 2, rng, max_attempts=0
+        ) == [(0.0, 0), (1.0, 1)]
+
+    def test_simulate_branch_history_handles_zero_rate_and_missing_transition(
+        self, default_args
+    ):
+        svc = StochasticCharacterMap(default_args)
+
+        zero_rate = svc._simulate_branch_history(
+            np.zeros((2, 2)),
+            0,
+            1,
+            2.0,
+            2,
+            np.random.default_rng(1),
+            max_attempts=1,
+        )
+        missing_transition = svc._simulate_branch_history(
+            np.array([[-1.0, 1.0], [1.0, -1.0]]),
+            0,
+            1,
+            2.0,
+            2,
+            np.random.default_rng(1),
+            max_attempts=1,
+            rates=np.ones(2),
+            transition_cdfs_by_state=[None, None],
+        )
+
+        assert zero_rate == [(0.0, 0), (1.0, 1)]
+        assert missing_transition == [(0.0, 0), (1.0, 1)]
+
+    def test_deterministic_transition_targets_classifies_rows(self):
+        observed = StochasticCharacterMap._deterministic_transition_targets(
+            [
+                None,
+                np.array([0.0, 1.0, 0.0]),
+                np.array([0.5, 0.5, 0.0]),
+            ]
+        )
+
+        assert observed == [-1, 1, -1]
+
+    def test_run_single_simulation_supports_legacy_branch_context(
+        self, default_args, monkeypatch
+    ):
+        svc = StochasticCharacterMap(default_args)
+        tree = Phylo.read(StringIO("(A:1,B:1,C:1);"), "newick")
+        parent_map = svc._build_parent_map(tree)
+        metadata = svc._build_simulation_metadata(
+            tree,
+            {"A": "x", "B": "y", "C": "x"},
+            ["x", "y"],
+            parent_map,
+        )
+        node_states = {id(clade): 0 for clade in tree.find_clades()}
+        calls = []
+
+        monkeypatch.setattr(
+            svc,
+            "_sample_ancestral_states",
+            lambda *_args, **_kwargs: node_states,
+        )
+
+        def simulate(*_args, **kwargs):
+            calls.append(kwargs["deterministic_next_states"])
+            return [(0.0, 0)]
+
+        monkeypatch.setattr(svc, "_simulate_branch_history", simulate)
+
+        observed = svc._run_single_simulation(
+            tree,
+            {"A": "x", "B": "y", "C": "x"},
+            np.array([[-1.0, 1.0], [1.0, -1.0]]),
+            np.array([0.5, 0.5]),
+            ["x", "y"],
+            np.random.default_rng(1),
+            cond_liks={},
+            parent_map=parent_map,
+            simulation_metadata=metadata,
+            sampling_nodes=[],
+            branch_history_context=(np.ones(2), [None, None]),
+        )
+
+        assert len(observed["branch_histories"]) == len(metadata[1])
+        assert calls and all(value is None for value in calls)
+
     def test_sample_categorical_matches_numpy_choice_stream(self):
         probs = np.array([0.2, 0.3, 0.5])
         rng_choice = np.random.default_rng(123)
@@ -1261,6 +1552,66 @@ class TestStochasticMapping:
 
 
 class TestSummary:
+    def test_summarize_simulations_supports_legacy_tree_traversal(
+        self, default_args
+    ):
+        svc = StochasticCharacterMap(default_args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,C:1);"), "newick")
+        clades = list(tree.find_clades(order="preorder"))
+
+        class LegacyTree:
+            root = object()
+
+            def find_clades(self, *args, **kwargs):
+                return tree.find_clades(*args, **kwargs)
+
+        mapping = {
+            "branch_histories": {
+                id(clade): [(0.0, 0)]
+                for clade in clades
+                if clade is not tree.root
+            },
+            "node_states": {id(clade): 0 for clade in clades},
+        }
+
+        observed = svc._summarize_simulations(
+            [mapping], ["x", "y"], LegacyTree()
+        )
+
+        assert observed["mean_dwelling_times"][0] > 0.0
+        assert observed["mean_dwelling_times"][1] == 0.0
+
+    def test_summarize_simulations_recovers_from_malformed_direct_traversal(
+        self, default_args
+    ):
+        svc = StochasticCharacterMap(default_args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,C:1);"), "newick")
+        clades = list(tree.find_clades(order="preorder"))
+
+        class MalformedRoot:
+            clades = [object()]
+
+        class MalformedTree:
+            root = MalformedRoot()
+
+            def find_clades(self, *args, **kwargs):
+                return tree.find_clades(*args, **kwargs)
+
+        mapping = {
+            "branch_histories": {
+                id(clades[1]): [(0.0, 0), (0.5, 0)],
+                id(object()): [(0.0, 1)],
+            },
+            "node_states": {id(clade): 0 for clade in clades},
+        }
+
+        observed = svc._summarize_simulations(
+            [mapping], ["x", "y"], MalformedTree()
+        )
+
+        assert observed["mean_dwelling_times"][0] > 0.0
+        assert observed["mean_transitions"].sum() == 0.0
+
     def test_summarize_simulations_accumulates_with_single_traversal(
         self, default_args, monkeypatch
     ):
@@ -1432,6 +1783,77 @@ class TestRun:
             },
         )
         monkeypatch.setattr(svc, "_print_text_output", lambda *_args, **_kwargs: None)
+
+    def test_run_rejects_invariant_character_states(
+        self, default_args, monkeypatch
+    ):
+        tree = Phylo.read(StringIO("(A:1,B:1,C:1);"), "newick")
+        svc = StochasticCharacterMap(default_args)
+        monkeypatch.setattr(svc, "read_tree_file_unmodified", lambda: tree)
+        monkeypatch.setattr(
+            svc,
+            "_parse_discrete_trait_file",
+            lambda *_args, **_kwargs: {"A": "x", "B": "x", "C": "x"},
+        )
+
+        with pytest.raises(PhykitUserError) as excinfo:
+            svc.run()
+
+        assert "At least 2 distinct character states" in excinfo.value.messages[0]
+
+    def test_run_ladderizes_a_copy_of_read_only_tree(
+        self, default_args, monkeypatch
+    ):
+        default_args.nsim = 0
+        default_args.ladderize = True
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        svc = StochasticCharacterMap(default_args)
+        captured_tree = {}
+        copied_trees = []
+        real_copy = svc._fast_copy
+
+        def copy_spy(value):
+            copied = real_copy(value)
+            copied_trees.append(copied)
+            return copied
+
+        monkeypatch.setattr(svc, "read_tree_file_unmodified", lambda: tree)
+        monkeypatch.setattr(
+            svc,
+            "_parse_discrete_trait_file",
+            lambda *_args, **_kwargs: {
+                "A": "x",
+                "B": "x",
+                "C": "y",
+                "D": "y",
+            },
+        )
+        monkeypatch.setattr(svc, "_fast_copy", copy_spy)
+        self._stub_expensive_run_tail(svc, monkeypatch, captured_tree)
+
+        svc.run()
+
+        assert len(copied_trees) == 1
+        assert captured_tree["tree"] is copied_trees[0]
+        assert captured_tree["tree"] is not tree
+
+    def test_format_result_includes_plot_output(self, default_args):
+        svc = StochasticCharacterMap(default_args)
+        summary = {
+            "mean_dwelling_times": np.array([0.0, 0.0]),
+            "mean_transitions": np.zeros((2, 2)),
+        }
+
+        observed = svc._format_result(
+            np.array([[-1.0, 1.0], [1.0, -1.0]]),
+            -1.0,
+            ["x", "y"],
+            summary,
+            "map.png",
+        )
+
+        assert observed["plot_output"] == "map.png"
+        assert observed["mean_dwelling_proportions"] == {"x": 0.0, "y": 0.0}
 
     def test_all_tips_present_uses_read_only_tree_without_copy_or_prune(
         self, default_args, monkeypatch

@@ -1,6 +1,4 @@
-from argparse import Namespace
 from io import StringIO
-from pathlib import Path
 import pickle as stdlib_pickle
 import subprocess
 import sys
@@ -695,6 +693,89 @@ class TestTreeBase:
         assert expected_message in exc.value.messages[0].lower()
 
     @pytest.mark.parametrize(
+        ("newick", "expected_message"),
+        [
+            pytest.param("(a]:1,b:1);", "comment delimiter", id="unmatched-close-comment"),
+            pytest.param(")a,b(;", "parentheses", id="leading-close-parenthesis"),
+            pytest.param("('a,b);", "quote", id="unmatched-quote"),
+            pytest.param("(a[comment,b);", "comment delimiter", id="unmatched-comment"),
+            pytest.param("(a:not-a-number,b:1);", "valid number", id="invalid-length"),
+            pytest.param("(a,b)", "semicolon", id="missing-semicolon"),
+        ],
+    )
+    def test_newick_document_validator_reports_delimiter_and_length_errors(
+        self,
+        tmp_path,
+        newick,
+        expected_message,
+    ):
+        tree_path = tmp_path / "invalid-document.tre"
+        tree_path.write_text(newick)
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            Tree._read_single_newick_document(str(tree_path))
+
+        assert expected_message in exc_info.value.messages[0]
+
+    @pytest.mark.parametrize(
+        "newick",
+        [
+            pytest.param("('a''b':1,c:2);", id="escaped-quote"),
+            pytest.param("(a[outer[inner]]:1,b:2);", id="nested-comment"),
+            pytest.param("(a:   1,b:2);", id="length-leading-whitespace"),
+        ],
+    )
+    def test_newick_document_validator_accepts_supported_lexical_forms(
+        self, tmp_path, newick
+    ):
+        tree_path = tmp_path / "valid-document.tre"
+        tree_path.write_text(newick)
+
+        assert Tree._read_single_newick_document(str(tree_path)) == newick
+
+    def test_cached_tree_read_normalizes_parser_errors(self, tmp_path, mocker):
+        tree_path = tmp_path / "parser-error.tre"
+        tree_path.write_text("(a,b);")
+        Tree._cached_tree_read.cache_clear()
+        mocker.patch("Bio.Phylo.read", side_effect=ValueError("parser rejected tree"))
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            Tree._cached_tree_read(str(tree_path), "newick", "hash")
+
+        assert exc_info.value.messages == [
+            f"Invalid Newick tree {tree_path}: parser rejected tree"
+        ]
+
+    def test_cached_non_newick_read_skips_newick_validation(self, mocker):
+        parsed = object()
+        mocked_read = mocker.patch("Bio.Phylo.read", return_value=parsed)
+        validate_document = mocker.patch.object(Tree, "_read_single_newick_document")
+        validate_tree = mocker.patch.object(Tree, "_validate_parsed_newick")
+        Tree._cached_tree_read.cache_clear()
+
+        observed = Tree._cached_tree_read("tree.nex", "nexus", "hash")
+
+        assert observed is parsed
+        mocked_read.assert_called_once_with("tree.nex", "nexus")
+        validate_document.assert_not_called()
+        validate_tree.assert_not_called()
+
+    def test_parsed_newick_validation_rejects_nonfinite_branch_length(self):
+        tree = NewickTree(
+            root=Clade(
+                clades=[
+                    Clade(name="a", branch_length=float("nan")),
+                    Clade(name="b", branch_length=1.0),
+                ]
+            )
+        )
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            Tree._validate_parsed_newick(tree, "tree.tre")
+
+        assert "branch lengths must be finite" in exc_info.value.messages[0]
+
+    @pytest.mark.parametrize(
         "newick",
         [
             pytest.param("('a b':1,b:2);", id="quoted-tip"),
@@ -714,6 +795,67 @@ class TestTreeBase:
             tip.name for tip in expected.get_terminals()
         ]
         assert observed.total_branch_length() == expected.total_branch_length()
+
+    @pytest.mark.parametrize(
+        "newick",
+        [
+            pytest.param("A(B,C);", id="opening-after-label"),
+            pytest.param("(,A);", id="leading-comma"),
+            pytest.param("();", id="empty-clade"),
+            pytest.param("(A,A);", id="duplicate-tip"),
+            pytest.param("(:1,A);", id="length-without-label"),
+            pytest.param("(A:,B);", id="empty-length"),
+            pytest.param("(A:not-a-number,B);", id="invalid-length"),
+            pytest.param("(A:nan,B);", id="nonfinite-length"),
+            pytest.param("(A:1 extra,B);", id="token-after-length"),
+            pytest.param("((A,B)inner extra,C);", id="second-internal-label"),
+        ],
+    )
+    def test_simple_newick_scanners_decline_unsupported_syntax(
+        self, tmp_path, newick
+    ):
+        tree_path = tmp_path / "unsupported-simple.tre"
+        tree_path.write_text(newick)
+
+        assert Tree._scan_simple_newick_summary(str(tree_path)) is None
+        assert Tree._scan_simple_newick_tip_names(str(tree_path)) is None
+
+    @pytest.mark.parametrize(
+        "newick",
+        [
+            pytest.param("(A:,B:1);", id="empty-terminal-length"),
+            pytest.param("(A:not-a-number,B:1);", id="invalid-terminal-length"),
+            pytest.param("(A:nan,B:1);", id="nonfinite-terminal-length"),
+            pytest.param("(A B,C);", id="invalid-child-separator"),
+            pytest.param("((A,B):,C);", id="empty-internal-length"),
+            pytest.param("(:1,A);", id="terminal-without-label"),
+            pytest.param("(A,);", id="missing-child"),
+            pytest.param("(A);", id="fewer-than-two-tips"),
+        ],
+    )
+    def test_terminal_distance_scanner_declines_unsupported_syntax(
+        self, tmp_path, newick
+    ):
+        tree_path = tmp_path / "unsupported-distances.tre"
+        tree_path.write_text(newick)
+
+        assert Tree._scan_simple_newick_terminal_distance_stats(str(tree_path)) is None
+
+    def test_terminal_distance_scanner_excludes_root_branch_length(self, tmp_path):
+        tree_path = tmp_path / "root-length.tre"
+        tree_path.write_text("((A:1,B:2):3,C:4):5;")
+
+        assert Tree._scan_simple_newick_terminal_distance_stats(str(tree_path)) == (
+            3,
+            13.0,
+            57.0,
+        )
+
+    def test_terminal_distance_scanner_falls_back_for_deep_tree(self, tmp_path):
+        tree_path = tmp_path / "deep-tree.tre"
+        tree_path.write_text("(" * 2_000 + "A" + ")" * 2_000 + ";")
+
+        assert Tree._scan_simple_newick_terminal_distance_stats(str(tree_path)) is None
 
     def test_get_simple_newick_summary_uses_cached_file_hash(self, tmp_path):
         tree_path = tmp_path / "tree.tre"

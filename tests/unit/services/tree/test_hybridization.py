@@ -2,7 +2,6 @@ import json
 import os
 import subprocess
 import sys
-import tempfile
 
 import pytest
 from argparse import Namespace
@@ -217,6 +216,16 @@ class TestPerBranchCounts:
 
         assert len(trees) == 1
 
+    def test_parse_gene_trees_reports_missing_input(self, tmp_path):
+        missing_path = tmp_path / "missing_gene_trees.nwk"
+        svc = _make_svc(gene_trees=str(missing_path))
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            svc._parse_gene_trees(str(missing_path))
+
+        assert exc_info.value.code == 2
+        assert str(missing_path) in exc_info.value.messages[0]
+
     def test_parse_gene_tree_path_list_avoids_per_row_path_objects(
         self, tmp_path, monkeypatch
     ):
@@ -413,6 +422,177 @@ class TestPerBranchCounts:
 
         assert [tip.name for tip in tips] == ["A", "B", "C", "D", "E", "F"]
 
+    def test_tree_helpers_support_traversal_only_interface(self):
+        from Bio import Phylo
+        from io import StringIO
+
+        svc = _make_svc()
+        source_tree = Phylo.read(
+            StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick"
+        )
+
+        class TraversalOnlyTree:
+            def find_clades(self, order):
+                return source_tree.find_clades(order=order)
+
+            def get_terminals(self):
+                return source_tree.get_terminals()
+
+        tree = TraversalOnlyTree()
+
+        parent_map = svc._build_parent_map(tree)
+        preorder = svc._preorder_clades(tree)
+        postorder = svc._postorder_clades(tree)
+        clade_taxa = svc._collect_clade_taxa(tree)
+        terminals = svc._get_terminal_clades(tree)
+
+        assert len(parent_map) == 6
+        assert preorder == list(source_tree.find_clades(order="preorder"))
+        assert postorder == list(source_tree.find_clades(order="postorder"))
+        assert clade_taxa[id(source_tree.root)] == frozenset({"A", "B", "C", "D"})
+        assert terminals == source_tree.get_terminals()
+
+    def test_tree_helpers_fall_back_from_incomplete_direct_interface(self):
+        from Bio import Phylo
+        from io import StringIO
+
+        svc = _make_svc()
+        source_tree = Phylo.read(
+            StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick"
+        )
+        malformed_root = type("Root", (), {"clades": [object()]})()
+
+        class AdaptedTree:
+            root = malformed_root
+
+            def find_clades(self, order):
+                return source_tree.find_clades(order=order)
+
+            def get_terminals(self):
+                return source_tree.get_terminals()
+
+        tree = AdaptedTree()
+
+        assert len(svc._build_parent_map(tree)) == 6
+        assert svc._preorder_clades(tree) == list(
+            source_tree.find_clades(order="preorder")
+        )
+        assert svc._postorder_clades(tree) == list(
+            source_tree.find_clades(order="postorder")
+        )
+        clade_taxa = svc._collect_clade_taxa(tree)
+        assert clade_taxa[id(source_tree.root)] == frozenset({"A", "B", "C", "D"})
+        assert svc._get_terminal_clades(tree) == source_tree.get_terminals()
+
+    def test_tree_helpers_preserve_unary_clade_taxa(self):
+        from Bio import Phylo
+        from io import StringIO
+
+        svc = _make_svc()
+        tree = Phylo.read(StringIO("(((A:1):1,B:1):1,C:1);"), "newick")
+        unary = tree.root.clades[0].clades[0]
+
+        preorder = svc._preorder_clades(tree)
+        clade_taxa = svc._collect_clade_taxa(tree)
+
+        assert unary in preorder
+        assert clade_taxa[id(unary)] == frozenset({"A"})
+
+    def test_get_four_groups_computes_taxa_when_cache_is_omitted(self):
+        from Bio import Phylo
+        from io import StringIO
+
+        svc = _make_svc()
+        tree = Phylo.read(
+            StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick"
+        )
+
+        groups = svc._get_four_groups(
+            tree,
+            tree.root.clades[0],
+            svc._build_parent_map(tree),
+            frozenset({"A", "B", "C", "D"}),
+        )
+
+        assert groups == tuple(frozenset({taxon}) for taxon in "ABCD")
+
+    def test_get_four_groups_rejects_uninformative_branches(self):
+        from Bio import Phylo
+        from io import StringIO
+
+        svc = _make_svc()
+        balanced = Phylo.read(
+            StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick"
+        )
+        parent_map = svc._build_parent_map(balanced)
+        clade_taxa = svc._collect_clade_taxa(balanced)
+        left = balanced.root.clades[0]
+
+        assert svc._get_four_groups(
+            balanced,
+            left.clades[0],
+            parent_map,
+            frozenset({"A", "B", "C", "D"}),
+            clade_taxa,
+        ) is None
+
+        unary_tree = Phylo.read(StringIO("((A:1):1,(B:1,C:1):1);"), "newick")
+        unary = unary_tree.root.clades[0]
+        assert svc._get_four_groups(
+            unary_tree,
+            unary,
+            svc._build_parent_map(unary_tree),
+            frozenset({"A", "B", "C"}),
+            svc._collect_clade_taxa(unary_tree),
+        ) is None
+
+        parent_without_sibling = type("Parent", (), {"clades": [left]})()
+        assert svc._get_four_groups(
+            balanced,
+            left,
+            {id(left): parent_without_sibling},
+            frozenset({"A", "B"}),
+            clade_taxa,
+        ) is None
+
+    def test_get_four_groups_rejects_filtered_or_terminal_siblings(self):
+        from Bio import Phylo
+        from io import StringIO
+
+        svc = _make_svc()
+        terminal_sibling = Phylo.read(
+            StringIO("((A:1,B:1):1,C:1);"), "newick"
+        )
+        left = terminal_sibling.root.clades[0]
+        parent_map = svc._build_parent_map(terminal_sibling)
+        clade_taxa = svc._collect_clade_taxa(terminal_sibling)
+
+        assert svc._get_four_groups(
+            terminal_sibling,
+            left,
+            parent_map,
+            frozenset({"A", "B"}),
+            clade_taxa,
+        ) is None
+        assert svc._get_four_groups(
+            terminal_sibling,
+            left,
+            parent_map,
+            frozenset({"A", "B", "C"}),
+            clade_taxa,
+        ) is None
+
+        balanced = Phylo.read(
+            StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick"
+        )
+        assert svc._get_four_groups(
+            balanced,
+            balanced.root.clades[0],
+            svc._build_parent_map(balanced),
+            frozenset({"B", "C", "D"}),
+            svc._collect_clade_taxa(balanced),
+        ) is None
+
 
 class TestAsymmetryRatioRange:
     def test_asymmetry_ratio_range(self):
@@ -516,6 +696,40 @@ class TestReticulationCountNonneg:
                 assert count >= 0
                 break
 
+    def test_run_marks_fdr_significant_asymmetry_as_reticulation(self):
+        svc = _make_svc(alpha=0.05)
+        topology_counts = {
+            "A,B": {
+                "split": ["A", "B"],
+                "n_concordant": 2,
+                "n_alt1": 10,
+                "n_alt2": 0,
+            }
+        }
+        captured = {}
+
+        def capture_output(branch_results, summary):
+            captured["branches"] = branch_results
+            captured["summary"] = summary
+
+        with patch.object(
+            svc, "read_tree_file_unmodified", return_value=object()
+        ), patch.object(
+            svc, "_parse_gene_trees", return_value=[object()] * 12
+        ), patch.object(
+            svc,
+            "_count_topologies",
+            return_value=(topology_counts, frozenset({"A", "B", "C", "D"})),
+        ), patch.object(
+            svc, "_output_text", side_effect=capture_output
+        ):
+            svc.run()
+
+        branch = captured["branches"][0]
+        assert branch["significant"] is True
+        assert branch["hybrid_score"] == pytest.approx(1.0)
+        assert captured["summary"]["n_reticulations"] == 1
+
 
 class TestSupportThreshold:
     def test_support_threshold(self):
@@ -538,9 +752,6 @@ class TestSupportThreshold:
 
     def test_support_threshold_with_supported_trees(self, tmp_path):
         """Test with gene trees that have support values."""
-        from Bio import Phylo
-        from io import StringIO
-
         sp_file = tmp_path / "species.tre"
         sp_file.write_text("((a,b),(c,d));")
 
@@ -678,6 +889,23 @@ class TestTextOutput:
         ])
         assert printed == [((expected,), {})]
 
+    def test_output_text_allows_closed_output_pipe(self, monkeypatch):
+        svc = _make_svc()
+        summary = {
+            "n_branches": 0,
+            "n_gene_trees": 0,
+            "support_threshold": None,
+            "n_reticulations": 0,
+            "alpha": 0.05,
+        }
+
+        monkeypatch.setattr(
+            "builtins.print",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(BrokenPipeError),
+        )
+
+        svc._output_text([], summary)
+
 
 class TestJsonOutput:
     def test_json_output(self, capsys):
@@ -713,6 +941,18 @@ class TestPlotCreated:
         output = str(tmp_path / "test_hybrid.png")
         svc = _make_svc(plot_output=output)
         svc.run()
+        assert os.path.exists(output)
+        assert os.path.getsize(output) > 0
+
+    def test_cladogram_plot_created(self, tmp_path):
+        output = str(tmp_path / "test_hybrid_cladogram.png")
+        args = _make_args(plot_output=output)
+        args.cladogram = True
+        from phykit.services.tree.hybridization import Hybridization
+
+        svc = Hybridization(args)
+        svc.run()
+
         assert os.path.exists(output)
         assert os.path.getsize(output) > 0
 

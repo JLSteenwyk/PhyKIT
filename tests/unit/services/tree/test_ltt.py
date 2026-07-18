@@ -122,6 +122,25 @@ class TestGammaStat:
 
         assert [tip.name for tip in tips] == ["A", "B", "C", "D", "E", "F"]
 
+    def test_terminal_clades_falls_back_to_tree_api(self):
+        tips = [object(), object(), object()]
+
+        class GenericTree:
+            def get_terminals(self):
+                return iter(tips)
+
+        assert LTT._terminal_clades(GenericTree()) == tips
+
+    def test_terminal_clades_fast_rejects_nonstandard_tree_objects(self):
+        class MissingRoot:
+            pass
+
+        class MissingChildClades:
+            root = type("Root", (), {"clades": [object()]})()
+
+        assert LTT._terminal_clades_fast(MissingRoot()) is None
+        assert LTT._terminal_clades_fast(MissingChildClades()) is None
+
     def test_balanced_tree_matches_r(self):
         """R: gammaStat(balanced_8) = -1.414214"""
         tree = Phylo.read(
@@ -284,6 +303,57 @@ class TestGammaStat:
             "D": 11.0,
         }
 
+    def test_depths_from_root_falls_back_to_tree_depths(self):
+        root = object()
+        tip = object()
+
+        class GenericTree:
+            root_reads = 0
+
+            @property
+            def root(self):
+                self.root_reads += 1
+                if self.root_reads == 1:
+                    raise AttributeError
+                return root
+
+            def depths(self):
+                return {root: 2.5, tip: 4.0}
+
+        tree = GenericTree()
+
+        assert LTT._depths_from_root(tree) == (root, {root: 2.5, tip: 4.0}, 2.5)
+
+    def test_depths_from_root_returns_none_when_fallback_is_unavailable(self):
+        class GenericTree:
+            @property
+            def root(self):
+                raise AttributeError
+
+            def depths(self):
+                raise AttributeError
+
+        assert LTT._depths_from_root(GenericTree()) is None
+
+    def test_depths_from_root_recovers_from_direct_type_error(self):
+        root = type("Root", (), {})()
+        child = type("Child", (), {"clades": [], "branch_length": "invalid"})()
+        root.clades = [child]
+
+        class GenericTree:
+            @property
+            def root(self):
+                return root
+
+            def depths(self):
+                return {root: 0.0, child: 1.0}
+
+        assert LTT._depths_from_root(GenericTree()) == (
+            root,
+            {root: 0.0, child: 1.0},
+            0.0,
+        )
+
     def test_internal_depths_from_root_handles_mixed_child_counts(self, monkeypatch):
         tree = Phylo.read(
             StringIO("(A:1,(B:1,C:1):2,(D:1,E:1,F:1):3);"),
@@ -309,6 +379,38 @@ class TestGammaStat:
 
         assert with_root == pytest.approx([0.0, 2.0, 3.0])
         assert without_root == pytest.approx([2.0, 3.0])
+
+    def test_internal_depths_rejects_missing_or_invalid_context(self):
+        assert LTT._internal_depths_from_root(object(), None, include_root=True) is None
+        assert (
+            LTT._internal_depths_from_root(
+                object(),
+                (object(), {}, 0.0),
+                include_root=True,
+            )
+            is None
+        )
+
+    def test_internal_depths_rejects_incomplete_depth_mapping(self):
+        tree = Phylo.read(StringIO("((A:1,B:1):1,C:2);"), "newick")
+        depth_data = (tree.root, {tree.root: 0.0}, 0.0)
+
+        assert (
+            LTT._internal_depths_from_root(tree, depth_data, include_root=True)
+            is None
+        )
+
+    def test_gamma_distance_fallback_matches_direct_depths(self):
+        newick = "(((A:1,B:1):1,(C:1,D:1):1):1,E:3);"
+        expected = LTT._compute_gamma(Phylo.read(StringIO(newick), "newick"))
+        tree = Phylo.read(StringIO(newick), "newick")
+        tips = list(tree.get_terminals())
+
+        observed = LTT._compute_gamma(tree, tips=tips, depth_data=None)
+
+        assert observed[0] == pytest.approx(expected[0])
+        assert observed[1] == pytest.approx(expected[1])
+        assert observed[2:] == expected[2:]
 
     def test_gamma_uses_provided_tree_context(self, monkeypatch):
         newick = "(((A:1,B:1):1,(C:1,D:1):1):1,E:3):0.5;"
@@ -355,6 +457,73 @@ class TestGammaStat:
         assert bt == expected_bt
         assert g == expected_g
         assert ltt_data == expected_ltt
+
+    def test_combined_gamma_and_ltt_requires_three_provided_tips(self):
+        tree = Phylo.read(StringIO("(A:1,B:1);"), "newick")
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            LTT._compute_gamma_and_ltt(
+                tree,
+                tips=list(tree.get_terminals()),
+                depth_data=None,
+            )
+
+        assert exc_info.value.messages == [
+            "Tree must have at least 3 tips for gamma statistic."
+        ]
+
+    def test_combined_gamma_and_ltt_distance_fallback_matches_direct_path(self):
+        newick = "(((A:1,B:1):1,(C:1,D:1):1):1,E:3);"
+        expected = LTT._compute_gamma_and_ltt(Phylo.read(StringIO(newick), "newick"))
+        tree = Phylo.read(StringIO(newick), "newick")
+
+        observed = LTT._compute_gamma_and_ltt(
+            tree,
+            tips=list(tree.get_terminals()),
+            depth_data=None,
+        )
+
+        assert observed[0] == pytest.approx(expected[0])
+        assert observed[1] == pytest.approx(expected[1])
+        assert observed[2:] == expected[2:]
+
+    def test_combined_gamma_and_ltt_uses_generic_internal_depth_fallback(
+        self, monkeypatch
+    ):
+        newick = "(((A:1,B:1):1,(C:1,D:1):1):1,E:3);"
+        expected = LTT._compute_gamma_and_ltt(Phylo.read(StringIO(newick), "newick"))
+        tree = Phylo.read(StringIO(newick), "newick")
+        tips = list(tree.get_terminals())
+        depth_data = LTT._depths_from_root(tree)
+        monkeypatch.setattr(
+            LTT,
+            "_internal_depths_from_root",
+            staticmethod(lambda *_args, **_kwargs: None),
+        )
+
+        observed = LTT._compute_gamma_and_ltt(
+            tree,
+            tips=tips,
+            depth_data=depth_data,
+        )
+
+        assert observed[0] == pytest.approx(expected[0])
+        assert observed[1] == pytest.approx(expected[1])
+        assert observed[2:] == expected[2:]
+
+    def test_direct_combined_helper_rejects_nonstandard_and_small_trees(self):
+        class MissingRoot:
+            pass
+
+        class MissingChildClades:
+            root = type("Root", (), {"clades": [object()]})()
+
+        assert LTT._compute_gamma_and_ltt_direct(MissingRoot()) is None
+        assert LTT._compute_gamma_and_ltt_direct(MissingChildClades()) is None
+
+        two_tip_tree = Phylo.read(StringIO("(A:1,B:1);"), "newick")
+        with pytest.raises(PhykitUserError):
+            LTT._compute_gamma_and_ltt_direct(two_tip_tree)
 
     def test_combined_gamma_and_ltt_direct_path_avoids_setup_helpers(
         self, monkeypatch
@@ -492,6 +661,25 @@ class TestLTTPlot:
         assert os.path.exists(plot_path)
         assert os.path.getsize(plot_path) > 0
 
+    def test_plot_supports_custom_title_and_gamma_without_p_value(self, tmp_path):
+        plot_path = tmp_path / "ltt-title.png"
+        instance = LTT(
+            Namespace(
+                tree="dummy.tre",
+                title="Custom LTT",
+            )
+        )
+
+        instance._plot_ltt(
+            [(0.0, 2), (1.0, 3)],
+            str(plot_path),
+            gamma=0.5,
+            p_value=None,
+        )
+
+        assert plot_path.exists()
+        assert plot_path.stat().st_size > 0
+
 
 class TestProcessArgs:
     def test_defaults(self):
@@ -553,6 +741,7 @@ class TestRun:
         gamma_val = float(parts[0])
         p_val = float(parts[1])
         assert abs(gamma_val - (-1.4142)) < 1e-2
+        assert 0.0 <= p_val <= 1.0
 
     def test_verbose_output(self, capsys):
         args = Namespace(
@@ -590,6 +779,12 @@ class TestRun:
             "  0.000000\t2\n"
             "  0.500000\t3"
         )
+
+    def test_output_text_handles_broken_pipe(self, monkeypatch):
+        svc = LTT(Namespace(tree=BALANCED_TREE, verbose=False))
+        monkeypatch.setattr("builtins.print", Mock(side_effect=BrokenPipeError))
+
+        svc._output_text(0.5, 0.25, [], [], [])
 
     def test_json_output(self, capsys):
         args = Namespace(

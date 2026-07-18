@@ -108,6 +108,14 @@ def _fail_column_stack(*_args, **_kwargs):
     raise AssertionError("batched circular segments should be preallocated")
 
 
+class _PlotOnlyAxes:
+    def __init__(self):
+        self.plot_calls = []
+
+    def plot(self, *args, **kwargs):
+        self.plot_calls.append((args, kwargs))
+
+
 # Reusable simple tree: ((A:1,B:1):1,(C:1,D:1):1,(E:1,F:1):1);
 NEWICK_6 = "((A:1,B:1):1,(C:1,D:1):1,(E:1,F:1):1);"
 
@@ -181,6 +189,54 @@ class TestTipAngles:
         for clade_id, expected_coords in expected.items():
             for key, expected_value in expected_coords.items():
                 assert observed[clade_id][key] == pytest.approx(expected_value)
+
+    def test_legacy_tree_coordinate_fallback_matches_direct_layout(self):
+        source_tree = _make_tree("((A:1,B:1):1,C:2);")
+        parent_map = _build_parent_map(source_tree)
+        node_x = _build_node_x_phylogram(source_tree)
+        expected = compute_circular_coords(source_tree, node_x, parent_map)
+
+        class LegacyTree:
+            def __init__(self):
+                self.root_reads = 0
+
+            @property
+            def root(self):
+                self.root_reads += 1
+                if self.root_reads == 1:
+                    return object()
+                return source_tree.root
+
+            @staticmethod
+            def get_terminals():
+                return source_tree.get_terminals()
+
+            @staticmethod
+            def find_clades(order):
+                return source_tree.find_clades(order=order)
+
+        observed = compute_circular_coords(LegacyTree(), node_x, parent_map)
+
+        assert set(observed) == set(expected)
+        for clade_id, expected_coords in expected.items():
+            for key, expected_value in expected_coords.items():
+                assert observed[clade_id][key] == pytest.approx(expected_value)
+
+    def test_invalid_precomputed_clades_fall_back_to_direct_layout(self):
+        tree = _make_tree("((A:1,B:1):1,C:2);")
+        parent_map = _build_parent_map(tree)
+        node_x = _build_node_x_phylogram(tree)
+        expected = compute_circular_coords(tree, node_x, parent_map)
+
+        observed = compute_circular_coords(
+            tree,
+            node_x,
+            parent_map,
+            preorder_clades=list(tree.find_clades(order="preorder")),
+            terminal_clades=[],
+        )
+
+        assert observed == expected
 
 
 class TestInternalNodeAngles:
@@ -423,6 +479,38 @@ class TestDrawBranches:
 
         assert ax.plot_calls == len(parent_map) + internal_branch_count
 
+    def test_draw_branches_supports_legacy_tree_and_plot_only_axes(self):
+        source_tree = _make_tree("((A:1,B:1):1,C:1);")
+        parent_map = _build_parent_map(source_tree)
+        node_x = _build_node_x_phylogram(source_tree)
+        coords = compute_circular_coords(source_tree, node_x, parent_map)
+        legacy_root = object()
+        parent_map[id(source_tree.root)] = legacy_root
+        coords[id(legacy_root)] = {
+            "x": 0.0,
+            "y": 0.0,
+            "angle": 0.0,
+            "radius": 0.0,
+        }
+
+        class LegacyTree:
+            root = legacy_root
+
+            @staticmethod
+            def find_clades(order):
+                assert order == "preorder"
+                return source_tree.find_clades(order=order)
+
+        ax = _PlotOnlyAxes()
+        draw_circular_branches(ax, LegacyTree(), coords, parent_map)
+
+        clade_count = len(list(source_tree.find_clades()))
+        internal_count = len(source_tree.get_nonterminals())
+        assert len(ax.plot_calls) == clade_count + internal_count
+        root_segment = ax.plot_calls[0][0]
+        assert root_segment[0] == [0.0, 0.0]
+        assert root_segment[1] == [0.0, 0.0]
+
     def test_draw_tip_labels_no_error(self):
         tree = _make_tree(NEWICK_6)
         parent_map = _build_parent_map(tree)
@@ -567,6 +655,24 @@ class TestDrawBranches:
         assert len(line_collections[0].get_segments()) == 2
         plt.close(fig)
 
+    def test_draw_colored_arcs_supports_plot_only_axes_and_empty_input(self):
+        ax = _PlotOnlyAxes()
+        draw_circular_colored_arcs(ax, [])
+        assert ax.plot_calls == []
+
+        draw_circular_colored_arcs(
+            ax,
+            [
+                (0.0, 0.0, 1.0, 0.0, math.pi / 2, "blue"),
+                (1.0, -1.0, 2.0, 0.0, 3.0 * math.pi / 2, "red"),
+            ],
+            lw=2.0,
+        )
+
+        assert len(ax.plot_calls) == 2
+        assert [call[1]["color"] for call in ax.plot_calls] == ["blue", "red"]
+        assert all(call[1]["linewidth"] == 2.0 for call in ax.plot_calls)
+
     def test_draw_scalar_arcs_batches_real_axes(self, monkeypatch):
         import matplotlib.axes
         from matplotlib.collections import LineCollection
@@ -604,6 +710,25 @@ class TestDrawBranches:
         assert len(line_collections[0].get_segments()) == 2
         assert list(line_collections[0].get_array()) == [0.25, 0.75]
         plt.close(fig)
+
+    def test_draw_scalar_arcs_supports_plot_only_axes_and_empty_input(self):
+        from matplotlib.colors import Normalize
+
+        ax = _PlotOnlyAxes()
+        cmap = plt.get_cmap("viridis")
+        norm = Normalize(vmin=0.0, vmax=1.0)
+        draw_circular_scalar_arcs(ax, [], cmap, norm)
+        assert ax.plot_calls == []
+
+        draw_circular_scalar_arcs(
+            ax,
+            [(0.0, 0.0, 1.0, 0.0, math.pi / 2, 0.25)],
+            cmap,
+            norm,
+        )
+
+        assert len(ax.plot_calls) == 1
+        assert ax.plot_calls[0][1]["color"] == cmap(0.25)
 
     def test_draw_gradient_branch_no_error(self):
         import matplotlib.cm as cm
@@ -643,6 +768,33 @@ class TestDrawBranches:
 
         assert len(line_collections) == 1
         plt.close(fig)
+
+    def test_draw_gradient_branch_supports_plot_only_axes_and_constant_range(self):
+        colors = []
+
+        def cmap(value):
+            colors.append(value)
+            return (value, value, value, 1.0)
+
+        ax = _PlotOnlyAxes()
+        draw_circular_gradient_branch(
+            ax,
+            {"angle": 0.0, "radius": 1.0},
+            {"angle": 0.0, "radius": 3.0},
+            cmap,
+            2.0,
+            2.0,
+            1.0,
+            4.0,
+            lw=2.5,
+        )
+
+        assert len(ax.plot_calls) == 30
+        assert len(colors) == 30
+        assert colors[0] == 0.0
+        assert colors[-1] == 1.0
+        assert ax.plot_calls[0][0][0][0] == pytest.approx(1.0)
+        assert ax.plot_calls[-1][0][0][1] == pytest.approx(3.0)
 
     def test_draw_gradient_branches_batches_all_branches_real_axes(self, monkeypatch):
         import matplotlib.axes
@@ -688,6 +840,35 @@ class TestDrawBranches:
         assert len(line_collections[0].get_segments()) == 60
         plt.close(fig)
 
+    def test_draw_gradient_branches_supports_plot_only_axes_and_empty_input(self):
+        ax = _PlotOnlyAxes()
+        cmap = lambda value: (value, value, value, 1.0)
+        draw_circular_gradient_branches(ax, [], cmap, 0.0, 1.0)
+        assert ax.plot_calls == []
+
+        draw_circular_gradient_branches(
+            ax,
+            [
+                (
+                    {"angle": 0.0, "radius": 0.0},
+                    {"angle": 0.0, "radius": 1.0},
+                    -1.0,
+                    2.0,
+                ),
+                (
+                    {"angle": math.pi / 2, "radius": 1.0},
+                    {"angle": math.pi / 2, "radius": 2.0},
+                    0.25,
+                    0.75,
+                ),
+            ],
+            cmap,
+            0.0,
+            1.0,
+        )
+
+        assert len(ax.plot_calls) == 60
+
     def test_draw_multi_segment_branch_no_error(self):
         pc = {"angle": 1.0, "radius": 0.5}
         cc = {"angle": 1.0, "radius": 2.5}
@@ -726,3 +907,19 @@ class TestDrawBranches:
 
         assert len(line_collections) == 1
         plt.close(fig)
+
+    def test_draw_multi_segment_branch_supports_plot_only_axes(self):
+        ax = _PlotOnlyAxes()
+        draw_circular_multi_segment_branch(
+            ax,
+            {"angle": math.pi, "radius": 1.0},
+            {"angle": math.pi, "radius": 3.0},
+            [(0.0, 0.25, "A"), (0.25, 1.0, "B")],
+            {"A": "red", "B": "blue"},
+            lw=3.0,
+        )
+
+        assert len(ax.plot_calls) == 2
+        assert [call[1]["color"] for call in ax.plot_calls] == ["red", "blue"]
+        assert ax.plot_calls[0][0][0] == pytest.approx([-1.0, -1.5])
+        assert ax.plot_calls[1][0][0] == pytest.approx([-1.5, -3.0])

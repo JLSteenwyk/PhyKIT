@@ -48,6 +48,21 @@ def test_parsimony_state_symbols_uses_joined_scan_for_many_dna_rows():
     assert module._parsimony_state_symbols(sequences) == ["A", "C", "G", "T"]
 
 
+def test_parsimony_state_symbols_uses_joined_scan_for_many_extra_states():
+    sequences = {
+        f"taxon_{idx}": ("E" if idx == 0 else "A")
+        for idx in range(module._PARSIMONY_JOINED_STATE_SCAN_MIN_SEQUENCES)
+    }
+
+    assert module._parsimony_state_symbols(sequences) == [
+        "A",
+        "C",
+        "E",
+        "G",
+        "T",
+    ]
+
+
 def test_parsimony_state_symbols_preserves_extra_ascii_states():
     sequences = {
         "A": "ACGTacgt-?NX",
@@ -83,6 +98,22 @@ def test_parsimony_state_symbols_preserves_unicode_fallback():
         "T",
         state_one,
         state_two,
+    ]
+
+
+def test_parsimony_state_symbols_preserves_unicode_for_many_rows():
+    unicode_state = chr(256)
+    sequences = {
+        f"taxon_{idx}": (unicode_state if idx == 0 else "A")
+        for idx in range(module._PARSIMONY_JOINED_STATE_SCAN_MIN_SEQUENCES)
+    }
+
+    assert module._parsimony_state_symbols(sequences) == [
+        "A",
+        "C",
+        "G",
+        "T",
+        unicode_state,
     ]
 
 
@@ -129,6 +160,32 @@ class TestParsimonyScoreInit:
 
 
 class TestFitchAlgorithm:
+    @pytest.mark.parametrize(
+        ("parser_result", "expected_message"),
+        [
+            (ValueError("bad FASTA"), "Could not parse alignment from broken.fa."),
+            ({}, "Alignment file is empty."),
+        ],
+        ids=["parser-error", "empty-alignment"],
+    )
+    def test_parse_alignment_reports_invalid_input(
+        self, monkeypatch, args, parser_result, expected_message
+    ):
+        if isinstance(parser_result, Exception):
+            def parse_result(_path):
+                raise parser_result
+        else:
+            def parse_result(_path):
+                return parser_result
+
+        monkeypatch.setattr(module, "read_fasta_first_token_upper", parse_result)
+        ps = ParsimonyScore(args)
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            ps._parse_alignment("broken.fa")
+
+        assert expected_message in exc_info.value.messages
+
     def test_parse_alignment_uses_first_header_token_uppercases_and_keeps_last_duplicate(
         self, tmp_path, args
     ):
@@ -237,6 +294,183 @@ class TestFitchAlgorithm:
 
         assert ps._has_polytomies(binary) is False
         assert ps._has_polytomies(mixed) is True
+
+    def test_tree_traversal_helpers_reject_incompatible_objects(self, args):
+        class MalformedRoot:
+            clades = [object()]
+
+        class MalformedTree:
+            root = MalformedRoot()
+
+        ps = ParsimonyScore(args)
+
+        assert ps._has_polytomies(object()) is None
+        assert ps._has_polytomies(MalformedTree()) is None
+        assert ps._postorder_clades_fast(object()) is None
+        assert ps._postorder_clades_fast(MalformedTree()) is None
+        assert not ps._resolve_standard_tree_polytomies(object())
+        assert not ps._resolve_standard_tree_polytomies(MalformedTree())
+
+    def test_generic_tree_polytomy_resolution_uses_postorder_fallback(self, args):
+        ps = ParsimonyScore(args)
+        tree = Phylo.read(StringIO("(A:1,B:1,C:1,D:1);"), "newick")
+
+        class GenericTree:
+            def find_clades(self, order):
+                return tree.find_clades(order=order)
+
+        ps._resolve_polytomies(GenericTree())
+
+        assert all(len(clade.clades) <= 2 for clade in tree.find_clades())
+
+    def test_terminal_sequence_check_supports_generic_tree_fallback(self, args):
+        ps = ParsimonyScore(args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,C:2);"), "newick")
+
+        class GenericTree:
+            def find_clades(self, order):
+                return tree.find_clades(order=order)
+
+        assert ps._tree_terminals_have_sequences(
+            GenericTree(),
+            {"A": "A", "B": "A", "C": "A"},
+        )
+        assert not ps._tree_terminals_have_sequences(
+            GenericTree(),
+            {"A": "A", "B": "A"},
+        )
+
+    def test_terminal_sequence_check_recovers_from_malformed_direct_tree(
+        self, args
+    ):
+        ps = ParsimonyScore(args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,C:2);"), "newick")
+
+        class MalformedRoot:
+            clades = [object()]
+
+        class MalformedTree:
+            root = MalformedRoot()
+
+            def find_clades(self, order):
+                return tree.find_clades(order=order)
+
+        assert ps._tree_terminals_have_sequences(
+            MalformedTree(),
+            {"A": "A", "B": "A", "C": "A"},
+        )
+        assert not ps._tree_terminals_have_sequences(
+            MalformedTree(),
+            {"A": "A", "B": "A"},
+        )
+
+    def test_fitch_algorithms_support_generic_postorder_traversal(self, args):
+        ps = ParsimonyScore(args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+
+        class GenericTree:
+            def find_clades(self, order):
+                return tree.find_clades(order=order)
+
+        generic_tree = GenericTree()
+        short_sequences = {
+            "A": "AA",
+            "B": "AC",
+            "C": "CC",
+            "D": "CA",
+        }
+        wide_sequences = {
+            taxon: sequence * 9
+            for taxon, sequence in short_sequences.items()
+        }
+
+        assert ps._fitch_parsimony_small(
+            generic_tree, short_sequences, 2
+        ) == ps._fitch_parsimony_small(tree, short_sequences, 2)
+        assert ps._fitch_parsimony_sets(
+            generic_tree, short_sequences, 2
+        ) == ps._fitch_parsimony_sets(tree, short_sequences, 2)
+        assert ps._fitch_parsimony(
+            generic_tree, wide_sequences, 18
+        ) == ps._fitch_parsimony(tree, wide_sequences, 18)
+
+    def test_fitch_algorithms_skip_unresolved_polytomies(self, args):
+        ps = ParsimonyScore(args)
+        tree = Phylo.read(StringIO("(A:1,B:1,C:1);"), "newick")
+        short_sequences = {"A": "A", "B": "C", "C": "G"}
+        wide_sequences = {
+            taxon: sequence * 17
+            for taxon, sequence in short_sequences.items()
+        }
+
+        assert ps._fitch_parsimony_small(tree, short_sequences, 1) == (0, [0])
+        assert ps._fitch_parsimony_sets(tree, short_sequences, 1) == (0, [0])
+        assert ps._fitch_parsimony(tree, wide_sequences, 17) == (0, [0] * 17)
+
+    def test_fitch_dispatches_high_cardinality_states_to_set_fallback(self, args):
+        def build_subtree(names):
+            if len(names) == 1:
+                return f"{names[0]}:1"
+            midpoint = len(names) // 2
+            return (
+                f"({build_subtree(names[:midpoint])},"
+                f"{build_subtree(names[midpoint:])}):1"
+            )
+
+        ps = ParsimonyScore(args)
+        taxa = [f"T{idx}" for idx in range(70)]
+        tree = Phylo.read(StringIO(f"{build_subtree(taxa)};"), "newick")
+        states = [chr(0x100 + idx) for idx in range(len(taxa))]
+        short_sequences = {
+            taxon: states[idx]
+            for idx, taxon in enumerate(taxa)
+        }
+        wide_sequences = {
+            taxon: states[idx] * 17
+            for idx, taxon in enumerate(taxa)
+        }
+
+        assert ps._fitch_parsimony(
+            tree, short_sequences, 1
+        ) == ps._fitch_parsimony_sets(tree, short_sequences, 1)
+        assert ps._fitch_parsimony(
+            tree, wide_sequences, 17
+        ) == ps._fitch_parsimony_sets(tree, wide_sequences, 17)
+
+    def test_vectorized_fitch_handles_unicode_state_lookup_fallback(self, args):
+        ps = ParsimonyScore(args)
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        state_one = chr(256)
+        state_two = chr(257)
+        sequences = {
+            "A": state_one + "A" * 16,
+            "B": state_two + "A" * 16,
+            "C": state_one + "C" * 16,
+            "D": state_two + "C" * 16,
+        }
+
+        assert ps._fitch_parsimony(
+            tree, sequences, 17
+        ) == ps._fitch_parsimony_sets(tree, sequences, 17)
+
+    def test_empty_sequence_collection_is_not_identical(self):
+        assert not ParsimonyScore._sequences_are_identical({})
+
+    def test_run_rejects_fewer_than_three_shared_taxa(self, tmp_path):
+        tree_file = tmp_path / "tree.tre"
+        tree_file.write_text("((A:1,B:1):1,C:2);\n")
+        alignment_file = tmp_path / "alignment.fa"
+        alignment_file.write_text(">A\nAC\n>B\nAC\n")
+        ps = ParsimonyScore(
+            Namespace(tree=str(tree_file), alignment=str(alignment_file))
+        )
+
+        with pytest.raises(PhykitUserError) as exc_info:
+            ps.run()
+
+        assert "Only 2 shared taxa between tree and alignment." in (
+            exc_info.value.messages
+        )
 
     def test_identical_sequences_score_zero(self, tmp_path):
         """All identical sequences should produce score 0."""
