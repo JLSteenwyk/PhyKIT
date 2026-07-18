@@ -109,6 +109,25 @@ The exact result has insufficient cross-version headroom for a 92% hard gate.
 CI therefore enforces 90% on the unit-only report and 91.5% on the merged
 Codecov project report. The local combined target also fails below 91.5%.
 
+## Codecov-accounting checkpoint
+
+- Date: 2026-07-17
+- Commit: `980f685b`
+- Unit tests: 6,126 passed, 869 deselected
+- Integration tests: 861 passed, 6,134 deselected
+- Statements: 45,582 of 48,110 covered (94.75%)
+- Branches: 15,305 of 17,244 covered (88.76%)
+- Partial branches: 1,531
+- Combined statement-plus-branch coverage: 93.16492%
+
+The additional batches target partially covered lines because Codecov treats
+those lines as uncovered in its merged report. They exercise plotting and
+color annotations, numerical fallbacks, malformed input handling, generic
+tree traversal, scalar simulation, and user-facing validation behavior. Since
+the baseline, the suite covers 2,826 additional statements and 1,550
+additional branches, increasing local combined coverage by 6.69 percentage
+points. All production modules remain at or above 80% local combined coverage.
+
 ## Reproduction
 
 Run the complete unit and integration suites and create an aggregate report:
