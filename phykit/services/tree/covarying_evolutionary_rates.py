@@ -1,6 +1,7 @@
 import math
 
 from .base import Tree
+from ...errors import PhykitUserError
 
 
 def print_json(*args, **kwargs):
@@ -227,8 +228,12 @@ class CovaryingEvolutionaryRates(Tree):
         tree_one_tips = self.get_tip_names_from_tree(tree_one)
         tree_ref_tips = self.get_tip_names_from_tree(tree_ref)
 
-        # get shared tips between the two trees
-        shared_tree_tips = self.shared_tips(tree_zero_tips, tree_one_tips)
+        # Restrict every tree to the same taxa before matching branches.
+        shared_tree_tips = self._shared_tips_across_trees(
+            tree_zero_tips,
+            tree_one_tips,
+            tree_ref_tips,
+        )
 
         # find differences between tree tips and shared tips
         # to determine what tips to prune
@@ -244,6 +249,8 @@ class CovaryingEvolutionaryRates(Tree):
         tree_zero = self._copy_and_prune_if_needed(tree_zero, tree_zero_tips_to_prune)
         tree_one = self._copy_and_prune_if_needed(tree_one, tree_one_tips_to_prune)
         tree_ref = self._copy_and_prune_if_needed(tree_ref, tree_ref_tips_to_prune)
+
+        self._validate_matching_topologies(tree_zero, tree_one, tree_ref)
 
         # obtain corrected branch lengths where branch lengths
         # are corrected by the species tree branch length
@@ -269,6 +276,11 @@ class CovaryingEvolutionaryRates(Tree):
             tree_one_corr_branch_lengths, outlier_indices
         )
         tip_names = self.remove_outliers_based_on_indices(tip_names, outlier_indices)
+
+        self._validate_rate_vectors(
+            tree_zero_corr_branch_lengths,
+            tree_one_corr_branch_lengths,
+        )
 
         # standardize values for final correction
         tree_zero_corr_branch_lengths = _zscore(tree_zero_corr_branch_lengths)
@@ -350,6 +362,23 @@ class CovaryingEvolutionaryRates(Tree):
         )
 
     @staticmethod
+    def _shared_tips_across_trees(tree_zero_tips, tree_one_tips, tree_ref_tips):
+        shared_tip_set = set(tree_one_tips) & set(tree_ref_tips)
+        shared_tree_tips = [
+            tip for tip in tree_zero_tips if tip in shared_tip_set
+        ]
+        if len(shared_tree_tips) < 2:
+            raise PhykitUserError(
+                [
+                    f"Only {len(shared_tree_tips)} taxa are shared by both gene "
+                    "trees and the reference tree.",
+                    "At least 2 shared taxa are required to calculate a correlation.",
+                ],
+                code=2,
+            )
+        return shared_tree_tips
+
+    @staticmethod
     def _tips_to_prune_for_shared(
         tree_zero_tips, tree_one_tips, tree_ref_tips, shared_tree_tips
     ):
@@ -364,6 +393,68 @@ class CovaryingEvolutionaryRates(Tree):
         if not tips:
             return tree
         return self.prune_tips(self._fast_copy(tree), tips)
+
+    @staticmethod
+    def _rooted_topology_signature(tree):
+        reference_data = (
+            CovaryingEvolutionaryRates._reference_tipsets_and_order_direct(tree)
+        )
+        if reference_data is None:
+            return None
+
+        sp_tips_by_id, _, _, nonterminals = reference_data
+        root = tree.root
+        return frozenset(
+            sp_tips_by_id[id(clade)]
+            for clade in nonterminals
+            if clade is not root
+        )
+
+    def _validate_matching_topologies(self, tree_zero, tree_one, tree_ref):
+        signatures = [
+            self._rooted_topology_signature(tree)
+            for tree in (tree_zero, tree_one, tree_ref)
+        ]
+        if any(signature is None for signature in signatures):
+            return
+        if signatures[0] == signatures[1] == signatures[2]:
+            return
+
+        raise PhykitUserError(
+            [
+                "Input trees differ in rooted topology after pruning to shared taxa.",
+                "Infer gene-tree branch lengths on the reference topology and root all "
+                "three trees consistently before calculating covariation.",
+            ],
+            code=2,
+        )
+
+    @staticmethod
+    def _validate_rate_vectors(tree_zero_rates, tree_one_rates):
+        if len(tree_zero_rates) != len(tree_one_rates):
+            raise PhykitUserError(
+                ["The matched branch-rate vectors have different lengths."],
+                code=2,
+            )
+        if len(tree_zero_rates) < 2:
+            raise PhykitUserError(
+                [
+                    "Fewer than 2 comparable branches remain after filtering.",
+                    "Check branch lengths, taxon overlap, and the outlier threshold.",
+                ],
+                code=2,
+            )
+        if (
+            min(tree_zero_rates) == max(tree_zero_rates)
+            or min(tree_one_rates) == max(tree_one_rates)
+        ):
+            raise PhykitUserError(
+                [
+                    "Pearson correlation is undefined because one gene has no "
+                    "variation in relative branch rates."
+                ],
+                code=2,
+            )
 
     def _plot_covarying_rates_scatter(self, x_vals, y_vals, corr):
         try:
@@ -527,8 +618,16 @@ class CovaryingEvolutionaryRates(Tree):
                 newtree = t0.common_ancestor(terminal_name)
                 newtree1 = t1.common_ancestor(terminal_name)
 
-                bl0 = round(newtree.branch_length / terminal_bl, 6) if newtree.branch_length else None
-                bl1 = round(newtree1.branch_length / terminal_bl, 6) if newtree1.branch_length else None
+                bl0 = (
+                    newtree.branch_length / terminal_bl
+                    if newtree.branch_length is not None
+                    else None
+                )
+                bl1 = (
+                    newtree1.branch_length / terminal_bl
+                    if newtree1.branch_length is not None
+                    else None
+                )
 
                 if bl0 is not None and bl1 is not None:
                     results.append((bl0, bl1, sp_tips))
@@ -550,9 +649,13 @@ class CovaryingEvolutionaryRates(Tree):
                 newtree = t0.common_ancestor(sp_tips)
                 newtree1 = t1.common_ancestor(sp_tips)
 
-                if newtree.branch_length and newtree1.branch_length and nonterminal_bl:
-                    bl0 = round(newtree.branch_length / nonterminal_bl, 6)
-                    bl1 = round(newtree1.branch_length / nonterminal_bl, 6)
+                if (
+                    newtree.branch_length is not None
+                    and newtree1.branch_length is not None
+                    and nonterminal_bl
+                ):
+                    bl0 = newtree.branch_length / nonterminal_bl
+                    bl1 = newtree1.branch_length / nonterminal_bl
                     results.append((bl0, bl1, sp_tips))
             except Exception as err:
                 if isinstance(err, (SystemExit, KeyboardInterrupt)):
@@ -563,13 +666,17 @@ class CovaryingEvolutionaryRates(Tree):
     def _process_terminals_sequential(self, terminals, t0, t1, l0, l1, tip_names):
         for i in terminals:
             sp_tips = self.get_tip_names_from_tree(i)
-            tip_names.append(sp_tips)
             try:
                 newtree = t0.common_ancestor(i.name)
                 newtree1 = t1.common_ancestor(i.name)
-                if newtree.branch_length and i.branch_length:
-                    l0.append(round(newtree.branch_length / i.branch_length, 6))
-                    l1.append(round(newtree1.branch_length / i.branch_length, 6))
+                if (
+                    newtree.branch_length is not None
+                    and newtree1.branch_length is not None
+                    and i.branch_length
+                ):
+                    l0.append(newtree.branch_length / i.branch_length)
+                    l1.append(newtree1.branch_length / i.branch_length)
+                    tip_names.append(sp_tips)
             except Exception as err:
                 if isinstance(err, (SystemExit, KeyboardInterrupt)):
                     raise
@@ -581,9 +688,13 @@ class CovaryingEvolutionaryRates(Tree):
             try:
                 newtree = t0.common_ancestor(sp_tips)
                 newtree1 = t1.common_ancestor(sp_tips)
-                if newtree.branch_length and newtree1.branch_length and i.branch_length:
-                    l0.append(round(newtree.branch_length / i.branch_length, 6))
-                    l1.append(round(newtree1.branch_length / i.branch_length, 6))
+                if (
+                    newtree.branch_length is not None
+                    and newtree1.branch_length is not None
+                    and i.branch_length
+                ):
+                    l0.append(newtree.branch_length / i.branch_length)
+                    l1.append(newtree1.branch_length / i.branch_length)
                     tip_names.append(sp_tips)
             except Exception as err:
                 if isinstance(err, (SystemExit, KeyboardInterrupt)):
@@ -738,9 +849,10 @@ class CovaryingEvolutionaryRates(Tree):
         l1_append = l1.append
         tip_names_append = tip_names.append
 
+        root = tree.root
         for clade_group in (terminals, nonterminals):
             for clade in clade_group:
-                if clade.branch_length:
+                if clade is not root and clade.branch_length:
                     l0_append(1.0)
                     l1_append(1.0)
                     tip_names_append(list(sp_tip_names_by_id[id(clade)]))
@@ -800,6 +912,8 @@ class CovaryingEvolutionaryRates(Tree):
 
         for clade_group in (terminals, nonterminals):
             for clade in clade_group:
+                if clade is sp.root:
+                    continue
                 tips = sp_tips_by_id.get(id(clade))
                 if not tips:
                     return None
@@ -809,9 +923,9 @@ class CovaryingEvolutionaryRates(Tree):
                 sp_bl = clade.branch_length
                 bl0 = t0_lengths[tips]
                 bl1 = t1_lengths[tips]
-                if bl0 and bl1 and sp_bl:
-                    l0.append(round(bl0 / sp_bl, 6))
-                    l1.append(round(bl1 / sp_bl, 6))
+                if bl0 is not None and bl1 is not None and sp_bl:
+                    l0.append(bl0 / sp_bl)
+                    l1.append(bl1 / sp_bl)
                     tip_names.append(list(sp_tip_names_by_id[id(clade)]))
 
         return l0, l1, tip_names
@@ -830,7 +944,9 @@ class CovaryingEvolutionaryRates(Tree):
 
         # Collect terminal data
         terminals = sp.get_terminals()
-        nonterminals = sp.get_nonterminals()
+        nonterminals = [
+            clade for clade in sp.get_nonterminals() if clade is not sp.root
+        ]
 
         # Process sequentially if small/medium fallback work would be dominated
         # by process startup and tree-pickling overhead.

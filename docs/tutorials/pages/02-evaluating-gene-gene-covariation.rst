@@ -39,10 +39,12 @@ identify genes that have shared functions, are coexpressed, and/or are part of t
 Furthermore, gene-gene covariation serves as a powerful evolution-based genetic screen for predicting gene function
 (`Brunette et al. 2019 <https://www.pnas.org/content/116/39/19593>`_).
 
-PhyKIT implements a mirror-tree-based method to identify genes that covary with one another. In principle, PhyKIT
-determines if two trees have similar branch length properties throughout the phylogeny. Thus, each input phylogeny
-must have the same topology. However, there are other steps that must be done prior to evaluating covariation
-between two genes. 
+PhyKIT implements the CovER branch-ratio method to identify genes that covary with one another. For every branch,
+the gene-tree length is divided by the corresponding reference-tree length, and the resulting branch-rate vectors
+are correlated. Thus, the two gene trees and reference tree must have the same rooted topology after all three are
+pruned to their shared taxa. Gene trees should be inferred with the reference topology constrained rather than
+estimated as unconstrained topologies. See the :doc:`command reference
+</reference/commands/covarying_evolutionary_rates>` for filtering and statistical details.
 
 To provide a comprehensive tutorial, we will start with the sequence alignments for three genes and their constrained 
 tree topologies that match the putative species tree from `Shen et al. 2020

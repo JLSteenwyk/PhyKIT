@@ -6,6 +6,21 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.4.1**:
+
+Covarying evolutionary rates correctness and validation:
+
+* Corrected ``covarying_evolutionary_rates`` to prune both gene trees and the
+  reference tree to their maximally shared taxa before matching branches.
+* Restored rooted-topology validation so incongruent trees fail with an
+  actionable error instead of silently correlating an incomplete branch set.
+* Retained valid zero-length gene branches, excluded root stems, preserved
+  branch/rate alignment after fallback errors, and removed premature rounding
+  before correlation.
+* Added independent numerical validation against R ``ape`` and
+  ``stats::cor.test`` and clarified how the CovER branch-ratio statistic differs
+  from residual-based ERC2.0 and RERconverge results.
+
 **2.4.0**:
 
 TreeShrink-inspired spurious-sequence detection:

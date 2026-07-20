@@ -4050,23 +4050,24 @@ class Phykit:
                 Genes that have covarying evolutionary histories tend to have 
                 similar functions and expression levels.
 
-                Input two phylogenies and calculate the correlation among relative 
-                evolutionary rates between the two phylogenies. The two input trees 
-                do not have to have the same taxa. This function will first prune both
-                trees to have the same tips. To transform branch lengths into relative
-                rates, PhyKIT uses the putative species tree's branch lengths, which is
-                inputted by the user. As recommended by the original method developers,
-                outlier branche lengths are removed. Outlier branches have a relative 
-                evolutionary rate greater than five.
+                Input two gene phylogenies and calculate the Pearson correlation among
+                their relative evolutionary rates. PhyKIT first prunes both gene trees
+                and the reference tree to their shared taxa. The three rooted trees must
+                then have the same topology. Each gene-tree branch length is divided by
+                the corresponding reference-tree branch length. Branch pairs are removed
+                if either relative rate is greater than five, and the remaining rates are
+                Z-transformed before correlation.
 
                 PhyKIT reports two tab delimited values:
                 col1: correlation coefficient
                 col2: p-value
 
-                Method is empirically evaluated by Clark et al., Genome Research
-                (2012), doi: 10.1101/gr.132647.111. Normalization method using a 
-                species tree follows Sato et al., Bioinformatics (2005), doi: 
-                10.1093/bioinformatics/bti564. 
+                This CovER calculation is described by Steenwyk et al., Science
+                Advances (2022), doi: 10.1126/sciadv.abn0105, and is based on the
+                mirror-tree principle developed by Sato et al., Bioinformatics (2005),
+                doi: 10.1093/bioinformatics/bti564. ERC2.0 and RERconverge use a
+                different residual-based rate normalization and are not expected to
+                return the same coefficient from the same trees.
 
 
                 Aliases:

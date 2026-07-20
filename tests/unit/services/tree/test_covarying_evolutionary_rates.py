@@ -9,7 +9,6 @@ from io import StringIO
 from unittest.mock import Mock, MagicMock, patch
 from concurrent.futures import Future
 from argparse import Namespace
-import pytest
 import subprocess
 import types
 import sys
@@ -18,6 +17,7 @@ import numpy as np
 from Bio import Phylo
 from Bio.Phylo.BaseTree import TreeMixin
 
+from phykit.errors import PhykitUserError
 from phykit.services.tree.covarying_evolutionary_rates import CovaryingEvolutionaryRates
 import phykit.services.tree.covarying_evolutionary_rates as cer_module
 
@@ -137,6 +137,55 @@ class TestCovaryingEvolutionaryRates(unittest.TestCase):
         self.assertEqual(tree_zero, ["A", "F"])
         self.assertEqual(tree_one, ["D", "G"])
         self.assertEqual(tree_ref, ["E", "H"])
+
+    def test_shared_tips_include_reference_and_preserve_tree_zero_order(self):
+        shared = self.cov_rates._shared_tips_across_trees(
+            ["D", "A", "B", "C"],
+            ["A", "B", "C", "E"],
+            ["C", "A", "F"],
+        )
+
+        self.assertEqual(shared, ["A", "C"])
+
+    def test_shared_tips_require_two_taxa_across_all_trees(self):
+        with self.assertRaises(PhykitUserError):
+            self.cov_rates._shared_tips_across_trees(
+                ["A", "B"],
+                ["A", "B"],
+                ["A", "C"],
+            )
+
+    def test_reference_missing_taxon_is_pruned_from_gene_trees(self):
+        tree_zero = Phylo.read(
+            StringIO("((A:1,X:1):2,(B:1,C:1):2);"), "newick"
+        )
+        tree_one = Phylo.read(
+            StringIO("((A:2,X:2):4,(B:2,C:2):4);"), "newick"
+        )
+        tree_ref = Phylo.read(StringIO("(A:1,(B:1,C:1):2);"), "newick")
+        shared = self.cov_rates._shared_tips_across_trees(
+            self.cov_rates.get_tip_names_from_tree(tree_zero),
+            self.cov_rates.get_tip_names_from_tree(tree_one),
+            self.cov_rates.get_tip_names_from_tree(tree_ref),
+        )
+        tips_to_prune = self.cov_rates._tips_to_prune_for_shared(
+            self.cov_rates.get_tip_names_from_tree(tree_zero),
+            self.cov_rates.get_tip_names_from_tree(tree_one),
+            self.cov_rates.get_tip_names_from_tree(tree_ref),
+            shared,
+        )
+
+        tree_zero = self.cov_rates.prune_tips(tree_zero, tips_to_prune[0])
+        tree_one = self.cov_rates.prune_tips(tree_one, tips_to_prune[1])
+        rates_zero, rates_one, branches = self.cov_rates.correct_branch_lengths(
+            tree_zero,
+            tree_one,
+            tree_ref,
+        )
+
+        a_index = branches.index(["A"])
+        self.assertEqual(rates_zero[a_index], 3.0)
+        self.assertEqual(rates_one[a_index], 6.0)
 
     def test_zscore_matches_scipy_default_formula(self):
         result = cer_module._zscore([1.0, 2.0, 3.0])
@@ -786,10 +835,66 @@ class TestCovaryingEvolutionaryRates(unittest.TestCase):
 
         l0, l1, tip_names = self.cov_rates.correct_branch_lengths(mock_t0, mock_t1, mock_sp)
 
-        # The function appends tip_names before processing, so it will have the tip names but no branch lengths
+        # Branch names and both rate vectors must remain aligned after an error.
         self.assertEqual(len(l0), 0)  # No branch lengths due to exception
         self.assertEqual(len(l1), 0)
-        self.assertEqual(len(tip_names), 1)  # tip_names was appended before exception
+        self.assertEqual(len(tip_names), 0)
+
+    def test_correct_branch_lengths_keeps_zero_gene_branch(self):
+        sp = Phylo.read(StringIO("((A:1,B:1):2,(C:1,D:1):3);"), "newick")
+        t0 = Phylo.read(StringIO("((A:0,B:2):4,(C:2,D:2):6);"), "newick")
+        t1 = Phylo.read(StringIO("((A:3,B:3):6,(C:3,D:3):9);"), "newick")
+
+        l0, l1, tip_names = self.cov_rates.correct_branch_lengths(t0, t1, sp)
+
+        self.assertEqual(l0[0], 0.0)
+        self.assertEqual(l1[0], 3.0)
+        self.assertEqual(tip_names[0], ["A"])
+        self.assertEqual(len(l0), len(l1))
+        self.assertEqual(len(l0), len(tip_names))
+
+    def test_correct_branch_lengths_excludes_root_stem(self):
+        sp = Phylo.read(StringIO("((A:1,B:1):2,(C:1,D:1):3):11;"), "newick")
+        t0 = Phylo.read(StringIO("((A:2,B:2):4,(C:2,D:2):6):22;"), "newick")
+        t1 = Phylo.read(StringIO("((A:3,B:3):6,(C:3,D:3):9):33;"), "newick")
+
+        l0, l1, tip_names = self.cov_rates.correct_branch_lengths(t0, t1, sp)
+
+        self.assertEqual(l0, [2.0] * 6)
+        self.assertEqual(l1, [3.0] * 6)
+        self.assertNotIn(["A", "B", "C", "D"], tip_names)
+
+    def test_matching_topology_validation_rejects_incongruent_tree(self):
+        tree_zero = Phylo.read(
+            StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick"
+        )
+        tree_one = Phylo.read(
+            StringIO("((A:1,C:1):1,(B:1,D:1):1);"), "newick"
+        )
+        tree_ref = Phylo.read(
+            StringIO("((D:1,C:1):1,(B:1,A:1):1);"), "newick"
+        )
+
+        with self.assertRaises(PhykitUserError):
+            self.cov_rates._validate_matching_topologies(
+                tree_zero,
+                tree_one,
+                tree_ref,
+            )
+
+    def test_matching_topology_validation_ignores_child_order(self):
+        tree_zero = Phylo.read(
+            StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick"
+        )
+        tree_one = Phylo.read(
+            StringIO("((D:1,C:1):1,(B:1,A:1):1);"), "newick"
+        )
+
+        self.cov_rates._validate_matching_topologies(
+            tree_zero,
+            tree_one,
+            tree_zero,
+        )
 
     def test_correct_branch_lengths_exact_split_fast_path(self):
         """Exact matching topologies should avoid repeated common_ancestor lookups."""
@@ -1150,7 +1255,7 @@ class TestCovaryingEvolutionaryRates(unittest.TestCase):
         self.cov_rates.read_reference_tree_file_unmodified = Mock(return_value=mock_ref_tree)
 
         self.cov_rates.get_tip_names_from_tree = Mock(side_effect=[
-            ['tip1'], ['tip1'], ['tip1']
+            ['tip1', 'tip2'], ['tip1', 'tip2'], ['tip1', 'tip2']
         ])
 
         self.cov_rates.shared_tips = Mock(return_value=['tip1'])

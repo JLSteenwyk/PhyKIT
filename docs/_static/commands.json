@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "phykit_version": "2.4.0",
+  "phykit_version": "2.4.1",
   "generated_from": [
     "phykit/cli_registry.py",
     "live argparse parsers",

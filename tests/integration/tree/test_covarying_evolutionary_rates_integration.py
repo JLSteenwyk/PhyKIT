@@ -58,16 +58,16 @@ class TestCovaryingEvolutionaryRates(object):
             [
                 f"{-0.333}\t{-1.3686}\traccoon",
                 f"{0.2747}\t{1.7774}\tbear",
-                f"{0.2747}\t{0.0692}\tsea_lion",
-                f"{1.3905}\t{0.597}\tseal",
+                f"{0.2747}\t{0.0691}\tsea_lion",
+                f"{1.3905}\t{0.5971}\tseal",
                 f"{0.2747}\t{-0.2188}\tmonkey",
-                f"{0.2747}\t{0.0692}\tcat",
+                f"{0.2747}\t{0.0691}\tcat",
                 f"{-0.3428}\t{-0.223}\tweasel",
                 f"{-3.1873}\t{-1.5688}\tdog",
-                f"{0.2747}\t{0.0692}\traccoon;bear",
+                f"{0.2747}\t{0.0691}\traccoon;bear",
                 f"{0.2747}\t{1.5686}\tsea_lion;seal;monkey;cat;weasel",
                 f"{0.2747}\t{-1.4737}\tsea_lion;seal",
-                f"{0.2747}\t{0.0692}\tmonkey;cat;weasel",
+                f"{0.2747}\t{0.0691}\tmonkey;cat;weasel",
                 f"{0.2747}\t{0.6333}\tmonkey;cat",
             ]
         )
@@ -130,7 +130,7 @@ class TestCovaryingEvolutionaryRates(object):
             "phykit",
             "covarying_evolutionary_rates",
             f"{here.parent.parent.parent}/sample_files/tree_simple.tre",
-            f"{here.parent.parent.parent}/sample_files/small_Aspergillus_tre_rooted_alt_topology.tree",
+            f"{here.parent.parent.parent}/sample_files/tree_simple_other_topology.tre",
             "-r",
             f"{here.parent.parent.parent}/sample_files/tree_simple_2.tre",
         ]
@@ -163,7 +163,7 @@ class TestCovaryingEvolutionaryRates(object):
         testargs = [
             "phykit",
             "covarying_evolutionary_rates",
-            f"{here.parent.parent.parent}/sample_files/small_Aspergillus_tre_rooted_alt_topology.tree",
+            f"{here.parent.parent.parent}/sample_files/tree_simple_other_topology.tre",
             f"{here.parent.parent.parent}/sample_files/tree_simple_1.tre",
             "-r",
             f"{here.parent.parent.parent}/sample_files/tree_simple_2.tre",
