@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Covarying evolutionary rates &mdash; phykit 2.4.0 documentation</title>
+  <title>Covarying evolutionary rates &mdash; phykit 2.4.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=ae8b8648" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../../_static/flavicon.png"/>
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=4d935f96"></script>
+      <script src="../../_static/documentation_options.js?v=e9ebdb8f"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -306,21 +306,38 @@ validation and scientific limitations are described in the guidance below.</p>
 <p>Determine if two genes have a signature of covariation with one another.
 Genes that have covarying evolutionary histories tend to have
 similar functions and expression levels.</p>
-<p>Input two phylogenies and calculate the correlation among relative
-evolutionary rates between the two phylogenies. The two input trees
-do not have to have the same taxa. This function will first prune both
-trees to have the same tips. To transform branch lengths into relative
-rates, PhyKIT uses the putative species tree's branch lengths, which is
-input by the user. As recommended by the original method developers,
-outlier branch lengths are removed. Outlier branches have a relative
-evolutionary rate greater than five.</p>
+<p>Input two gene phylogenies and calculate the Pearson correlation among
+their relative evolutionary rates. The two gene trees and the reference
+tree may initially contain different taxa. PhyKIT prunes all three trees
+to their shared taxa, after which they must have the same rooted topology.</p>
+<p>For each corresponding terminal and internal branch, PhyKIT calculates
+<code class="docutils literal notranslate"><span class="pre">gene</span> <span class="pre">branch</span> <span class="pre">length</span> <span class="pre">/</span> <span class="pre">reference</span> <span class="pre">branch</span> <span class="pre">length</span></code>. A root stem is not a
+phylogenetic branch and is excluded. Branches with a zero or missing
+reference length are also excluded because their ratio is undefined;
+zero-length gene branches are retained. A branch pair is removed if either
+relative rate is greater than five. The remaining values are Z-transformed,
+and their Pearson correlation coefficient is reported.</p>
 <p>PhyKIT reports two tab delimited values:
 col1: correlation coefficient
 col2: p-value</p>
-<p>Method is empirically evaluated by Clark et al., Genome Research
-(2012), doi: 10.1101/gr.132647.111. Normalization method using a
-species tree follows Sato et al., Bioinformatics (2005), doi:
-10.1093/bioinformatics/bti564.</p>
+<p>This implementation is the CovER procedure described by <a class="reference external" href="https://doi.org/10.1126/sciadv.abn0105">Steenwyk et al.
+(2022)</a>. It is based on the
+mirror-tree principle developed by <a class="reference external" href="https://doi.org/10.1093/bioinformatics/bti564">Sato et al. (2005)</a>, and the biological basis
+of evolutionary rate covariation was evaluated by <a class="reference external" href="https://doi.org/10.1101/gr.132647.111">Clark et al. (2012)</a>.</p>
+<section id="comparison-with-other-erc-software">
+<h3>Comparison with other ERC software<a class="headerlink" href="#comparison-with-other-erc-software" title="Link to this heading"></a></h3>
+<p>An independent implementation of this branch-ratio procedure using R
+<code class="docutils literal notranslate"><span class="pre">ape</span></code> and <code class="docutils literal notranslate"><span class="pre">stats::cor.test</span></code> reproduces PhyKIT's coefficient and p-value.
+The validation is maintained in <code class="docutils literal notranslate"><span class="pre">tests/validation/validate_covarying_rates.R</span></code>.</p>
+<p>Do not expect the same numerical coefficient from <a class="reference external" href="https://github.com/nclark-lab/erc">ERC2.0</a> or <a class="reference external" href="https://github.com/nclark-lab/RERconverge">RERconverge</a>. Those programs estimate
+relative rates as regression residuals and include additional normalization
+such as heteroskedasticity correction and winsorization. These are related
+ERC methods, not independent implementations of the PhyKIT/CovER statistic.</p>
+<p>The reported p-value is the standard two-sided Pearson correlation p-value,
+using the retained branches as observations. Because branches in a phylogeny
+are not strictly independent, interpret this parametric p-value cautiously;
+for gene-network analyses, establish an empirical coefficient threshold or
+null distribution appropriate for the data set.</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>covarying_evolutionary_rates<span class="w"> </span>&lt;tree_file_zero&gt;<span class="w"> </span>&lt;tree_file_one&gt;<span class="w"> </span>-r/--reference<span class="w"> </span>&lt;reference_tree_file&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-output<span class="w"> </span>&lt;path&gt;<span class="o">]</span>
 <span class="w">    </span><span class="o">[</span>--fig-width<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--fig-height<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--dpi<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--no-title<span class="o">]</span><span class="w"> </span><span class="o">[</span>--title<span class="w"> </span>&lt;str&gt;<span class="o">]</span>
 <span class="w">    </span><span class="o">[</span>--legend-position<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ylabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--xlabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span>
@@ -330,8 +347,8 @@ species tree follows Sato et al., Bioinformatics (2005), doi:
 <p>Options: <br />
 <em>&lt;tree_file_zero&gt;</em>: first argument after function name should be a tree file <br />
 <em>&lt;tree_file_one&gt;</em>: second argument after function name should be a tree file <br />
-<em>-r/--reference</em>: a tree to correct branch lengths by in the two input trees. Typically,
-this is a putative species tree. <br />
+<em>-r/--reference</em>: a tree whose corresponding branch lengths normalize the two
+gene trees. Typically, this is a putative species tree. <br />
 <em>-v/--verbose</em>: print out corrected branch lengths shared between tree 0 and tree 1 <br />
 <em>--plot</em>: save a covarying-rates scatter plot <br />
 <em>--plot-output</em>: output path for plot (default: <code class="docutils literal notranslate"><span class="pre">covarying_rates_plot.png</span></code>) <br />
@@ -351,6 +368,7 @@ this is a putative species tree. <br />
 <em>--circular</em>: draw circular (radial/fan) phylogram instead of rectangular <br />
 <em>--color-file</em>: color annotation file for tip labels, clade ranges, and branch colors (iTOL-inspired TSV format) <br />
 <em>--json</em>: optional argument to print results as JSON</p>
+</section>
 </section>
 </section>
 

@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Change log &mdash; phykit 2.4.0 documentation</title>
+  <title>Change log &mdash; phykit 2.4.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=ae8b8648" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../_static/flavicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=4d935f96"></script>
+      <script src="../_static/documentation_options.js?v=e9ebdb8f"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -85,6 +85,20 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.4.1</strong>:</p>
+<p>Covarying evolutionary rates correctness and validation:</p>
+<ul class="simple">
+<li><p>Corrected <code class="docutils literal notranslate"><span class="pre">covarying_evolutionary_rates</span></code> to prune both gene trees and the
+reference tree to their maximally shared taxa before matching branches.</p></li>
+<li><p>Restored rooted-topology validation so incongruent trees fail with an
+actionable error instead of silently correlating an incomplete branch set.</p></li>
+<li><p>Retained valid zero-length gene branches, excluded root stems, preserved
+branch/rate alignment after fallback errors, and removed premature rounding
+before correlation.</p></li>
+<li><p>Added independent numerical validation against R <code class="docutils literal notranslate"><span class="pre">ape</span></code> and
+<code class="docutils literal notranslate"><span class="pre">stats::cor.test</span></code> and clarified how the CovER branch-ratio statistic differs
+from residual-based ERC2.0 and RERconverge results.</p></li>
+</ul>
 <p><strong>2.4.0</strong>:</p>
 <p>TreeShrink-inspired spurious-sequence detection:</p>
 <ul class="simple">

@@ -2,7 +2,7 @@
 
 > Command-line tools for processing and analyzing multiple sequence alignments, phylogenetic trees, and comparative trait data.
 
-Documentation version: 2.4.0
+Documentation version: 2.4.1
 
 ## Start
 

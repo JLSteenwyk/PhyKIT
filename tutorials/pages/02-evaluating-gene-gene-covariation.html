@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tutorial 2: Evaluating gene-gene covariation &mdash; phykit 2.4.0 documentation</title>
+  <title>Tutorial 2: Evaluating gene-gene covariation &mdash; phykit 2.4.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=ae8b8648" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../../_static/flavicon.png"/>
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=4d935f96"></script>
+      <script src="../../_static/documentation_options.js?v=e9ebdb8f"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -153,10 +153,11 @@ identify genes that have shared functions, are coexpressed, and/or are part of t
 <a class="reference external" href="https://genome.cshlp.org/content/22/4/714.full">Clark et al. 2012</a>).
 Furthermore, gene-gene covariation serves as a powerful evolution-based genetic screen for predicting gene function
 (<a class="reference external" href="https://www.pnas.org/content/116/39/19593">Brunette et al. 2019</a>).</p>
-<p>PhyKIT implements a mirror-tree-based method to identify genes that covary with one another. In principle, PhyKIT
-determines if two trees have similar branch length properties throughout the phylogeny. Thus, each input phylogeny
-must have the same topology. However, there are other steps that must be done prior to evaluating covariation
-between two genes.</p>
+<p>PhyKIT implements the CovER branch-ratio method to identify genes that covary with one another. For every branch,
+the gene-tree length is divided by the corresponding reference-tree length, and the resulting branch-rate vectors
+are correlated. Thus, the two gene trees and reference tree must have the same rooted topology after all three are
+pruned to their shared taxa. Gene trees should be inferred with the reference topology constrained rather than
+estimated as unconstrained topologies. See the <a class="reference internal" href="../../reference/commands/covarying_evolutionary_rates.html"><span class="doc">command reference</span></a> for filtering and statistical details.</p>
 <p>To provide a comprehensive tutorial, we will start with the sequence alignments for three genes and their constrained
 tree topologies that match the putative species tree from <a class="reference external" href="https://www.biorxiv.org/content/10.1101/2020.05.11.088658v1.abstract">Shen et al. 2020</a>.</p>
 <p class="centered">
