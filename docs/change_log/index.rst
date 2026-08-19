@@ -6,7 +6,7 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
-**Next release**:
+**2.6.0**:
 
 Experimental localization of evolutionary-rate covariation:
 
