@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tutorial 4: Evaluating the accuracy of a multiple sequence alignment &mdash; phykit 2.4.1 documentation</title>
+  <title>Tutorial 4: Evaluating the accuracy of a multiple sequence alignment &mdash; phykit 2.5.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=ae8b8648" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../../_static/flavicon.png"/>
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=e9ebdb8f"></script>
+      <script src="../../_static/documentation_options.js?v=3c4615cf"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -198,12 +198,12 @@ using the <em>sum_of_pairs_score</em> and <em>column_score</em> functions.</p>
 <h3>Step 1: Score each alignment<a class="headerlink" href="#step-1-score-each-alignment" title="Link to this heading"></a></h3>
 <p>For both functions, the first argument is the query alignment and the <em>-r/--reference</em> argument specifies the reference alignment.
 We will programmatically score each alignment using the same for loop that was used to calculate alignment length.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="nb">echo</span><span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;BAliBASE_id_and_aln_strategy\tsop\tcs&quot;</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="nb">echo</span><span class="w"> </span>-e<span class="w"> </span><span class="s2">"BAliBASE_id_and_aln_strategy\tsop\tcs"</span>
 <span class="k">for</span><span class="w"> </span>i<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="k">$(</span>ls<span class="w"> </span>*pair.faa<span class="k">)</span>
 <span class="k">do</span>
 <span class="w">   </span><span class="nv">sop</span><span class="o">=</span><span class="k">$(</span>phykit<span class="w"> </span>sum_of_pairs_score<span class="w"> </span><span class="nv">$i</span><span class="w"> </span>-r<span class="w"> </span>BBA0001_reference.faa<span class="k">)</span>
 <span class="w">   </span><span class="nv">cs</span><span class="o">=</span><span class="k">$(</span>phykit<span class="w"> </span>column_score<span class="w"> </span><span class="nv">$i</span><span class="w"> </span>-r<span class="w"> </span>BBA0001_reference.faa<span class="k">)</span>
-<span class="w">   </span><span class="nb">echo</span><span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$i</span><span class="s2">\t</span><span class="nv">$sop</span><span class="s2">\t</span><span class="nv">$cs</span><span class="s2">&quot;</span>
+<span class="w">   </span><span class="nb">echo</span><span class="w"> </span>-e<span class="w"> </span><span class="s2">"</span><span class="nv">$i</span><span class="s2">\t</span><span class="nv">$sop</span><span class="s2">\t</span><span class="nv">$cs</span><span class="s2">"</span>
 <span class="k">done</span>
 </pre></div>
 </div>

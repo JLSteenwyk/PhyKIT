@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tutorial 19: End-to-end comparative methods workflow &mdash; phykit 2.4.1 documentation</title>
+  <title>Tutorial 19: End-to-end comparative methods workflow &mdash; phykit 2.5.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=ae8b8648" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../../_static/flavicon.png"/>
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=e9ebdb8f"></script>
+      <script src="../../_static/documentation_options.js?v=3c4615cf"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -234,7 +234,7 @@ and assumptions of the downstream analysis.</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>phylogenetic_signal<span class="w"> </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span>-d<span class="w"> </span>tree_simple_traits.tsv<span class="w"> </span>--json
 </pre></div>
 </div>
-<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="nt">&quot;K&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.5842</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;p_value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.474</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;permutations&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1000</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;r_squared_phylo&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.9499</span><span class="p">}</span>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="nt">"K"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.5842</span><span class="p">,</span><span class="w"> </span><span class="nt">"p_value"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.474</span><span class="p">,</span><span class="w"> </span><span class="nt">"permutations"</span><span class="p">:</span><span class="w"> </span><span class="mi">1000</span><span class="p">,</span><span class="w"> </span><span class="nt">"r_squared_phylo"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.9499</span><span class="p">}</span>
 </pre></div>
 </div>
 <p>The <code class="docutils literal notranslate"><span class="pre">r_squared_phylo</span></code> value compares the fitted Brownian-motion variance
@@ -307,7 +307,7 @@ Coefficients:
 (Intercept)               0.9972      0.0871     11.4467    0.000027    ***
 body_mass                 0.7086      0.0451     15.7140    0.000004    ***
 ---
-Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1
 
 Residual standard error: 0.0250 on 6 degrees of freedom
 Multiple R-squared: 0.9763    Adjusted R-squared: 0.9723

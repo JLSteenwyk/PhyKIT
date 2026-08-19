@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tutorial 21: Customizing phylogenetic plots &mdash; phykit 2.4.1 documentation</title>
+  <title>Tutorial 21: Customizing phylogenetic plots &mdash; phykit 2.5.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=ae8b8648" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../../_static/flavicon.png"/>
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=e9ebdb8f"></script>
+      <script src="../../_static/documentation_options.js?v=3c4615cf"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -254,7 +254,7 @@ pie chart:</p>
 override the defaults. For <code class="docutils literal notranslate"><span class="pre">quartet_pie</span></code>, the three colors represent
 concordant, discordant alt 1, and discordant alt 2:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>quartet_pie<span class="w"> </span>-t<span class="w"> </span><span class="nv">$TREE</span><span class="w"> </span>-g<span class="w"> </span><span class="nv">$GENES</span><span class="w"> </span>-o<span class="w"> </span>qpie_colors.png<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>--colors<span class="w"> </span><span class="s2">&quot;#2ca02c,#ff7f0e,#9467bd&quot;</span>
+<span class="w">    </span>--colors<span class="w"> </span><span class="s2">"#2ca02c,#ff7f0e,#9467bd"</span>
 </pre></div>
 </div>
 <a class="reference internal image-reference" href="../../_images/qpie_custom_colors.png"><img alt="PhyKIT qpie custom colors figure" class="align-center" src="../../_images/qpie_custom_colors.png" style="width: 80%;" />
@@ -268,7 +268,7 @@ concordant, discordant alt 1, and discordant alt 2:</p>
 <p>The <code class="docutils literal notranslate"><span class="pre">--title</span></code> flag sets a custom title. Use <code class="docutils literal notranslate"><span class="pre">--no-title</span></code> to remove
 the title entirely:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>quartet_pie<span class="w"> </span>-t<span class="w"> </span><span class="nv">$TREE</span><span class="w"> </span>-g<span class="w"> </span><span class="nv">$GENES</span><span class="w"> </span>-o<span class="w"> </span>qpie_title.png<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>--title<span class="w"> </span><span class="s2">&quot;Mammal Quartet Concordance&quot;</span>
+<span class="w">    </span>--title<span class="w"> </span><span class="s2">"Mammal Quartet Concordance"</span>
 </pre></div>
 </div>
 <a class="reference internal image-reference" href="../../_images/qpie_custom_title.png"><img alt="PhyKIT qpie custom title figure" class="align-center" src="../../_images/qpie_custom_title.png" style="width: 80%;" />
@@ -288,7 +288,7 @@ the title entirely:</p>
 <code class="docutils literal notranslate"><span class="pre">upper</span> <span class="pre">right</span></code> (default), <code class="docutils literal notranslate"><span class="pre">upper</span> <span class="pre">left</span></code>, <code class="docutils literal notranslate"><span class="pre">lower</span> <span class="pre">left</span></code>, <code class="docutils literal notranslate"><span class="pre">lower</span> <span class="pre">right</span></code>,
 <code class="docutils literal notranslate"><span class="pre">center</span> <span class="pre">left</span></code>, <code class="docutils literal notranslate"><span class="pre">center</span> <span class="pre">right</span></code>, or <code class="docutils literal notranslate"><span class="pre">none</span></code> to hide the legend:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>quartet_pie<span class="w"> </span>-t<span class="w"> </span><span class="nv">$TREE</span><span class="w"> </span>-g<span class="w"> </span><span class="nv">$GENES</span><span class="w"> </span>-o<span class="w"> </span>qpie_legend.png<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>--legend-position<span class="w"> </span><span class="s2">&quot;lower right&quot;</span>
+<span class="w">    </span>--legend-position<span class="w"> </span><span class="s2">"lower right"</span>
 </pre></div>
 </div>
 <a class="reference internal image-reference" href="../../_images/qpie_legend_lower.png"><img alt="PhyKIT qpie legend lower figure" class="align-center" src="../../_images/qpie_legend_lower.png" style="width: 80%;" />
@@ -345,8 +345,8 @@ taxon from each side of the clade.</p>
 <p>All options can be combined for maximum customization:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>quartet_pie<span class="w"> </span>-t<span class="w"> </span><span class="nv">$TREE</span><span class="w"> </span>-g<span class="w"> </span><span class="nv">$GENES</span><span class="w"> </span>-o<span class="w"> </span>qpie_full.png<span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>--circular<span class="w"> </span>--ladderize<span class="w"> </span>--color-file<span class="w"> </span>colors.tsv<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>--annotate<span class="w"> </span>--legend-position<span class="w"> </span><span class="s2">&quot;upper left&quot;</span><span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>--title<span class="w"> </span><span class="s2">&quot;Full Customization&quot;</span>
+<span class="w">    </span>--annotate<span class="w"> </span>--legend-position<span class="w"> </span><span class="s2">"upper left"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--title<span class="w"> </span><span class="s2">"Full Customization"</span>
 </pre></div>
 </div>
 <a class="reference internal image-reference" href="../../_images/qpie_all_options.png"><img alt="PhyKIT qpie all options figure" class="align-center" src="../../_images/qpie_all_options.png" style="width: 80%;" />

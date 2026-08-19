@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Network signal &mdash; phykit 2.4.1 documentation</title>
+  <title>Network signal &mdash; phykit 2.5.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=ae8b8648" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../../_static/flavicon.png"/>
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=e9ebdb8f"></script>
+      <script src="../../_static/documentation_options.js?v=3c4615cf"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -296,16 +296,16 @@ is due to ILS alone or also involves hybridization:</p>
 </div>
 <p>Examine the output to see which quartets are classified as hybrid:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># Quick summary</span>
-python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;</span>
+python<span class="w"> </span>-c<span class="w"> </span><span class="s2">"</span>
 <span class="s2">import json</span>
-<span class="s2">data = json.load(open(&#39;quartets.json&#39;))</span>
-<span class="s2">print(f&#39;Tree-like: {data[\&quot;tree_count\&quot;]}&#39;)</span>
-<span class="s2">print(f&#39;Hybrid: {data[\&quot;hybrid_count\&quot;]}&#39;)</span>
-<span class="s2">print(f&#39;Unresolved: {data[\&quot;unresolved_count\&quot;]}&#39;)</span>
-<span class="s2">for q in data[&#39;quartets&#39;]:</span>
-<span class="s2">    if q[&#39;classification&#39;] == &#39;hybrid&#39;:</span>
-<span class="s2">        print(f&#39;  {q[\&quot;dominant_topology\&quot;]}  CFs: {q[\&quot;cfs\&quot;]}&#39;)</span>
-<span class="s2">&quot;</span>
+<span class="s2">data = json.load(open('quartets.json'))</span>
+<span class="s2">print(f'Tree-like: {data[\"tree_count\"]}')</span>
+<span class="s2">print(f'Hybrid: {data[\"hybrid_count\"]}')</span>
+<span class="s2">print(f'Unresolved: {data[\"unresolved_count\"]}')</span>
+<span class="s2">for q in data['quartets']:</span>
+<span class="s2">    if q['classification'] == 'hybrid':</span>
+<span class="s2">        print(f'  {q[\"dominant_topology\"]}  CFs: {q[\"cfs\"]}')</span>
+<span class="s2">"</span>
 </pre></div>
 </div>
 <p>Suppose the output shows that quartets involving <em>H. melpomene</em>
@@ -341,8 +341,8 @@ pattern alleles to <em>H. heurippa</em> with an estimated 25% introgression:</p>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Hybrid edge: H_melpomene -&gt; H_heurippa (gamma=0.2500)
 Network taxa: 6
 ---
-Blomberg&#39;s K: 0.6821    p-value: 0.0410
-Pagel&#39;s lambda: 0.5934    log-likelihood: -8.7231    p-value: 0.0085
+Blomberg's K: 0.6821    p-value: 0.0410
+Pagel's lambda: 0.5934    log-likelihood: -8.7231    p-value: 0.0085
 </pre></div>
 </div>
 <p>Interpretation:</p>

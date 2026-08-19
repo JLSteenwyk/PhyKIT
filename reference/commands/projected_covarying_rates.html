@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Covarying evolutionary rates &mdash; phykit 2.5.0 documentation</title>
+  <title>Projected covarying rates &mdash; phykit 2.5.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=ae8b8648" />
@@ -18,11 +18,12 @@
       <script src="../../_static/documentation_options.js?v=3c4615cf"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="Projected covarying rates" href="projected_covarying_rates.html" />
-    <link rel="prev" title="Evolutionary rate analysis" href="../categories/evolutionary-rate-analysis.html" /> 
+    <link rel="next" title="Relative rate test" href="relative_rate_test.html" />
+    <link rel="prev" title="Covarying evolutionary rates" href="covarying_evolutionary_rates.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -54,8 +55,8 @@
 <li class="toctree-l3"><a class="reference internal" href="../categories/alignment-quality-statistics.html">Alignment quality &amp; statistics</a></li>
 <li class="toctree-l3 current"><a class="reference internal" href="../categories/evolutionary-rate-analysis.html">Evolutionary rate analysis</a><ul class="current">
 <li class="toctree-l4"><a class="reference internal" href="codon_dnds.html">Codon dN/dS</a></li>
-<li class="toctree-l4 current"><a class="current reference internal" href="#">Covarying evolutionary rates</a></li>
-<li class="toctree-l4"><a class="reference internal" href="projected_covarying_rates.html">Projected covarying rates</a></li>
+<li class="toctree-l4"><a class="reference internal" href="covarying_evolutionary_rates.html">Covarying evolutionary rates</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Projected covarying rates</a></li>
 <li class="toctree-l4"><a class="reference internal" href="relative_rate_test.html">Relative rate test</a></li>
 </ul>
 </li>
@@ -100,7 +101,7 @@
       <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
           <li class="breadcrumb-item"><a href="../index.html">Command reference</a></li>
           <li class="breadcrumb-item"><a href="../categories/evolutionary-rate-analysis.html">Evolutionary rate analysis</a></li>
-      <li class="breadcrumb-item active">Covarying evolutionary rates</li>
+      <li class="breadcrumb-item active">Projected covarying rates</li>
       <li class="wy-breadcrumbs-aside">
       </li>
   </ul>
@@ -109,26 +110,29 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="covarying-evolutionary-rates">
-<span id="command-covarying-evolutionary-rates"></span><span id="cmd-covarying-evolutionary-rates"></span><h1>Covarying evolutionary rates<a class="headerlink" href="#covarying-evolutionary-rates" title="Link to this heading"></a></h1>
-<p>Detect covariation in evolutionary rates</p>
+  <section id="projected-covarying-rates">
+<span id="command-projected-covarying-rates"></span><span id="cmd-projected-covarying-rates"></span><h1>Projected covarying rates<a class="headerlink" href="#projected-covarying-rates" title="Link to this heading"></a></h1>
+<p>Topology-robust evolutionary-rate covariation by reference-edge projection</p>
 <section id="command-identity">
 <h2>Command identity<a class="headerlink" href="#command-identity" title="Link to this heading"></a></h2>
 <dl class="field-list simple">
 <dt class="field-odd">Canonical command<span class="colon">:</span></dt>
-<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">covarying_evolutionary_rates</span></code></p>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">projected_covarying_rates</span></code></p>
 </dd>
 <dt class="field-even">Handler<span class="colon">:</span></dt>
-<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">covarying_evolutionary_rates</span></code></p>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">projected_covarying_rates</span></code></p>
 </dd>
 <dt class="field-odd">Aliases<span class="colon">:</span></dt>
-<dd class="field-odd"><p>cover</p>
+<dd class="field-odd"><p>pcover</p>
 </dd>
 <dt class="field-even">Standalone executables<span class="colon">:</span></dt>
-<dd class="field-even"><p>pk_covarying_evolutionary_rates, pk_cover</p>
+<dd class="field-even"><p>pk_projected_covarying_rates, pk_pcover</p>
 </dd>
 <dt class="field-odd">Categories<span class="colon">:</span></dt>
 <dd class="field-odd"><p>Evolutionary rate analysis</p>
+</dd>
+<dt class="field-even">Status<span class="colon">:</span></dt>
+<dd class="field-even"><p>Experimental</p>
 </dd>
 </dl>
 </section>
@@ -136,7 +140,7 @@
 <h2>Runtime interface<a class="headerlink" href="#runtime-interface" title="Link to this heading"></a></h2>
 <section id="synopsis">
 <h3>Synopsis<a class="headerlink" href="#synopsis" title="Link to this heading"></a></h3>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>phykit covarying_evolutionary_rates &lt;tree_zero&gt; &lt;tree_one&gt; --reference &lt;reference&gt; [--verbose] [--plot] [--plot-output &lt;plot_output&gt;] [--fig-width &lt;fig_width&gt;] [--fig-height &lt;fig_height&gt;] [--dpi &lt;dpi&gt;] [--no-title] [--title &lt;title&gt;] [--legend-position &lt;legend_position&gt;] [--ylabel-fontsize &lt;ylabel_fontsize&gt;] [--xlabel-fontsize &lt;xlabel_fontsize&gt;] [--title-fontsize &lt;title_fontsize&gt;] [--axis-fontsize &lt;axis_fontsize&gt;] [--colors &lt;colors&gt;] [--ladderize] [--cladogram] [--circular] [--color-file &lt;color_file&gt;] [--json]
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>phykit projected_covarying_rates &lt;tree_zero&gt; &lt;tree_one&gt; --reference &lt;reference&gt; [--verbose] [--weighting &lt;weighting&gt;] [--max-rate &lt;max_rate&gt;] [--max-pairs &lt;max_pairs&gt;] [--seed &lt;seed&gt;] [--plot] [--plot-output &lt;plot_output&gt;] [--fig-width &lt;fig_width&gt;] [--fig-height &lt;fig_height&gt;] [--dpi &lt;dpi&gt;] [--no-title] [--title &lt;title&gt;] [--legend-position &lt;legend_position&gt;] [--ylabel-fontsize &lt;ylabel_fontsize&gt;] [--xlabel-fontsize &lt;xlabel_fontsize&gt;] [--title-fontsize &lt;title_fontsize&gt;] [--axis-fontsize &lt;axis_fontsize&gt;] [--colors &lt;colors&gt;] [--ladderize] [--cladogram] [--circular] [--color-file &lt;color_file&gt;] [--json]
 </pre></div>
 </div>
 </section>
@@ -185,6 +189,30 @@ source for accepted spellings, required arguments, types, defaults, and choices.
 <td><p>false</p></td>
 <td><p>any</p></td>
 </tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--weighting</span></code></p></td>
+<td><p>false</p></td>
+<td><p>string</p></td>
+<td><p>uniform</p></td>
+<td><p>uniform, inverse_reference</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--max-rate</span></code></p></td>
+<td><p>false</p></td>
+<td><p>float</p></td>
+<td><p>5.0</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--max-pairs</span></code></p></td>
+<td><p>false</p></td>
+<td><p>int</p></td>
+<td><p>50000</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--seed</span></code></p></td>
+<td><p>false</p></td>
+<td><p>int</p></td>
+<td><p>0</p></td>
+<td><p>any</p></td>
+</tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--plot</span></code></p></td>
 <td><p>false</p></td>
 <td><p>boolean</p></td>
@@ -194,7 +222,7 @@ source for accepted spellings, required arguments, types, defaults, and choices.
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--plot-output</span></code></p></td>
 <td><p>false</p></td>
 <td><p>str</p></td>
-<td><p>covarying_rates_plot.png</p></td>
+<td><p>projected_covarying_rates_plot.png</p></td>
 <td><p>any</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--fig-width</span></code></p></td>
@@ -304,71 +332,123 @@ validation and scientific limitations are described in the guidance below.</p>
 </section>
 <section id="guidance-interpretation-and-examples">
 <h2>Guidance, interpretation, and examples<a class="headerlink" href="#guidance-interpretation-and-examples" title="Link to this heading"></a></h2>
-<p>Determine if two genes have a signature of covariation with one another.
-Genes that have covarying evolutionary histories tend to have
-similar functions and expression levels.</p>
-<p>Input two gene phylogenies and calculate the Pearson correlation among
-their relative evolutionary rates. The two gene trees and the reference
-tree may initially contain different taxa. PhyKIT prunes all three trees
-to their shared taxa, after which they must have the same rooted topology.</p>
-<p>For each corresponding terminal and internal branch, PhyKIT calculates
-<code class="docutils literal notranslate"><span class="pre">gene</span> <span class="pre">branch</span> <span class="pre">length</span> <span class="pre">/</span> <span class="pre">reference</span> <span class="pre">branch</span> <span class="pre">length</span></code>. A root stem is not a
-phylogenetic branch and is excluded. Branches with a zero or missing
-reference length are also excluded because their ratio is undefined;
-zero-length gene branches are retained. A branch pair is removed if either
-relative rate is greater than five. The remaining values are Z-transformed,
-and their Pearson correlation coefficient is reported.</p>
-<p>PhyKIT reports two tab delimited values:
-col1: correlation coefficient
-col2: p-value</p>
-<p>This implementation is the CovER procedure described by <a class="reference external" href="https://doi.org/10.1126/sciadv.abn0105">Steenwyk et al.
-(2022)</a>. It is based on the
-mirror-tree principle developed by <a class="reference external" href="https://doi.org/10.1093/bioinformatics/bti564">Sato et al. (2005)</a>, and the biological basis
-of evolutionary rate covariation was evaluated by <a class="reference external" href="https://doi.org/10.1101/gr.132647.111">Clark et al. (2012)</a>.</p>
-<section id="comparison-with-other-erc-software">
-<h3>Comparison with other ERC software<a class="headerlink" href="#comparison-with-other-erc-software" title="Link to this heading"></a></h3>
-<p>An independent implementation of this branch-ratio procedure using R
-<code class="docutils literal notranslate"><span class="pre">ape</span></code> and <code class="docutils literal notranslate"><span class="pre">stats::cor.test</span></code> reproduces PhyKIT's coefficient and p-value.
-The validation is maintained in <code class="docutils literal notranslate"><span class="pre">tests/validation/validate_covarying_rates.R</span></code>.</p>
-<p>Do not expect the same numerical coefficient from <a class="reference external" href="https://github.com/nclark-lab/erc">ERC2.0</a> or <a class="reference external" href="https://github.com/nclark-lab/RERconverge">RERconverge</a>. Those programs estimate
-relative rates as regression residuals and include additional normalization
-such as heteroskedasticity correction and winsorization. These are related
-ERC methods, not independent implementations of the PhyKIT/CovER statistic.</p>
-<p>The reported p-value is the standard two-sided Pearson correlation p-value,
-using the retained branches as observations. Because branches in a phylogeny
-are not strictly independent, interpret this parametric p-value cautiously;
-for gene-network analyses, establish an empirical coefficient threshold or
-null distribution appropriate for the data set.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>covarying_evolutionary_rates<span class="w"> </span>&lt;tree_file_zero&gt;<span class="w"> </span>&lt;tree_file_one&gt;<span class="w"> </span>-r/--reference<span class="w"> </span>&lt;reference_tree_file&gt;<span class="w"> </span><span class="o">[</span>-v/--verbose<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot<span class="o">]</span><span class="w"> </span><span class="o">[</span>--plot-output<span class="w"> </span>&lt;path&gt;<span class="o">]</span>
-<span class="w">    </span><span class="o">[</span>--fig-width<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--fig-height<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--dpi<span class="w"> </span>&lt;int&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--no-title<span class="o">]</span><span class="w"> </span><span class="o">[</span>--title<span class="w"> </span>&lt;str&gt;<span class="o">]</span>
-<span class="w">    </span><span class="o">[</span>--legend-position<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ylabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--xlabel-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span>
-<span class="w">    </span><span class="o">[</span>--title-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--axis-fontsize<span class="w"> </span>&lt;float&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--colors<span class="w"> </span>&lt;str&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--ladderize<span class="o">]</span><span class="w"> </span><span class="o">[</span>--cladogram<span class="o">]</span><span class="w"> </span><span class="o">[</span>--circular<span class="o">]</span><span class="w"> </span><span class="o">[</span>--color-file<span class="w"> </span>&lt;file&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--json<span class="o">]</span>
+<p>Use <code class="docutils literal notranslate"><span class="pre">projected_covarying_rates</span></code> to estimate evolutionary-rate covariation
+between two genes when their inferred tree topologies differ. Unlike
+<a class="reference internal" href="covarying_evolutionary_rates.html"><span class="doc">Covarying evolutionary rates</span></a>, this command does not require either gene
+tree to match the reference topology after taxon pruning.</p>
+<p>This is an experimental PhyKIT estimator. It is not the published CovER
+branch-ratio statistic, and coefficients from the two methods are not
+interchangeable.</p>
+<section id="inputs-and-preprocessing">
+<h3>Inputs and preprocessing<a class="headerlink" href="#inputs-and-preprocessing" title="Link to this heading"></a></h3>
+<p>Provide two gene trees and one reference tree in Newick format. Every tree
+must have named tips and finite, nonnegative branch lengths. The reference is
+typically a species tree, but it may be another biologically justified common
+topology.</p>
+<p>PhyKIT takes the intersection of the taxa in all three trees and prunes each
+tree to that shared set. At least three shared taxa are required. Taxa present
+in only one or two inputs do not contribute to the result.</p>
+</section>
+<section id="method">
+<h3>Method<a class="headerlink" href="#method" title="Link to this heading"></a></h3>
+<p>For the shared taxa, PhyKIT:</p>
+<ol class="arabic simple">
+<li><p>Calculates all selected pairwise patristic distances in each gene tree.</p></li>
+<li><p>Represents each identifiable unrooted reference-tree edge as a column in a
+path design matrix. A row contains one for every reference edge separating
+that taxon pair and zero otherwise.</p></li>
+<li><p>Uses nonnegative least squares (NNLS) to estimate reference-edge lengths
+whose induced pairwise distances best approximate each gene's observed
+distances.</p></li>
+<li><p>Divides each projected gene-edge length by the corresponding reference-edge
+length, removes undefined zero-reference rates and rates above
+<code class="docutils literal notranslate"><span class="pre">--max-rate</span></code>, and Z-transforms each retained gene-rate vector.</p></li>
+<li><p>Reports Pearson's correlation between the two standardized projected-rate
+vectors.</p></li>
+</ol>
+<p>The default <code class="docutils literal notranslate"><span class="pre">uniform</span></code> weighting gives every taxon pair equal influence.
+<code class="docutils literal notranslate"><span class="pre">--weighting</span> <span class="pre">inverse_reference</span></code> weights a pair inversely by its reference
+distance, increasing the relative influence of shorter paths.</p>
+<p>Pairwise distances cannot separately identify the two complementary branches
+below a degree-two root. PhyKIT therefore combines those branch lengths into
+one unrooted reference edge. The root stem is excluded. Edge labels contain
+the lexicographically canonical, smaller side of each split, with taxon names
+separated by semicolons.</p>
+</section>
+<section id="projection-diagnostics">
+<h3>Projection diagnostics<a class="headerlink" href="#projection-diagnostics" title="Link to this heading"></a></h3>
+<p>Each gene receives a normalized root mean squared projection error (NRMSE):</p>
+<div class="math notranslate nohighlight">
+\[\mathrm{NRMSE} = \sqrt{\frac{\sum_i w_i(\hat{d}_i-d_i)^2}
+{\sum_i w_i d_i^2}}\]</div>
+<p>An NRMSE of zero means that the gene distances are exactly additive on the
+reference topology. Larger values mean that more of the gene tree's distance
+signal cannot be represented by that topology. There is no universal NRMSE
+cutoff; evaluate its empirical distribution for the trees and taxa in the
+study.</p>
+<p>Interpret a correlation together with both NRMSE values and the number of
+retained edges. A high correlation accompanied by poor projection fits is not
+strong evidence of shared branchwise rate history. Projection preserves a
+common comparison basis, but it does not identify one-to-one homologous
+branches between discordant topologies.</p>
+<p>The reported p-value is the ordinary two-sided Pearson p-value with retained
+reference edges treated as observations. Phylogenetic edges and projected
+estimates are not statistically independent, so this p-value is descriptive.
+For gene-network analyses, use a study-specific empirical null or threshold.</p>
+</section>
+<section id="scaling-and-reproducibility">
+<h3>Scaling and reproducibility<a class="headerlink" href="#scaling-and-reproducibility" title="Link to this heading"></a></h3>
+<p>The full analysis uses all shared-taxon pairs until it reaches <code class="docutils literal notranslate"><span class="pre">--max-pairs</span></code>
+or the internal design-memory limit. If subsampling is needed, pairs are drawn
+without replacement using <code class="docutils literal notranslate"><span class="pre">--seed</span></code> and then sorted into a deterministic
+order. PhyKIT rejects a subsample that cannot uniquely identify every
+reference edge; increase <code class="docutils literal notranslate"><span class="pre">--max-pairs</span></code> or change <code class="docutils literal notranslate"><span class="pre">--seed</span></code> in that case.</p>
+<p>Record <code class="docutils literal notranslate"><span class="pre">distance_pair_count</span></code>, <code class="docutils literal notranslate"><span class="pre">distance_pairs_used</span></code>, <code class="docutils literal notranslate"><span class="pre">--max-pairs</span></code>, and
+<code class="docutils literal notranslate"><span class="pre">--seed</span></code> when reporting a subsampled analysis. Check that conclusions are
+stable across several seeds when pair subsampling is substantial.</p>
+</section>
+<section id="output">
+<h3>Output<a class="headerlink" href="#output" title="Link to this heading"></a></h3>
+<p>Default text output reports the correlation, descriptive p-value, shared-taxon
+count, used and available distance-pair counts, reference and retained edge
+counts, and both projection NRMSE values. <code class="docutils literal notranslate"><span class="pre">--verbose</span></code> adds one tab-delimited
+row per reference edge with projected lengths, relative rates, Z-scores, and a
+filter status.</p>
+<p><code class="docutils literal notranslate"><span class="pre">--json</span></code> returns those summary values plus:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">branches</span></code>: all reference-edge records, including excluded edges;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">tree_zero_projection</span></code> and <code class="docutils literal notranslate"><span class="pre">tree_one_projection</span></code>: NRMSE, weighted sum of
+squared errors, and maximum absolute residual;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">shared_taxa</span></code>: the exact sorted taxon intersection;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">weighting</span></code> and <code class="docutils literal notranslate"><span class="pre">max_rate</span></code>: settings needed to interpret the result.</p></li>
+</ul>
+</section>
+<section id="examples">
+<h3>Examples<a class="headerlink" href="#examples" title="Link to this heading"></a></h3>
+<p>Run the uniform-weighted analysis and retain complete diagnostics:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>projected_covarying_rates<span class="w"> </span>gene_a.tre<span class="w"> </span>gene_b.tre<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--reference<span class="w"> </span>species.tre<span class="w"> </span>--json<span class="w"> </span>&gt;<span class="w"> </span>projected_rates.json
 </pre></div>
 </div>
-<p>Options: <br />
-<em>&lt;tree_file_zero&gt;</em>: first argument after function name should be a tree file <br />
-<em>&lt;tree_file_one&gt;</em>: second argument after function name should be a tree file <br />
-<em>-r/--reference</em>: a tree whose corresponding branch lengths normalize the two
-gene trees. Typically, this is a putative species tree. <br />
-<em>-v/--verbose</em>: print out corrected branch lengths shared between tree 0 and tree 1 <br />
-<em>--plot</em>: save a covarying-rates scatter plot <br />
-<em>--plot-output</em>: output path for plot (default: <code class="docutils literal notranslate"><span class="pre">covarying_rates_plot.png</span></code>) <br />
-<em>--fig-width</em>: figure width in inches (auto-scaled if omitted) <br />
-<em>--fig-height</em>: figure height in inches (auto-scaled if omitted) <br />
-<em>--dpi</em>: resolution in DPI (default: 300) <br />
-<em>--no-title</em>: hide the plot title <br />
-<em>--title</em>: custom title text <br />
-<em>--legend-position</em>: legend location (e.g., &quot;upper right&quot;, &quot;none&quot; to hide) <br />
-<em>--ylabel-fontsize</em>: font size for y-axis labels; 0 to hide <br />
-<em>--xlabel-fontsize</em>: font size for x-axis labels; 0 to hide <br />
-<em>--title-fontsize</em>: font size for the title <br />
-<em>--axis-fontsize</em>: font size for axis labels <br />
-<em>--colors</em>: comma-separated colors (hex or named) <br />
-<em>--ladderize</em>: ladderize (sort) the tree before plotting <br />
-<em>--cladogram</em>: draw cladogram (equal branch lengths, tips aligned) instead of phylogram <br />
-<em>--circular</em>: draw circular (radial/fan) phylogram instead of rectangular <br />
-<em>--color-file</em>: color annotation file for tip labels, clade ranges, and branch colors (iTOL-inspired TSV format) <br />
-<em>--json</em>: optional argument to print results as JSON</p>
+<p>Emphasize shorter reference paths and save a scatter plot:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>pcover<span class="w"> </span>gene_a.tre<span class="w"> </span>gene_b.tre<span class="w"> </span>-r<span class="w"> </span>species.tre<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--weighting<span class="w"> </span>inverse_reference<span class="w"> </span>--plot<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--plot-output<span class="w"> </span>gene_a_gene_b_projected_rates.png
+</pre></div>
+</div>
+<p>Use the published CovER calculation instead when constrained gene trees have
+the same rooted topology as the reference:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>cover<span class="w"> </span>constrained_gene_a.tre<span class="w"> </span>constrained_gene_b.tre<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-r<span class="w"> </span>species.tre
+</pre></div>
+</div>
+</section>
+<section id="citations">
+<h3>Citations<a class="headerlink" href="#citations" title="Link to this heading"></a></h3>
+<p>The evolutionary-rate covariation context follows <a class="reference external" href="https://doi.org/10.1126/sciadv.abn0105">Steenwyk et al. (2022)</a>. The numerical projection uses the
+nonnegative least-squares problem described by <a class="reference external" href="https://doi.org/10.1137/1.9781611971217">Lawson and Hanson (1995)</a>. The reference-edge projection and
+its NRMSE diagnostic are experimental PhyKIT methodology and should be cited
+as such rather than attributed to those publications.</p>
 </section>
 </section>
 </section>
@@ -377,8 +457,8 @@ gene trees. Typically, this is a putative species tree. <br />
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="../categories/evolutionary-rate-analysis.html" class="btn btn-neutral float-left" title="Evolutionary rate analysis" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="projected_covarying_rates.html" class="btn btn-neutral float-right" title="Projected covarying rates" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="covarying_evolutionary_rates.html" class="btn btn-neutral float-left" title="Covarying evolutionary rates" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="relative_rate_test.html" class="btn btn-neutral float-right" title="Relative rate test" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

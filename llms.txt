@@ -2,7 +2,7 @@
 
 > Command-line tools for processing and analyzing multiple sequence alignments, phylogenetic trees, and comparative trait data.
 
-Documentation version: 2.4.1
+Documentation version: 2.5.0
 
 ## Start
 
@@ -53,6 +53,7 @@ Documentation version: 2.4.1
 ### Evolutionary rate analysis
 - [codon_dnds](https://jlsteenwyk.github.io/PhyKIT/reference/commands/codon_dnds.html): Pairwise synonymous and nonsynonymous substitution-rate estimates
 - [covarying_evolutionary_rates](https://jlsteenwyk.github.io/PhyKIT/reference/commands/covarying_evolutionary_rates.html): Detect covariation in evolutionary rates
+- [projected_covarying_rates](https://jlsteenwyk.github.io/PhyKIT/reference/commands/projected_covarying_rates.html): Topology-robust evolutionary-rate covariation by reference-edge projection
 - [relative_rate_test](https://jlsteenwyk.github.io/PhyKIT/reference/commands/relative_rate_test.html): Relative rate test between lineages
 ### Homology assessment
 - [alignment_outlier_regions](https://jlsteenwyk.github.io/PhyKIT/reference/commands/alignment_outlier_regions.html): Detect localized outlier regions in multiple sequence alignments

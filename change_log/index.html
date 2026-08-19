@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Change log &mdash; phykit 2.4.1 documentation</title>
+  <title>Change log &mdash; phykit 2.5.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=ae8b8648" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../_static/flavicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=e9ebdb8f"></script>
+      <script src="../_static/documentation_options.js?v=3c4615cf"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -85,6 +85,24 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.5.0</strong>:</p>
+<p>Experimental topology-robust evolutionary-rate covariation:</p>
+<ul class="simple">
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">projected_covarying_rates</span></code> (alias: <code class="docutils literal notranslate"><span class="pre">pcover</span></code>) to compare gene
+evolutionary rates when the gene trees and reference tree have discordant
+topologies.</p></li>
+<li><p>Projected each gene tree's pairwise patristic distances onto a common
+unrooted reference-edge basis with nonnegative least squares, then
+normalized, filtered, standardized, and correlated the projected edge
+rates.</p></li>
+<li><p>Reported per-gene projection NRMSE, retained-edge and taxon-pair diagnostics,
+optional inverse-reference weighting, deterministic pair subsampling,
+structured JSON, verbose edge tables, and scatter plots.</p></li>
+<li><p>Added rank and branch-length safeguards, three-way missing-taxon pruning,
+simulation recovery validation, 97% unit coverage for the new service, and
+documentation distinguishing this experimental estimator from published
+CovER.</p></li>
+</ul>
 <p><strong>2.4.1</strong>:</p>
 <p>Covarying evolutionary rates correctness and validation:</p>
 <ul class="simple">

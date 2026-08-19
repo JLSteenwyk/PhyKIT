@@ -6,6 +6,25 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.5.0**:
+
+Experimental topology-robust evolutionary-rate covariation:
+
+* Added ``projected_covarying_rates`` (alias: ``pcover``) to compare gene
+  evolutionary rates when the gene trees and reference tree have discordant
+  topologies.
+* Projected each gene tree's pairwise patristic distances onto a common
+  unrooted reference-edge basis with nonnegative least squares, then
+  normalized, filtered, standardized, and correlated the projected edge
+  rates.
+* Reported per-gene projection NRMSE, retained-edge and taxon-pair diagnostics,
+  optional inverse-reference weighting, deterministic pair subsampling,
+  structured JSON, verbose edge tables, and scatter plots.
+* Added rank and branch-length safeguards, three-way missing-taxon pruning,
+  simulation recovery validation, 97% unit coverage for the new service, and
+  documentation distinguishing this experimental estimator from published
+  CovER.
+
 **2.4.1**:
 
 Covarying evolutionary rates correctness and validation:

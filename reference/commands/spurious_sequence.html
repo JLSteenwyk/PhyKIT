@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Spurious homolog identification &mdash; phykit 2.4.1 documentation</title>
+  <title>Spurious homolog identification &mdash; phykit 2.5.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=ae8b8648" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../../_static/flavicon.png"/>
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=e9ebdb8f"></script>
+      <script src="../../_static/documentation_options.js?v=3c4615cf"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -307,34 +307,34 @@ metadata. <code class="docutils literal notranslate"><span class="pre">rows</spa
 the tree path, taxon, signature, p-value, removal rank, terminal branch length,
 and before/after diameters.</p>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;alpha&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.05</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;method&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;diameter-impact&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;rows&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">  </span><span class="nt">"alpha"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.05</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"method"</span><span class="p">:</span><span class="w"> </span><span class="s2">"diameter-impact"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"rows"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
 <span class="w">    </span><span class="p">{</span>
-<span class="w">      </span><span class="nt">&quot;diameter_after&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">2.0</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;diameter_before&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">101.0</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;p_value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.000007</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;removal_rank&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;signature&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">3.921973</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;taxon&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;outlier&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;terminal_branch_length&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">100.0</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;tree&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;gene.tre&quot;</span>
+<span class="w">      </span><span class="nt">"diameter_after"</span><span class="p">:</span><span class="w"> </span><span class="mf">2.0</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"diameter_before"</span><span class="p">:</span><span class="w"> </span><span class="mf">101.0</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"p_value"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.000007</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"removal_rank"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"signature"</span><span class="p">:</span><span class="w"> </span><span class="mf">3.921973</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"taxon"</span><span class="p">:</span><span class="w"> </span><span class="s2">"outlier"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"terminal_branch_length"</span><span class="p">:</span><span class="w"> </span><span class="mf">100.0</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"tree"</span><span class="p">:</span><span class="w"> </span><span class="s2">"gene.tre"</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="w">  </span><span class="p">],</span>
-<span class="w">  </span><span class="nt">&quot;scope&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;per-gene&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;spurious_sequences&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">  </span><span class="nt">"scope"</span><span class="p">:</span><span class="w"> </span><span class="s2">"per-gene"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"spurious_sequences"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
 <span class="w">    </span><span class="p">{</span>
-<span class="w">      </span><span class="nt">&quot;diameter_after&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">2.0</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;diameter_before&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">101.0</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;p_value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.000007</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;removal_rank&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;signature&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">3.921973</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;taxon&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;outlier&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;terminal_branch_length&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">100.0</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;tree&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;gene.tre&quot;</span>
+<span class="w">      </span><span class="nt">"diameter_after"</span><span class="p">:</span><span class="w"> </span><span class="mf">2.0</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"diameter_before"</span><span class="p">:</span><span class="w"> </span><span class="mf">101.0</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"p_value"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.000007</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"removal_rank"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"signature"</span><span class="p">:</span><span class="w"> </span><span class="mf">3.921973</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"taxon"</span><span class="p">:</span><span class="w"> </span><span class="s2">"outlier"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"terminal_branch_length"</span><span class="p">:</span><span class="w"> </span><span class="mf">100.0</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"tree"</span><span class="p">:</span><span class="w"> </span><span class="s2">"gene.tre"</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="w">  </span><span class="p">],</span>
-<span class="w">  </span><span class="nt">&quot;tree_count&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">  </span><span class="nt">"tree_count"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span>
 <span class="p">}</span>
 </pre></div>
 </div>

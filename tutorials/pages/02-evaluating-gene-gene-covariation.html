@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tutorial 2: Evaluating gene-gene covariation &mdash; phykit 2.4.1 documentation</title>
+  <title>Tutorial 2: Evaluating gene-gene covariation &mdash; phykit 2.5.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=ae8b8648" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../../_static/flavicon.png"/>
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=e9ebdb8f"></script>
+      <script src="../../_static/documentation_options.js?v=3c4615cf"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -56,6 +56,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#prerequisites-and-working-directory">Prerequisites and working directory</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#related-command-references">Related command references</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#workflow">Workflow</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#choosing-a-method-when-topologies-differ">Choosing a method when topologies differ</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#expected-artifacts">Expected artifacts</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#troubleshooting">Troubleshooting</a></li>
 </ul>
@@ -142,6 +143,7 @@ the commands. All paths below are relative to this directory.</p>
 <h2>Related command references<a class="headerlink" href="#related-command-references" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p><a class="reference internal" href="../../reference/commands/covarying_evolutionary_rates.html"><span class="doc">Covarying Evolutionary Rates</span></a></p></li>
+<li><p><a class="reference internal" href="../../reference/commands/projected_covarying_rates.html"><span class="doc">Projected Covarying Rates</span></a></p></li>
 <li><p><a class="reference internal" href="../../reference/commands/root_tree.html"><span class="doc">Root Tree</span></a></p></li>
 </ul>
 </section>
@@ -160,6 +162,26 @@ pruned to their shared taxa. Gene trees should be inferred with the reference to
 estimated as unconstrained topologies. See the <a class="reference internal" href="../../reference/commands/covarying_evolutionary_rates.html"><span class="doc">command reference</span></a> for filtering and statistical details.</p>
 <p>To provide a comprehensive tutorial, we will start with the sequence alignments for three genes and their constrained
 tree topologies that match the putative species tree from <a class="reference external" href="https://www.biorxiv.org/content/10.1101/2020.05.11.088658v1.abstract">Shen et al. 2020</a>.</p>
+</section>
+<section id="choosing-a-method-when-topologies-differ">
+<h2>Choosing a method when topologies differ<a class="headerlink" href="#choosing-a-method-when-topologies-differ" title="Link to this heading"></a></h2>
+<p>The published CovER implementation, <code class="docutils literal notranslate"><span class="pre">cover</span></code>, is appropriate for the
+constrained and topology-matched trees used in this tutorial. If gene trees
+were inferred without a topological constraint and disagree with one another
+or with the species tree, the experimental <code class="docutils literal notranslate"><span class="pre">pcover</span></code> command provides a
+different analysis:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>pcover<span class="w"> </span>unconstrained_gene_a.tre<span class="w"> </span>unconstrained_gene_b.tre<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-r<span class="w"> </span>species_tree.tre<span class="w"> </span>--json<span class="w"> </span>&gt;<span class="w"> </span>projected_rates.json
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">pcover</span></code> projects each gene's pairwise patristic distances onto the species
+tree's unrooted edge basis before correlating relative rates. It reports a
+projection NRMSE for each gene; zero is an exact fit to the reference basis,
+whereas larger values indicate unexplained topological distance signal.
+Interpret the correlation only alongside both NRMSE values. The <code class="docutils literal notranslate"><span class="pre">cover</span></code> and
+<code class="docutils literal notranslate"><span class="pre">pcover</span></code> coefficients estimate different quantities and should not be mixed
+within the same gene-pair network. See <a class="reference internal" href="../../reference/commands/projected_covarying_rates.html"><span class="doc">Projected Covarying Rates</span></a> for assumptions and output
+details.</p>
 <p class="centered">
 <strong>Download test data:
 <a class="reference download internal" download="" href="../../_downloads/baacaa62787a1e1b03db323b16d03049/gene_gene_covariation_tutorial.tar.gz"><code class="xref download docutils literal notranslate"><span class="pre">gene_gene_covariation_tutorial.tar.gz</span></code></a></strong></p><div class="line-block">
