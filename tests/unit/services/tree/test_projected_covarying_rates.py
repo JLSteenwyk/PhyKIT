@@ -2,6 +2,8 @@
 
 from argparse import Namespace
 from io import StringIO
+import json
+from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -113,6 +115,15 @@ def test_shared_taxa_are_intersection_of_all_three_trees():
     reference = _tree("((A:1,B:1):1,(C:1,Z:1):1);")
 
     assert service._shared_taxa(gene_zero, gene_one, reference) == ["A", "B", "C"]
+
+
+def test_prune_to_taxa_removes_nonshared_tip():
+    service = _service()
+    tree = _tree("((A:1,B:1):1,(C:1,X:1):1);")
+
+    pruned = service._prune_to_taxa(tree, ["A", "B", "C"])
+
+    assert sorted(service.get_tip_names_from_tree(pruned)) == ["A", "B", "C"]
 
 
 def test_shared_taxa_requires_at_least_three_tips():
@@ -397,6 +408,83 @@ def test_rate_vectors_require_three_retained_edges():
             [2.0, 3.0],
         )
     assert "Fewer than 3" in " ".join(error.value.messages)
+
+
+def test_run_emits_json_for_discordant_gene_trees(monkeypatch, capsys):
+    sample_files = Path(__file__).parents[3] / "sample_files"
+    tree_zero = Phylo.read(sample_files / "tree_simple.tre", "newick")
+    tree_one = Phylo.read(
+        sample_files / "tree_simple_other_topology.tre",
+        "newick",
+    )
+    reference = Phylo.read(sample_files / "tree_simple_2.tre", "newick")
+    service = _service(json=True)
+    monkeypatch.setattr(service, "read_tree_file_unmodified", lambda: tree_zero)
+    monkeypatch.setattr(service, "read_tree1_file_unmodified", lambda: tree_one)
+    monkeypatch.setattr(
+        service,
+        "read_reference_tree_file_unmodified",
+        lambda: reference,
+    )
+
+    service.run()
+
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["shared_taxon_count"] == 8
+    assert payload["tree_zero_projection"]["nrmse"] == pytest.approx(
+        0.0,
+        abs=1e-12,
+    )
+    assert payload["tree_one_projection"]["nrmse"] > 0.0
+
+
+def test_verbose_text_output_formats_excluded_values(capsys):
+    service = _service(verbose=True)
+    payload = {
+        "correlation": 0.5,
+        "p_value": 0.1,
+        "shared_taxon_count": 4,
+        "distance_pairs_used": 6,
+        "distance_pair_count": 6,
+        "reference_edge_count": 5,
+        "retained_edge_count": 4,
+        "tree_zero_projection": {"nrmse": 0.0},
+        "tree_one_projection": {"nrmse": 0.1},
+        "branches": [
+            {
+                "branch": "A",
+                "reference_length": 0.0,
+                "tree_zero_projected_length": 1.0,
+                "tree_one_projected_length": 1.0,
+                "tree_zero_relative_rate": None,
+                "tree_one_relative_rate": None,
+                "tree_zero_zscore": None,
+                "tree_one_zscore": None,
+                "status": "zero_reference_length",
+            }
+        ],
+    }
+
+    service._print_text(payload)
+
+    output = capsys.readouterr().out
+    assert "branch\treference_length\tprojected_zero" in output
+    assert "A\t0.000000\t1.000000\t1.000000\tNA\tNA\tNA\tNA" in output
+
+
+def test_plot_projected_rates_writes_nonempty_image(tmp_path):
+    output = tmp_path / "projected_rates.png"
+    service = _service(plot=True, plot_output=str(output))
+
+    service._plot_projected_rates(
+        [-1.0, -0.2, 0.4, 1.2],
+        [-0.8, 0.1, 0.3, 1.0],
+        correlation=0.95,
+        p_value=0.05,
+    )
+
+    assert output.is_file()
+    assert output.stat().st_size > 0
 
 
 def test_text_output_tolerates_closed_pipe(monkeypatch):
