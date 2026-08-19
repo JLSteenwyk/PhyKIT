@@ -379,16 +379,23 @@ class ProjectedCovaryingRates(Tree):
         pair_j,
         selected_pairs,
     ):
+        total_pair_count = len(shared_taxa) * (len(shared_taxa) - 1) // 2
+        if len(selected_pairs) < total_pair_count:
+            return np.asarray(
+                [
+                    tree.distance(shared_taxa[int(i)], shared_taxa[int(j)])
+                    for i, j in zip(pair_i, pair_j)
+                ],
+                dtype=float,
+            )
+
         fast_result = self.calculate_pairwise_tip_distances_fast(
             tree,
             shared_taxa,
             include_combos=False,
         )
         if fast_result is not None:
-            distances = np.asarray(fast_result[1], dtype=float)
-            if len(selected_pairs) == len(distances):
-                return distances
-            return distances[selected_pairs]
+            return np.asarray(fast_result[1], dtype=float)
 
         return np.asarray(
             [

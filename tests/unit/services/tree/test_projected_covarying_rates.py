@@ -220,12 +220,19 @@ def test_pair_selection_rejects_too_few_rows_for_edges():
     assert "At least 5 distance pairs" in " ".join(error.value.messages)
 
 
-def test_selected_distances_uses_sample_indices():
+def test_selected_distances_only_calculates_sampled_pairs(monkeypatch):
     service = _service()
     taxa = ["A", "B", "C", "D"]
     tree = _tree("((A:1,B:2):3,(C:4,D:5):6);")
     pair_i, pair_j = np.triu_indices(len(taxa), k=1)
     selected = np.asarray([1, 4])
+    monkeypatch.setattr(
+        service,
+        "calculate_pairwise_tip_distances_fast",
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            AssertionError("subsampling should not calculate all distances")
+        ),
+    )
 
     observed = service._selected_distances(
         tree,
@@ -235,14 +242,11 @@ def test_selected_distances_uses_sample_indices():
         selected,
     )
 
-    full = np.asarray(
-        service.calculate_pairwise_tip_distances_fast(
-            tree,
-            taxa,
-            include_combos=False,
-        )[1]
-    )
-    np.testing.assert_allclose(observed, full[selected])
+    expected = [
+        tree.distance(taxa[pair_i[index]], taxa[pair_j[index]])
+        for index in selected
+    ]
+    np.testing.assert_allclose(observed, expected)
 
 
 def test_selected_distances_falls_back_for_tree_test_double(monkeypatch):
@@ -257,12 +261,12 @@ def test_selected_distances_falls_back_for_tree_test_double(monkeypatch):
     observed = service._selected_distances(
         tree,
         ["A", "BB", "CCC"],
-        np.asarray([0, 1]),
-        np.asarray([1, 2]),
-        np.asarray([0, 2]),
+        np.asarray([0, 0, 1]),
+        np.asarray([1, 2, 2]),
+        np.asarray([0, 1, 2]),
     )
 
-    np.testing.assert_allclose(observed, [3.0, 5.0])
+    np.testing.assert_allclose(observed, [3.0, 4.0, 5.0])
 
 
 def test_reference_basis_validation_rejects_mismatched_distances():
