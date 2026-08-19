@@ -8,6 +8,9 @@ from ..base import BaseService
 from ...errors import PhykitUserError
 
 
+NEWICK_BRANCH_LENGTH_FORMAT = "%1.5f"
+
+
 class _LazyPickle:
     _module = None
 
@@ -721,6 +724,13 @@ class Tree(BaseService):
     def write_tree_file(self, tree, output_file_path):
         from Bio import Phylo
 
+        if self.tree_format == "newick":
+            return Phylo.write(
+                tree,
+                output_file_path,
+                self.tree_format,
+                format_branch_length=NEWICK_BRANCH_LENGTH_FORMAT,
+            )
         return Phylo.write(tree, output_file_path, self.tree_format)
 
     def get_tip_names_from_tree(self, tree) -> list:

@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from io import StringIO
 
-from .base import Tree
+from .base import NEWICK_BRANCH_LENGTH_FORMAT, Tree
 from ...errors import PhykitUserError
 
 
@@ -133,7 +133,12 @@ class Spr(Tree):
             trees_payload = []
             for desc, spr_tree in spr_trees:
                 s = StringIO()
-                Phylo.write(spr_tree, s, "newick")
+                Phylo.write(
+                    spr_tree,
+                    s,
+                    "newick",
+                    format_branch_length=NEWICK_BRANCH_LENGTH_FORMAT,
+                )
                 trees_payload.append(
                     {"description": desc, "newick": s.getvalue().strip()}
                 )
@@ -148,7 +153,12 @@ class Spr(Tree):
         elif self.output_path:
             with open(self.output_path, "w") as f:
                 for desc, spr_tree in spr_trees:
-                    Phylo.write(spr_tree, f, "newick")
+                    Phylo.write(
+                        spr_tree,
+                        f,
+                        "newick",
+                        format_branch_length=NEWICK_BRANCH_LENGTH_FORMAT,
+                    )
             self._print_output_summary(len(spr_trees))
         else:
             self._print_spr_trees(spr_trees)
@@ -170,7 +180,12 @@ class Spr(Tree):
         lines = []
         for desc, spr_tree in spr_trees:
             s = StringIO()
-            Phylo.write(spr_tree, s, "newick")
+            Phylo.write(
+                spr_tree,
+                s,
+                "newick",
+                format_branch_length=NEWICK_BRANCH_LENGTH_FORMAT,
+            )
             lines.append(s.getvalue().strip())
         if not lines:
             return

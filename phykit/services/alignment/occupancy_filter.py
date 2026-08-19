@@ -369,7 +369,7 @@ class OccupancyFilter:
     def _filter_tree(self, input_path, output_path, kept_taxa):
         """Filter a tree to keep only tips in kept_taxa."""
         from Bio import Phylo
-        from ..tree.base import Tree
+        from ..tree.base import NEWICK_BRANCH_LENGTH_FORMAT, Tree
 
         tree = Phylo.read(input_path, "newick")
         terminals = []
@@ -433,7 +433,12 @@ class OccupancyFilter:
                     tree.prune(tip)
                 except Exception:
                     pass
-        Phylo.write(tree, output_path, "newick")
+        Phylo.write(
+            tree,
+            output_path,
+            "newick",
+            format_branch_length=NEWICK_BRANCH_LENGTH_FORMAT,
+        )
 
         return len(terminals) - len(tips_to_prune), len(tips_to_prune)
 

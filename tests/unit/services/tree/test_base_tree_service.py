@@ -947,7 +947,12 @@ class TestTreeBase:
         tree = object()
         res = service.write_tree_file(tree, "out.tre")
         assert res == 1
-        mocked_write.assert_called_once_with(tree, "out.tre", "newick")
+        mocked_write.assert_called_once_with(
+            tree,
+            "out.tre",
+            "newick",
+            format_branch_length="%1.5f",
+        )
 
     def test_get_tip_names_from_tree(self):
         service = Tree()

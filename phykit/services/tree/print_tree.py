@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from .base import Tree
+from .base import NEWICK_BRANCH_LENGTH_FORMAT, Tree
 
 
 def print_json(*args, **kwargs):
@@ -66,7 +66,7 @@ class PrintTree(Tree):
             tree,
             output,
             "newick",
-            format_branch_length="%1.5f",
+            format_branch_length=NEWICK_BRANCH_LENGTH_FORMAT,
         )
         return output.getvalue().strip()
 

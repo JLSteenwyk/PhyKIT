@@ -56,8 +56,7 @@ statistically independent.
 
 ## Compatibility
 
-- Made JSON Newick serialization from `print_tree` deterministic across
-  supported Biopython versions by explicitly formatting branch lengths to five
-  decimal places.
+- Made Newick serialization deterministic across supported Biopython versions
+  by explicitly formatting branch lengths to five decimal places.
 - Stabilized generic eigendecomposition validation across supported Python and
   numerical-library versions without changing the production fallback rules.

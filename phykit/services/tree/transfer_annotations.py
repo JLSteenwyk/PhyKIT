@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from io import StringIO
 
-from .base import Tree
+from .base import NEWICK_BRANCH_LENGTH_FORMAT, Tree
 from ...errors import PhykitUserError
 
 
@@ -269,7 +269,12 @@ class TransferAnnotations(Tree):
     def _write_annotated_tree(tree, output_path: str) -> None:
         """Write tree preserving comment annotations in brackets."""
         buffer = StringIO()
-        Phylo.write(tree, buffer, "newick")
+        Phylo.write(
+            tree,
+            buffer,
+            "newick",
+            format_branch_length=NEWICK_BRANCH_LENGTH_FORMAT,
+        )
         content = buffer.getvalue()
 
         # BioPython writes comments as [&comment] but wASTRAL uses

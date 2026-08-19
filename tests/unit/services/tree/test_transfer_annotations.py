@@ -313,10 +313,11 @@ class TestTransferAnnotations:
     ):
         seen = {}
 
-        def fake_write(tree, handle, fmt):
+        def fake_write(tree, handle, fmt, **kwargs):
             seen["tree"] = tree
             seen["handle"] = handle
             seen["format"] = fmt
+            seen["kwargs"] = kwargs
             handle.write("(A:1)[&q1=1]\\[extra\\];\n")
             return 1
 
@@ -332,4 +333,5 @@ class TestTransferAnnotations:
         assert seen["tree"] is tree
         assert hasattr(seen["handle"], "getvalue")
         assert seen["format"] == "newick"
+        assert seen["kwargs"] == {"format_branch_length": "%1.5f"}
         assert output_path.read_text() == "(A:1)[q1=1][extra];\n"

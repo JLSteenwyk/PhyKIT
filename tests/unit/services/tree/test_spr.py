@@ -301,7 +301,8 @@ class TestSpr:
     def test_print_spr_trees_batches_stdout(self, mocker):
         printed = mocker.patch("builtins.print")
 
-        def fake_write(tree, handle, fmt):
+        def fake_write(tree, handle, fmt, **kwargs):
+            assert kwargs == {"format_branch_length": "%1.5f"}
             handle.write(f"{tree}\n")
 
         mocker.patch("phykit.services.tree.spr.Phylo.write", side_effect=fake_write)

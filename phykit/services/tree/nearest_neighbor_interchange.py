@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from .base import Tree
+from .base import NEWICK_BRANCH_LENGTH_FORMAT, Tree
 from ...errors import PhykitUserError
 
 
@@ -94,7 +94,12 @@ class NearestNeighborInterchange(Tree):
             branch_report = None
 
         trees_to_write = output_trees if self.no_input_tree else [tree, *output_trees]
-        Phylo.write(trees_to_write, self.output_file_path, "newick")
+        Phylo.write(
+            trees_to_write,
+            self.output_file_path,
+            "newick",
+            format_branch_length=NEWICK_BRANCH_LENGTH_FORMAT,
+        )
 
         if self.json_output:
             payload = dict(
