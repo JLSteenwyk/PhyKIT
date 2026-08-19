@@ -83,6 +83,7 @@ ALIAS_TO_HANDLER: dict[str, str] = {
     "time_tree": "chronogram",
     "cover": "covarying_evolutionary_rates",
     "pcover": "projected_covarying_rates",
+    "erc_scan": "episodic_rate_covariation",
     "consnet": "consensus_network",
     "splitnet": "consensus_network",
     "splits_network": "consensus_network",

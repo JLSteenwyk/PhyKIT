@@ -623,6 +623,8 @@ class Phykit:
                     - calculates correlation in the evolutionary rate of two trees
                 projected_covarying_rates (alias: pcover)
                     - estimates rate covariation when gene-tree topologies differ
+                episodic_rate_covariation (alias: erc_scan)
+                    - localizes clades with coordinated evolutionary-rate shifts
                 consensus_network (alias: consnet; splitnet; splits_network)
                     - extract bipartition splits from gene trees and visualize
                       conflicting phylogenetic signal as a splits network
@@ -4297,6 +4299,129 @@ class Phykit:
         add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, ProjectedCovaryingRates)
+
+    @staticmethod
+    def episodic_rate_covariation(argv):
+        parser = _new_parser(
+            description=_dedent(
+                f"""\
+                {help_header}
+
+                Localize episodic evolutionary-rate covariation to clades on a
+                reference tree (experimental).
+
+                The command first uses projected_covarying_rates to place two gene
+                trees, including discordant or partially overlapping trees, onto a
+                shared reference-edge basis. For every retained edge, it multiplies
+                the two standardized projected rates. It then scans eligible rooted
+                clades for an excess of these local contributions relative to the
+                rest of the tree. Positive local contributions indicate concordant
+                shifts; negative contributions indicate antagonistic shifts.
+
+                Significance is estimated by permuting one gene's rates among edges
+                with similar topological depth. A maximum absolute clade statistic
+                gives family-wise error rate (FWER) adjusted p-values across the
+                complete scan. The unlocalizable edge formed by merging the two
+                complementary branches below a degree-two root is excluded from the
+                local scan, but remains in the global correlation.
+
+                This is a novel experimental PhyKIT scan, not the published CovER
+                calculation. The evolutionary-rate covariation framework follows
+                Clark et al., Genome Research (2012),
+                doi: 10.1101/gr.132647.111, and Steenwyk et al., Science Advances
+                (2022), doi: 10.1126/sciadv.abn0105. Treat both global and local
+                results as exploratory until validated for the study design.
+
+                Aliases:
+                  episodic_rate_covariation, erc_scan
+                Command line interfaces:
+                  pk_episodic_rate_covariation, pk_erc_scan
+
+                Usage:
+                phykit episodic_rate_covariation <tree_file_zero> <tree_file_one>
+                    -r/--reference <reference_tree_file>
+                    [-v/--verbose]
+                    [--weighting uniform|inverse_reference]
+                    [--max-rate <float>] [--max-pairs <int>] [--seed <int>]
+                    [--permutations <int>] [--depth-bins <int>]
+                    [--min-edges <int>] [--alpha <float>]
+                    [-o/--output <path>] [--annotated-tree <path>] [--json]
+
+                Options
+                =====================================================
+                <tree_file_zero>            first gene tree with branch lengths
+
+                <tree_file_one>             second gene tree with branch lengths
+
+                -r/--reference              rooted reference tree with branch
+                                            lengths; typically a species tree
+
+                -v/--verbose                report every eligible clade instead of
+                                            only FWER-significant clades
+
+                --weighting                 distance-pair weighting for NNLS:
+                                            uniform (default) or inverse_reference
+
+                --max-rate                  exclude an edge if either projected
+                                            relative rate exceeds this value
+                                            (default: 5)
+
+                --max-pairs                 maximum number of taxon pairs used in
+                                            projection (default: 50000)
+
+                --seed                      random seed for pair subsampling and
+                                            scan permutations (default: 0)
+
+                --permutations              number of depth-matched permutations
+                                            (default: 999)
+
+                --depth-bins                maximum topological-depth strata used
+                                            for permutations (default: 4)
+
+                --min-edges                 minimum localizable edges required both
+                                            inside and outside a clade (default: 3)
+
+                --alpha                     FWER significance threshold
+                                            (default: 0.05)
+
+                -o/--output                 optional clade-level TSV output path
+
+                --annotated-tree            optional reference-tree output path;
+                                            significant clades receive comments
+
+                --json                      output results and diagnostics as JSON
+                """
+            ),
+        )
+        parser.add_argument("tree_zero", type=str, help=SUPPRESS)
+        parser.add_argument("tree_one", type=str, help=SUPPRESS)
+        parser.add_argument(
+            "-r", "--reference", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-v", "--verbose", action="store_true", required=False, help=SUPPRESS
+        )
+        parser.add_argument(
+            "--weighting",
+            choices=("uniform", "inverse_reference"),
+            default="uniform",
+            help=SUPPRESS,
+        )
+        parser.add_argument("--max-rate", type=float, default=5.0, help=SUPPRESS)
+        parser.add_argument(
+            "--max-pairs", type=int, default=50_000, help=SUPPRESS
+        )
+        parser.add_argument("--seed", type=int, default=0, help=SUPPRESS)
+        parser.add_argument(
+            "--permutations", type=int, default=999, help=SUPPRESS
+        )
+        parser.add_argument("--depth-bins", type=int, default=4, help=SUPPRESS)
+        parser.add_argument("--min-edges", type=int, default=3, help=SUPPRESS)
+        parser.add_argument("--alpha", type=float, default=0.05, help=SUPPRESS)
+        parser.add_argument("-o", "--output", type=str, help=SUPPRESS)
+        parser.add_argument("--annotated-tree", type=str, help=SUPPRESS)
+        _add_json_argument(parser)
+        _run_service(parser, argv, EpisodicRateCovariation)
 
     @staticmethod
     def dvmc(argv):
@@ -10564,6 +10689,10 @@ def covarying_evolutionary_rates(argv=None):
 
 def projected_covarying_rates(argv=None):
     Phykit.projected_covarying_rates(sys.argv[1:])
+
+
+def episodic_rate_covariation(argv=None):
+    Phykit.episodic_rate_covariation(sys.argv[1:])
 
 
 def dvmc(argv=None):

@@ -8,6 +8,7 @@ _EXPORTS = {
     "Chronogram": "chronogram",
     "CovaryingEvolutionaryRates": "covarying_evolutionary_rates",
     "ProjectedCovaryingRates": "projected_covarying_rates",
+    "EpisodicRateCovariation": "episodic_rate_covariation",
     "ConsensusNetwork": "consensus_network",
     "NeighborNet": "neighbor_net",
     "ConsensusTree": "consensus_tree",
