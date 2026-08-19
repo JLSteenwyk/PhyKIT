@@ -150,6 +150,39 @@ def test_pair_subsampling_is_deterministic_and_sorted():
     np.testing.assert_array_equal(first_j, second_j)
 
 
+def test_rank_deficient_subsample_is_rejected():
+    design = np.asarray(
+        [
+            [1.0, 0.0, 1.0],
+            [0.0, 1.0, 1.0],
+            [1.0, 1.0, 2.0],
+        ]
+    )
+
+    with pytest.raises(PhykitUserError) as error:
+        ProjectedCovaryingRates._validate_projection_design(
+            design,
+            edge_count=3,
+            was_subsampled=True,
+        )
+
+    assert "rank deficient" in " ".join(error.value.messages)
+
+
+def test_full_design_skips_redundant_rank_computation(monkeypatch):
+    design = np.eye(3)
+
+    def fail_if_called(*args, **kwargs):
+        raise AssertionError("full reference designs have a known identifiable basis")
+
+    monkeypatch.setattr(np.linalg, "matrix_rank", fail_if_called)
+    ProjectedCovaryingRates._validate_projection_design(
+        design,
+        edge_count=3,
+        was_subsampled=False,
+    )
+
+
 @pytest.mark.parametrize(
     ("overrides", "message"),
     [

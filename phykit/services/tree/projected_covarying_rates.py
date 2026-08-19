@@ -150,6 +150,11 @@ class ProjectedCovaryingRates(Tree):
             )
         )
         design = self._path_design_matrix(shared_taxa, edges, pair_i, pair_j)
+        self._validate_projection_design(
+            design,
+            edge_count=len(edges),
+            was_subsampled=len(pair_i) < total_pair_count,
+        )
 
         reference_distances = self._selected_distances(
             tree_ref,
@@ -345,6 +350,26 @@ class ProjectedCovaryingRates(Tree):
             membership[[taxon_index[taxon] for taxon in edge.split]] = True
             design[:, column] = membership[pair_i] != membership[pair_j]
         return design
+
+    @staticmethod
+    def _validate_projection_design(design, edge_count, was_subsampled) -> None:
+        if np.any(np.count_nonzero(design, axis=0) == 0):
+            raise PhykitUserError(
+                [
+                    "The selected taxon pairs do not observe every reference edge.",
+                    "Increase --max-pairs or use a different --seed.",
+                ],
+                code=2,
+            )
+        if was_subsampled and np.linalg.matrix_rank(design) < edge_count:
+            raise PhykitUserError(
+                [
+                    "The subsampled reference-edge design is rank deficient, so "
+                    "projected edge lengths are not uniquely identifiable.",
+                    "Increase --max-pairs or use a different --seed.",
+                ],
+                code=2,
+            )
 
     def _selected_distances(
         self,
