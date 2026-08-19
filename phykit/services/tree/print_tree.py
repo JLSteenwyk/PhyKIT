@@ -39,7 +39,7 @@ class PrintTree(Tree):
             print_json(
                 dict(
                     remove_branch_lengths=self.remove,
-                    tree_newick=tree.format("newick").strip(),
+                    tree_newick=self._format_newick(tree),
                 )
             )
             return
@@ -55,6 +55,20 @@ class PrintTree(Tree):
             remove=args.remove,
             json_output=getattr(args, "json", False),
         )
+
+    @staticmethod
+    def _format_newick(tree) -> str:
+        from io import StringIO
+        from Bio import Phylo as _Phylo
+
+        output = StringIO()
+        _Phylo.write(
+            tree,
+            output,
+            "newick",
+            format_branch_length="%1.5f",
+        )
+        return output.getvalue().strip()
 
     def remove_branch_lengths(self, tree) -> None:
         if self._remove_standard_tree_branch_lengths(tree):

@@ -1137,10 +1137,29 @@ class TestFelsensteinPruning:
     ):
         import phykit.helpers.discrete_models as discrete_models
 
-        Q = build_q_matrix(
-            np.array([0.06, 0.15, 0.04, 0.2, 0.06, 0.12]),
-            3,
-            "ARD",
+        eigenvalues = np.array([0.0, -0.2, -0.5])
+        eigenvectors = np.array(
+            [
+                [1.0, 1.0, 0.2],
+                [1.0, -0.5, 1.0],
+                [1.0, 0.25, -1.0],
+            ]
+        )
+        inverse_eigenvectors = np.linalg.inv(eigenvectors)
+        matrix = (
+            eigenvectors @ np.diag(eigenvalues) @ inverse_eigenvectors
+        )
+        expected = matrix_exp(matrix, 0.75)
+
+        monkeypatch.setattr(
+            discrete_models.np.linalg,
+            "eig",
+            lambda _matrix: (eigenvalues, eigenvectors),
+        )
+        monkeypatch.setattr(
+            discrete_models.np.linalg,
+            "inv",
+            lambda _matrix: inverse_eigenvectors,
         )
 
         def fail_asarray(*_args, **_kwargs):
@@ -1148,13 +1167,13 @@ class TestFelsensteinPruning:
 
         monkeypatch.setattr(discrete_models.np, "asarray", fail_asarray)
 
-        context = discrete_models._matrix_exp_eigendecomp_context(Q)
+        context = discrete_models._matrix_exp_eigendecomp_context(matrix)
 
         assert context[0] == "generic"
         assert len(context) == 5
         transition = discrete_models._matrix_exp_from_eigendecomp(context, 0.75)
         assert transition.dtype == np.float64
-        np.testing.assert_allclose(transition, matrix_exp(Q, 0.75))
+        np.testing.assert_allclose(transition, expected)
 
     def test_ill_conditioned_eigendecomposition_context_falls_back(self):
         import phykit.helpers.discrete_models as discrete_models

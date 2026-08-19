@@ -53,3 +53,11 @@ branch-ratio statistic. Interpret its correlation together with both
 projection NRMSE values and the retained-edge count. Its ordinary Pearson
 p-value is descriptive because projected phylogenetic edges are not
 statistically independent.
+
+## Compatibility
+
+- Made JSON Newick serialization from `print_tree` deterministic across
+  supported Biopython versions by explicitly formatting branch lengths to five
+  decimal places.
+- Stabilized generic eigendecomposition validation across supported Python and
+  numerical-library versions without changing the production fallback rules.
