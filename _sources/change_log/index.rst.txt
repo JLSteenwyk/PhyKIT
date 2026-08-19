@@ -24,7 +24,7 @@ Experimental topology-robust evolutionary-rate covariation:
   simulation recovery validation, 97% unit coverage for the new service, and
   documentation distinguishing this experimental estimator from published
   CovER.
-* Made JSON Newick output from ``print_tree`` deterministic across supported
+* Made Newick branch-length formatting deterministic across supported
   Biopython versions and stabilized cross-platform eigendecomposition tests.
 
 **2.4.1**:
