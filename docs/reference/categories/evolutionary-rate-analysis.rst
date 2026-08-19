@@ -3,6 +3,7 @@ Evolutionary rate analysis
 
 - :doc:`Codon dN/dS <../commands/codon_dnds>` - Pairwise synonymous and nonsynonymous substitution-rate estimates
 - :doc:`Covarying evolutionary rates <../commands/covarying_evolutionary_rates>` - Detect covariation in evolutionary rates
+- :doc:`Projected covarying rates <../commands/projected_covarying_rates>` - Topology-robust rate covariation by reference-edge projection
 - :doc:`Relative rate test <../commands/relative_rate_test>` - Relative rate test between lineages
 
 .. toctree::
@@ -10,4 +11,5 @@ Evolutionary rate analysis
 
    ../commands/codon_dnds
    ../commands/covarying_evolutionary_rates
+   ../commands/projected_covarying_rates
    ../commands/relative_rate_test

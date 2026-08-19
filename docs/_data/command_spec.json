@@ -2686,6 +2686,75 @@
       }
     },
     {
+      "canonical": "projected_covarying_rates",
+      "handler": "projected_covarying_rates",
+      "aliases": [
+        "pcover"
+      ],
+      "entry_points": [
+        "pk_projected_covarying_rates",
+        "pk_pcover"
+      ],
+      "title": "Projected covarying rates",
+      "summary": "Topology-robust evolutionary-rate covariation by reference-edge projection",
+      "categories": [
+        "Evolutionary rate analysis"
+      ],
+      "page": "reference/commands/projected_covarying_rates.rst",
+      "documentation": {
+        "purpose": "Estimate gene-gene evolutionary-rate covariation when the two gene-tree topologies differ from each other or from the reference tree.",
+        "use_cases": [
+          "Compare unconstrained gene trees without forcing their topologies to match the species tree.",
+          "Quantify how well each gene's patristic distances fit a shared reference-tree edge basis.",
+          "Explore rate covariation while retaining topology disagreement as a projection diagnostic."
+        ],
+        "input_formats": [
+          "Two Newick gene trees with finite, nonnegative branch lengths.",
+          "One Newick reference tree with finite, nonnegative branch lengths, supplied with --reference."
+        ],
+        "outputs": [
+          "Pearson correlation and descriptive two-sided p-value for retained projected relative rates.",
+          "Shared-taxon, distance-pair, retained-edge, and per-gene projection NRMSE diagnostics.",
+          "Optional per-edge verbose table, structured JSON, and scatter plot."
+        ],
+        "errors": [
+          "Fewer than three taxa are shared by both gene trees and the reference tree.",
+          "A tree has missing, negative, or non-finite branch lengths.",
+          "Pair subsampling produces a rank-deficient reference-edge design.",
+          "Fewer than three rates remain after filtering or one retained rate vector is constant."
+        ],
+        "limitations": [
+          "This is an experimental PhyKIT estimator and is not the published CovER branch-ratio statistic.",
+          "Large projection NRMSE indicates that the reference topology poorly represents a gene tree's distance signal.",
+          "Projection maps distances onto reference edges; it does not identify homologous discordant gene-tree branches.",
+          "Projected edges are not independent, so the ordinary Pearson p-value is descriptive.",
+          "Pair subsampling trades precision for memory and runtime and should be checked for seed sensitivity."
+        ],
+        "scientific_interpretation": "Interpret the correlation only together with both projection NRMSE values and the retained-edge count. A high correlation with poor projection fits is weak evidence because substantial gene-tree signal lies outside the reference topology. Compare coefficients only among analyses that use the same reference, weighting, filtering, and pair-sampling settings.",
+        "validation": [
+          "Unit tests verify exact recovery of positive edge lengths from additive distances.",
+          "Discordant-topology tests verify nonnegative estimates and nonzero projection error.",
+          "Integration tests cover three-way taxon pruning, both weighting modes, JSON, verbose output, and the pcover alias."
+        ],
+        "citations": [
+          "Steenwyk et al. 2022, Science Advances, doi:10.1126/sciadv.abn0105, for the evolutionary-rate covariation context.",
+          "Lawson and Hanson 1995, Solving Least Squares Problems, doi:10.1137/1.9781611971217, for nonnegative least squares."
+        ],
+        "examples": [
+          "phykit projected_covarying_rates gene_a.tre gene_b.tre --reference species.tre --json",
+          "phykit pcover gene_a.tre gene_b.tre -r species.tre --weighting inverse_reference --plot"
+        ],
+        "related_commands": [
+          "covarying_evolutionary_rates",
+          "patristic_distances",
+          "tree_space"
+        ],
+        "related_tutorials": [
+          "tutorials/pages/02-evaluating-gene-gene-covariation.rst"
+        ]
+      }
+    },
+    {
       "canonical": "prune_tree",
       "handler": "prune_tree",
       "aliases": [

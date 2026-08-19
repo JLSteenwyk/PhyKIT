@@ -16297,6 +16297,462 @@
       }
     },
     {
+      "canonical": "projected_covarying_rates",
+      "handler": "projected_covarying_rates",
+      "aliases": [
+        "pcover"
+      ],
+      "entry_points": [
+        "pk_projected_covarying_rates",
+        "pk_pcover"
+      ],
+      "title": "Projected covarying rates",
+      "summary": "Topology-robust evolutionary-rate covariation by reference-edge projection",
+      "categories": [
+        "Evolutionary rate analysis"
+      ],
+      "page": "reference/commands/projected_covarying_rates.rst",
+      "documentation": {
+        "purpose": "Estimate gene-gene evolutionary-rate covariation when the two gene-tree topologies differ from each other or from the reference tree.",
+        "use_cases": [
+          "Compare unconstrained gene trees without forcing their topologies to match the species tree.",
+          "Quantify how well each gene's patristic distances fit a shared reference-tree edge basis.",
+          "Explore rate covariation while retaining topology disagreement as a projection diagnostic."
+        ],
+        "input_formats": [
+          "Two Newick gene trees with finite, nonnegative branch lengths.",
+          "One Newick reference tree with finite, nonnegative branch lengths, supplied with --reference."
+        ],
+        "outputs": [
+          "Pearson correlation and descriptive two-sided p-value for retained projected relative rates.",
+          "Shared-taxon, distance-pair, retained-edge, and per-gene projection NRMSE diagnostics.",
+          "Optional per-edge verbose table, structured JSON, and scatter plot."
+        ],
+        "errors": [
+          "Fewer than three taxa are shared by both gene trees and the reference tree.",
+          "A tree has missing, negative, or non-finite branch lengths.",
+          "Pair subsampling produces a rank-deficient reference-edge design.",
+          "Fewer than three rates remain after filtering or one retained rate vector is constant."
+        ],
+        "limitations": [
+          "This is an experimental PhyKIT estimator and is not the published CovER branch-ratio statistic.",
+          "Large projection NRMSE indicates that the reference topology poorly represents a gene tree's distance signal.",
+          "Projection maps distances onto reference edges; it does not identify homologous discordant gene-tree branches.",
+          "Projected edges are not independent, so the ordinary Pearson p-value is descriptive.",
+          "Pair subsampling trades precision for memory and runtime and should be checked for seed sensitivity."
+        ],
+        "scientific_interpretation": "Interpret the correlation only together with both projection NRMSE values and the retained-edge count. A high correlation with poor projection fits is weak evidence because substantial gene-tree signal lies outside the reference topology. Compare coefficients only among analyses that use the same reference, weighting, filtering, and pair-sampling settings.",
+        "validation": [
+          "Unit tests verify exact recovery of positive edge lengths from additive distances.",
+          "Discordant-topology tests verify nonnegative estimates and nonzero projection error.",
+          "Integration tests cover three-way taxon pruning, both weighting modes, JSON, verbose output, and the pcover alias."
+        ],
+        "citations": [
+          "Steenwyk et al. 2022, Science Advances, doi:10.1126/sciadv.abn0105, for the evolutionary-rate covariation context.",
+          "Lawson and Hanson 1995, Solving Least Squares Problems, doi:10.1137/1.9781611971217, for nonnegative least squares."
+        ],
+        "examples": [
+          "phykit projected_covarying_rates gene_a.tre gene_b.tre --reference species.tre --json",
+          "phykit pcover gene_a.tre gene_b.tre -r species.tre --weighting inverse_reference --plot"
+        ],
+        "related_commands": [
+          "covarying_evolutionary_rates",
+          "patristic_distances",
+          "tree_space"
+        ],
+        "related_tutorials": [
+          "tutorials/pages/02-evaluating-gene-gene-covariation.rst"
+        ]
+      },
+      "arguments": [
+        {
+          "name": "tree_zero",
+          "flags": [],
+          "positional": true,
+          "required": true,
+          "type": "str",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "tree_one",
+          "flags": [],
+          "positional": true,
+          "required": true,
+          "type": "str",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "reference",
+          "flags": [
+            "-r",
+            "--reference"
+          ],
+          "positional": false,
+          "required": true,
+          "type": "str",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": "",
+          "action": "_StoreAction"
+        },
+        {
+          "name": "verbose",
+          "flags": [
+            "-v",
+            "--verbose"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "boolean",
+          "nargs": 0,
+          "default": false,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreTrueAction"
+        },
+        {
+          "name": "weighting",
+          "flags": [
+            "--weighting"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "string",
+          "nargs": null,
+          "default": "uniform",
+          "choices": [
+            "uniform",
+            "inverse_reference"
+          ],
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "max_rate",
+          "flags": [
+            "--max-rate"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "float",
+          "nargs": null,
+          "default": 5.0,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "max_pairs",
+          "flags": [
+            "--max-pairs"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "int",
+          "nargs": null,
+          "default": 50000,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "seed",
+          "flags": [
+            "--seed"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "int",
+          "nargs": null,
+          "default": 0,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "plot",
+          "flags": [
+            "--plot"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "boolean",
+          "nargs": 0,
+          "default": false,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreTrueAction"
+        },
+        {
+          "name": "plot_output",
+          "flags": [
+            "--plot-output"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "str",
+          "nargs": null,
+          "default": "projected_covarying_rates_plot.png",
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "fig_width",
+          "flags": [
+            "--fig-width"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "float",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "fig_height",
+          "flags": [
+            "--fig-height"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "float",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "dpi",
+          "flags": [
+            "--dpi"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "int",
+          "nargs": null,
+          "default": 300,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "no_title",
+          "flags": [
+            "--no-title"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "boolean",
+          "nargs": 0,
+          "default": false,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreTrueAction"
+        },
+        {
+          "name": "title",
+          "flags": [
+            "--title"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "str",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "legend_position",
+          "flags": [
+            "--legend-position"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "str",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "ylabel_fontsize",
+          "flags": [
+            "--ylabel-fontsize"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "float",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "xlabel_fontsize",
+          "flags": [
+            "--xlabel-fontsize"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "float",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "title_fontsize",
+          "flags": [
+            "--title-fontsize"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "float",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "axis_fontsize",
+          "flags": [
+            "--axis-fontsize"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "float",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "colors",
+          "flags": [
+            "--colors"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "str",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "ladderize",
+          "flags": [
+            "--ladderize"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "boolean",
+          "nargs": 0,
+          "default": false,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreTrueAction"
+        },
+        {
+          "name": "cladogram",
+          "flags": [
+            "--cladogram"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "boolean",
+          "nargs": 0,
+          "default": false,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreTrueAction"
+        },
+        {
+          "name": "circular",
+          "flags": [
+            "--circular"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "boolean",
+          "nargs": 0,
+          "default": false,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreTrueAction"
+        },
+        {
+          "name": "color_file",
+          "flags": [
+            "--color-file"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "str",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "json",
+          "flags": [
+            "--json"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "boolean",
+          "nargs": 0,
+          "default": false,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreTrueAction"
+        }
+      ],
+      "documentation_url": "reference/commands/projected_covarying_rates.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [
+          "--plot-output"
+        ],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
+    },
+    {
       "canonical": "prune_tree",
       "handler": "prune_tree",
       "aliases": [

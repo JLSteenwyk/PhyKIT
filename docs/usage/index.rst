@@ -564,6 +564,12 @@ These links preserve the command fragments used by earlier versions of the docum
 
 .. raw:: html
 
+   <span id="cmd-projected_covarying_rates"></span>
+
+- :doc:`Projected covarying rates </reference/commands/projected_covarying_rates>`
+
+.. raw:: html
+
    <span id="cmd-prune_tree"></span>
 
 - :doc:`Prune tree </reference/commands/prune_tree>`

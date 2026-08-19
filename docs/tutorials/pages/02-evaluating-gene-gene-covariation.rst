@@ -27,6 +27,7 @@ Related command references
 --------------------------
 
 - :doc:`Covarying Evolutionary Rates </reference/commands/covarying_evolutionary_rates>`
+- :doc:`Projected Covarying Rates </reference/commands/projected_covarying_rates>`
 - :doc:`Root Tree </reference/commands/root_tree>`
 
 Workflow
@@ -49,6 +50,30 @@ estimated as unconstrained topologies. See the :doc:`command reference
 To provide a comprehensive tutorial, we will start with the sequence alignments for three genes and their constrained 
 tree topologies that match the putative species tree from `Shen et al. 2020
 <https://www.biorxiv.org/content/10.1101/2020.05.11.088658v1.abstract>`_. 
+
+Choosing a method when topologies differ
+-----------------------------------------
+
+The published CovER implementation, ``cover``, is appropriate for the
+constrained and topology-matched trees used in this tutorial. If gene trees
+were inferred without a topological constraint and disagree with one another
+or with the species tree, the experimental ``pcover`` command provides a
+different analysis:
+
+.. code-block:: shell
+
+   phykit pcover unconstrained_gene_a.tre unconstrained_gene_b.tre \
+       -r species_tree.tre --json > projected_rates.json
+
+``pcover`` projects each gene's pairwise patristic distances onto the species
+tree's unrooted edge basis before correlating relative rates. It reports a
+projection NRMSE for each gene; zero is an exact fit to the reference basis,
+whereas larger values indicate unexplained topological distance signal.
+Interpret the correlation only alongside both NRMSE values. The ``cover`` and
+``pcover`` coefficients estimate different quantities and should not be mixed
+within the same gene-pair network. See :doc:`Projected Covarying Rates
+</reference/commands/projected_covarying_rates>` for assumptions and output
+details.
 
 .. centered::
    Download test data:
