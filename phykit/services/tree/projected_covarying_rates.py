@@ -66,6 +66,7 @@ class ProjectedCovaryingRates(Tree):
 
     def __init__(self, args) -> None:
         parsed = self.process_args(args)
+        self._processed_args = parsed
         super().__init__(
             tree_file_path=parsed["tree_file_path"],
             tree1_file_path=parsed["tree1_file_path"],
