@@ -621,6 +621,8 @@ class Phykit:
                     - collapses branches according to bipartition support
                 covarying_evolutionary_rates (alias: cover)
                     - calculates correlation in the evolutionary rate of two trees
+                projected_covarying_rates (alias: pcover)
+                    - estimates rate covariation when gene-tree topologies differ
                 consensus_network (alias: consnet; splitnet; splits_network)
                     - extract bipartition splits from gene trees and visualize
                       conflicting phylogenetic signal as a splits network
@@ -4181,6 +4183,120 @@ class Phykit:
         add_plot_arguments(parser)
         _add_json_argument(parser)
         _run_service(parser, argv, CovaryingEvolutionaryRates)
+
+    @staticmethod
+    def projected_covarying_rates(argv):
+        parser = _new_parser(
+            description=_dedent(
+                f"""\
+                {help_header}
+
+                Estimate evolutionary-rate covariation when gene-tree topologies
+                differ (experimental).
+
+                This method prunes both gene trees and a reference tree to their
+                shared taxa, then converts each gene tree to pairwise patristic
+                distances. It constructs an edge-path design matrix from the
+                unrooted reference tree and uses nonnegative least squares (NNLS)
+                to project each gene's distances onto that common edge basis.
+                Projected edge lengths are divided by reference edge lengths,
+                filtered by --max-rate, Z-transformed, and correlated with Pearson's
+                r. Unlike covarying_evolutionary_rates, matching tree topologies are
+                not required.
+
+                The projection NRMSE reported for each gene measures disagreement
+                with the reference basis: zero is an exact additive fit and larger
+                values indicate more distance signal that the reference topology
+                cannot explain. For rooted references with two root children, their
+                complementary branches are combined because pairwise distances
+                identify only their summed unrooted edge length.
+
+                This is an experimental PhyKIT estimator, not the published CovER
+                calculation. Its ordinary Pearson p-value is descriptive because
+                projected reference edges are not statistically independent. The
+                rate-covariation context follows Steenwyk et al., Science Advances
+                (2022), doi: 10.1126/sciadv.abn0105. NNLS follows Lawson and Hanson,
+                Solving Least Squares Problems (1995).
+
+                Aliases:
+                  projected_covarying_rates, pcover
+                Command line interfaces:
+                  pk_projected_covarying_rates, pk_pcover
+
+                Usage:
+                phykit projected_covarying_rates <tree_file_zero> <tree_file_one>
+                    -r/--reference <reference_tree_file>
+                    [-v/--verbose]
+                    [--weighting uniform|inverse_reference]
+                    [--max-rate <float>] [--max-pairs <int>] [--seed <int>]
+                    [--plot] [--plot-output <path>] [--json]
+
+                Options
+                =====================================================
+                <tree_file_zero>            first gene tree with branch lengths
+
+                <tree_file_one>             second gene tree with branch lengths
+
+                -r/--reference              reference tree with branch lengths;
+                                            typically a species tree
+
+                -v/--verbose                include the projected length, relative
+                                            rate, Z-score, and status of every
+                                            identifiable reference edge
+
+                --weighting                 distance-pair weighting for NNLS:
+                                            uniform (default) or inverse_reference
+
+                --max-rate                  exclude an edge if either projected
+                                            relative rate exceeds this value
+                                            (default: 5)
+
+                --max-pairs                 maximum number of taxon pairs used in
+                                            projection (default: 50000)
+
+                --seed                      random seed for deterministic pair
+                                            subsampling (default: 0)
+
+                --plot                      save a projected-rate scatter plot
+
+                --plot-output               plot path (default:
+                                            projected_covarying_rates_plot.png)
+
+                --json                      output results and diagnostics as JSON
+                """
+            ),
+        )
+        parser.add_argument("tree_zero", type=str, help=SUPPRESS)
+        parser.add_argument("tree_one", type=str, help=SUPPRESS)
+        parser.add_argument(
+            "-r", "--reference", type=str, required=True, help=SUPPRESS, metavar=""
+        )
+        parser.add_argument(
+            "-v", "--verbose", action="store_true", required=False, help=SUPPRESS
+        )
+        parser.add_argument(
+            "--weighting",
+            choices=("uniform", "inverse_reference"),
+            default="uniform",
+            help=SUPPRESS,
+        )
+        parser.add_argument(
+            "--max-rate", type=float, default=5.0, help=SUPPRESS
+        )
+        parser.add_argument(
+            "--max-pairs", type=int, default=50_000, help=SUPPRESS
+        )
+        parser.add_argument("--seed", type=int, default=0, help=SUPPRESS)
+        parser.add_argument("--plot", action="store_true", help=SUPPRESS)
+        parser.add_argument(
+            "--plot-output",
+            type=str,
+            default="projected_covarying_rates_plot.png",
+            help=SUPPRESS,
+        )
+        add_plot_arguments(parser)
+        _add_json_argument(parser)
+        _run_service(parser, argv, ProjectedCovaryingRates)
 
     @staticmethod
     def dvmc(argv):
@@ -10444,6 +10560,10 @@ def collapse_branches(argv=None):
 
 def covarying_evolutionary_rates(argv=None):
     Phykit.covarying_evolutionary_rates(sys.argv[1:])
+
+
+def projected_covarying_rates(argv=None):
+    Phykit.projected_covarying_rates(sys.argv[1:])
 
 
 def dvmc(argv=None):
