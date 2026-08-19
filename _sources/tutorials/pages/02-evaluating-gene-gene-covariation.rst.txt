@@ -27,6 +27,7 @@ Related command references
 --------------------------
 
 - :doc:`Covarying Evolutionary Rates </reference/commands/covarying_evolutionary_rates>`
+- :doc:`Episodic Rate Covariation </reference/commands/episodic_rate_covariation>`
 - :doc:`Projected Covarying Rates </reference/commands/projected_covarying_rates>`
 - :doc:`Root Tree </reference/commands/root_tree>`
 
@@ -74,6 +75,33 @@ Interpret the correlation only alongside both NRMSE values. The ``cover`` and
 within the same gene-pair network. See :doc:`Projected Covarying Rates
 </reference/commands/projected_covarying_rates>` for assumptions and output
 details.
+
+Localizing covariation after projection
+---------------------------------------
+
+A whole-tree ``pcover`` coefficient asks whether projected rates covary across
+all retained reference edges. To investigate whether that signal is
+concentrated in a particular part of the tree, run the experimental episodic
+scan on the same inputs and settings:
+
+.. code-block:: shell
+
+   phykit erc_scan unconstrained_gene_a.tre unconstrained_gene_b.tre \
+       -r species_tree.tre --permutations 9999 --seed 814 \
+       --output episodic_clades.tsv \
+       --annotated-tree episodic_reference.tre --json > episodic_scan.json
+
+For each eligible rooted clade, the scan contrasts the products of the two
+standardized projected rates inside the clade with those elsewhere in the
+tree. It permutes rates among similarly deep edges and reports both
+unadjusted and maximum-statistic family-wise error rate (FWER) p-values. Base
+discovery claims on ``fwer_p_value``, inspect both projection NRMSE values, and
+record the permutation count and seed. The scan is exploratory and does not
+replace independent validation of a proposed episodic interaction. See
+:doc:`Episodic Rate Covariation
+</reference/commands/episodic_rate_covariation>` for the statistic, edge
+eligibility rules, and interpretation of concordant versus antagonistic
+coupling.
 
 .. centered::
    Download test data:

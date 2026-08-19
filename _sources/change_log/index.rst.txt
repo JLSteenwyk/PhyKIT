@@ -6,6 +6,22 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.6.0**:
+
+Experimental localization of evolutionary-rate covariation:
+
+* Added ``episodic_rate_covariation`` (alias: ``erc_scan``) to identify rooted
+  reference-tree clades with localized concordant or antagonistic projected
+  gene-rate shifts.
+* Added topological-depth-matched permutations, plus-one empirical p-values,
+  and a maximum absolute clade statistic for family-wise error rate control.
+* Added clade-level TSV output, significant-clade Newick annotations,
+  structured JSON, per-edge local contributions, and leave-one-edge-out global
+  correlation diagnostics.
+* Added planted-signal and independent-null simulations, end-to-end CLI tests,
+  and documentation of the statistic, exchangeability assumption, root-edge
+  exclusion, and experimental status.
+
 **2.5.0**:
 
 Experimental topology-robust evolutionary-rate covariation:
