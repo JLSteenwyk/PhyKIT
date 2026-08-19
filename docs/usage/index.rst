@@ -288,6 +288,12 @@ These links preserve the command fragments used by earlier versions of the docum
 
 .. raw:: html
 
+   <span id="cmd-episodic_rate_covariation"></span>
+
+- :doc:`Episodic rate covariation </reference/commands/episodic_rate_covariation>`
+
+.. raw:: html
+
    <span id="cmd-evo_tempo_map"></span>
 
 - :doc:`Evolutionary tempo mapping </reference/commands/evo_tempo_map>`

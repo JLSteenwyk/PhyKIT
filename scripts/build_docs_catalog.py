@@ -106,6 +106,12 @@ def rst_value(value: Any) -> str:
     return str(value).replace("`", "\\`")
 
 
+def is_output_argument(argument: dict[str, Any]) -> bool:
+    return argument["name"] == "annotated_tree" or any(
+        "output" in flag for flag in argument["flags"]
+    )
+
+
 def runtime_include(command: dict[str, Any]) -> str:
     arguments = command["arguments"]
     synopsis = " ".join(
@@ -136,8 +142,7 @@ def runtime_include(command: dict[str, Any]) -> str:
         else "This command does not expose a ``--json`` option."
     )
     output_options = [
-        argument for argument in arguments
-        if any("output" in flag for flag in argument["flags"])
+        argument for argument in arguments if is_output_argument(argument)
     ]
     output_note = (
         "Output-file options: "
@@ -238,7 +243,7 @@ def output_contract(
             flag
             for argument in arguments
             for flag in argument["flags"]
-            if flag.startswith("--") and "output" in flag
+            if flag.startswith("--") and is_output_argument(argument)
         }
     )
     return {

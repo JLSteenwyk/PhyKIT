@@ -7193,6 +7193,314 @@
       }
     },
     {
+      "canonical": "episodic_rate_covariation",
+      "handler": "episodic_rate_covariation",
+      "aliases": [
+        "erc_scan"
+      ],
+      "entry_points": [
+        "pk_episodic_rate_covariation",
+        "pk_erc_scan"
+      ],
+      "title": "Episodic rate covariation",
+      "summary": "Localize coordinated gene-rate shifts to clades on a reference tree",
+      "categories": [
+        "Evolutionary rate analysis"
+      ],
+      "page": "reference/commands/episodic_rate_covariation.rst",
+      "documentation": {
+        "purpose": "Identify rooted reference-tree clades where two genes show a localized excess of concordant or antagonistic projected-rate changes.",
+        "use_cases": [
+          "Localize a whole-tree evolutionary-rate covariation signal to candidate clades.",
+          "Detect coordinated rate episodes that may be diluted in a global correlation.",
+          "Measure whether one reference-tree region disproportionately influences a gene-pair correlation."
+        ],
+        "input_formats": [
+          "Two Newick gene trees with named tips and finite, nonnegative branch lengths.",
+          "One rooted Newick reference tree with named tips and finite, nonnegative branch lengths, supplied with --reference."
+        ],
+        "outputs": [
+          "Global projected-rate correlation and descriptive Pearson p-value.",
+          "Per-clade normalized contribution contrast, coupling direction, empirical p-value, and max-statistic FWER p-value.",
+          "Per-edge local contribution and leave-one-out correlation influence diagnostics.",
+          "Optional clade TSV, significant-clade annotated Newick tree, and structured JSON."
+        ],
+        "errors": [
+          "Fewer than three taxa are shared or projected rates cannot be estimated.",
+          "Too few localizable edges occur inside or outside every candidate clade.",
+          "No projected edges can be permuted within the requested depth strata.",
+          "Permutation, depth-bin, minimum-edge, or alpha settings are outside their accepted ranges."
+        ],
+        "limitations": [
+          "This is novel experimental PhyKIT methodology, not published CovER or a branch-site selection test.",
+          "The reference root defines candidate clades and can therefore change the hypotheses being tested.",
+          "The permutation null assumes edges are exchangeable within topological-depth strata.",
+          "Nested candidates share edges; max-statistic correction controls the implemented test family but does not make hypotheses independent.",
+          "Projection quality, rate filtering, tree size, and permutation count affect power and interpretation.",
+          "A degree-two root's merged complementary edge cannot be localized and is omitted from clade scans."
+        ],
+        "scientific_interpretation": "Use the FWER p-value for local discovery calls and interpret it with the local mean contribution, coupling direction, global correlation, retained-edge count, and both projection NRMSE values. Concordant means that standardized rates tend to shift in the same direction within a clade; antagonistic means opposite directions. Neither establishes a direct molecular interaction.",
+        "validation": [
+          "Unit tests independently verify the clade statistic, depth binning, empirical correction, root-edge exclusion, and leave-one-out correlations.",
+          "A full synthetic projection test recovers a planted four-taxon clade with max-statistic FWER significance.",
+          "A fixed independent-rate simulation produces no FWER-significant clade.",
+          "Integration tests cover canonical and alias dispatch, JSON, TSV, and annotated-tree output."
+        ],
+        "citations": [
+          "Clark et al. 2012, Genome Research, doi:10.1101/gr.132647.111, for the evolutionary-rate covariation framework.",
+          "Steenwyk et al. 2022, Science Advances, doi:10.1126/sciadv.abn0105, for gene-gene evolutionary-rate covariation context.",
+          "The projected-edge clade scan and its depth-matched max-statistic test are experimental PhyKIT methodology."
+        ],
+        "examples": [
+          "phykit episodic_rate_covariation gene_a.tre gene_b.tre --reference species.tre --permutations 9999 --json",
+          "phykit erc_scan gene_a.tre gene_b.tre -r species.tre --output clades.tsv --annotated-tree episodic.tre"
+        ],
+        "related_commands": [
+          "projected_covarying_rates",
+          "covarying_evolutionary_rates",
+          "trait_rate_map"
+        ],
+        "related_tutorials": [
+          "tutorials/pages/02-evaluating-gene-gene-covariation.rst"
+        ]
+      },
+      "arguments": [
+        {
+          "name": "tree_zero",
+          "flags": [],
+          "positional": true,
+          "required": true,
+          "type": "str",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "tree_one",
+          "flags": [],
+          "positional": true,
+          "required": true,
+          "type": "str",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "reference",
+          "flags": [
+            "-r",
+            "--reference"
+          ],
+          "positional": false,
+          "required": true,
+          "type": "str",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": "",
+          "action": "_StoreAction"
+        },
+        {
+          "name": "verbose",
+          "flags": [
+            "-v",
+            "--verbose"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "boolean",
+          "nargs": 0,
+          "default": false,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreTrueAction"
+        },
+        {
+          "name": "weighting",
+          "flags": [
+            "--weighting"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "string",
+          "nargs": null,
+          "default": "uniform",
+          "choices": [
+            "uniform",
+            "inverse_reference"
+          ],
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "max_rate",
+          "flags": [
+            "--max-rate"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "float",
+          "nargs": null,
+          "default": 5.0,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "max_pairs",
+          "flags": [
+            "--max-pairs"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "int",
+          "nargs": null,
+          "default": 50000,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "seed",
+          "flags": [
+            "--seed"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "int",
+          "nargs": null,
+          "default": 0,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "permutations",
+          "flags": [
+            "--permutations"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "int",
+          "nargs": null,
+          "default": 999,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "depth_bins",
+          "flags": [
+            "--depth-bins"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "int",
+          "nargs": null,
+          "default": 4,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "min_edges",
+          "flags": [
+            "--min-edges"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "int",
+          "nargs": null,
+          "default": 3,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "alpha",
+          "flags": [
+            "--alpha"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "float",
+          "nargs": null,
+          "default": 0.05,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "output",
+          "flags": [
+            "-o",
+            "--output"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "str",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "annotated_tree",
+          "flags": [
+            "--annotated-tree"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "str",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "json",
+          "flags": [
+            "--json"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "boolean",
+          "nargs": 0,
+          "default": false,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreTrueAction"
+        }
+      ],
+      "documentation_url": "reference/commands/episodic_rate_covariation.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [
+          "--annotated-tree",
+          "--output"
+        ],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
+    },
+    {
       "canonical": "evo_tempo_map",
       "handler": "evo_tempo_map",
       "aliases": [
