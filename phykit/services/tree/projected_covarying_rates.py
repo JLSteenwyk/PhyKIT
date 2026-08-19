@@ -40,6 +40,25 @@ class ProjectionResult:
     max_absolute_residual: float
 
 
+@dataclass(frozen=True)
+class ProjectedRateAnalysis:
+    """Reusable projected-rate vectors and their supporting diagnostics."""
+
+    reference_tree: object
+    shared_taxa: list[str]
+    total_pair_count: int
+    used_pair_count: int
+    edges: list[ReferenceEdge]
+    rows: list[dict]
+    retained_edge_indices: np.ndarray
+    standardized_zero: np.ndarray
+    standardized_one: np.ndarray
+    correlation: float
+    p_value: float
+    projection_zero: ProjectionResult
+    projection_one: ProjectionResult
+
+
 class ProjectedCovaryingRates(Tree):
     """Correlate gene rates after projecting distances onto a reference tree."""
 
@@ -109,6 +128,33 @@ class ProjectedCovaryingRates(Tree):
         }
 
     def run(self) -> None:
+        analysis = self._analyze_projected_rates()
+
+        if self.plot:
+            self._plot_projected_rates(
+                analysis.standardized_zero,
+                analysis.standardized_one,
+                analysis.correlation,
+                analysis.p_value,
+            )
+
+        payload = self._result_payload(
+            correlation=analysis.correlation,
+            p_value=analysis.p_value,
+            shared_taxa=analysis.shared_taxa,
+            total_pair_count=analysis.total_pair_count,
+            used_pair_count=analysis.used_pair_count,
+            edges=analysis.edges,
+            rows=analysis.rows,
+            projection_zero=analysis.projection_zero,
+            projection_one=analysis.projection_one,
+        )
+        if self.json_output:
+            print_json(payload)
+        else:
+            self._print_text(payload)
+
+    def _analyze_projected_rates(self) -> ProjectedRateAnalysis:
         tree_zero = self.read_tree_file_unmodified()
         tree_one = self.read_tree1_file_unmodified()
         tree_ref = self.read_reference_tree_file_unmodified()
@@ -201,30 +247,30 @@ class ProjectedCovaryingRates(Tree):
         standardized_one = _zscore(retained_one)
         correlation, p_value = _pearsonr(standardized_zero, standardized_one)
         self._add_standardized_rates(rows, standardized_zero, standardized_one)
+        retained_edge_indices = np.asarray(
+            [
+                index
+                for index, row in enumerate(rows)
+                if row["status"] == "retained"
+            ],
+            dtype=np.intp,
+        )
 
-        if self.plot:
-            self._plot_projected_rates(
-                standardized_zero,
-                standardized_one,
-                correlation,
-                p_value,
-            )
-
-        payload = self._result_payload(
-            correlation=correlation,
-            p_value=p_value,
+        return ProjectedRateAnalysis(
+            reference_tree=tree_ref,
             shared_taxa=shared_taxa,
             total_pair_count=total_pair_count,
             used_pair_count=len(pair_i),
             edges=edges,
             rows=rows,
+            retained_edge_indices=retained_edge_indices,
+            standardized_zero=np.asarray(standardized_zero, dtype=float),
+            standardized_one=np.asarray(standardized_one, dtype=float),
+            correlation=correlation,
+            p_value=p_value,
             projection_zero=projection_zero,
             projection_one=projection_one,
         )
-        if self.json_output:
-            print_json(payload)
-        else:
-            self._print_text(payload)
 
     def _shared_taxa(self, tree_zero, tree_one, tree_ref) -> list[str]:
         shared = (

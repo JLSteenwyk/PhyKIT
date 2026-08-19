@@ -442,6 +442,39 @@ def test_run_emits_json_for_discordant_gene_trees(monkeypatch, capsys):
     assert payload["tree_one_projection"]["nrmse"] > 0.0
 
 
+def test_analysis_exposes_reusable_retained_edge_vectors(monkeypatch):
+    sample_files = Path(__file__).parents[3] / "sample_files"
+    tree_zero = Phylo.read(sample_files / "tree_simple.tre", "newick")
+    tree_one = Phylo.read(
+        sample_files / "tree_simple_other_topology.tre",
+        "newick",
+    )
+    reference = Phylo.read(sample_files / "tree_simple_2.tre", "newick")
+    service = _service()
+    monkeypatch.setattr(service, "read_tree_file_unmodified", lambda: tree_zero)
+    monkeypatch.setattr(service, "read_tree1_file_unmodified", lambda: tree_one)
+    monkeypatch.setattr(
+        service,
+        "read_reference_tree_file_unmodified",
+        lambda: reference,
+    )
+
+    analysis = service._analyze_projected_rates()
+
+    assert analysis.reference_tree is reference
+    assert len(analysis.retained_edge_indices) == len(
+        analysis.standardized_zero
+    )
+    assert len(analysis.standardized_zero) == len(analysis.standardized_one)
+    assert analysis.used_pair_count <= analysis.total_pair_count
+    assert analysis.correlation == pytest.approx(
+        np.corrcoef(
+            analysis.standardized_zero,
+            analysis.standardized_one,
+        )[0, 1]
+    )
+
+
 def test_verbose_text_output_formats_excluded_values(capsys):
     service = _service(verbose=True)
     payload = {
