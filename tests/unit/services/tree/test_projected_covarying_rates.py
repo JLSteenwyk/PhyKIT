@@ -2,6 +2,8 @@
 
 from argparse import Namespace
 from io import StringIO
+from types import SimpleNamespace
+from unittest.mock import patch
 
 from Bio import Phylo
 import numpy as np
@@ -169,6 +171,21 @@ def test_rank_deficient_subsample_is_rejected():
     assert "rank deficient" in " ".join(error.value.messages)
 
 
+def test_unobserved_reference_edge_is_rejected():
+    design = np.asarray([[1.0, 0.0], [1.0, 0.0]])
+
+    with pytest.raises(PhykitUserError) as error:
+        ProjectedCovaryingRates._validate_projection_design(
+            design,
+            edge_count=2,
+            was_subsampled=True,
+        )
+
+    assert "do not observe every reference edge" in " ".join(
+        error.value.messages
+    )
+
+
 def test_full_design_skips_redundant_rank_computation(monkeypatch):
     design = np.eye(3)
 
@@ -181,6 +198,140 @@ def test_full_design_skips_redundant_rank_computation(monkeypatch):
         edge_count=3,
         was_subsampled=False,
     )
+
+
+def test_pair_selection_rejects_too_few_rows_for_edges():
+    service = _service(max_pairs=2)
+
+    with pytest.raises(PhykitUserError) as error:
+        service._selected_pair_indices(taxon_count=4, edge_count=5)
+
+    assert "At least 5 distance pairs" in " ".join(error.value.messages)
+
+
+def test_selected_distances_uses_sample_indices():
+    service = _service()
+    taxa = ["A", "B", "C", "D"]
+    tree = _tree("((A:1,B:2):3,(C:4,D:5):6);")
+    pair_i, pair_j = np.triu_indices(len(taxa), k=1)
+    selected = np.asarray([1, 4])
+
+    observed = service._selected_distances(
+        tree,
+        taxa,
+        pair_i[selected],
+        pair_j[selected],
+        selected,
+    )
+
+    full = np.asarray(
+        service.calculate_pairwise_tip_distances_fast(
+            tree,
+            taxa,
+            include_combos=False,
+        )[1]
+    )
+    np.testing.assert_allclose(observed, full[selected])
+
+
+def test_selected_distances_falls_back_for_tree_test_double(monkeypatch):
+    service = _service()
+    tree = SimpleNamespace(distance=lambda first, second: len(first) + len(second))
+    monkeypatch.setattr(
+        service,
+        "calculate_pairwise_tip_distances_fast",
+        lambda *args, **kwargs: None,
+    )
+
+    observed = service._selected_distances(
+        tree,
+        ["A", "BB", "CCC"],
+        np.asarray([0, 1]),
+        np.asarray([1, 2]),
+        np.asarray([0, 2]),
+    )
+
+    np.testing.assert_allclose(observed, [3.0, 5.0])
+
+
+def test_reference_basis_validation_rejects_mismatched_distances():
+    edges = [SimpleNamespace(length=1.0), SimpleNamespace(length=1.0)]
+
+    with pytest.raises(PhykitUserError) as error:
+        ProjectedCovaryingRates._validate_reference_basis(
+            np.eye(2),
+            edges,
+            np.asarray([1.0, 2.0]),
+        )
+
+    assert "does not reproduce" in " ".join(error.value.messages)
+
+
+def test_reference_basis_rejects_tree_without_identifiable_edges():
+    with pytest.raises(PhykitUserError) as error:
+        _service()._reference_edge_basis(_tree("(A:1);"), ["A"])
+
+    assert "fewer than 2 identifiable edges" in " ".join(error.value.messages)
+
+
+def test_inverse_weights_reject_all_zero_reference_distances():
+    with pytest.raises(PhykitUserError) as error:
+        ProjectedCovaryingRates._pair_weights(
+            np.zeros(3),
+            "inverse_reference",
+        )
+
+    assert "all zero" in " ".join(error.value.messages)
+
+
+@pytest.mark.parametrize("distances", [[-1.0, 1.0], [float("nan"), 1.0]])
+def test_projection_rejects_invalid_gene_distances(distances):
+    with pytest.raises(PhykitUserError) as error:
+        ProjectedCovaryingRates._project_distances(
+            np.eye(2),
+            np.asarray(distances),
+            np.ones(2),
+        )
+
+    assert "finite and nonnegative" in " ".join(error.value.messages)
+
+
+def test_projection_falls_back_to_bounded_least_squares():
+    with patch("scipy.optimize.nnls", side_effect=RuntimeError("iteration limit")):
+        result = ProjectedCovaryingRates._project_distances(
+            np.eye(2),
+            np.asarray([1.0, 2.0]),
+            np.ones(2),
+        )
+
+    np.testing.assert_allclose(result.edge_lengths, [1.0, 2.0])
+    assert result.nrmse == pytest.approx(0.0)
+
+
+def test_projection_reports_failure_from_fallback_solver():
+    failed = SimpleNamespace(success=False, message="did not converge")
+    with (
+        patch("scipy.optimize.nnls", side_effect=RuntimeError("iteration limit")),
+        patch("scipy.optimize.lsq_linear", return_value=failed),
+        pytest.raises(PhykitUserError) as error,
+    ):
+        ProjectedCovaryingRates._project_distances(
+            np.eye(2),
+            np.asarray([1.0, 2.0]),
+            np.ones(2),
+        )
+
+    assert "did not converge" in " ".join(error.value.messages)
+
+
+def test_zero_distance_projection_has_zero_nrmse():
+    result = ProjectedCovaryingRates._project_distances(
+        np.eye(2),
+        np.zeros(2),
+        np.ones(2),
+    )
+
+    assert result.nrmse == 0.0
 
 
 @pytest.mark.parametrize(
@@ -228,3 +379,42 @@ def test_constant_projected_rates_cannot_be_correlated():
             [1.0, 2.0, 3.0],
         )
     assert "no variation" in " ".join(error.value.messages)
+
+
+def test_rate_vectors_must_have_matching_lengths():
+    with pytest.raises(PhykitUserError) as error:
+        ProjectedCovaryingRates._validate_rate_vectors(
+            [1.0, 2.0, 3.0],
+            [1.0, 2.0],
+        )
+    assert "different lengths" in " ".join(error.value.messages)
+
+
+def test_rate_vectors_require_three_retained_edges():
+    with pytest.raises(PhykitUserError) as error:
+        ProjectedCovaryingRates._validate_rate_vectors(
+            [1.0, 2.0],
+            [2.0, 3.0],
+        )
+    assert "Fewer than 3" in " ".join(error.value.messages)
+
+
+def test_text_output_tolerates_closed_pipe(monkeypatch):
+    service = _service()
+    payload = {
+        "correlation": 0.5,
+        "p_value": 0.1,
+        "shared_taxon_count": 4,
+        "distance_pairs_used": 6,
+        "distance_pair_count": 6,
+        "reference_edge_count": 5,
+        "retained_edge_count": 5,
+        "tree_zero_projection": {"nrmse": 0.0},
+        "tree_one_projection": {"nrmse": 0.1},
+    }
+    monkeypatch.setattr(
+        "builtins.print",
+        lambda *args, **kwargs: (_ for _ in ()).throw(BrokenPipeError()),
+    )
+
+    service._print_text(payload)

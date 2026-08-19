@@ -115,3 +115,25 @@ def test_projected_covarying_rates_verbose_output_includes_diagnostics(capsys):
     assert "Projected Covarying Evolutionary Rates (experimental)" in output
     assert "Tree one projection NRMSE:" in output
     assert "branch\treference_length\tprojected_zero" in output
+
+
+@pytest.mark.integration
+def test_projected_covarying_rates_writes_plot(tmp_path, capsys):
+    plot_path = tmp_path / "projected_rates.png"
+    _run_cli(
+        [
+            "pcover",
+            str(SAMPLE_FILES / "tree_simple.tre"),
+            str(SAMPLE_FILES / "tree_simple_other_topology.tre"),
+            "-r",
+            str(SAMPLE_FILES / "tree_simple_2.tre"),
+            "--plot",
+            "--plot-output",
+            str(plot_path),
+        ]
+    )
+
+    output = capsys.readouterr().out
+    assert plot_path.is_file()
+    assert plot_path.stat().st_size > 0
+    assert f"Saved projected covarying rates plot: {plot_path}" in output
