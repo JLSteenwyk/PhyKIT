@@ -74,6 +74,8 @@ ALIAS_TO_HANDLER: dict[str, str] = {
     "pgwas": "phylo_gwas",
     "vs": "variable_sites",
     # Tree aliases
+    "topology_landscape": "topology_landscape",
+    "topomap": "topology_landscape",
     "bss": "bipartition_support_stats",
     "blm": "branch_length_multiplier",
     "collapse": "collapse_branches",

@@ -106,6 +106,7 @@ CharacterMap = _LazyServiceFactory("phykit.services.tree.character_map", "Charac
 PhyloHeatmap = _LazyServiceFactory("phykit.services.tree.phylo_heatmap", "PhyloHeatmap")
 PruneTree = _LazyServiceFactory("phykit.services.tree.prune_tree", "PruneTree")
 QuartetPie = _LazyServiceFactory("phykit.services.tree.quartet_pie", "QuartetPie")
+TopologyLandscape = _LazyServiceFactory("phykit.services.tree.topology_landscape", "TopologyLandscape")
 RenameTreeTips = _LazyServiceFactory("phykit.services.tree.rename_tree_tips", "RenameTreeTips")
 FitDiscrete = _LazyServiceFactory("phykit.services.tree.fit_discrete", "FitDiscrete")
 IndependentContrasts = _LazyServiceFactory("phykit.services.tree.independent_contrasts", "IndependentContrasts")

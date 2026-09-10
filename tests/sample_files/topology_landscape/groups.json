@@ -1,0 +1,6 @@
+{
+  "Outgroup": ["outgroup"],
+  "Ctenophores": ["ctenophore", "ctenophore2"],
+  "Sponges": ["sponge"],
+  "OtherAnimals": ["other"]
+}

@@ -716,6 +716,8 @@ class Phykit:
                 quartet_network (alias: quartet_net; qnet; nanuq)
                     - quartet-based network inference (NANUQ-style)
                       distinguishing ILS from hybridization
+                topology_landscape (alias: topomap)
+                  map focal gene-tree concordance across reference genomes
                 quartet_pie (alias: qpie; quartet_pie_chart)
                     - phylogram with quartet concordance pie charts
                       at internal nodes
@@ -7618,6 +7620,76 @@ class Phykit:
         _run_service(parser, argv, NeighborNet)
 
     @staticmethod
+    def topology_landscape(argv):
+        parser = _new_parser(description=_dedent(f"""\
+            {help_header}
+
+            Map gene-tree support for three focal quartet resolutions to genomic
+            coordinates. Strict mode uses all sampled representatives and requires
+            each group to form an unrooted clan. Polytomies, insufficient sampling,
+            and incompatible groups remain separate; this is concordance mapping,
+            not a likelihood test, confidence estimate, or introgression test.
+
+            Manifest: header-bearing TSV with gene_id and tree columns; relative
+            tree paths are resolved beside the manifest. Coordinates: BED4+ or TSV
+            with gene_id, chromosome, start, end; both are 0-based half-open.
+            Repeated same-reference gene records merge to one span. Its midpoint
+            assigns the gene once to a nonoverlapping neighborhood. Chromosomes
+            are sorted lexicographically; reference genomes are kept separate.
+
+            Groups: JSON object mapping exactly four names to disjoint taxon lists.
+            Group order defines AB|CD, AC|BD, AD|BC. --outgroup moves that group
+            first and labels alternatives by its partner (the sister hypothesis).
+            Alternatively select an internal edge by the full taxon list on one
+            side using --reference-tree and --branch-taxa.
+
+            Related method: Martin and Van Belleghem (2017), Twisst, Genetics,
+            doi:10.1534/genetics.116.194720. This command counts strictly classified
+            genes; it does not implement Twisst's fractional subtree weighting.
+
+            Outputs: PREFIX.genes.tsv, PREFIX.neighborhoods.tsv,
+            PREFIX.overall.tsv, PREFIX.diagnostics.json; optional plots and JSON.
+            Fractions use resolved genes as denominator; empty fractions are null.
+            Aliases: topology_landscape, topomap; pk_topology_landscape, pk_topomap.
+            """))
+        parser.add_argument("--manifest", required=True, help="Gene-ID / Newick-path TSV")
+        parser.add_argument("--coordinates", nargs=3, action="append", required=True,
+                            metavar=("REFERENCE", "FORMAT", "PATH"), help="Repeat for BED or TSV files (bed|tsv)")
+        focal = parser.add_mutually_exclusive_group(required=True)
+        focal.add_argument("--groups", help="Four-group JSON file")
+        focal.add_argument("--reference-tree", help="Reference Newick tree")
+        parser.add_argument("--branch-taxa", nargs="+", help="Complete taxon set on one side of the selected edge")
+        parser.add_argument("--outgroup", help="Name of the outgroup in the four-group definition")
+        parser.add_argument("--labels", nargs=3, help="Display labels for topology_1, topology_2, topology_3")
+        parser.add_argument("--min-support", type=float, help="Collapse edges below this threshold")
+        parser.add_argument("--support-scale", type=int, choices=(1, 100), default=100,
+                            help="Explicit numeric support scale (default: 100)")
+        parser.add_argument("--missing-support", choices=("collapse", "keep", "error"), default="collapse",
+                            help="Absent support policy when --min-support is set; repeated edge labels use minimum support")
+        parser.add_argument("--unmapped", choices=("error", "skip"), default="error",
+                            help="Policy for manifest genes absent from all coordinate files")
+        window = parser.add_mutually_exclusive_group()
+        window.add_argument("--window-bp", type=int, default=1000000, help="Physical window length (default: 1000000)")
+        window.add_argument("--window-genes", type=int, help="Genes per rank window, including unresolved genes")
+        parser.add_argument("--chromosome", action="append", help="Chromosome to retain (repeatable)")
+        parser.add_argument("--interval", nargs=2, type=int, metavar=("START", "END"),
+                            help="Half-open midpoint range, applied to each selected chromosome")
+        parser.add_argument("--output-prefix", "-o", required=True, help="Output file prefix; parent directory must exist")
+        parser.add_argument("--plot", action="store_true", help="Plot gene tracks, proportions, and gene counts")
+        parser.add_argument("--plot-output", help="Plot path; multiple panels receive numbered filenames")
+        parser.add_argument("--fig-width", type=float, help="Plot width in inches")
+        parser.add_argument("--fig-height", type=float, help="Plot height in inches")
+        parser.add_argument("--dpi", type=int, default=300, help="Plot resolution")
+        parser.add_argument("--title", help="Custom plot title")
+        parser.add_argument("--no-title", action="store_true", help="Hide plot title")
+        parser.add_argument("--legend-position", help="Matplotlib legend position, or none")
+        parser.add_argument("--colors", help="Comma-separated colors in classification order")
+        for name in ("xlabel", "ylabel", "axis", "title"):
+            parser.add_argument(f"--{name}-fontsize", type=float, help=f"{name} font size")
+        _add_json_argument(parser)
+        _run_service(parser, argv, TopologyLandscape)
+
+    @staticmethod
     def quartet_pie(argv):
         parser = _new_parser(
             description=_dedent(
@@ -10841,6 +10913,10 @@ def neighbor_net(argv=None):
 
 def quartet_network(argv=None):
     Phykit.quartet_network(sys.argv[1:])
+
+
+def topology_landscape(argv=None):
+    Phykit.topology_landscape(sys.argv[1:] if argv is None else argv)
 
 
 def quartet_pie(argv=None):
