@@ -6,7 +6,7 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
-**Unreleased**:
+**2.7.0**:
 
 * Added ``topology_landscape`` (alias: ``topomap``) for strict focal gene-tree
   classification and reference-genome concordance tracks.
