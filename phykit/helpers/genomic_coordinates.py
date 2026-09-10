@@ -93,10 +93,10 @@ def read_coordinates(sources):
                     fail(f"Ambiguous mapping: {gene} occurs on multiple chromosomes in {reference}.")
                 start, end = min(start, previous["start"]), max(end, previous["end"])
                 duplicates[reference] += 1
-            coordinates[key] = dict(
-                reference=reference, gene_id=gene, chromosome=chromosome,
-                start=start, end=end, anchor=(start + end - 1) // 2,
-            )
+            coordinates[key] = {
+                "reference": reference, "gene_id": gene, "chromosome": chromosome,
+                "start": start, "end": end, "anchor": (start + end - 1) // 2,
+            }
     if not coordinates:
         fail("Coordinate files contain no gene records.")
     return list(coordinates.values()), {

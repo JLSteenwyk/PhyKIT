@@ -3,19 +3,27 @@
 import csv
 import json
 import math
-from pathlib import Path
 import sys
 import textwrap
+from pathlib import Path
 
 from ...helpers.genomic_coordinates import (
-    neighborhoods, read_coordinates, read_manifest, select_rows, summarize,
+    neighborhoods,
+    read_coordinates,
+    read_manifest,
+    select_rows,
+    summarize,
 )
 from ...helpers.json_output import print_json
 from ...helpers.plot_config import PlotConfig
 from ...helpers.topology_landscape import (
-    CLASSES, classify_tree, fail, groups_from_branch, read_tree, validate_groups,
+    CLASSES,
+    classify_tree,
+    fail,
+    groups_from_branch,
+    read_tree,
+    validate_groups,
 )
-
 
 COLORS = ["#0072B2", "#D55E00", "#009E73", "#999999", "#E6C84F", "#CC79A7"]
 
@@ -102,13 +110,13 @@ class TopologyLandscape:
         )
         overall = [dict(reference=ref, **summarize([r for r in rows if r["reference"] == ref]))
                    for ref in sorted({r["reference"] for r in rows})]
-        payload = dict(
-            command="topology_landscape", mode="strict", coordinate_system="0-based-half-open",
-            groups={name: sorted(taxa) for name, taxa in groups.items()}, labels=labels,
-            outgroup=args.outgroup, min_support=args.min_support, support_scale=args.support_scale,
-            missing_support=args.missing_support, genes=rows, classifications=classifications,
-            neighborhoods=windows, overall=overall, diagnostics=diagnostics,
-        )
+        payload = {
+            "command": "topology_landscape", "mode": "strict", "coordinate_system": "0-based-half-open",
+            "groups": {name: sorted(taxa) for name, taxa in groups.items()}, "labels": labels,
+            "outgroup": args.outgroup, "min_support": args.min_support, "support_scale": args.support_scale,
+            "missing_support": args.missing_support, "genes": rows, "classifications": classifications,
+            "neighborhoods": windows, "overall": overall, "diagnostics": diagnostics,
+        }
         prefix = Path(args.output_prefix)
         outputs = {
             key: str(prefix) + suffix for key, suffix in (
@@ -235,5 +243,5 @@ class TopologyLandscape:
                     fig.savefig(path, dpi=config.dpi)
                 finally:
                     plt.close(fig)
-            outputs.append(dict(reference=ref, chromosome=chromosome, path=path))
+            outputs.append({"reference": ref, "chromosome": chromosome, "path": path})
         return outputs

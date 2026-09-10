@@ -21,6 +21,7 @@
     {"number": 18, "command": ["consnet", "-t", "consensus_network_tutorial.nwk", "--json"]},
     {"number": 19, "command": ["phylogenetic_signal", "-t", "tree_simple.tre", "-d", "tree_simple_traits.tsv", "-p", "10", "--json"]},
     {"number": 20, "command": ["consensus_network", "-t", "gene_trees_simple.nwk", "--json"]},
-    {"number": 21, "command": ["quartet_pie", "-t", "tree_simple.tre", "-g", "gene_trees_simple.nwk", "-o", "qpie_default.png"], "artifacts": ["qpie_default.png"]}
+    {"number": 21, "command": ["quartet_pie", "-t", "tree_simple.tre", "-g", "gene_trees_simple.nwk", "-o", "qpie_default.png"], "artifacts": ["qpie_default.png"]},
+    {"number": 22, "cwd": "topology_landscape", "command": ["topology_landscape", "--manifest", "genes.tsv", "--groups", "groups.json", "--coordinates", "example", "bed", "reference.bed", "--outgroup", "Outgroup", "--window-bp", "500", "--output-prefix", "animal_root", "--plot", "--json"], "artifacts": ["animal_root.genes.tsv", "animal_root.neighborhoods.tsv", "animal_root.overall.tsv", "animal_root.diagnostics.json", "animal_root.1.png", "animal_root.2.png"]}
   ]
 }

@@ -2,6 +2,30 @@
   "schema_version": 1,
   "commands": [
     {
+      "canonical": "topology_landscape",
+      "handler": "topology_landscape",
+      "aliases": ["topomap"],
+      "entry_points": ["pk_topology_landscape", "pk_topomap"],
+      "title": "Topology landscape",
+      "summary": "Map focal gene-tree concordance across genomic neighborhoods",
+      "categories": ["Tree comparison & consensus"],
+      "page": "reference/commands/topology_landscape.rst",
+      "documentation": {
+        "purpose": "Classify gene trees at a selected relationship and map their concordance to reference genome coordinates.",
+        "use_cases": ["Map ctenophore-sister versus sponge-sister gene support", "Summarize focal topologies in genomic neighborhoods"],
+        "input_formats": ["Gene-ID/Newick-path TSV manifest", "BED4+ or header-bearing gene-coordinate TSV", "Four-group JSON or reference Newick plus complete edge-side taxa"],
+        "outputs": ["Per-gene, neighborhood, and per-reference TSVs", "Mapping diagnostics JSON", "Optional chromosome plots and full JSON output"],
+        "errors": ["Duplicate or ambiguous identifiers", "Malformed coordinates", "Missing coordinate mappings", "Invalid focal groups or reference edge"],
+        "limitations": ["Strict classification only; no fractional quartet weighting", "No GFF3 parser or automatic transcript-ID mapping", "No p-values, introgression inference, or breakpoint detection"],
+        "scientific_interpretation": "Gene-tree concordance is not statistical confidence; adjacent genes need not be independent.",
+        "validation": ["Exact synthetic classifications and window counts", "Root invariance, support filtering, deduplication, and multi-reference plotting tests"],
+        "citations": ["Martin and Van Belleghem (2017), Genetics, doi:10.1534/genetics.116.194720 (related Twisst method, not implemented weighting)"],
+        "examples": ["phykit topomap --manifest genes.tsv --groups groups.json --coordinates reference bed genes.bed --output-prefix landscape --plot"],
+        "related_commands": ["quartet_pie", "spectral_discordance"],
+        "related_tutorials": ["tutorials/pages/22-mapping-topologies-across-genomes.rst"]
+      }
+    },
+    {
       "canonical": "alignment_entropy",
       "handler": "alignment_entropy",
       "aliases": [

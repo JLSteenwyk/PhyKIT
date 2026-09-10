@@ -5,7 +5,6 @@ import pytest
 
 from phykit.phykit import Phykit
 
-
 FIXTURE = Path(__file__).resolve().parents[3] / "sample_files" / "topology_landscape"
 
 

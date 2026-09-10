@@ -2,7 +2,11 @@ import pytest
 
 from phykit.errors import PhykitUserError
 from phykit.helpers.genomic_coordinates import (
-    read_manifest, read_coordinates, neighborhoods, select_rows, summarize,
+    neighborhoods,
+    read_coordinates,
+    read_manifest,
+    select_rows,
+    summarize,
 )
 
 
@@ -50,8 +54,8 @@ def test_invalid_bed(tmp_path, body):
 
 
 def row(gene, anchor, category="topology_1", reference="r", chromosome="chr1"):
-    return dict(gene_id=gene, anchor=anchor, start=anchor, end=anchor + 1,
-                classification=category, reference=reference, chromosome=chromosome)
+    return {"gene_id": gene, "anchor": anchor, "start": anchor, "end": anchor + 1,
+                "classification": category, "reference": reference, "chromosome": chromosome}
 
 
 def test_physical_windows_empty_boundary_and_denominators():
@@ -81,8 +85,8 @@ def test_interval_and_chromosome_selection():
     assert [w["total_genes"] for w in windows] == [1, 0, 0]
 
 
-@pytest.mark.parametrize("kwargs", [{}, dict(window_bp=0), dict(window_genes=-1),
-                                    dict(window_bp=5, window_genes=2)])
+@pytest.mark.parametrize("kwargs", [{}, {"window_bp": 0}, {"window_genes": -1},
+                                    {"window_bp": 5, "window_genes": 2}])
 def test_invalid_windows(kwargs):
     with pytest.raises(PhykitUserError):
         neighborhoods([], **kwargs)

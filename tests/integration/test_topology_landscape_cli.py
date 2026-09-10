@@ -1,8 +1,8 @@
 import json
 import os
-from pathlib import Path
 import subprocess
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -17,7 +17,7 @@ def test_cli_genomic_landscape(tmp_path, command):
         "--groups", str(fixture / "groups.json"),
         "--coordinates", "ref", "bed", str(fixture / "reference.bed"),
         "--output-prefix", str(tmp_path / "map"), "--json",
-    ], capture_output=True, text=True, env=dict(os.environ, MPLBACKEND="Agg"))
+    ], capture_output=True, text=True, check=False, env=dict(os.environ, MPLBACKEND="Agg"))
     assert result.returncode == 0, result.stdout + result.stderr
     payload = json.loads(result.stdout)
     assert payload["overall"][0]["total_genes"] == 6

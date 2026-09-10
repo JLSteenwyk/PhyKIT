@@ -1,11 +1,14 @@
 from io import StringIO
 
-from Bio import Phylo
 import pytest
+from Bio import Phylo
 
 from phykit.errors import PhykitUserError
 from phykit.helpers.topology_landscape import (
-    classify_tree, groups_from_branch, read_tree, validate_groups,
+    classify_tree,
+    groups_from_branch,
+    read_tree,
+    validate_groups,
 )
 
 
@@ -13,7 +16,7 @@ def tree(text):
     return Phylo.read(StringIO(text), "newick")
 
 
-GROUPS = dict(A=["a"], B=["b"], C=["c"], D=["d"])
+GROUPS = {"A": ["a"], "B": ["b"], "C": ["c"], "D": ["d"]}
 
 
 @pytest.mark.parametrize("newick,expected", [
@@ -62,8 +65,8 @@ def test_support_policies_and_root_duplicate():
 
 
 @pytest.mark.parametrize("kwargs", [
-    dict(min_support=-1), dict(min_support=float("nan")),
-    dict(min_support=101), dict(support_scale=10), dict(missing_support="ignore"),
+    {"min_support": -1}, {"min_support": float("nan")},
+    {"min_support": 101}, {"support_scale": 10}, {"missing_support": "ignore"},
 ])
 def test_bad_support_arguments(kwargs):
     with pytest.raises(PhykitUserError):
@@ -96,8 +99,8 @@ def test_invalid_trees(tmp_path):
 
 def test_reference_branch_root_invariance():
     t = tree("(((a,a2),b),(c,(d,d2)));")
-    expected = dict(A=frozenset(["a", "a2"]), B=frozenset(["b"]),
-                    C=frozenset(["c"]), D=frozenset(["d", "d2"]))
+    expected = {"A": frozenset(["a", "a2"]), "B": frozenset(["b"]),
+                    "C": frozenset(["c"]), "D": frozenset(["d", "d2"])}
     for tip in [x.name for x in t.get_terminals()]:
         t.root_with_outgroup(tip)
         assert groups_from_branch(t, ["a", "a2", "b"]) == expected

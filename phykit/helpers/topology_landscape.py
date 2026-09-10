@@ -1,13 +1,12 @@
 """Strict, unrooted four-group classification for genomic concordance maps."""
 
-from collections import defaultdict
 import math
+from collections import defaultdict
 
 from Bio import Phylo
 
 from ..errors import PhykitUserError
 from .quartet_utils import _collect_clade_tip_sets, canonical_split
-
 
 CLASSES = (
     "topology_1", "topology_2", "topology_3", "unresolved",
@@ -180,7 +179,7 @@ def groups_from_branch(tree, branch_taxa):
         for right in neighbors:
             if component(left, right) != target:
                 continue
-            if len(graph[left]) != 3 or len(graph[right]) != 3:
+            if len(neighbors) != 3 or len(graph[right]) != 3:
                 fail("Selected branch must have two degree-three internal endpoints.")
             sides = []
             for node, other in ((left, right), (right, left)):
