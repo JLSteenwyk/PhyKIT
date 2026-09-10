@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pytest
 
+from phykit.helpers.genomic_coordinates import read_manifest
 from phykit.phykit import Phykit
 
 FIXTURE = Path(__file__).resolve().parents[3] / "sample_files" / "topology_landscape"
@@ -96,6 +97,41 @@ def test_bad_groups_file(tmp_path, capsys, content):
     groups.write_text(content)
     args = arguments(tmp_path)
     args[args.index(str(FIXTURE / "groups.json"))] = str(groups)
+    with pytest.raises(SystemExit) as error:
+        Phykit.topology_landscape(args)
+    assert error.value.code == 2
+
+
+@pytest.mark.parametrize("extension", ["pdf", "svg"])
+def test_vector_gene_window_plots(tmp_path, capsys, extension):
+    args = arguments(tmp_path)
+    index = args.index("--window-bp")
+    del args[index:index + 2]
+    Phykit.topology_landscape(args + [
+        "--window-genes", "2", "--chromosome", "chr1", "--interval", "0", "400",
+        "--plot", "--plot-output", str(tmp_path / f"plot.{extension}"),
+        "--no-title", "--legend-position", "none",
+    ])
+    payload = json.loads(capsys.readouterr().out)
+    assert len(payload["plots"]) == 1
+    assert len(payload["genes"]) == 4
+    assert Path(payload["plots"][0]["path"]).stat().st_size > 1000
+
+
+def test_output_collision_and_unwritable_parent(tmp_path, capsys):
+    source = tmp_path / "map.genes.tsv"
+    manifest = read_manifest(FIXTURE / "genes.tsv")
+    source.write_text("gene_id\ttree\n" + "".join(f"{gene}\t{path}\n" for gene, path in manifest.items()))
+    original = source.read_text()
+    args = arguments(tmp_path)
+    args[args.index(str(FIXTURE / "genes.tsv"))] = str(source)
+    with pytest.raises(SystemExit) as error:
+        Phykit.topology_landscape(args)
+    assert error.value.code == 2
+    assert source.read_text() == original
+    assert "would overwrite" in capsys.readouterr().out
+    args = arguments(tmp_path)
+    args[args.index(str(tmp_path / "map"))] = str(tmp_path / "absent" / "map")
     with pytest.raises(SystemExit) as error:
         Phykit.topology_landscape(args)
     assert error.value.code == 2

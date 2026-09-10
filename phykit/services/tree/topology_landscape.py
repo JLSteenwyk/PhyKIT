@@ -224,11 +224,12 @@ class TopologyLandscape:
                     counts.set_ylabel("Gene count")
                     counts.set_xlabel("Gene-count window index" if gene_mode else "Reference position (bp)")
                     if config.legend_position != "none":
-                        location = config.legend_position or "upper right"
-                        counts.legend(loc=location, fontsize=8)
+                        placement = ({"loc": config.legend_position} if config.legend_position
+                                     else {"loc": "upper left", "bbox_to_anchor": (1.01, 1)})
+                        counts.legend(**placement, fontsize=8)
                         proportions.legend(handles=[Line2D([], [], color=colors[i], lw=3,
                                            label=textwrap.fill(labels[c], 28)) for i, c in enumerate(CLASSES[:3])],
-                                           loc=location, fontsize=8)
+                                           **placement, fontsize=8)
                     for ax in axes:
                         ax.spines[["top", "right"]].set_visible(False)
                         ax.tick_params(axis="x", labelsize=config.xlabel_fontsize)

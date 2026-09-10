@@ -4,6 +4,7 @@ import math
 from collections import defaultdict
 
 from Bio import Phylo
+from Bio.Phylo.NewickIO import NewickError
 
 from ..errors import PhykitUserError
 from .quartet_utils import _collect_clade_tip_sets, canonical_split
@@ -38,7 +39,7 @@ def validate_groups(groups):
 def read_tree(path):
     try:
         tree = Phylo.read(path, "newick")
-    except (OSError, ValueError, IndexError) as exc:
+    except (OSError, ValueError, IndexError, NewickError) as exc:
         fail(f"Cannot read exactly one Newick tree from {path}: {exc}")
     names = [tip.name for tip in tree.get_terminals()]
     if any(not name for name in names) or len(set(names)) != len(names):

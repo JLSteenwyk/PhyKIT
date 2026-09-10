@@ -84,7 +84,7 @@ def test_invalid_groups(groups):
 
 
 def test_invalid_trees(tmp_path):
-    for content in ("(a,a,b,c);", "(,a,b,c);", "(a,b);\n(c,d);"):
+    for content in ("(a,a,b,c);", "(,a,b,c);", "(a,b);\n(c,d);", "((a,b);"):
         path = tmp_path / "tree"
         path.write_text(content)
         with pytest.raises(PhykitUserError):
