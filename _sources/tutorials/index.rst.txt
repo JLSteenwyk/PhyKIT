@@ -30,9 +30,12 @@ Tutorial index
 19. :doc:`End-to-end comparative methods workflow <pages/19-end-to-end-comparative-methods-workflow>`
 20. :doc:`Gene tree discordance analysis pipeline <pages/20-gene-tree-discordance-analysis-pipeline>`
 21. :doc:`Customizing phylogenetic plots <pages/21-customizing-phylogenetic-plots>`
+22. :doc:`Mapping topologies across genomes <pages/22-mapping-topologies-across-genomes>`
 
 .. toctree::
    :hidden:
+
+   pages/22-mapping-topologies-across-genomes
 
    pages/01-summarizing-information-content
    pages/02-evaluating-gene-gene-covariation
@@ -184,3 +187,9 @@ Legacy tutorial anchors
    <span id="customizing-phylogenetic-plots"></span>
 
 :doc:`Tutorial 21: Customizing phylogenetic plots <pages/21-customizing-phylogenetic-plots>`
+
+.. raw:: html
+
+   <span id="mapping-topologies-across-genomes"></span>
+
+:doc:`Tutorial 22: Mapping topologies across genomes <pages/22-mapping-topologies-across-genomes>`

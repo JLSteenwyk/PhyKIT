@@ -3,8 +3,8 @@
 Installation and first analysis
 ===============================
 
-Requirements
-------------
+Supported Python versions
+-------------------------
 
 PhyKIT supports Python 3.10, 3.11, 3.12, and 3.13. Use a virtual environment
 to keep its dependencies separate from other projects.

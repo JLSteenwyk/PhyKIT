@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tutorial 14: Visualization commands &mdash; phykit 2.6.0 documentation</title>
+  <title>Tutorial 22: Mapping topologies across genomes &mdash; phykit 2.6.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=ae8b8648" />
@@ -21,8 +21,8 @@
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="Tutorial 15: Comparing continuous trait evolution models" href="15-comparing-continuous-trait-evolution-models.html" />
-    <link rel="prev" title="Tutorial 13: Testing for rate heterogeneity across phylogenetic regimes" href="13-testing-for-rate-heterogeneity-across-phylogenetic-regimes.html" /> 
+    <link rel="next" title="Tutorial 1: Summarizing information content" href="01-summarizing-information-content.html" />
+    <link rel="prev" title="Tutorials" href="../index.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -50,7 +50,15 @@
 <li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">Command reference</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="../index.html">Tutorials</a><ul class="current">
 <li class="toctree-l2 current"><a class="reference internal" href="../index.html#tutorial-index">Tutorial index</a><ul class="current">
-<li class="toctree-l3"><a class="reference internal" href="22-mapping-topologies-across-genomes.html">Tutorial 22: Mapping topologies across genomes</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Tutorial 22: Mapping topologies across genomes</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#objectives">Objectives</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#prerequisites-and-working-directory">Prerequisites and working directory</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#related-command-references">Related command references</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#workflow">Workflow</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#expected-artifacts">Expected artifacts</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#troubleshooting">Troubleshooting</a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="01-summarizing-information-content.html">Tutorial 1: Summarizing information content</a></li>
 <li class="toctree-l3"><a class="reference internal" href="02-evaluating-gene-gene-covariation.html">Tutorial 2: Evaluating gene-gene covariation</a></li>
 <li class="toctree-l3"><a class="reference internal" href="03-identifying-signatures-of-rapid-radiations.html">Tutorial 3: Identifying signatures of rapid radiations</a></li>
@@ -64,15 +72,7 @@
 <li class="toctree-l3"><a class="reference internal" href="11-reconstructing-ancestral-trait-values-and-mapping-them-onto-a-phylogeny.html">Tutorial 11: Reconstructing ancestral trait values and mapping them onto a phylogeny</a></li>
 <li class="toctree-l3"><a class="reference internal" href="12-spectral-discordance-decomposition.html">Tutorial 12: Spectral discordance decomposition</a></li>
 <li class="toctree-l3"><a class="reference internal" href="13-testing-for-rate-heterogeneity-across-phylogenetic-regimes.html">Tutorial 13: Testing for rate heterogeneity across phylogenetic regimes</a></li>
-<li class="toctree-l3 current"><a class="current reference internal" href="#">Tutorial 14: Visualization commands</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#objectives">Objectives</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#prerequisites-and-working-directory">Prerequisites and working directory</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#related-command-references">Related command references</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#workflow">Workflow</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#expected-artifacts">Expected artifacts</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#troubleshooting">Troubleshooting</a></li>
-</ul>
-</li>
+<li class="toctree-l3"><a class="reference internal" href="14-visualization-commands.html">Tutorial 14: Visualization commands</a></li>
 <li class="toctree-l3"><a class="reference internal" href="15-comparing-continuous-trait-evolution-models.html">Tutorial 15: Comparing continuous trait evolution models</a></li>
 <li class="toctree-l3"><a class="reference internal" href="16-multi-regime-ou-models-ouwie.html">Tutorial 16: Multi-regime OU models (OUwie)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="17-automatic-detection-of-adaptive-shifts-on-a-phylogeny.html">Tutorial 17: Automatic detection of adaptive shifts on a phylogeny</a></li>
@@ -110,7 +110,7 @@
   <ul class="wy-breadcrumbs">
       <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
           <li class="breadcrumb-item"><a href="../index.html">Tutorials</a></li>
-      <li class="breadcrumb-item active">Tutorial 14: Visualization commands</li>
+      <li class="breadcrumb-item active">Tutorial 22: Mapping topologies across genomes</li>
       <li class="wy-breadcrumbs-aside">
       </li>
   </ul>
@@ -119,88 +119,92 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="tutorial-14-visualization-commands">
-<span id="tutorial-visualization-commands"></span><span id="tutorial-14"></span><h1>Tutorial 14: Visualization commands<a class="headerlink" href="#tutorial-14-visualization-commands" title="Link to this heading"></a></h1>
+  <section id="tutorial-22-mapping-topologies-across-genomes">
+<span id="tutorial-22"></span><h1>Tutorial 22: Mapping topologies across genomes<a class="headerlink" href="#tutorial-22-mapping-topologies-across-genomes" title="Link to this heading"></a></h1>
 <section id="objectives">
 <h2>Objectives<a class="headerlink" href="#objectives" title="Link to this heading"></a></h2>
-<ul class="simple">
-<li><p>Complete the visualization commands workflow.</p></li>
-<li><p>Interpret the reported values and generated artifacts in their scientific context.</p></li>
-<li><p>Identify the canonical command references for each analysis step.</p></li>
-</ul>
+<p>Map six synthetic gene trees to two chromosomes and distinguish ctenophore-sister,
+sponge-sister, and a ctenophore-plus-sponge clade. These examples demonstrate
+classification; they are not empirical evidence about animal relationships.</p>
 </section>
 <section id="prerequisites-and-working-directory">
 <h2>Prerequisites and working directory<a class="headerlink" href="#prerequisites-and-working-directory" title="Link to this heading"></a></h2>
-<p>Install the current PhyKIT release and create a dedicated working directory.
-Download the data linked in this tutorial into that directory before running
-the commands. All paths below are relative to this directory.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>mkdir<span class="w"> </span>phykit-tutorial-14
-<span class="nb">cd</span><span class="w"> </span>phykit-tutorial-14
+<p>Install PhyKIT with <code class="docutils literal notranslate"><span class="pre">topology_landscape</span></code> support. Download
+<a class="reference download internal" download="" href="../../_downloads/f311985c14e139bc2dd01a0922f50824/topology_landscape_tutorial.tar.gz"><code class="xref download docutils literal notranslate"><span class="pre">the</span> <span class="pre">complete</span> <span class="pre">example</span></code></a>
+into a new working directory, then unpack it:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>tar<span class="w"> </span>-xzf<span class="w"> </span>topology_landscape_tutorial.tar.gz
+<span class="nb">cd</span><span class="w"> </span>topology_landscape
 </pre></div>
 </div>
+<p>The manifest <code class="docutils literal notranslate"><span class="pre">genes.tsv</span></code> links gene IDs to relative Newick paths.
+<code class="docutils literal notranslate"><span class="pre">reference.bed</span></code> supplies zero-based half-open locations; <code class="docutils literal notranslate"><span class="pre">groups.json</span></code>
+defines Outgroup, Ctenophores, Sponges, and OtherAnimals. No sequence alignments
+or externally inferred roots are required.</p>
 </section>
 <section id="related-command-references">
 <h2>Related command references<a class="headerlink" href="#related-command-references" title="Link to this heading"></a></h2>
 <ul class="simple">
-<li><p><a class="reference internal" href="../../reference/commands/cont_map.html"><span class="doc">Cont Map</span></a></p></li>
-<li><p><a class="reference internal" href="../../reference/commands/density_map.html"><span class="doc">Density Map</span></a></p></li>
-<li><p><a class="reference internal" href="../../reference/commands/phenogram.html"><span class="doc">Phenogram</span></a></p></li>
-<li><p><a class="reference internal" href="../../reference/commands/cophylo.html"><span class="doc">Cophylo</span></a></p></li>
+<li><p><a class="reference internal" href="../../reference/commands/topology_landscape.html"><span class="doc">Topology landscape</span></a></p></li>
+<li><p><a class="reference internal" href="../../reference/commands/quartet_pie.html"><span class="doc">Quartet pie</span></a></p></li>
 </ul>
 </section>
 <section id="workflow">
 <h2>Workflow<a class="headerlink" href="#workflow" title="Link to this heading"></a></h2>
-<p>PhyKIT provides several phylogenetic visualization commands analogous to
-R's <code class="docutils literal notranslate"><span class="pre">phytools</span></code> plotting functions. All produce publication-quality plots
-saved at 300 DPI.</p>
-<p class="centered">
-<strong>Download test data:
-<a class="reference download internal" download="" href="../../_downloads/97c38abccff78ac60aee3f25ca0b02f5/tree_simple.tre"><code class="xref download docutils literal notranslate"><span class="pre">Mammal</span> <span class="pre">phylogeny</span></code></a>;
-<a class="reference download internal" download="" href="../../_downloads/b9b38de12b46a5f753d0fc77e586cea3/tree_simple_traits.tsv"><code class="xref download docutils literal notranslate"><span class="pre">Continuous</span> <span class="pre">trait</span> <span class="pre">data</span></code></a>;
-<a class="reference download internal" download="" href="../../_downloads/eb1e1a4c08691d20c03a9f1889e028a3/tree_simple_discrete_traits.tsv"><code class="xref download docutils literal notranslate"><span class="pre">Discrete</span> <span class="pre">trait</span> <span class="pre">data</span></code></a></strong></p><p><strong>contMap</strong> — continuous trait mapping onto a phylogram:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>cont_map<span class="w"> </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span>-d<span class="w"> </span>tree_simple_traits.tsv<span class="w"> </span>-o<span class="w"> </span>contmap.png
+<p>Generate physical neighborhoods and chromosome plots:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>topology_landscape<span class="w"> </span>--manifest<span class="w"> </span>genes.tsv<span class="w"> </span>--groups<span class="w"> </span>groups.json<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--coordinates<span class="w"> </span>example<span class="w"> </span>bed<span class="w"> </span>reference.bed<span class="w"> </span>--outgroup<span class="w"> </span>Outgroup<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--labels<span class="w"> </span>Ctenophore-sister<span class="w"> </span>Sponge-sister<span class="w"> </span><span class="s2">"Ctenophore + sponge"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--window-bp<span class="w"> </span><span class="m">500</span><span class="w"> </span>--output-prefix<span class="w"> </span>animal_root<span class="w"> </span>--plot<span class="w"> </span>--json<span class="w"> </span>&gt;<span class="w"> </span>animal_root.json
 </pre></div>
 </div>
-<p><strong>densityMap</strong> — posterior state probabilities from stochastic character mapping:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>density_map<span class="w"> </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span>-d<span class="w"> </span>tree_simple_discrete_traits.tsv<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>-c<span class="w"> </span>diet<span class="w"> </span>-o<span class="w"> </span>densitymap.png<span class="w"> </span>-n<span class="w"> </span><span class="m">100</span><span class="w"> </span>--seed<span class="w"> </span><span class="m">42</span>
+<p>There are six genes overall: one of each of the three resolved topologies,
+one unresolved, one missing a required group, and one with incompatible group
+relationships. Thus the resolved denominator is three, not six.
+The first chr1 window has four genes: three resolved and one unresolved.
+Each topology has proportion 1/3 among those three resolved genes.
+The second chr1 window is empty. The final chr1 window contains the
+insufficiently sampled gene, and chr2 contains the incompatible gene.</p>
+<p>Use fixed numbers of genes and PDF figures:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>topomap<span class="w"> </span>--manifest<span class="w"> </span>genes.tsv<span class="w"> </span>--groups<span class="w"> </span>groups.json<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--coordinates<span class="w"> </span>example<span class="w"> </span>bed<span class="w"> </span>reference.bed<span class="w"> </span>--window-genes<span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--output-prefix<span class="w"> </span>gene_windows<span class="w"> </span>--plot<span class="w"> </span>--plot-output<span class="w"> </span>gene_windows.pdf
 </pre></div>
 </div>
-<p><strong>phenogram (traitgram)</strong> — trait values vs. distance from root:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>phenogram<span class="w"> </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span>-d<span class="w"> </span>tree_simple_traits.tsv<span class="w"> </span>-o<span class="w"> </span>phenogram.png
+<p>Select the reference edge separating outgroup/ctenophore from sponge/other:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>topomap<span class="w"> </span>--manifest<span class="w"> </span>genes.tsv<span class="w"> </span>--reference-tree<span class="w"> </span>ctenophore.tre<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--branch-taxa<span class="w"> </span>outgroup<span class="w"> </span>ctenophore<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--coordinates<span class="w"> </span>example<span class="w"> </span>bed<span class="w"> </span>reference.bed<span class="w"> </span>--output-prefix<span class="w"> </span>reference_edge
 </pre></div>
 </div>
-<p><strong>cophylo (tanglegram)</strong> — two trees facing each other with connecting lines:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>cophylo<span class="w"> </span>-t<span class="w"> </span>tree_simple.tre<span class="w"> </span>-t2<span class="w"> </span>tree_simple.tre<span class="w"> </span>-o<span class="w"> </span>tanglegram.png
-</pre></div>
-</div>
-<p>All visualization commands support <code class="docutils literal notranslate"><span class="pre">--json</span></code> output. The <code class="docutils literal notranslate"><span class="pre">density_map</span></code> command
-also supports <code class="docutils literal notranslate"><span class="pre">--seed</span></code> for reproducibility and <code class="docutils literal notranslate"><span class="pre">-n</span></code> to set the number of
-stochastic mapping simulations. The <code class="docutils literal notranslate"><span class="pre">cophylo</span></code> command supports <code class="docutils literal notranslate"><span class="pre">-m/--mapping</span></code>
-for a tab-delimited file matching taxa between trees with different tip names.</p>
-<p>For methodological details, see
-<a class="reference external" href="https://doi.org/10.1111/j.2041-210X.2011.00169.x">Revell (2012)</a>.</p>
-<div class="line-block">
-<div class="line"><br /></div>
-</div>
+<p>Reference-edge mode derives its own four groups. Here ctenophore2 is outside
+the reference tree, so this example does not have the same group membership
+or incompatible-gene count as the explicit-groups example. Always inspect the
+reported groups before comparing analyses.</p>
 </section>
 <section id="expected-artifacts">
 <h2>Expected artifacts<a class="headerlink" href="#expected-artifacts" title="Link to this heading"></a></h2>
-<p>Each step identifies its expected terminal output or generated files. Confirm
-that those artifacts exist before continuing to the next step; filenames are
-relative to the tutorial working directory unless an absolute path is shown.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">animal_root.genes.tsv</span></code>, <code class="docutils literal notranslate"><span class="pre">animal_root.neighborhoods.tsv</span></code>, and
+<code class="docutils literal notranslate"><span class="pre">animal_root.overall.tsv</span></code> contain gene and neighborhood counts.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">animal_root.diagnostics.json</span></code> reports matching and deduplication diagnostics.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">animal_root.json</span></code> records groups, hypothesis labels, classifications, and paths.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">animal_root.1.png</span></code> and <code class="docutils literal notranslate"><span class="pre">animal_root.2.png</span></code> are the two chromosome figures.</p></li>
+</ul>
 </section>
 <section id="troubleshooting">
 <h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading"></a></h2>
 <ul class="simple">
-<li><p>Run <code class="docutils literal notranslate"><span class="pre">phykit</span> <span class="pre">&lt;command&gt;</span> <span class="pre">--help</span></code> to compare an invocation with the live interface.</p></li>
-<li><p>Confirm that downloaded files are in the current working directory and retain
-the filenames shown in the tutorial.</p></li>
-<li><p>For parsing errors, compare taxon names exactly across alignments, trees, and
-trait tables, including capitalization and underscores.</p></li>
-<li><p>See <a class="reference internal" href="../../troubleshooting/index.html"><span class="doc">Troubleshooting</span></a> for installation, format,
-and error-reporting guidance.</p></li>
+<li><p>Gene IDs must match exactly; transcript IDs are not automatically gene IDs.</p></li>
+<li><p>With <code class="docutils literal notranslate"><span class="pre">--min-support</span></code>, unlabelled edges collapse unless another missing-support
+policy is explicitly selected. Use <code class="docutils literal notranslate"><span class="pre">--support-scale</span> <span class="pre">1</span></code> for fractional labels.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--interval</span></code> selects gene midpoints, not all genes overlapping a region.</p></li>
+<li><p>Repeated coordinate rows merge to one span per gene; cross-chromosome mappings
+within a reference are rejected. Different references require different names.</p></li>
+<li><p>Concordance fractions are not statistical confidence, and local conflict does
+not by itself establish introgression or recombination breakpoints.</p></li>
 </ul>
+<p>Related topology mapping includes Twisst, <a class="reference external" href="https://doi.org/10.1534/genetics.116.194720">Martin and Van Belleghem (2017)</a>. PhyKIT's strict whole-gene
+classification is not Twisst's fractional subtree weighting.</p>
 </section>
 </section>
 
@@ -208,8 +212,8 @@ and error-reporting guidance.</p></li>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="13-testing-for-rate-heterogeneity-across-phylogenetic-regimes.html" class="btn btn-neutral float-left" title="Tutorial 13: Testing for rate heterogeneity across phylogenetic regimes" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="15-comparing-continuous-trait-evolution-models.html" class="btn btn-neutral float-right" title="Tutorial 15: Comparing continuous trait evolution models" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="../index.html" class="btn btn-neutral float-left" title="Tutorials" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="01-summarizing-information-content.html" class="btn btn-neutral float-right" title="Tutorial 1: Summarizing information content" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
