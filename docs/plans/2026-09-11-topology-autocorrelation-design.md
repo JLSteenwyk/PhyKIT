@@ -1,7 +1,9 @@
 # Topology autocorrelation specification
 
-Status: prespecified implementation and calibration plan; inference is not yet
-validated. No version bump or release is part of this work.
+Status: implementation and scoped calibration complete; original prespecification
+and candidate revisions are retained below. No version bump or release is part
+of this work. Final numerical results are in
+`benchmarks/topology_autocorrelation_validation.md`.
 
 ## Estimand
 
@@ -179,3 +181,11 @@ changes, extend all five stationary scenarios to 1,000 datasets using the
 same seeds (the original 200 are included). This reduces Monte Carlo
 uncertainty without selectively rerunning only the failing cell. Keep the
 200-dataset assumption-violation results separate from calibration gates.
+
+The 1,000-dataset extension passed all 80 stationary metric/bin/block-size
+cells with empirical coverage 0.921-0.954, no withheld intervals, and
+maximum absolute estimator bias below 0.000214. This meets the unchanged
+prespecified criterion but is approximate calibration: nominal 95%
+intervals still undercovered in some scenarios. Report that limitation
+explicitly. No further statistical algorithm changes were made after
+the centered 200-dataset experiment.
