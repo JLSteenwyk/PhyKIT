@@ -489,6 +489,14 @@ They describe repeated spatial sampling, not a random-label null distribution.
 They are not simultaneous confidence bands: scanning all bins for a pointwise
 interval that excludes zero is not a multiple-testing-corrected analysis.
 No p-values, significance calls, or clustering-range estimates are provided.</p>
+<p>Simulation calibration used 1,000 datasets in each of five stationary scenarios,
+two block sizes, and 499 replicates. Empirical coverage across all tested cells
+was 92.1-95.4% for nominal 95% intervals, meeting the prespecified 90-99% criterion.
+Some undercoverage remains: these are approximate intervals, not exact coverage
+guarantees. Independent labels with spatially changing frequencies produced
+positive excess in separate assumption-violation simulations. Reproducible
+results and earlier failed candidates are retained in
+<code class="docutils literal notranslate"><span class="pre">benchmarks/topology_autocorrelation_validation.md</span></code> and associated JSON files.</p>
 </section>
 <section id="outputs-and-limitations">
 <h3>Outputs and limitations<a class="headerlink" href="#outputs-and-limitations" title="Link to this heading"></a></h3>
