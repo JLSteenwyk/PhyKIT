@@ -717,6 +717,7 @@ class Phykit:
                     - quartet-based network inference (NANUQ-style)
                       distinguishing ILS from hybridization
                 topology_landscape (alias: topomap)
+                topology_autocorrelation (alias: topo_ac)
                   map focal gene-tree concordance across reference genomes
                 quartet_pie (alias: qpie; quartet_pie_chart)
                     - phylogram with quartet concordance pie charts
@@ -7690,6 +7691,77 @@ class Phykit:
         _run_service(parser, argv, TopologyLandscape)
 
     @staticmethod
+    def topology_autocorrelation(argv):
+        parser = _new_parser(description=_dedent(f"""\
+            {help_header}
+
+            Measure excess same-topology agreement versus genomic distance.
+            Input: topology_landscape .genes.tsv, or raw gene trees and BED/TSV
+            coordinates with the same strict four-group classification rules.
+            Pairs never cross chromosomes or references. Bins are [lower, upper),
+            including the last bin; distinct genes at tied anchors have distance 0.
+            Baselines use chromosome-specific frequencies without replacement,
+            combined by pair counts. Unresolved genes are excluded, but reported.
+
+            Optional --block-sizes requests chromosome-stratified marked-block
+            bootstrap intervals and block-size sensitivity (at least two sizes).
+            These are 95% pointwise intervals, not simultaneous bands or a
+            random-label null distribution. Stationarity and sufficient spatial
+            replication are required; unsupported intervals are withheld.
+            Spatially changing frequencies and nonrandom missingness can confound
+            results. No p-values, clustering ranges, introgression conclusions,
+            recombination breakpoints, or independent-locus counts are inferred.
+
+            Related methods: Pollard et al. (2006), PLoS Genetics,
+            doi:10.1371/journal.pgen.0020173; Loh and Stein (2004), Statistica
+            Sinica 14:69-101 (marked-point bootstrap adaptation).
+            Raw classification: see topology_landscape and its Twisst comparison.
+
+            Outputs: PREFIX.autocorrelation.tsv, PREFIX.chromosomes.tsv,
+            PREFIX.genes.tsv, PREFIX.uncertainty.tsv, PREFIX.blocks.tsv, PREFIX.json.
+            Aliases: topology_autocorrelation, topo_ac.
+            """))
+        source = parser.add_mutually_exclusive_group(required=True)
+        source.add_argument("--classified-genes", help="Per-gene topology_landscape TSV")
+        source.add_argument("--manifest", help="Gene-ID / Newick-path TSV for raw input")
+        parser.add_argument("--coordinates", nargs=3, action="append", metavar=("REFERENCE", "FORMAT", "PATH"),
+                            help="Raw input coordinate file: reference bed|tsv path (repeatable)")
+        focal = parser.add_mutually_exclusive_group()
+        focal.add_argument("--groups", help="Four-group JSON for raw input")
+        focal.add_argument("--reference-tree", help="Reference tree for raw input")
+        parser.add_argument("--branch-taxa", nargs="+", help="Complete side of a resolved reference edge")
+        parser.add_argument("--outgroup", help="Outgroup name in the raw-input groups")
+        parser.add_argument("--min-support", type=float, help="Raw input: collapse weaker edges")
+        parser.add_argument("--support-scale", type=int, choices=(1, 100), help="Raw support scale (default: 100)")
+        parser.add_argument("--missing-support", choices=("collapse", "keep", "error"),
+                            help="Raw absent-support policy (default: collapse)")
+        parser.add_argument("--unmapped", choices=("error", "skip"), help="Raw unmapped policy (default: error)")
+        parser.add_argument("--labels", nargs=3, help="Topology_1, topology_2, topology_3 display labels")
+        parser.add_argument("--chromosome", action="append", help="Retain chromosome (repeatable)")
+        parser.add_argument("--interval", nargs=2, type=int, metavar=("START", "END"),
+                            help="Half-open gene-anchor selection on each chromosome")
+        parser.add_argument("--distance-edges", nargs="+", type=int, help="Increasing bin edges starting at zero")
+        parser.add_argument("--bin-width", type=int, help="Equal-width distance bins (default: 10000 bp)")
+        parser.add_argument("--max-distance", type=int, help="Exclusive maximum distance (default: 1000000 bp)")
+        parser.add_argument("--block-sizes", nargs="+", type=int, help="At least two physical sizes for uncertainty")
+        parser.add_argument("--replicates", type=int, default=999, help="Bootstrap replicates, at least 499 (default: 999)")
+        parser.add_argument("--seed", type=int, default=0, help="Nonnegative resampling seed (default: 0)")
+        parser.add_argument("--output-prefix", "-o", required=True, help="Output prefix; parent must exist")
+        parser.add_argument("--plot", action="store_true", help="Plot distance decay and contributing pair counts")
+        parser.add_argument("--plot-output", help="Plot filename; separate numbered files for multiple references")
+        parser.add_argument("--fig-width", type=float, help="Plot width in inches")
+        parser.add_argument("--fig-height", type=float, help="Plot height in inches")
+        parser.add_argument("--dpi", type=int, default=300, help="Plot resolution")
+        parser.add_argument("--title", help="Custom plot title")
+        parser.add_argument("--no-title", action="store_true", help="Hide title")
+        parser.add_argument("--legend-position", help="Matplotlib legend position or none")
+        parser.add_argument("--colors", help="Comma-separated topology colors")
+        for name in ("xlabel", "ylabel", "axis", "title"):
+            parser.add_argument(f"--{name}-fontsize", type=float, help=f"{name} font size")
+        _add_json_argument(parser)
+        _run_service(parser, argv, TopologyAutocorrelation)
+
+    @staticmethod
     def quartet_pie(argv):
         parser = _new_parser(
             description=_dedent(
@@ -10917,6 +10989,10 @@ def quartet_network(argv=None):
 
 def topology_landscape(argv=None):
     Phykit.topology_landscape(sys.argv[1:] if argv is None else argv)
+
+
+def topology_autocorrelation(argv=None):
+    Phykit.topology_autocorrelation(sys.argv[1:] if argv is None else argv)
 
 
 def quartet_pie(argv=None):

@@ -32,16 +32,13 @@ class TopologyLandscape:
     def __init__(self, args):
         self.args = args
 
-    def run(self):
+    def prepare(self):
+        """Classify and select mapped genes without writing files or neighborhoods."""
         args = self.args
         if bool(args.groups) == bool(args.reference_tree):
             fail("Provide either --groups or --reference-tree with --branch-taxa.")
         if bool(args.reference_tree) != bool(args.branch_taxa):
             fail("--reference-tree and --branch-taxa must be provided together.")
-        if args.window_bp is not None and args.window_bp <= 0:
-            fail("--window-bp must be positive.")
-        if args.window_genes is not None and args.window_genes <= 0:
-            fail("--window-genes must be positive.")
         if args.groups:
             try:
                 with open(args.groups, encoding="utf-8") as handle:
@@ -104,19 +101,31 @@ class TopologyLandscape:
         rows = select_rows(rows, args.chromosome, args.interval)
         if not rows:
             fail("No mapped genes remain in the selected chromosomes/interval.")
+        inputs = {Path(p).resolve() for p in [args.manifest, *manifest.values(),
+                  *(s[2] for s in args.coordinates), args.groups or args.reference_tree]}
+        return {
+            "command": "topology_landscape", "mode": "strict", "coordinate_system": "0-based-half-open",
+            "groups": {name: sorted(taxa) for name, taxa in groups.items()}, "labels": labels,
+            "outgroup": args.outgroup, "min_support": args.min_support, "support_scale": args.support_scale,
+            "missing_support": args.missing_support, "genes": rows, "classifications": classifications,
+            "diagnostics": diagnostics,
+        }, inputs
+
+    def run(self):
+        args = self.args
+        if args.window_bp is not None and args.window_bp <= 0:
+            fail("--window-bp must be positive.")
+        if args.window_genes is not None and args.window_genes <= 0:
+            fail("--window-genes must be positive.")
+        payload, inputs = self.prepare()
+        rows, labels, diagnostics = payload["genes"], payload["labels"], payload["diagnostics"]
         windows = neighborhoods(
             rows, window_bp=args.window_bp if args.window_genes is None else None,
             window_genes=args.window_genes, interval=args.interval,
         )
         overall = [dict(reference=ref, **summarize([r for r in rows if r["reference"] == ref]))
                    for ref in sorted({r["reference"] for r in rows})]
-        payload = {
-            "command": "topology_landscape", "mode": "strict", "coordinate_system": "0-based-half-open",
-            "groups": {name: sorted(taxa) for name, taxa in groups.items()}, "labels": labels,
-            "outgroup": args.outgroup, "min_support": args.min_support, "support_scale": args.support_scale,
-            "missing_support": args.missing_support, "genes": rows, "classifications": classifications,
-            "neighborhoods": windows, "overall": overall, "diagnostics": diagnostics,
-        }
+        payload.update(neighborhoods=windows, overall=overall)
         prefix = Path(args.output_prefix)
         outputs = {
             key: str(prefix) + suffix for key, suffix in (
@@ -125,8 +134,6 @@ class TopologyLandscape:
             )
         }
         # Do not let a mistyped prefix or plot filename overwrite any source.
-        inputs = {Path(p).resolve() for p in [args.manifest, *manifest.values(),
-                  *(s[2] for s in args.coordinates), args.groups or args.reference_tree]}
         plot_paths = self.plot_paths(rows) if args.plot else []
         for path in [*outputs.values(), *(p[2] for p in plot_paths)]:
             if Path(path).resolve() in inputs:

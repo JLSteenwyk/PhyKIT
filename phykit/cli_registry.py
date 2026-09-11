@@ -76,6 +76,8 @@ ALIAS_TO_HANDLER: dict[str, str] = {
     # Tree aliases
     "topology_landscape": "topology_landscape",
     "topomap": "topology_landscape",
+    "topology_autocorrelation": "topology_autocorrelation",
+    "topo_ac": "topology_autocorrelation",
     "bss": "bipartition_support_stats",
     "blm": "branch_length_multiplier",
     "collapse": "collapse_branches",

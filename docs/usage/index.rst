@@ -6,9 +6,12 @@ Usage
 .. raw:: html
 
    <span id="cmd-topology_landscape"></span>
+   <span id="cmd-topology_autocorrelation"></span>
 
 - :doc:`Topology landscape </reference/commands/topology_landscape>` maps focal
   gene-tree concordance across reference-genome neighborhoods.
+- :doc:`Topology autocorrelation </reference/commands/topology_autocorrelation>`
+  quantifies excess agreement versus genomic distance.
 
 PhyKIT provides 100+ functions for processing and analyzing multiple sequence
 alignments and phylogenies. Functions span alignment quality assessment,

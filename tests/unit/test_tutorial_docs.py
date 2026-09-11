@@ -13,8 +13,8 @@ MANIFEST = DOCS / "_data" / "tutorial_smoke.json"
 def test_tutorial_pages_and_smoke_manifest_cover_all_tutorials():
     pages = sorted(TUTORIALS.glob("*.rst"))
     manifest = json.loads(MANIFEST.read_text())["tutorials"]
-    assert len(pages) == 22
-    assert [item["number"] for item in manifest] == list(range(1, 23))
+    assert len(pages) == 23
+    assert [item["number"] for item in manifest] == list(range(1, 24))
 
 
 def test_every_tutorial_has_the_standard_contract():
