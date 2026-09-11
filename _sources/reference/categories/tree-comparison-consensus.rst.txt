@@ -2,6 +2,7 @@ Tree comparison & consensus
 ===========================
 
 - :doc:`Topology landscape <../commands/topology_landscape>` - Map gene-tree concordance across genomic neighborhoods
+- :doc:`Topology autocorrelation <../commands/topology_autocorrelation>` - Measure genomic distance-decay in topology agreement
 
 - :doc:`Consensus network <../commands/consensus_network>` - Consensus network from multiple trees
 - :doc:`Consensus tree <../commands/consensus_tree>` - Consensus tree from multiple trees
@@ -20,6 +21,7 @@ Tree comparison & consensus
    :hidden:
 
    ../commands/topology_landscape
+   ../commands/topology_autocorrelation
 
    ../commands/consensus_network
    ../commands/consensus_tree

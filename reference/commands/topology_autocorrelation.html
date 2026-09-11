@@ -1,0 +1,569 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Topology autocorrelation &mdash; phykit 2.7.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=ae8b8648" />
+
+  
+    <link rel="shortcut icon" href="../../_static/flavicon.png"/>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=dfec817d"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Consensus network" href="consensus_network.html" />
+    <link rel="prev" title="Topology landscape" href="topology_landscape.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html">
+            
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started/index.html">Installation and first analysis</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Command reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../index.html#choose-by-task">Choose by task</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#all-commands">All commands</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../categories/alignment-dataset-utilities.html">Alignment &amp; dataset utilities</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../categories/alignment-quality-statistics.html">Alignment quality &amp; statistics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../categories/evolutionary-rate-analysis.html">Evolutionary rate analysis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../categories/homology-assessment.html">Homology assessment</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../categories/introgression-gene-flow.html">Introgression &amp; gene flow</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../categories/other-utilities.html">Other utilities</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../categories/phylogenetic-comparative-methods.html">Phylogenetic comparative methods</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../categories/phylogenetic-signal.html">Phylogenetic signal</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../categories/saturation-model-adequacy.html">Saturation &amp; model adequacy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../categories/trait-evolution.html">Trait evolution</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../categories/tree-comparison-consensus.html">Tree comparison &amp; consensus</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="topology_landscape.html">Topology landscape</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Topology autocorrelation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="consensus_network.html">Consensus network</a></li>
+<li class="toctree-l4"><a class="reference internal" href="consensus_tree.html">Consensus tree</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cophylo.html">Cophylogenetic plot (tanglegram)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="evo_tempo_map.html">Evolutionary tempo mapping</a></li>
+<li class="toctree-l4"><a class="reference internal" href="kf_distance.html">Kuhner-Felsenstein distance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="neighbor_net.html">NeighborNet</a></li>
+<li class="toctree-l4"><a class="reference internal" href="polytomy_test.html">Polytomy testing</a></li>
+<li class="toctree-l4"><a class="reference internal" href="quartet_network.html">Quartet network</a></li>
+<li class="toctree-l4"><a class="reference internal" href="quartet_pie.html">Quartet pie chart</a></li>
+<li class="toctree-l4"><a class="reference internal" href="robinson_foulds_distance.html">Robinson-Foulds distance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="spectral_discordance.html">Spectral discordance decomposition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tree_space.html">Tree space visualization</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../categories/tree-manipulation-utilities.html">Tree manipulation &amp; utilities</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../categories/tree-summary-statistics.html">Tree summary statistics</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../formats/index.html">Input formats and shared conventions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../glossary/index.html">Glossary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../troubleshooting/index.html">Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../frequently_asked_questions/index.html">Frequently asked questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/index.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../about/index.html">About</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../change_log/index.html">Change log</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../other_software/index.html">Other software</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">phykit</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Command reference</a></li>
+          <li class="breadcrumb-item"><a href="../categories/tree-comparison-consensus.html">Tree comparison &amp; consensus</a></li>
+      <li class="breadcrumb-item active">Topology autocorrelation</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="topology-autocorrelation">
+<span id="command-topology-autocorrelation"></span><span id="cmd-topology-autocorrelation"></span><h1>Topology autocorrelation<a class="headerlink" href="#topology-autocorrelation" title="Link to this heading"></a></h1>
+<p>Measure how excess agreement among focal gene-tree topologies varies with
+physical genomic distance. Unlike <a class="reference internal" href="topology_landscape.html"><span class="doc">Topology landscape</span></a>, this command
+calculates distance-dependent statistics rather than genomic window counts.</p>
+<section id="command-identity">
+<h2>Command identity<a class="headerlink" href="#command-identity" title="Link to this heading"></a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">Canonical command<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">topology_autocorrelation</span></code></p>
+</dd>
+<dt class="field-even">Handler<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">topology_autocorrelation</span></code></p>
+</dd>
+<dt class="field-odd">Aliases<span class="colon">:</span></dt>
+<dd class="field-odd"><p>topo_ac</p>
+</dd>
+<dt class="field-even">Standalone executables<span class="colon">:</span></dt>
+<dd class="field-even"><p>pk_topology_autocorrelation, pk_topo_ac</p>
+</dd>
+<dt class="field-odd">Categories<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tree comparison &amp; consensus</p>
+</dd>
+</dl>
+</section>
+<section id="runtime-interface">
+<h2>Runtime interface<a class="headerlink" href="#runtime-interface" title="Link to this heading"></a></h2>
+<section id="synopsis">
+<h3>Synopsis<a class="headerlink" href="#synopsis" title="Link to this heading"></a></h3>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>phykit topology_autocorrelation [--classified-genes &lt;classified_genes&gt;] [--manifest &lt;manifest&gt;] [--coordinates &lt;coordinates&gt;] [--groups &lt;groups&gt;] [--reference-tree &lt;reference_tree&gt;] [--branch-taxa &lt;branch_taxa&gt;] [--outgroup &lt;outgroup&gt;] [--min-support &lt;min_support&gt;] [--support-scale &lt;support_scale&gt;] [--missing-support &lt;missing_support&gt;] [--unmapped &lt;unmapped&gt;] [--labels &lt;labels&gt;] [--chromosome &lt;chromosome&gt;] [--interval &lt;interval&gt;] [--distance-edges &lt;distance_edges&gt;] [--bin-width &lt;bin_width&gt;] [--max-distance &lt;max_distance&gt;] [--block-sizes &lt;block_sizes&gt;] [--replicates &lt;replicates&gt;] [--seed &lt;seed&gt;] --output-prefix &lt;output_prefix&gt; [--plot] [--plot-output &lt;plot_output&gt;] [--fig-width &lt;fig_width&gt;] [--fig-height &lt;fig_height&gt;] [--dpi &lt;dpi&gt;] [--title &lt;title&gt;] [--no-title] [--legend-position &lt;legend_position&gt;] [--colors &lt;colors&gt;] [--xlabel-fontsize &lt;xlabel_fontsize&gt;] [--ylabel-fontsize &lt;ylabel_fontsize&gt;] [--axis-fontsize &lt;axis_fontsize&gt;] [--title-fontsize &lt;title_fontsize&gt;] [--json]
+</pre></div>
+</div>
+</section>
+<section id="arguments">
+<h3>Arguments<a class="headerlink" href="#arguments" title="Link to this heading"></a></h3>
+<p>This table is generated from the live command parser. It is the authoritative
+source for accepted spellings, required arguments, types, defaults, and choices.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 31.8%" />
+<col style="width: 11.4%" />
+<col style="width: 13.6%" />
+<col style="width: 20.5%" />
+<col style="width: 22.7%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Argument</p></th>
+<th class="head"><p>Required</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Default</p></th>
+<th class="head"><p>Choices</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--classified-genes</span></code></p></td>
+<td><p>false</p></td>
+<td><p>string</p></td>
+<td><p>none</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--manifest</span></code></p></td>
+<td><p>false</p></td>
+<td><p>string</p></td>
+<td><p>none</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--coordinates</span></code></p></td>
+<td><p>false</p></td>
+<td><p>string</p></td>
+<td><p>none</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--groups</span></code></p></td>
+<td><p>false</p></td>
+<td><p>string</p></td>
+<td><p>none</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--reference-tree</span></code></p></td>
+<td><p>false</p></td>
+<td><p>string</p></td>
+<td><p>none</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--branch-taxa</span></code></p></td>
+<td><p>false</p></td>
+<td><p>string</p></td>
+<td><p>none</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--outgroup</span></code></p></td>
+<td><p>false</p></td>
+<td><p>string</p></td>
+<td><p>none</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--min-support</span></code></p></td>
+<td><p>false</p></td>
+<td><p>float</p></td>
+<td><p>none</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--support-scale</span></code></p></td>
+<td><p>false</p></td>
+<td><p>int</p></td>
+<td><p>none</p></td>
+<td><p>1, 100</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--missing-support</span></code></p></td>
+<td><p>false</p></td>
+<td><p>string</p></td>
+<td><p>none</p></td>
+<td><p>collapse, keep, error</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--unmapped</span></code></p></td>
+<td><p>false</p></td>
+<td><p>string</p></td>
+<td><p>none</p></td>
+<td><p>error, skip</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--labels</span></code></p></td>
+<td><p>false</p></td>
+<td><p>string</p></td>
+<td><p>none</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--chromosome</span></code></p></td>
+<td><p>false</p></td>
+<td><p>string</p></td>
+<td><p>none</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--interval</span></code></p></td>
+<td><p>false</p></td>
+<td><p>int</p></td>
+<td><p>none</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--distance-edges</span></code></p></td>
+<td><p>false</p></td>
+<td><p>int</p></td>
+<td><p>none</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--bin-width</span></code></p></td>
+<td><p>false</p></td>
+<td><p>int</p></td>
+<td><p>none</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--max-distance</span></code></p></td>
+<td><p>false</p></td>
+<td><p>int</p></td>
+<td><p>none</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--block-sizes</span></code></p></td>
+<td><p>false</p></td>
+<td><p>int</p></td>
+<td><p>none</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--replicates</span></code></p></td>
+<td><p>false</p></td>
+<td><p>int</p></td>
+<td><p>999</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--seed</span></code></p></td>
+<td><p>false</p></td>
+<td><p>int</p></td>
+<td><p>0</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--output-prefix,</span> <span class="pre">-o</span></code></p></td>
+<td><p>true</p></td>
+<td><p>string</p></td>
+<td><p>required</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--plot</span></code></p></td>
+<td><p>false</p></td>
+<td><p>boolean</p></td>
+<td><p>false</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--plot-output</span></code></p></td>
+<td><p>false</p></td>
+<td><p>string</p></td>
+<td><p>none</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--fig-width</span></code></p></td>
+<td><p>false</p></td>
+<td><p>float</p></td>
+<td><p>none</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--fig-height</span></code></p></td>
+<td><p>false</p></td>
+<td><p>float</p></td>
+<td><p>none</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--dpi</span></code></p></td>
+<td><p>false</p></td>
+<td><p>int</p></td>
+<td><p>300</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--title</span></code></p></td>
+<td><p>false</p></td>
+<td><p>string</p></td>
+<td><p>none</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--no-title</span></code></p></td>
+<td><p>false</p></td>
+<td><p>boolean</p></td>
+<td><p>false</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--legend-position</span></code></p></td>
+<td><p>false</p></td>
+<td><p>string</p></td>
+<td><p>none</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--colors</span></code></p></td>
+<td><p>false</p></td>
+<td><p>string</p></td>
+<td><p>none</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--xlabel-fontsize</span></code></p></td>
+<td><p>false</p></td>
+<td><p>float</p></td>
+<td><p>none</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--ylabel-fontsize</span></code></p></td>
+<td><p>false</p></td>
+<td><p>float</p></td>
+<td><p>none</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--axis-fontsize</span></code></p></td>
+<td><p>false</p></td>
+<td><p>float</p></td>
+<td><p>none</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--title-fontsize</span></code></p></td>
+<td><p>false</p></td>
+<td><p>float</p></td>
+<td><p>none</p></td>
+<td><p>any</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--json</span></code></p></td>
+<td><p>false</p></td>
+<td><p>boolean</p></td>
+<td><p>false</p></td>
+<td><p>any</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="output-and-errors">
+<h3>Output and errors<a class="headerlink" href="#output-and-errors" title="Link to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">--json</span></code> provides the command's structured JSON representation. Output-file options: <code class="docutils literal notranslate"><span class="pre">--output-prefix</span></code>, <code class="docutils literal notranslate"><span class="pre">--plot-output</span></code>. Invalid command syntax exits with status 2. Input
+validation and scientific limitations are described in the guidance below.</p>
+</section>
+</section>
+<section id="guidance-interpretation-and-examples">
+<h2>Guidance, interpretation, and examples<a class="headerlink" href="#guidance-interpretation-and-examples" title="Link to this heading"></a></h2>
+<section id="inputs-and-selection">
+<h3>Inputs and selection<a class="headerlink" href="#inputs-and-selection" title="Link to this heading"></a></h3>
+<p>Supply either <code class="docutils literal notranslate"><span class="pre">--classified-genes</span> <span class="pre">landscape.genes.tsv</span></code> or <code class="docutils literal notranslate"><span class="pre">--manifest</span></code>
+with raw trees, <code class="docutils literal notranslate"><span class="pre">--coordinates</span></code>, and <code class="docutils literal notranslate"><span class="pre">--groups</span></code> or <code class="docutils literal notranslate"><span class="pre">--reference-tree</span></code>.
+Raw mode uses the same strict classification, support filtering, reference-edge
+selection, mapping diagnostics, and midpoint selection as <a class="reference internal" href="topology_landscape.html"><span class="doc">Topology landscape</span></a>.
+The command does not first write an intermediate landscape or compute windows.</p>
+<p>Classified TSV requires <code class="docutils literal notranslate"><span class="pre">reference</span></code>, <code class="docutils literal notranslate"><span class="pre">chromosome</span></code>, <code class="docutils literal notranslate"><span class="pre">gene_id</span></code>, <code class="docutils literal notranslate"><span class="pre">start</span></code>,
+<code class="docutils literal notranslate"><span class="pre">end</span></code>, <code class="docutils literal notranslate"><span class="pre">anchor</span></code>, and <code class="docutils literal notranslate"><span class="pre">classification</span></code>. Coordinates are zero-based half-open;
+the anchor must equal <code class="docutils literal notranslate"><span class="pre">(start</span> <span class="pre">+</span> <span class="pre">end</span> <span class="pre">-</span> <span class="pre">1)</span> <span class="pre">//</span> <span class="pre">2</span></code>. Accepted classes are
+<code class="docutils literal notranslate"><span class="pre">topology_1</span></code>, <code class="docutils literal notranslate"><span class="pre">topology_2</span></code>, <code class="docutils literal notranslate"><span class="pre">topology_3</span></code>, <code class="docutils literal notranslate"><span class="pre">unresolved</span></code>,
+<code class="docutils literal notranslate"><span class="pre">insufficient_sampling</span></code>, and <code class="docutils literal notranslate"><span class="pre">incompatible_groups</span></code>. Other landscape columns
+are retained as metadata. Duplicate reference/gene pairs, invalid anchors,
+and conflicting classifications for the same gene across references are errors.
+In raw mode, coordinate record merging follows the landscape rules instead.</p>
+<p>Classification labels and support policies cannot be recovered from a standalone
+TSV. Existing classifications are retained without re-filtering. Supply
+<code class="docutils literal notranslate"><span class="pre">--labels</span></code> to name the three alternatives; raw-tree and support options are
+rejected in classified mode rather than silently ignored.</p>
+<p><code class="docutils literal notranslate"><span class="pre">--chromosome</span></code> is repeatable. <code class="docutils literal notranslate"><span class="pre">--interval</span> <span class="pre">START</span> <span class="pre">END</span></code> retains anchors in
+that half-open interval on each selected chromosome and reference. Selection
+happens before estimating chromosome frequencies. Output ordering is lexical
+by reference/chromosome, then increasing distance and metric order.</p>
+</section>
+<section id="distances-and-denominators">
+<h3>Distances and denominators<a class="headerlink" href="#distances-and-denominators" title="Link to this heading"></a></h3>
+<p>Distance is the absolute difference between two gene anchors. Each unordered
+pair of resolved genes contributes once; distinct genes at the same anchor
+have distance zero. No pairs cross chromosomes, reference genomes, or selection
+boundaries. Unresolved/unclassifiable genes do not contribute to pair
+denominators, but remain in per-gene and diagnostic output.</p>
+<p>Set <code class="docutils literal notranslate"><span class="pre">--distance-edges</span> <span class="pre">0</span> <span class="pre">1000</span> <span class="pre">5000</span> <span class="pre">10000</span></code> for custom bins, or combine
+<code class="docutils literal notranslate"><span class="pre">--bin-width</span></code> (default 10,000 bp) with <code class="docutils literal notranslate"><span class="pre">--max-distance</span></code> (default 1,000,000 bp).
+Every bin is <code class="docutils literal notranslate"><span class="pre">[lower,</span> <span class="pre">upper)</span></code>, including the last: a pair at exactly the
+maximum distance is excluded. A final equal-width bin may be shorter.
+At most 1,000 bins are supported. Empty bins remain visible with zero pairs
+and null estimates, not apparent evidence for zero excess.</p>
+<p>Let chromosome c have n resolved genes, including n_k in topology k.
+Its finite-population baseline joint support is
+<code class="docutils literal notranslate"><span class="pre">q_ck</span> <span class="pre">=</span> <span class="pre">n_k</span> <span class="pre">(n_k</span> <span class="pre">-</span> <span class="pre">1)</span> <span class="pre">/</span> <span class="pre">(n</span> <span class="pre">(n</span> <span class="pre">-</span> <span class="pre">1))</span></code>. This is the expected probability that
+both members of a pair support k under random reassignment of observed labels
+without replacement. Aggregate baseline agreement is the sum over k.</p>
+<p>In each distance bin, <code class="docutils literal notranslate"><span class="pre">observed</span></code> is the fraction of resolved pairs supporting
+the same topology (metric <code class="docutils literal notranslate"><span class="pre">agreement</span></code>), or both supporting the specified
+topology (metrics <code class="docutils literal notranslate"><span class="pre">topology_1</span></code> through <code class="docutils literal notranslate"><span class="pre">topology_3</span></code>).
+<code class="docutils literal notranslate"><span class="pre">excess</span> <span class="pre">=</span> <span class="pre">observed</span> <span class="pre">-</span> <span class="pre">baseline</span></code>. Topology-specific excesses sum to aggregate
+excess. <code class="docutils literal notranslate"><span class="pre">enrichment_ratio</span> <span class="pre">=</span> <span class="pre">observed</span> <span class="pre">/</span> <span class="pre">baseline</span></code> is secondary and null when
+the baseline is zero. These quantities are not Pearson correlations or
+conditional probabilities given one endpoint's topology.</p>
+<p>Reference-level estimates weight chromosome estimates and baselines by the
+number of pairs in that distance bin. They never estimate a baseline from
+pooled chromosome frequencies. The baseline can therefore change across bins
+as contributing chromosomes change. <code class="docutils literal notranslate"><span class="pre">contributing_genes</span></code> counts distinct
+pair endpoints, while <code class="docutils literal notranslate"><span class="pre">contributing_chromosomes</span></code> counts chromosomes with pairs.
+Singleton chromosomes have undefined baselines and contribute no pairs.</p>
+</section>
+<section id="block-resampling">
+<h3>Block resampling<a class="headerlink" href="#block-resampling" title="Link to this heading"></a></h3>
+<p>Without <code class="docutils literal notranslate"><span class="pre">--block-sizes</span></code>, output is descriptive and interval/block TSV files
+contain headers only. To request uncertainty, supply at least two distinct
+positive sizes, for example <code class="docutils literal notranslate"><span class="pre">--block-sizes</span> <span class="pre">50000</span> <span class="pre">100000</span> <span class="pre">--replicates</span> <span class="pre">999</span> <span class="pre">--seed</span> <span class="pre">7</span></code>.
+At least 499 replicates are required; the default is 999. Seeds reproduce runs
+with the same implementation, inputs, and numerical-library versions.</p>
+<p>Each chromosome's observed span from its first to last selected anchor is
+divided into <code class="docutils literal notranslate"><span class="pre">max(1,</span> <span class="pre">floor(span</span> <span class="pre">/</span> <span class="pre">requested_size))</span></code> near-equal physical blocks.
+Widths differ by at most one base; there is no short terminal block. Empty
+blocks remain eligible. This is an observed-gene span, not a known chromosome
+length. Block diagnostics include actual bounds and all six class counts.</p>
+<p>The bootstrap draws the original number of blocks with replacement independently
+within each chromosome, using the same draws across all bins and metrics.
+It resamples precomputed contributions, not genes joined into a synthetic
+genome. Original pairs spanning a block boundary are retained; no new pairs,
+wrapping, or adjacency are introduced.</p>
+<p>Each pair denominator is split equally between its endpoints. For topology
+indicator I and observed chromosome frequency p, its endpoint-i contribution is
+<code class="docutils literal notranslate"><span class="pre">0.5</span> <span class="pre">(I_i-p)(I_j-p)</span> <span class="pre">+</span> <span class="pre">p</span> <span class="pre">I_i</span> <span class="pre">-</span> <span class="pre">0.5</span> <span class="pre">p^2</span></code>. The two endpoint contributions sum
+exactly to <code class="docutils literal notranslate"><span class="pre">I_i</span> <span class="pre">I_j</span></code>. This algebraic centering assigns the linear frequency
+term to its owning gene and reduces block-boundary artifacts. These signed
+resampling contributions are separate from the actual reported pair counts.
+Each replicate recomputes chromosome frequencies, finite baselines, and
+pair-weighted excesses. Percentiles yield 95% pointwise intervals for excess.</p>
+<p>Intervals are withheld for a bin if any contributing chromosome has fewer than
+20 pair-occupied blocks or its actual block widths are less than five times
+the bin's upper distance. They are also withheld if fewer than 95% of
+replicates are valid or their distribution is degenerate. Reasons are explicit.
+If admissible interval widths differ by more than a factor of two across
+sizes, <code class="docutils literal notranslate"><span class="pre">block_size_sensitive</span></code> is true. With fewer than two admissible sizes,
+sensitivity is null with a diagnostic, not a declaration of stability.</p>
+<p>These safeguards do not verify stationarity or make neighboring blocks
+independent. Intervals assume approximately stationary, short-range-dependent
+marked gene processes within chromosomes and sufficient spatial replication.
+They describe repeated spatial sampling, not a random-label null distribution.
+They are not simultaneous confidence bands: scanning all bins for a pointwise
+interval that excludes zero is not a multiple-testing-corrected analysis.
+No p-values, significance calls, or clustering-range estimates are provided.</p>
+</section>
+<section id="outputs-and-limitations">
+<h3>Outputs and limitations<a class="headerlink" href="#outputs-and-limitations" title="Link to this heading"></a></h3>
+<p>Required <code class="docutils literal notranslate"><span class="pre">--output-prefix</span> <span class="pre">PREFIX</span></code> writes:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">.autocorrelation.tsv</span></code>: per-reference, per-bin, per-metric estimates and counts.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">.chromosomes.tsv</span></code>: corresponding chromosome-level descriptive estimates.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">.genes.tsv</span></code>: selected mapped genes, including unresolved/unclassifiable genes.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">.uncertainty.tsv</span></code>: intervals by reference, bin, metric, and requested block size.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">.blocks.tsv</span></code>: physical block bounds and class-count diagnostics for every size.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">.json</span></code>: complete results, parameters, input metadata, warnings, and diagnostics.</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">--json</span></code> also prints the complete payload. JSON null and empty TSV cells
+mean undefined. TSV list/dictionary cells use JSON encoding. Existing parent
+directories are required; outputs cannot overwrite input files or each other.</p>
+<p><code class="docutils literal notranslate"><span class="pre">--plot</span></code> draws aggregate excess, topology-specific excess, and resolved-pair
+counts. Dashed zero lines are the baseline for excess. Available 95% pointwise
+intervals are shaded for requested sizes; exact size-specific values are in TSV.
+Each reference gets a separate figure. PNG, PDF, SVG, JPEG, and TIFF are supported.
+Multiple references add numbered filename suffixes. Configure labels, colors,
+dimensions, fonts, and legend placement using standard plotting options.</p>
+<p>Spatially changing topology frequencies, gene density, or nonrandom unresolved
+genes can cause apparent clustering. Inspect class-count block diagnostics and
+per-gene maps. Agreement concerns estimated gene trees, not error-free genealogies.
+This analysis does not establish introgression, identify recombination breakpoints,
+or estimate the number of independent loci. <code class="docutils literal notranslate"><span class="pre">clustering_range</span></code> is explicitly
+<code class="docutils literal notranslate"><span class="pre">not_estimable</span></code>; no arbitrary first-zero-crossing rule is used.</p>
+</section>
+<section id="examples-and-related-methods">
+<h3>Examples and related methods<a class="headerlink" href="#examples-and-related-methods" title="Link to this heading"></a></h3>
+<p>See <a class="reference internal" href="../../tutorials/pages/23-topology-autocorrelation.html"><span class="doc">23. Topology autocorrelation</span></a> for two datasets with
+identical topology totals but different spatial structure, and a simulated
+example for block-size sensitivity. The method specification and reproducible
+calibration scripts are in <code class="docutils literal notranslate"><span class="pre">docs/plans</span></code> and <code class="docutils literal notranslate"><span class="pre">benchmarks</span></code> in the repository.</p>
+<p>Spatial clustering of gene-tree support was studied by
+<a class="reference external" href="https://doi.org/10.1371/journal.pgen.0020173">Pollard et al. (2006), PLoS Genetics, doi:10.1371/journal.pgen.0020173</a>. Resampling precomputed local
+contributions is motivated by
+<a class="reference external" href="https://web.njit.edu/~loh/Papers/Sinica.LohStein.2004.pdf">Loh and Stein (2004), Statistica Sinica 14:69-101</a>. Our categorical
+estimator and centering are adaptations requiring separate calibration,
+not their K-function estimator. This is not a claim of a novel spatial
+statistical concept. Raw focal classification uses <a class="reference internal" href="topology_landscape.html"><span class="doc">Topology landscape</span></a>,
+which explains its distinction from Twisst's fractional topology weighting.</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="topology_landscape.html" class="btn btn-neutral float-left" title="Topology landscape" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="consensus_network.html" class="btn btn-neutral float-right" title="Consensus network" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020-2026 Jacob L. Steenwyk.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

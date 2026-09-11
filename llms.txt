@@ -116,6 +116,7 @@ Documentation version: 2.7.0
 - [quartet_pie](https://jlsteenwyk.github.io/PhyKIT/reference/commands/quartet_pie.html): Phylogram with quartet concordance pie charts at internal nodes
 - [robinson_foulds_distance](https://jlsteenwyk.github.io/PhyKIT/reference/commands/robinson_foulds_distance.html): Topological distance between trees
 - [spectral_discordance](https://jlsteenwyk.github.io/PhyKIT/reference/commands/spectral_discordance.html): PCA ordination and clustering of gene tree topologies
+- [topology_autocorrelation](https://jlsteenwyk.github.io/PhyKIT/reference/commands/topology_autocorrelation.html): Measure distance-dependent excess agreement among genomic gene-tree topologies
 - [topology_landscape](https://jlsteenwyk.github.io/PhyKIT/reference/commands/topology_landscape.html): Map focal gene-tree concordance across genomic neighborhoods
 - [tree_space](https://jlsteenwyk.github.io/PhyKIT/reference/commands/tree_space.html): Visualize gene tree topology space via MDS, t-SNE, UMAP, or clustered distance heatmap
 ### Tree manipulation & utilities

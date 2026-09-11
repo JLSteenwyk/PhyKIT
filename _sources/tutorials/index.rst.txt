@@ -31,11 +31,13 @@ Tutorial index
 20. :doc:`Gene tree discordance analysis pipeline <pages/20-gene-tree-discordance-analysis-pipeline>`
 21. :doc:`Customizing phylogenetic plots <pages/21-customizing-phylogenetic-plots>`
 22. :doc:`Mapping topologies across genomes <pages/22-mapping-topologies-across-genomes>`
+23. :doc:`Topology autocorrelation <pages/23-topology-autocorrelation>`
 
 .. toctree::
    :hidden:
 
    pages/22-mapping-topologies-across-genomes
+   pages/23-topology-autocorrelation
 
    pages/01-summarizing-information-content
    pages/02-evaluating-gene-gene-covariation
