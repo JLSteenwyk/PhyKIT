@@ -76,6 +76,7 @@ def test_multireference_plots_and_withheld_intervals(tmp_path, capsys, extension
     ["--block-sizes", "10"], ["--block-sizes", "10", "20", "--replicates", "10"],
     ["--interval", "10", "1"], ["--chromosome", "absent"],
     ["--plot", "--fig-width", "-1"], ["--plot", "--fig-height", "nan"],
+    ["--plot", "--fig-width", "0"], ["--plot", "--fig-height", "0"],
     ["--plot", "--colors", "not_a_color"], ["--plot", "--plot-output", "x.bad"],
 ])
 def test_user_errors(tmp_path, capsys, options):

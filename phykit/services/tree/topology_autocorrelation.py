@@ -162,8 +162,8 @@ class TopologyAutocorrelation:
         from matplotlib.colors import is_color_like
 
         config = PlotConfig.from_args(self.args)
-        config.fig_width = config.fig_width or 11
-        config.fig_height = config.fig_height or 9
+        config.fig_width = config.fig_width if config.fig_width is not None else 11
+        config.fig_height = config.fig_height if config.fig_height is not None else 9
         config.resolve()
         if any(not math.isfinite(v) or v <= 0 for v in (config.fig_width, config.fig_height, config.dpi)):
             fail("Plot dimensions and DPI must be finite and positive.")

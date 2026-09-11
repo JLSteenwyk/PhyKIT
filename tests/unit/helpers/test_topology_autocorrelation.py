@@ -200,3 +200,69 @@ def test_bad_uncertainty_options(kwargs):
     options.update(kwargs)
     with pytest.raises(SystemExit):
         uncertainty(genes([0, 1], [0, 1]), [0, 10], **options)
+
+
+def test_centered_pair_allocation_direct_formula():
+    rows = genes([0, 3, 5, 10, 19], [0, 0, 1, 2, 0])
+    edges = [0, 4, 11, 21]
+    marks = chromosome_marks(rows, edges, block_size=4)
+    expected = np.zeros_like(marks["bootstrap_marks"])
+    p = np.array([3, 1, 1]) / 5
+    for i, j in itertools.combinations(range(len(rows)), 2):
+        distance = rows[j]["anchor"] - rows[i]["anchor"]
+        b = np.searchsorted(edges, distance, side="right") - 1
+        for focal, neighbor in ((i, j), (j, i)):
+            block = np.searchsorted(marks["bounds"], rows[focal]["anchor"], side="right") - 1
+            expected[block, b, 0] += 0.5
+            for k in range(3):
+                a = float(rows[focal]["classification"] == CLASSES[k])
+                z = float(rows[neighbor]["classification"] == CLASSES[k])
+                expected[block, b, k + 1] += 0.5 * (a - p[k]) * (z - p[k]) + p[k] * a - 0.5 * p[k]**2
+    np.testing.assert_allclose(marks["bootstrap_marks"], expected, atol=1e-14)
+
+
+def test_reflection_preserves_symmetric_block_marks():
+    rows = genes(np.linspace(0, 999, 100, dtype=int), np.random.default_rng(3).integers(0, 3, 100))
+    mirrored = [dict(r, start=999 - r["anchor"], end=1000 - r["anchor"], anchor=999 - r["anchor"])
+                for r in rows]
+    a = chromosome_marks(rows, [0, 21, 51], block_size=250)
+    b = chromosome_marks(mirrored, [0, 21, 51], block_size=250)
+    np.testing.assert_allclose(a["bootstrap_marks"], b["bootstrap_marks"][::-1], atol=1e-12)
+
+
+def test_block_size_sensitivity_flag(monkeypatch):
+    import phykit.helpers.topology_autocorrelation as module
+
+    def fake_draws(marks, replicates, rng):
+        scale = 1 if len(marks[0]["class_counts"]) > 40 else 3
+        return np.tile(np.linspace(-scale, scale, replicates)[:, None, None], (1, 1, 4))
+
+    monkeypatch.setattr(module, "bootstrap_reference", fake_draws)
+    rows = genes(np.arange(3000) * 10, np.arange(3000) % 3)
+    result, _ = uncertainty(rows, [0, 11], [500, 1000], 499)
+    assert all(r["block_size_sensitive"] for r in result)
+
+
+def test_resource_guards_and_dense_pair_counting():
+    import tracemalloc
+
+    with pytest.raises(SystemExit):
+        chromosome_marks([], [0, 10])
+    with pytest.raises(SystemExit):
+        chromosome_marks(genes([0, 1000000], [0, 1]), [0, 10], block_size=1)
+    with pytest.raises(SystemExit):
+        chromosome_marks(genes([0], [0]), [0, 10], block_size=-1)
+    with pytest.raises(SystemExit):
+        validate_edges(list(range(1002)))
+    with pytest.raises(SystemExit):
+        uncertainty(genes([0, 1], [0, 1]), list(range(1001)), [10, 20], 100000)
+    n = 3000
+    rows = genes(np.arange(n), np.arange(n) % 3)
+    tracemalloc.start()
+    try:
+        result, _ = analyze(rows, [0, n])
+        _, peak = tracemalloc.get_traced_memory()
+    finally:
+        tracemalloc.stop()
+    assert result["reference_estimates"][0]["pair_count"] == n * (n - 1) // 2
+    assert peak < 15 * 2**20  # An n-by-n numeric distance matrix alone exceeds 68 MiB.
