@@ -1,0 +1,56 @@
+{
+  "python": "3.11.14",
+  "platform": "macOS-26.6.2-arm64-arm-64bit",
+  "numpy": "2.4.2",
+  "memory_scope": "tracemalloc peak after input construction, including validation copies and NumPy buffers",
+  "results": [
+    {
+      "genes": 1000,
+      "bins": 10,
+      "maximum_distance_exclusive": 1000,
+      "pairs": 8955,
+      "seconds_with_tracemalloc": 0.027773375040851533,
+      "peak_additional_traced_mib": 0.5938434600830078
+    },
+    {
+      "genes": 1000,
+      "bins": 10,
+      "maximum_distance_exclusive": 1000000,
+      "pairs": 499500,
+      "seconds_with_tracemalloc": 0.02504495799075812,
+      "peak_additional_traced_mib": 0.4683246612548828
+    },
+    {
+      "genes": 10000,
+      "bins": 10,
+      "maximum_distance_exclusive": 1000,
+      "pairs": 89955,
+      "seconds_with_tracemalloc": 0.2007242910331115,
+      "peak_additional_traced_mib": 4.769136428833008
+    },
+    {
+      "genes": 10000,
+      "bins": 10,
+      "maximum_distance_exclusive": 1000000,
+      "pairs": 49995000,
+      "seconds_with_tracemalloc": 0.1776082080323249,
+      "peak_additional_traced_mib": 4.686502456665039
+    },
+    {
+      "genes": 100000,
+      "bins": 10,
+      "maximum_distance_exclusive": 1000,
+      "pairs": 899955,
+      "seconds_with_tracemalloc": 2.115110084065236,
+      "peak_additional_traced_mib": 48.623695373535156
+    },
+    {
+      "genes": 100000,
+      "bins": 10,
+      "maximum_distance_exclusive": 1000000,
+      "pairs": 949905000,
+      "seconds_with_tracemalloc": 1.9277690830640495,
+      "peak_additional_traced_mib": 48.623695373535156
+    }
+  ]
+}

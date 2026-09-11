@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "phykit_version": "2.6.0",
+  "phykit_version": "2.7.0",
   "generated_from": [
     "phykit/cli_registry.py",
     "live argparse parsers",
@@ -22734,6 +22734,1125 @@
         "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
         "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
         "file_options": [],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
+    },
+    {
+      "canonical": "topology_autocorrelation",
+      "handler": "topology_autocorrelation",
+      "aliases": [
+        "topo_ac"
+      ],
+      "entry_points": [
+        "pk_topology_autocorrelation",
+        "pk_topo_ac"
+      ],
+      "title": "Topology autocorrelation",
+      "summary": "Measure distance-dependent excess agreement among genomic gene-tree topologies",
+      "categories": [
+        "Tree comparison & consensus"
+      ],
+      "page": "reference/commands/topology_autocorrelation.rst",
+      "documentation": {
+        "purpose": "Quantify topology agreement versus genomic distance using chromosome-specific finite-population baselines.",
+        "use_cases": [
+          "Compare spatial clustering despite identical topology totals",
+          "Assess distance-decay curves and block-size sensitivity"
+        ],
+        "input_formats": [
+          "topology_landscape per-gene TSV",
+          "Gene-tree manifest, BED/TSV coordinates, and focal groups or reference edge"
+        ],
+        "outputs": [
+          "Reference and chromosome distance-bin TSVs",
+          "Per-gene, block, and pointwise interval TSVs",
+          "Complete JSON and optional reference-specific plots"
+        ],
+        "errors": [
+          "Duplicate or ambiguous classified mappings",
+          "Invalid distance bins",
+          "Incompatible raw and classified input options",
+          "Input/output collisions"
+        ],
+        "limitations": [
+          "Pointwise intervals require stationary short-range dependence and sufficient blocks",
+          "Changing frequencies and nonrandom missingness can confound excess",
+          "No p-values, clustering-range estimates, breakpoint calls, or independent-locus estimates"
+        ],
+        "scientific_interpretation": "Excess agreement is descriptive dependence of estimated topology labels, not proof of introgression.",
+        "validation": [
+          "Hand-counted pairs and exhaustive small-label permutations",
+          "Independent spatial simulation targets and block-bootstrap coverage calibration",
+          "Raw/classified CLI parity and plotting tests"
+        ],
+        "citations": [
+          "Pollard et al. (2006), doi:10.1371/journal.pgen.0020173",
+          "Loh and Stein (2004), Statistica Sinica 14:69-101 (adapted marked-point resampling)"
+        ],
+        "examples": [
+          "phykit topo_ac --classified-genes landscape.genes.tsv --distance-edges 0 1000 10000 --output-prefix decay --plot"
+        ],
+        "related_commands": [
+          "topology_landscape",
+          "quartet_pie"
+        ],
+        "related_tutorials": [
+          "tutorials/pages/23-topology-autocorrelation.rst"
+        ]
+      },
+      "arguments": [
+        {
+          "name": "classified_genes",
+          "flags": [
+            "--classified-genes"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "string",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "manifest",
+          "flags": [
+            "--manifest"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "string",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "coordinates",
+          "flags": [
+            "--coordinates"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "string",
+          "nargs": 3,
+          "default": null,
+          "choices": null,
+          "metavar": [
+            "REFERENCE",
+            "FORMAT",
+            "PATH"
+          ],
+          "action": "_AppendAction"
+        },
+        {
+          "name": "groups",
+          "flags": [
+            "--groups"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "string",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "reference_tree",
+          "flags": [
+            "--reference-tree"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "string",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "branch_taxa",
+          "flags": [
+            "--branch-taxa"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "string",
+          "nargs": "+",
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "outgroup",
+          "flags": [
+            "--outgroup"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "string",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "min_support",
+          "flags": [
+            "--min-support"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "float",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "support_scale",
+          "flags": [
+            "--support-scale"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "int",
+          "nargs": null,
+          "default": null,
+          "choices": [
+            1,
+            100
+          ],
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "missing_support",
+          "flags": [
+            "--missing-support"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "string",
+          "nargs": null,
+          "default": null,
+          "choices": [
+            "collapse",
+            "keep",
+            "error"
+          ],
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "unmapped",
+          "flags": [
+            "--unmapped"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "string",
+          "nargs": null,
+          "default": null,
+          "choices": [
+            "error",
+            "skip"
+          ],
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "labels",
+          "flags": [
+            "--labels"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "string",
+          "nargs": 3,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "chromosome",
+          "flags": [
+            "--chromosome"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "string",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_AppendAction"
+        },
+        {
+          "name": "interval",
+          "flags": [
+            "--interval"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "int",
+          "nargs": 2,
+          "default": null,
+          "choices": null,
+          "metavar": [
+            "START",
+            "END"
+          ],
+          "action": "_StoreAction"
+        },
+        {
+          "name": "distance_edges",
+          "flags": [
+            "--distance-edges"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "int",
+          "nargs": "+",
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "bin_width",
+          "flags": [
+            "--bin-width"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "int",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "max_distance",
+          "flags": [
+            "--max-distance"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "int",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "block_sizes",
+          "flags": [
+            "--block-sizes"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "int",
+          "nargs": "+",
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "replicates",
+          "flags": [
+            "--replicates"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "int",
+          "nargs": null,
+          "default": 999,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "seed",
+          "flags": [
+            "--seed"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "int",
+          "nargs": null,
+          "default": 0,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "output_prefix",
+          "flags": [
+            "--output-prefix",
+            "-o"
+          ],
+          "positional": false,
+          "required": true,
+          "type": "string",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "plot",
+          "flags": [
+            "--plot"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "boolean",
+          "nargs": 0,
+          "default": false,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreTrueAction"
+        },
+        {
+          "name": "plot_output",
+          "flags": [
+            "--plot-output"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "string",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "fig_width",
+          "flags": [
+            "--fig-width"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "float",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "fig_height",
+          "flags": [
+            "--fig-height"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "float",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "dpi",
+          "flags": [
+            "--dpi"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "int",
+          "nargs": null,
+          "default": 300,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "title",
+          "flags": [
+            "--title"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "string",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "no_title",
+          "flags": [
+            "--no-title"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "boolean",
+          "nargs": 0,
+          "default": false,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreTrueAction"
+        },
+        {
+          "name": "legend_position",
+          "flags": [
+            "--legend-position"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "string",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "colors",
+          "flags": [
+            "--colors"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "string",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "xlabel_fontsize",
+          "flags": [
+            "--xlabel-fontsize"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "float",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "ylabel_fontsize",
+          "flags": [
+            "--ylabel-fontsize"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "float",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "axis_fontsize",
+          "flags": [
+            "--axis-fontsize"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "float",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "title_fontsize",
+          "flags": [
+            "--title-fontsize"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "float",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "json",
+          "flags": [
+            "--json"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "boolean",
+          "nargs": 0,
+          "default": false,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreTrueAction"
+        }
+      ],
+      "documentation_url": "reference/commands/topology_autocorrelation.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [
+          "--output-prefix",
+          "--plot-output"
+        ],
+        "json": {
+          "available": true,
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": [
+              "object",
+              "array"
+            ],
+            "description": "Command-specific fields are documented on the canonical page and in checked examples."
+          },
+          "examples": []
+        }
+      }
+    },
+    {
+      "canonical": "topology_landscape",
+      "handler": "topology_landscape",
+      "aliases": [
+        "topomap"
+      ],
+      "entry_points": [
+        "pk_topology_landscape",
+        "pk_topomap"
+      ],
+      "title": "Topology landscape",
+      "summary": "Map focal gene-tree concordance across genomic neighborhoods",
+      "categories": [
+        "Tree comparison & consensus"
+      ],
+      "page": "reference/commands/topology_landscape.rst",
+      "documentation": {
+        "purpose": "Classify gene trees at a selected relationship and map their concordance to reference genome coordinates.",
+        "use_cases": [
+          "Map ctenophore-sister versus sponge-sister gene support",
+          "Summarize focal topologies in genomic neighborhoods"
+        ],
+        "input_formats": [
+          "Gene-ID/Newick-path TSV manifest",
+          "BED4+ or header-bearing gene-coordinate TSV",
+          "Four-group JSON or reference Newick plus complete edge-side taxa"
+        ],
+        "outputs": [
+          "Per-gene, neighborhood, and per-reference TSVs",
+          "Mapping diagnostics JSON",
+          "Optional chromosome plots and full JSON output"
+        ],
+        "errors": [
+          "Duplicate or ambiguous identifiers",
+          "Malformed coordinates",
+          "Missing coordinate mappings",
+          "Invalid focal groups or reference edge"
+        ],
+        "limitations": [
+          "Strict classification only; no fractional quartet weighting",
+          "No GFF3 parser or automatic transcript-ID mapping",
+          "No p-values, introgression inference, or breakpoint detection"
+        ],
+        "scientific_interpretation": "Gene-tree concordance is not statistical confidence; adjacent genes need not be independent.",
+        "validation": [
+          "Exact synthetic classifications and window counts",
+          "Root invariance, support filtering, deduplication, and multi-reference plotting tests"
+        ],
+        "citations": [
+          "Martin and Van Belleghem (2017), Genetics, doi:10.1534/genetics.116.194720 (related Twisst method, not implemented weighting)"
+        ],
+        "examples": [
+          "phykit topomap --manifest genes.tsv --groups groups.json --coordinates reference bed genes.bed --output-prefix landscape --plot"
+        ],
+        "related_commands": [
+          "quartet_pie",
+          "spectral_discordance"
+        ],
+        "related_tutorials": [
+          "tutorials/pages/22-mapping-topologies-across-genomes.rst"
+        ]
+      },
+      "arguments": [
+        {
+          "name": "manifest",
+          "flags": [
+            "--manifest"
+          ],
+          "positional": false,
+          "required": true,
+          "type": "string",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "coordinates",
+          "flags": [
+            "--coordinates"
+          ],
+          "positional": false,
+          "required": true,
+          "type": "string",
+          "nargs": 3,
+          "default": null,
+          "choices": null,
+          "metavar": [
+            "REFERENCE",
+            "FORMAT",
+            "PATH"
+          ],
+          "action": "_AppendAction"
+        },
+        {
+          "name": "groups",
+          "flags": [
+            "--groups"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "string",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "reference_tree",
+          "flags": [
+            "--reference-tree"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "string",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "branch_taxa",
+          "flags": [
+            "--branch-taxa"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "string",
+          "nargs": "+",
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "outgroup",
+          "flags": [
+            "--outgroup"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "string",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "labels",
+          "flags": [
+            "--labels"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "string",
+          "nargs": 3,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "min_support",
+          "flags": [
+            "--min-support"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "float",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "support_scale",
+          "flags": [
+            "--support-scale"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "int",
+          "nargs": null,
+          "default": 100,
+          "choices": [
+            1,
+            100
+          ],
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "missing_support",
+          "flags": [
+            "--missing-support"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "string",
+          "nargs": null,
+          "default": "collapse",
+          "choices": [
+            "collapse",
+            "keep",
+            "error"
+          ],
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "unmapped",
+          "flags": [
+            "--unmapped"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "string",
+          "nargs": null,
+          "default": "error",
+          "choices": [
+            "error",
+            "skip"
+          ],
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "window_bp",
+          "flags": [
+            "--window-bp"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "int",
+          "nargs": null,
+          "default": 1000000,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "window_genes",
+          "flags": [
+            "--window-genes"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "int",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "chromosome",
+          "flags": [
+            "--chromosome"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "string",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_AppendAction"
+        },
+        {
+          "name": "interval",
+          "flags": [
+            "--interval"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "int",
+          "nargs": 2,
+          "default": null,
+          "choices": null,
+          "metavar": [
+            "START",
+            "END"
+          ],
+          "action": "_StoreAction"
+        },
+        {
+          "name": "output_prefix",
+          "flags": [
+            "--output-prefix",
+            "-o"
+          ],
+          "positional": false,
+          "required": true,
+          "type": "string",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "plot",
+          "flags": [
+            "--plot"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "boolean",
+          "nargs": 0,
+          "default": false,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreTrueAction"
+        },
+        {
+          "name": "plot_output",
+          "flags": [
+            "--plot-output"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "string",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "fig_width",
+          "flags": [
+            "--fig-width"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "float",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "fig_height",
+          "flags": [
+            "--fig-height"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "float",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "dpi",
+          "flags": [
+            "--dpi"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "int",
+          "nargs": null,
+          "default": 300,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "title",
+          "flags": [
+            "--title"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "string",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "no_title",
+          "flags": [
+            "--no-title"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "boolean",
+          "nargs": 0,
+          "default": false,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreTrueAction"
+        },
+        {
+          "name": "legend_position",
+          "flags": [
+            "--legend-position"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "string",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "colors",
+          "flags": [
+            "--colors"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "string",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "xlabel_fontsize",
+          "flags": [
+            "--xlabel-fontsize"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "float",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "ylabel_fontsize",
+          "flags": [
+            "--ylabel-fontsize"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "float",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "axis_fontsize",
+          "flags": [
+            "--axis-fontsize"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "float",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "title_fontsize",
+          "flags": [
+            "--title-fontsize"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "float",
+          "nargs": null,
+          "default": null,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreAction"
+        },
+        {
+          "name": "json",
+          "flags": [
+            "--json"
+          ],
+          "positional": false,
+          "required": false,
+          "type": "boolean",
+          "nargs": 0,
+          "default": false,
+          "choices": null,
+          "metavar": null,
+          "action": "_StoreTrueAction"
+        }
+      ],
+      "documentation_url": "reference/commands/topology_landscape.html",
+      "output_contract": {
+        "stdout": "Structured JSON with --json; otherwise command-specific text or data.",
+        "stderr": "Diagnostics and warnings; invalid command syntax exits with status 2.",
+        "file_options": [
+          "--output-prefix",
+          "--plot-output"
+        ],
         "json": {
           "available": true,
           "schema": {

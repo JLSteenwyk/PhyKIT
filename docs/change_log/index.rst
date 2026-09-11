@@ -6,6 +6,25 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**Unreleased**:
+
+* Added ``topology_autocorrelation`` (alias: ``topo_ac``) for genomic distance-binned
+  topology agreement, finite chromosome-specific baselines, and optional
+  chromosome-stratified marked-block pointwise intervals with size sensitivity.
+* Added raw-tree and classified-TSV inputs, separate reference plots, explicit
+  missingness diagnostics, simulation calibration, and a downloadable tutorial.
+  No p-values, clustering ranges, introgression claims, or breakpoint calls are made.
+
+**2.7.0**:
+
+* Added ``topology_landscape`` (alias: ``topomap``) for strict focal gene-tree
+  classification and reference-genome concordance tracks.
+* Added BED/TSV coordinate matching, repeated-record diagnostics, reference-edge
+  selection, support filtering, physical and gene-count neighborhoods, and plots.
+* Added synthetic animal-root examples, a downloadable tutorial, and classification,
+  coordinate, window, CLI, and plotting tests. This is descriptive concordance
+  mapping, not a topology significance test or fractional topology weighting.
+
 **2.6.0**:
 
 Experimental localization of evolutionary-rate covariation:

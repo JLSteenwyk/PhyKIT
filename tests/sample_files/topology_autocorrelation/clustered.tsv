@@ -1,0 +1,13 @@
+reference	chromosome	gene_id	start	end	anchor	classification
+example	chr1	g01	0	1	0	topology_1
+example	chr1	g02	100	101	100	topology_1
+example	chr1	g03	200	201	200	topology_1
+example	chr1	g04	300	301	300	topology_1
+example	chr1	g05	400	401	400	topology_2
+example	chr1	g06	500	501	500	topology_2
+example	chr1	g07	600	601	600	topology_2
+example	chr1	g08	700	701	700	topology_2
+example	chr1	g09	800	801	800	topology_3
+example	chr1	g10	900	901	900	topology_3
+example	chr1	g11	1000	1001	1000	topology_3
+example	chr1	g12	1100	1101	1100	topology_3

@@ -1,0 +1,1329 @@
+{
+  "datasets": 1000,
+  "replicates": 499,
+  "seed": 20261203,
+  "python": "3.11.14",
+  "numpy": "2.4.2",
+  "edges": [
+    0,
+    201,
+    501
+  ],
+  "blocks": [
+    5000,
+    10000
+  ],
+  "scenarios": [
+    {
+      "scenario": "iid_regular",
+      "assumption_violation": false,
+      "results": [
+        {
+          "block_bp": 5000,
+          "distance_start": 0,
+          "metric": "agreement",
+          "target": 3.9877832289023895e-14,
+          "bias": -2.291109608345866e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.938,
+          "coverage_mc_interval": [
+            0.9212200503389399,
+            0.9521381518866391
+          ],
+          "mean_width": 0.012766288146389092,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 5000,
+          "distance_start": 0,
+          "metric": "topology_1",
+          "target": 1.3292610763007966e-14,
+          "bias": -1.955056791484141e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.936,
+          "coverage_mc_interval": [
+            0.919004925632949,
+            0.950366910708151
+          ],
+          "mean_width": 0.0060175023541226644,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 5000,
+          "distance_start": 0,
+          "metric": "topology_2",
+          "target": 1.3292610763007966e-14,
+          "bias": -5.338053376918455e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.942,
+          "coverage_mc_interval": [
+            0.9256635046176485,
+            0.9556671397475647
+          ],
+          "mean_width": 0.0060016016311623946,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 5000,
+          "distance_start": 0,
+          "metric": "topology_3",
+          "target": 1.3292610763007966e-14,
+          "bias": 5.0020005600567345e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.943,
+          "coverage_mc_interval": [
+            0.9267772705393374,
+            0.9565464180630414
+          ],
+          "mean_width": 0.006020586597666304,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 5000,
+          "distance_start": 201,
+          "metric": "agreement",
+          "target": 3.988293993611953e-14,
+          "bias": 9.085234554798048e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.933,
+          "coverage_mc_interval": [
+            0.9156899628975511,
+            0.9477021635999548
+          ],
+          "mean_width": 0.010281541483156242,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 5000,
+          "distance_start": 201,
+          "metric": "topology_1",
+          "target": 1.3294313312039843e-14,
+          "bias": 5.586205657824113e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.954,
+          "coverage_mc_interval": [
+            0.9391164472862573,
+            0.966128501452322
+          ],
+          "mean_width": 0.004835891088335933,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 5000,
+          "distance_start": 201,
+          "metric": "topology_2",
+          "target": 1.3294313312039843e-14,
+          "bias": 7.10831906737992e-06,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.94,
+          "coverage_mc_interval": [
+            0.9234395095959226,
+            0.9539049645775157
+          ],
+          "mean_width": 0.00483445210922772,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 5000,
+          "distance_start": 201,
+          "metric": "topology_3",
+          "target": 1.3294313312039843e-14,
+          "bias": 2.78819699023608e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.934,
+          "coverage_mc_interval": [
+            0.9167939495385973,
+            0.9485914339810815
+          ],
+          "mean_width": 0.004860531367914617,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 10000,
+          "distance_start": 0,
+          "metric": "agreement",
+          "target": 3.9877832289023895e-14,
+          "bias": -2.291109608345866e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.934,
+          "coverage_mc_interval": [
+            0.9167939495385973,
+            0.9485914339810815
+          ],
+          "mean_width": 0.012750548077413446,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 10000,
+          "distance_start": 0,
+          "metric": "topology_1",
+          "target": 1.3292610763007966e-14,
+          "bias": -1.955056791484141e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.938,
+          "coverage_mc_interval": [
+            0.9212200503389399,
+            0.9521381518866391
+          ],
+          "mean_width": 0.005991555024283087,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 10000,
+          "distance_start": 0,
+          "metric": "topology_2",
+          "target": 1.3292610763007966e-14,
+          "bias": -5.338053376918455e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.948,
+          "coverage_mc_interval": [
+            0.9323649859494784,
+            0.96092346505602
+          ],
+          "mean_width": 0.00600551174040718,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 10000,
+          "distance_start": 0,
+          "metric": "topology_3",
+          "target": 1.3292610763007966e-14,
+          "bias": 5.0020005600567345e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.933,
+          "coverage_mc_interval": [
+            0.9156899628975511,
+            0.9477021635999548
+          ],
+          "mean_width": 0.006014430237935497,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 10000,
+          "distance_start": 201,
+          "metric": "agreement",
+          "target": 3.988293993611953e-14,
+          "bias": 9.085234554798048e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.941,
+          "coverage_mc_interval": [
+            0.9245509269157591,
+            0.9547866455972034
+          ],
+          "mean_width": 0.010304986428681216,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 10000,
+          "distance_start": 201,
+          "metric": "topology_1",
+          "target": 1.3294313312039843e-14,
+          "bias": 5.586205657824113e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.951,
+          "coverage_mc_interval": [
+            0.9357339468598302,
+            0.9635329408280467
+          ],
+          "mean_width": 0.004849602587638675,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 10000,
+          "distance_start": 201,
+          "metric": "topology_2",
+          "target": 1.3294313312039843e-14,
+          "bias": 7.10831906737992e-06,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.95,
+          "coverage_mc_interval": [
+            0.9346095120845064,
+            0.9626646023953394
+          ],
+          "mean_width": 0.004869123899952551,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 10000,
+          "distance_start": 201,
+          "metric": "topology_3",
+          "target": 1.3294313312039843e-14,
+          "bias": 2.78819699023608e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.932,
+          "coverage_mc_interval": [
+            0.9145869498085615,
+            0.9468119002393963
+          ],
+          "mean_width": 0.0048770856306969024,
+          "passes_prespecified_coverage": true
+        }
+      ]
+    },
+    {
+      "scenario": "iid_irregular_missing",
+      "assumption_violation": false,
+      "results": [
+        {
+          "block_bp": 5000,
+          "distance_start": 0,
+          "metric": "agreement",
+          "target": 9.09248042666548e-15,
+          "bias": -0.00021397750312565435,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.939,
+          "coverage_mc_interval": [
+            0.9223292259508594,
+            0.9530221244589202
+          ],
+          "mean_width": 0.01765672327715521,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 5000,
+          "distance_start": 0,
+          "metric": "topology_1",
+          "target": -4.229280058653773e-16,
+          "bias": -0.00019551313450538908,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.931,
+          "coverage_mc_interval": [
+            0.9134848906542885,
+            0.9459206642067437
+          ],
+          "mean_width": 0.010890531612195366,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 5000,
+          "distance_start": 0,
+          "metric": "topology_2",
+          "target": 1.3584427092385964e-14,
+          "bias": 1.3166792072701508e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.942,
+          "coverage_mc_interval": [
+            0.9256635046176485,
+            0.9556671397475647
+          ],
+          "mean_width": 0.009327117551243495,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 5000,
+          "distance_start": 0,
+          "metric": "topology_3",
+          "target": -4.069018659855105e-15,
+          "bias": -3.163116069296896e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.934,
+          "coverage_mc_interval": [
+            0.9167939495385973,
+            0.9485914339810815
+          ],
+          "mean_width": 0.009709746694700712,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 5000,
+          "distance_start": 201,
+          "metric": "agreement",
+          "target": 9.094552203862014e-15,
+          "bias": 5.954065237694767e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.928,
+          "coverage_mc_interval": [
+            0.9101842508246495,
+            0.9432413124454371
+          ],
+          "mean_width": 0.012831872773890961,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 5000,
+          "distance_start": 201,
+          "metric": "topology_1",
+          "target": -4.2323849620538846e-16,
+          "bias": -3.8827503841128825e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.938,
+          "coverage_mc_interval": [
+            0.9212200503389399,
+            0.9521381518866391
+          ],
+          "mean_width": 0.007850872142455919,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 5000,
+          "distance_start": 201,
+          "metric": "topology_2",
+          "target": 1.358446730178069e-14,
+          "bias": 2.0138252159085004e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.934,
+          "coverage_mc_interval": [
+            0.9167939495385973,
+            0.9485914339810815
+          ],
+          "mean_width": 0.0067538438288706265,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 5000,
+          "distance_start": 201,
+          "metric": "topology_3",
+          "target": -4.066676601713289e-15,
+          "bias": 7.822990405899039e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.936,
+          "coverage_mc_interval": [
+            0.919004925632949,
+            0.950366910708151
+          ],
+          "mean_width": 0.007074498215321563,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 10000,
+          "distance_start": 0,
+          "metric": "agreement",
+          "target": 9.09248042666548e-15,
+          "bias": -0.00021397750312565435,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.93,
+          "coverage_mc_interval": [
+            0.912383766510715,
+            0.9450284750808301
+          ],
+          "mean_width": 0.01756759894255572,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 10000,
+          "distance_start": 0,
+          "metric": "topology_1",
+          "target": -4.229280058653773e-16,
+          "bias": -0.00019551313450538908,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.932,
+          "coverage_mc_interval": [
+            0.9145869498085615,
+            0.9468119002393963
+          ],
+          "mean_width": 0.010861523220850959,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 10000,
+          "distance_start": 0,
+          "metric": "topology_2",
+          "target": 1.3584427092385964e-14,
+          "bias": 1.3166792072701508e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.94,
+          "coverage_mc_interval": [
+            0.9234395095959226,
+            0.9539049645775157
+          ],
+          "mean_width": 0.009294211255283019,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 10000,
+          "distance_start": 0,
+          "metric": "topology_3",
+          "target": -4.069018659855105e-15,
+          "bias": -3.163116069296896e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.934,
+          "coverage_mc_interval": [
+            0.9167939495385973,
+            0.9485914339810815
+          ],
+          "mean_width": 0.00968995588013799,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 10000,
+          "distance_start": 201,
+          "metric": "agreement",
+          "target": 9.094552203862014e-15,
+          "bias": 5.954065237694767e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.928,
+          "coverage_mc_interval": [
+            0.9101842508246495,
+            0.9432413124454371
+          ],
+          "mean_width": 0.012858825913688459,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 10000,
+          "distance_start": 201,
+          "metric": "topology_1",
+          "target": -4.2323849620538846e-16,
+          "bias": -3.8827503841128825e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.938,
+          "coverage_mc_interval": [
+            0.9212200503389399,
+            0.9521381518866391
+          ],
+          "mean_width": 0.007886538654109208,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 10000,
+          "distance_start": 201,
+          "metric": "topology_2",
+          "target": 1.358446730178069e-14,
+          "bias": 2.0138252159085004e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.938,
+          "coverage_mc_interval": [
+            0.9212200503389399,
+            0.9521381518866391
+          ],
+          "mean_width": 0.006762989009951695,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 10000,
+          "distance_start": 201,
+          "metric": "topology_3",
+          "target": -4.066676601713289e-15,
+          "bias": 7.822990405899039e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.931,
+          "coverage_mc_interval": [
+            0.9134848906542885,
+            0.9459206642067437
+          ],
+          "mean_width": 0.007025686125754805,
+          "passes_prespecified_coverage": true
+        }
+      ]
+    },
+    {
+      "scenario": "iid_imbalanced",
+      "assumption_violation": false,
+      "results": [
+        {
+          "block_bp": 5000,
+          "distance_start": 0,
+          "metric": "agreement",
+          "target": -1.118586073447754e-13,
+          "bias": 4.3444396682671946e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.946,
+          "coverage_mc_interval": [
+            0.930125994422613,
+            0.9591766488739144
+          ],
+          "mean_width": 0.007484260227081737,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 5000,
+          "distance_start": 0,
+          "metric": "topology_1",
+          "target": -1.154875879277622e-13,
+          "bias": 2.913478865355853e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.947,
+          "coverage_mc_interval": [
+            0.9312448167100368,
+            0.9600507476399807
+          ],
+          "mean_width": 0.004345265322702087,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 5000,
+          "distance_start": 0,
+          "metric": "topology_2",
+          "target": 4.080103973329624e-15,
+          "bias": 7.906512208329546e-06,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.943,
+          "coverage_mc_interval": [
+            0.9267772705393374,
+            0.9565464180630414
+          ],
+          "mean_width": 0.0034365721170806643,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 5000,
+          "distance_start": 0,
+          "metric": "topology_3",
+          "target": -4.511233903428211e-16,
+          "bias": 6.403095820792735e-06,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.933,
+          "coverage_mc_interval": [
+            0.9156899628975511,
+            0.9477021635999548
+          ],
+          "mean_width": 0.0012847380740386237,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 5000,
+          "distance_start": 201,
+          "metric": "agreement",
+          "target": -1.1183622470875619e-13,
+          "bias": 3.060199455180581e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.946,
+          "coverage_mc_interval": [
+            0.930125994422613,
+            0.9591766488739144
+          ],
+          "mean_width": 0.006011938269975974,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 5000,
+          "distance_start": 201,
+          "metric": "topology_1",
+          "target": -1.1546903530597836e-13,
+          "bias": 3.42797124944146e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.934,
+          "coverage_mc_interval": [
+            0.9167939495385973,
+            0.9485914339810815
+          ],
+          "mean_width": 0.0035104536466967254,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 5000,
+          "distance_start": 201,
+          "metric": "topology_2",
+          "target": 4.083861516386158e-15,
+          "bias": 1.2296512091400262e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.945,
+          "coverage_mc_interval": [
+            0.9290084844575156,
+            0.958301204920464
+          ],
+          "mean_width": 0.0027757854723359436,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 5000,
+          "distance_start": 201,
+          "metric": "topology_3",
+          "target": -4.51050919163978e-16,
+          "bias": -1.5974230034003713e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.939,
+          "coverage_mc_interval": [
+            0.9223292259508594,
+            0.9530221244589202
+          ],
+          "mean_width": 0.0010283094760583707,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 10000,
+          "distance_start": 0,
+          "metric": "agreement",
+          "target": -1.118586073447754e-13,
+          "bias": 4.3444396682671946e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.941,
+          "coverage_mc_interval": [
+            0.9245509269157591,
+            0.9547866455972034
+          ],
+          "mean_width": 0.007441508099970199,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 10000,
+          "distance_start": 0,
+          "metric": "topology_1",
+          "target": -1.154875879277622e-13,
+          "bias": 2.913478865355853e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.941,
+          "coverage_mc_interval": [
+            0.9245509269157591,
+            0.9547866455972034
+          ],
+          "mean_width": 0.004307936363419248,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 10000,
+          "distance_start": 0,
+          "metric": "topology_2",
+          "target": 4.080103973329624e-15,
+          "bias": 7.906512208329546e-06,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.942,
+          "coverage_mc_interval": [
+            0.9256635046176485,
+            0.9556671397475647
+          ],
+          "mean_width": 0.003430614455670788,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 10000,
+          "distance_start": 0,
+          "metric": "topology_3",
+          "target": -4.511233903428211e-16,
+          "bias": 6.403095820792735e-06,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.934,
+          "coverage_mc_interval": [
+            0.9167939495385973,
+            0.9485914339810815
+          ],
+          "mean_width": 0.0012832905911407946,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 10000,
+          "distance_start": 201,
+          "metric": "agreement",
+          "target": -1.1183622470875619e-13,
+          "bias": 3.060199455180581e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.952,
+          "coverage_mc_interval": [
+            0.9368598845984234,
+            0.9643997346571099
+          ],
+          "mean_width": 0.006049053366264924,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 10000,
+          "distance_start": 201,
+          "metric": "topology_1",
+          "target": -1.1546903530597836e-13,
+          "bias": 3.42797124944146e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.943,
+          "coverage_mc_interval": [
+            0.9267772705393374,
+            0.9565464180630414
+          ],
+          "mean_width": 0.003529251408608869,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 10000,
+          "distance_start": 201,
+          "metric": "topology_2",
+          "target": 4.083861516386158e-15,
+          "bias": 1.2296512091400262e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.945,
+          "coverage_mc_interval": [
+            0.9290084844575156,
+            0.958301204920464
+          ],
+          "mean_width": 0.0027861170650383465,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 10000,
+          "distance_start": 201,
+          "metric": "topology_3",
+          "target": -4.51050919163978e-16,
+          "bias": -1.5974230034003713e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.941,
+          "coverage_mc_interval": [
+            0.9245509269157591,
+            0.9547866455972034
+          ],
+          "mean_width": 0.001031024608528742,
+          "passes_prespecified_coverage": true
+        }
+      ]
+    },
+    {
+      "scenario": "clustered_regular",
+      "assumption_violation": false,
+      "results": [
+        {
+          "block_bp": 5000,
+          "distance_start": 0,
+          "metric": "agreement",
+          "target": 0.34659402116114923,
+          "bias": 6.082107035421114e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.937,
+          "coverage_mc_interval": [
+            0.9201119581266444,
+            0.9512530724434194
+          ],
+          "mean_width": 0.024009701182018253,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 5000,
+          "distance_start": 0,
+          "metric": "topology_1",
+          "target": 0.11963956316557506,
+          "bias": -0.00012931417859932126,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.947,
+          "coverage_mc_interval": [
+            0.9312448167100368,
+            0.9600507476399807
+          ],
+          "mean_width": 0.012158911833142449,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 5000,
+          "distance_start": 0,
+          "metric": "topology_2",
+          "target": 0.1173947491029969,
+          "bias": 0.00014151641053194997,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.936,
+          "coverage_mc_interval": [
+            0.919004925632949,
+            0.950366910708151
+          ],
+          "mean_width": 0.013603370842139173,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 5000,
+          "distance_start": 0,
+          "metric": "topology_3",
+          "target": 0.10955970889257725,
+          "bias": 4.86188384211661e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.936,
+          "coverage_mc_interval": [
+            0.919004925632949,
+            0.950366910708151
+          ],
+          "mean_width": 0.013564786502791899,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 5000,
+          "distance_start": 201,
+          "metric": "agreement",
+          "target": 0.1314442227829849,
+          "bias": 1.2532544278770485e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.932,
+          "coverage_mc_interval": [
+            0.9145869498085615,
+            0.9468119002393963
+          ],
+          "mean_width": 0.027791544205789297,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 5000,
+          "distance_start": 201,
+          "metric": "topology_1",
+          "target": 0.045378198527598425,
+          "bias": -4.3110233284585076e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.93,
+          "coverage_mc_interval": [
+            0.912383766510715,
+            0.9450284750808301
+          ],
+          "mean_width": 0.012807019956989232,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 5000,
+          "distance_start": 201,
+          "metric": "topology_2",
+          "target": 0.04452143029747355,
+          "bias": 1.3121480530980945e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.929,
+          "coverage_mc_interval": [
+            0.911283559113163,
+            0.9441353517501091
+          ],
+          "mean_width": 0.013009993606254813,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 5000,
+          "distance_start": 201,
+          "metric": "topology_3",
+          "target": 0.04154459395791291,
+          "bias": 4.252129703255503e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.93,
+          "coverage_mc_interval": [
+            0.912383766510715,
+            0.9450284750808301
+          ],
+          "mean_width": 0.012669273571168845,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 10000,
+          "distance_start": 0,
+          "metric": "agreement",
+          "target": 0.34659402116114923,
+          "bias": 6.082107035421114e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.938,
+          "coverage_mc_interval": [
+            0.9212200503389399,
+            0.9521381518866391
+          ],
+          "mean_width": 0.02400516963846808,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 10000,
+          "distance_start": 0,
+          "metric": "topology_1",
+          "target": 0.11963956316557506,
+          "bias": -0.00012931417859932126,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.944,
+          "coverage_mc_interval": [
+            0.9278922537167004,
+            0.9574244503135819
+          ],
+          "mean_width": 0.012111836088400114,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 10000,
+          "distance_start": 0,
+          "metric": "topology_2",
+          "target": 0.1173947491029969,
+          "bias": 0.00014151641053194997,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.921,
+          "coverage_mc_interval": [
+            0.9025129050925998,
+            0.93695879719054
+          ],
+          "mean_width": 0.0136137766973187,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 10000,
+          "distance_start": 0,
+          "metric": "topology_3",
+          "target": 0.10955970889257725,
+          "bias": 4.86188384211661e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.935,
+          "coverage_mc_interval": [
+            0.9178989300786151,
+            0.9494796903102141
+          ],
+          "mean_width": 0.01364386090828594,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 10000,
+          "distance_start": 201,
+          "metric": "agreement",
+          "target": 0.1314442227829849,
+          "bias": 1.2532544278770485e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.928,
+          "coverage_mc_interval": [
+            0.9101842508246495,
+            0.9432413124454371
+          ],
+          "mean_width": 0.027960865691477616,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 10000,
+          "distance_start": 201,
+          "metric": "topology_1",
+          "target": 0.045378198527598425,
+          "bias": -4.3110233284585076e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.936,
+          "coverage_mc_interval": [
+            0.919004925632949,
+            0.950366910708151
+          ],
+          "mean_width": 0.012922685644814755,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 10000,
+          "distance_start": 201,
+          "metric": "topology_2",
+          "target": 0.04452143029747355,
+          "bias": 1.3121480530980945e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.932,
+          "coverage_mc_interval": [
+            0.9145869498085615,
+            0.9468119002393963
+          ],
+          "mean_width": 0.01312000754982925,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 10000,
+          "distance_start": 201,
+          "metric": "topology_3",
+          "target": 0.04154459395791291,
+          "bias": 4.252129703255503e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.935,
+          "coverage_mc_interval": [
+            0.9178989300786151,
+            0.9494796903102141
+          ],
+          "mean_width": 0.01275425180306059,
+          "passes_prespecified_coverage": true
+        }
+      ]
+    },
+    {
+      "scenario": "clustered_irregular_missing",
+      "assumption_violation": false,
+      "results": [
+        {
+          "block_bp": 5000,
+          "distance_start": 0,
+          "metric": "agreement",
+          "target": 0.3901122501024945,
+          "bias": -0.00019854093098825576,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.936,
+          "coverage_mc_interval": [
+            0.919004925632949,
+            0.950366910708151
+          ],
+          "mean_width": 0.027809210345980502,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 5000,
+          "distance_start": 0,
+          "metric": "topology_1",
+          "target": 0.1350353893242626,
+          "bias": -0.0001640604843048954,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.94,
+          "coverage_mc_interval": [
+            0.9234395095959226,
+            0.9539049645775157
+          ],
+          "mean_width": 0.019222786981596063,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 5000,
+          "distance_start": 0,
+          "metric": "topology_2",
+          "target": 0.13213479438956405,
+          "bias": 6.612105264952595e-06,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.931,
+          "coverage_mc_interval": [
+            0.9134848906542885,
+            0.9459206642067437
+          ],
+          "mean_width": 0.020832688816829953,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 5000,
+          "distance_start": 0,
+          "metric": "topology_3",
+          "target": 0.1229420663886679,
+          "bias": -4.109255194832684e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.95,
+          "coverage_mc_interval": [
+            0.9346095120845064,
+            0.9626646023953394
+          ],
+          "mean_width": 0.02041849363376986,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 5000,
+          "distance_start": 201,
+          "metric": "agreement",
+          "target": 0.16074129311373747,
+          "bias": 0.00010722724918441062,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.925,
+          "coverage_mc_interval": [
+            0.9068915530385006,
+            0.9405538717890046
+          ],
+          "mean_width": 0.03143240657551385,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 5000,
+          "distance_start": 201,
+          "metric": "topology_1",
+          "target": 0.05555325765480126,
+          "bias": -4.922685804473192e-07,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.937,
+          "coverage_mc_interval": [
+            0.9201119581266444,
+            0.9512530724434194
+          ],
+          "mean_width": 0.016571730280046583,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 5000,
+          "distance_start": 201,
+          "metric": "topology_2",
+          "target": 0.054444631538534516,
+          "bias": 6.879552099656877e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.932,
+          "coverage_mc_interval": [
+            0.9145869498085615,
+            0.9468119002393963
+          ],
+          "mean_width": 0.01644770358339592,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 5000,
+          "distance_start": 201,
+          "metric": "topology_3",
+          "target": 0.050743403920401685,
+          "bias": 3.8923996768386315e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.945,
+          "coverage_mc_interval": [
+            0.9290084844575156,
+            0.958301204920464
+          ],
+          "mean_width": 0.0161283491173258,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 10000,
+          "distance_start": 0,
+          "metric": "agreement",
+          "target": 0.3901122501024945,
+          "bias": -0.00019854093098825576,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.932,
+          "coverage_mc_interval": [
+            0.9145869498085615,
+            0.9468119002393963
+          ],
+          "mean_width": 0.027939320323347283,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 10000,
+          "distance_start": 0,
+          "metric": "topology_1",
+          "target": 0.1350353893242626,
+          "bias": -0.0001640604843048954,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.942,
+          "coverage_mc_interval": [
+            0.9256635046176485,
+            0.9556671397475647
+          ],
+          "mean_width": 0.019283698083191046,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 10000,
+          "distance_start": 0,
+          "metric": "topology_2",
+          "target": 0.13213479438956405,
+          "bias": 6.612105264952595e-06,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.928,
+          "coverage_mc_interval": [
+            0.9101842508246495,
+            0.9432413124454371
+          ],
+          "mean_width": 0.020797645775726143,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 10000,
+          "distance_start": 0,
+          "metric": "topology_3",
+          "target": 0.1229420663886679,
+          "bias": -4.109255194832684e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.945,
+          "coverage_mc_interval": [
+            0.9290084844575156,
+            0.958301204920464
+          ],
+          "mean_width": 0.02044447540007615,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 10000,
+          "distance_start": 201,
+          "metric": "agreement",
+          "target": 0.16074129311373747,
+          "bias": 0.00010722724918441062,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.925,
+          "coverage_mc_interval": [
+            0.9068915530385006,
+            0.9405538717890046
+          ],
+          "mean_width": 0.03166564379719922,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 10000,
+          "distance_start": 201,
+          "metric": "topology_1",
+          "target": 0.05555325765480126,
+          "bias": -4.922685804473192e-07,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.938,
+          "coverage_mc_interval": [
+            0.9212200503389399,
+            0.9521381518866391
+          ],
+          "mean_width": 0.016673076739532913,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 10000,
+          "distance_start": 201,
+          "metric": "topology_2",
+          "target": 0.054444631538534516,
+          "bias": 6.879552099656877e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.93,
+          "coverage_mc_interval": [
+            0.912383766510715,
+            0.9450284750808301
+          ],
+          "mean_width": 0.016602386730650016,
+          "passes_prespecified_coverage": true
+        },
+        {
+          "block_bp": 10000,
+          "distance_start": 201,
+          "metric": "topology_3",
+          "target": 0.050743403920401685,
+          "bias": 3.8923996768386315e-05,
+          "available": 1000,
+          "withheld": 0,
+          "coverage": 0.945,
+          "coverage_mc_interval": [
+            0.9290084844575156,
+            0.958301204920464
+          ],
+          "mean_width": 0.016210833550086456,
+          "passes_prespecified_coverage": true
+        }
+      ]
+    }
+  ],
+  "seconds": 538.2130155829946
+}

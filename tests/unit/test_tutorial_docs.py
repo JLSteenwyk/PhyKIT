@@ -13,8 +13,8 @@ MANIFEST = DOCS / "_data" / "tutorial_smoke.json"
 def test_tutorial_pages_and_smoke_manifest_cover_all_tutorials():
     pages = sorted(TUTORIALS.glob("*.rst"))
     manifest = json.loads(MANIFEST.read_text())["tutorials"]
-    assert len(pages) == 21
-    assert [item["number"] for item in manifest] == list(range(1, 22))
+    assert len(pages) == 23
+    assert [item["number"] for item in manifest] == list(range(1, 24))
 
 
 def test_every_tutorial_has_the_standard_contract():
@@ -47,8 +47,8 @@ def test_all_tutorial_downloads_resolve_to_versioned_data():
 def test_legacy_tutorial_fragments_are_present():
     content = INDEX.read_text()
     fragments = re.findall(r'<span id="([a-z0-9-]+)"></span>', content)
-    assert len(fragments) == 21
-    assert len(set(fragments)) == 21
+    assert len(fragments) == 22
+    assert len(set(fragments)) == 22
 
 
 def test_commands_and_expected_output_use_separate_blocks():

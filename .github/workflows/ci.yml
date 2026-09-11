@@ -108,7 +108,7 @@ jobs:
             --smoke-python tutorial-wheel/bin/python
           python scripts/smoke_tutorials.py --python tutorial-wheel/bin/python
       - name: Deploy
-        if: ${{ github.ref == 'refs/heads/master' }}
+        if: ${{ github.ref == 'refs/heads/main' }}
         uses: JamesIves/github-pages-deploy-action@releases/v3
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
