@@ -74,7 +74,7 @@ def baseline(counts):
 
 
 def chromosome_marks(genes, edges, block_size=None):
-    """Compute left-endpoint marks without enumerating or storing gene pairs.
+    """Compute symmetric endpoint marks without storing individual gene pairs.
 
     Each bin uses range searches and topology prefix sums. Difference arrays
     identify participating right endpoints, avoiding materialized pair lists.
@@ -102,7 +102,8 @@ def chromosome_marks(genes, edges, block_size=None):
     resolved = classes < 3
     x, y, blocks = all_x[resolved], classes[resolved], all_block[resolved]
     n, nbins = len(x), len(edges) - 1
-    pair_marks = np.zeros((nblocks, nbins, 4), dtype=np.int64)
+    pair_marks = np.zeros((nblocks, nbins, 4), dtype=float)
+    bootstrap_marks = np.zeros_like(pair_marks)
     participants = np.zeros(nbins, dtype=np.int64)
     prefix = np.zeros((n + 1, 3), dtype=np.int64)
     if n:
@@ -112,17 +113,29 @@ def chromosome_marks(genes, edges, block_size=None):
         left = np.maximum(indices + 1, np.searchsorted(x, x + lower, side="left"))
         right = np.maximum(left, np.searchsorted(x, x + upper, side="left"))
         counts = right - left
-        np.add.at(pair_marks[:, b, 0], blocks, counts)
+        previous_left = np.searchsorted(x, x - upper, side="right")
+        previous_right = np.minimum(indices, np.searchsorted(x, x - lower, side="right"))
+        previous_counts = previous_right - previous_left
+        np.add.at(pair_marks[:, b, 0], blocks, (counts + previous_counts) / 2)
         for k in range(3):
-            joint = (prefix[right, k] - prefix[left, k]) * (y == k)
+            neighbor_count = (prefix[right, k] - prefix[left, k] + prefix[previous_right, k]
+                              - prefix[previous_left, k])
+            joint = neighbor_count * (y == k) / 2
             np.add.at(pair_marks[:, b, k + 1], blocks, joint)
+            # Allocate the linear frequency term to its own gene, preserving
+            # exact pair totals while avoiding boundary-induced noncancellation.
+            frequency = np.count_nonzero(y == k) / n if n else 0
+            correction = frequency * ((counts + previous_counts) * (y == k) - neighbor_count) / 2
+            np.add.at(bootstrap_marks[:, b, k + 1], blocks, joint + correction)
         difference = np.zeros(n + 1, dtype=np.int64)
         np.add.at(difference, left, 1)
         np.add.at(difference, right, -1)
         participants[b] = np.count_nonzero((counts > 0) | (np.cumsum(difference[:-1]) > 0))
+    bootstrap_marks[:, :, 0] = pair_marks[:, :, 0]
     return {
         "reference": genes[0]["reference"], "chromosome": genes[0]["chromosome"],
         "bounds": bounds, "class_counts": class_counts, "pair_marks": pair_marks,
+        "bootstrap_marks": bootstrap_marks,
         "participants": participants,
     }
 
@@ -214,7 +227,7 @@ def bootstrap_reference(marks, replicates, rng):
             blocks = len(m["class_counts"])
             weights = rng.multinomial(blocks, np.full(blocks, 1 / blocks), size=size)
             counts = weights @ m["class_counts"][:, :3]
-            pairs = (weights @ m["pair_marks"].reshape(blocks, -1)).reshape(size, nbins, 4)
+            pairs = (weights @ m["bootstrap_marks"].reshape(blocks, -1)).reshape(size, nbins, 4)
             q = baseline(counts)[:, None, :]
             denominator = pairs[:, :, :1]
             valid &= (counts.sum(axis=1)[:, None, None] >= 2) | (denominator == 0)

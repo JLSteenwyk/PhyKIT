@@ -62,6 +62,7 @@ def test_prefix_counts_match_independent_pair_enumeration(seed):
     expected, participants = brute_force(rows, edges)
     marks = chromosome_marks(rows, edges, block_size=21)
     np.testing.assert_array_equal(marks["pair_marks"].sum(axis=0), expected)
+    np.testing.assert_allclose(marks["bootstrap_marks"].sum(axis=0), expected, atol=1e-12)
     np.testing.assert_array_equal(marks["participants"], participants)
     assert marks["class_counts"].sum() == len(rows)
     assert np.ptp(np.diff(marks["bounds"])) <= 1
@@ -141,10 +142,10 @@ def test_classified_tsv(tmp_path):
 def test_block_marks_retain_cross_boundary_pairs_without_new_adjacency():
     m = chromosome_marks(genes([0, 9, 10, 19], [0, 0, 1, 1]), [0, 2, 11], block_size=10)
     np.testing.assert_array_equal(m["bounds"], [0, 10, 20])
-    # Pair (9, 10) crosses a boundary but belongs to the original left mark.
-    np.testing.assert_array_equal(m["pair_marks"][:, 0, 0], [1, 0])
+    # Pair (9, 10) crosses a boundary; each original endpoint receives half.
+    np.testing.assert_array_equal(m["pair_marks"][:, 0, 0], [0.5, 0.5])
     duplicate_left = m["pair_marks"][0] * 2
-    assert duplicate_left[0, 0] == 2
+    assert duplicate_left[0, 0] == 1
     obs, exp, excess = estimate(duplicate_left, m["class_counts"][0, :3] * 2)
     assert obs[0, 0] == 0
     assert exp[0, 0] == 1

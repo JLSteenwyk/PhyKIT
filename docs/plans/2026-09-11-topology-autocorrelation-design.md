@@ -126,3 +126,56 @@ breakpoints, or estimate a number of independent loci. It measures dependence
 of estimated gene-tree labels, not necessarily true genealogies. Publish
 implementation, calibration evidence, limitations, and runnable tutorial
 through incremental commits to main; do not release a new package version.
+
+## Calibration revision 1: symmetric marks
+
+The initial 200-dataset experiment (seed 20260911, 499 replicates, seven
+scenarios) is preserved in benchmarks/topology_autocorrelation_calibration_left_marks.json.
+The stationary imbalanced scenario had coverage 1.00 for dominant-topology
+joint excess in the second bin at both block sizes, outside the prespecified
+0.90-0.99 interval. We do not relax the acceptance limits.
+
+Revise the left-only assignment above to half of each pair's denominator and
+same-topology contributions at each endpoint. Both marks still describe the
+original pair and never create new adjacency. The aggregate statistic is
+unchanged. Symmetric marks preserve the association of local pair contributions
+with both genes' frequency contributions and remove left/right directional
+asymmetry at sampled block boundaries. Validate this change on fresh seeds;
+the initial results are evidence of a failed candidate, not validation of
+the revised implementation. Pair-occupied blocks, rather than merely blocks
+containing genes, determine the minimum-20-block safeguard per bin.
+
+## Calibration revision 2: centered local marks
+
+Fresh seed 20261017 reduced the imbalanced dominant-topology coverage from
+1.00 to 0.995 at L=5000, still outside the original acceptance interval.
+Results are preserved in the symmetric_marks JSON. Investigating the algebra
+shows that symmetric raw marks allocate half of a neighbor's linear label
+contribution to the focal gene, while the resampled frequency baseline
+allocates all its contribution to the owning gene. At resampled boundaries
+this impairs the cancellation between joint support and its baseline,
+especially when one topology is common and residual covariance is small.
+
+For topology indicator I_i and observed chromosome frequency p, allocate
+the pair contribution at endpoint i as
+  0.5*(I_i-p)*(I_j-p) + p*I_i - 0.5*p*p.
+The contributions at i and j sum exactly to I_i*I_j. Thus the statistic,
+denominator, pairs, and estimand do not change. Algebraically this adds
+0.5*p*(degree_i*I_i - sum_neighbors I_j) to each raw symmetric mark; the
+correction sums to zero on the original chromosome. The centered quadratic
+component stays shared, but the linear frequency component follows its own
+gene. These signed bootstrap contributions are not fabricated pair counts.
+Keep actual raw counts separate in outputs and use the centered marks only
+for bootstrap resampling. Recompute the finite-frequency baseline in each
+replicate as before. This is an estimator-specific algebraic adaptation;
+do not claim the marked-point literature proves its calibration. Require
+new validation seeds with unchanged coverage limits.
+
+The first centered-mark run (seed 20261203) passed the imbalanced scenario;
+one stationary aggregate interval had coverage 179/200 = 0.895, just below
+the 0.90 lower threshold (Monte Carlo interval 0.844-0.934). Preserve this
+run as centered_200.json. With no further algorithm or acceptance-limit
+changes, extend all five stationary scenarios to 1,000 datasets using the
+same seeds (the original 200 are included). This reduces Monte Carlo
+uncertainty without selectively rerunning only the failing cell. Keep the
+200-dataset assumption-violation results separate from calibration gates.
