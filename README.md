@@ -118,3 +118,8 @@ To test phykit installation, launch the help message
 ```shell
 phykit -h
 ```
+
+## Release Maintenance
+
+See the [Bioconda automation guide](scripts/bioconda/README.md) for release-triggered
+recipe synchronization, credential setup, dry runs, and failure recovery.
