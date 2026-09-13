@@ -8,6 +8,10 @@ Major changes to PhyKIT are summarized here.
 
 **Unreleased**:
 
+* Added release-triggered Bioconda recipe synchronization with verified PyPI
+  metadata, explicit dependency mappings, installed-package checks, dry runs,
+  and guarded pull-request publication. Requires a maintainer-configured GitHub
+  credential; Bioconda still controls merging and package publication.
 * Added ``topology_autocorrelation`` (alias: ``topo_ac``) for genomic distance-binned
   topology agreement, finite chromosome-specific baselines, and optional
   chromosome-stratified marked-block pointwise intervals with size sensitivity.
