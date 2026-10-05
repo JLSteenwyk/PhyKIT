@@ -8,6 +8,8 @@ Major changes to PhyKIT are summarized here.
 
 **Unreleased**:
 
+* Consolidated file-list reading for ``taxon_groups`` and ``occupancy_filter``,
+  preserving relative paths, duplicate entries, diagnostics, and lazy imports.
 * Shared file-list path normalization between ``taxon_groups`` and
   ``occupancy_filter``, preserving path spelling and existing fast paths.
 * Extended the shared single-trait parser to ``rate_heterogeneity``, ``ouwie``,
