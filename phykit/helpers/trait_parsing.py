@@ -11,7 +11,7 @@ from ..errors import PhykitUserError
 
 
 def parse_single_trait_file(path: str, tree_tips: list[str]) -> dict[str, float]:
-    """Parse the legacy headerless two-column format used by trait plots.
+    """Parse the legacy headerless two-column format used by trait services.
 
     Preserve duplicate-row overwrites, non-finite values, diagnostics, and
     overlap ordering. This contract differs from the headered multi-trait parser.

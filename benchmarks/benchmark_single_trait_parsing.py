@@ -5,6 +5,7 @@ import argparse
 import ast
 from contextlib import redirect_stderr
 import io
+import importlib
 import json
 from pathlib import Path
 import platform
@@ -24,7 +25,7 @@ from phykit.services.tree.cont_map import ContMap
 from phykit.services.tree.phenogram import Phenogram
 
 
-def original_parser(revision, module, class_name):
+def original_parser(revision, module, class_name, method_name):
     path = f"phykit/services/tree/{module}.py"
     source = subprocess.check_output(
         ["git", "show", f"{revision}:{path}"], cwd=ROOT, text=True,
@@ -32,11 +33,11 @@ def original_parser(revision, module, class_name):
     tree = ast.parse(source)
     cls = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == class_name)
     method = next(n for n in cls.body if isinstance(n, ast.FunctionDef)
-                  and n.name == "_parse_single_trait_data")
+                  and n.name == method_name)
     namespace = {"sys": sys, "PhykitUserError": PhykitUserError}
     # Load only the original, state-independent parser, not the historical service.
     exec(compile(ast.Module(body=[method], type_ignores=[]), path, "exec"), namespace)
-    return MethodType(namespace["_parse_single_trait_data"], object())
+    return MethodType(namespace[method_name], object())
 
 
 def measure(parser, path, tips, loops):
@@ -52,6 +53,8 @@ def main():
     parser.add_argument("--baseline-ref", required=True, help="trusted pre-extraction Git revision")
     parser.add_argument("--rows", type=int, default=500_000)
     parser.add_argument("--repeats", type=int, default=9)
+    parser.add_argument("--additional-services", action="store_true",
+                        help="benchmark the six services migrated after the plot services")
     args = parser.parse_args()
     if args.rows < 4 or args.repeats < 1:
         parser.error("rows must be at least 4 and repeats must be positive")
@@ -71,9 +74,24 @@ def main():
             ("reordered", str(large), list(reversed(names)), 1),
             ("partial_overlap", str(large), names[:-1] + ["missing"], 1),
         ]
-        for module, cls in (("cont_map", ContMap), ("phenogram", Phenogram)):
-            before = original_parser(revision, module, cls.__name__)
-            after = cls.__new__(cls)._parse_single_trait_data
+        services = [("cont_map", ContMap), ("phenogram", Phenogram)]
+        method_name = "_parse_single_trait_data"
+        if args.additional_services:
+            services = [
+                (name, getattr(importlib.import_module(f"phykit.services.tree.{name}"), cls))
+                for name, cls in (
+                    ("rate_heterogeneity", "RateHeterogeneity"),
+                    ("ouwie", "OUwie"),
+                    ("ou_shift_detection", "OUShiftDetection"),
+                    ("phylogenetic_signal", "PhylogeneticSignal"),
+                    ("network_signal", "NetworkSignal"),
+                    ("fit_continuous", "FitContinuous"),
+                )
+            ]
+            method_name = "_parse_trait_file"
+        for module, cls in services:
+            before = original_parser(revision, module, cls.__name__, method_name)
+            after = getattr(cls.__new__(cls), method_name)
             for name, path, tips, loops in cases:
                 old_warnings, new_warnings = io.StringIO(), io.StringIO()
                 with redirect_stderr(old_warnings):

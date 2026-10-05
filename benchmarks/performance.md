@@ -10040,3 +10040,25 @@ ranged from 1.9% faster to 7.4% slower, with substantial sample variation;
 these measurements do not establish performance equivalence. The original
 fast paths and parser algorithm remain unchanged. Subprocess unit tests
 separately check that importing either service does not import the helper.
+
+### Remaining six identical parsers
+
+The same extraction was extended to `rate_heterogeneity`, `ouwie`,
+`ou_shift_detection`, `phylogenetic_signal`, `network_signal`, and
+`fit_continuous`. AST comparison confirmed their original bodies exactly
+matched the shared helper, excluding its docstring. Service signatures and
+lazy forwarding wrappers remain in place.
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 venv/bin/python \
+  benchmarks/benchmark_single_trait_parsing.py \
+  --baseline-ref 8dc944fbb29a15d368f1a837a053897fdb9aba1a \
+  --additional-services --rows 100000 --repeats 9
+```
+
+On the same Python/platform, all 24 service/case comparisons passed value,
+ordering, and warning equivalence checks. Small-file median overhead was
+0.4-1.4 microseconds per call. For the 100,000-row cases, median elapsed-time
+changes ranged from 5.9% faster to 11.6% slower; this noisy local run does not
+establish performance equivalence or a speed improvement. Parsing logic and
+fast paths are unchanged, and cold imports are checked separately by tests.

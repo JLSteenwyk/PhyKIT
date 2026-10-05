@@ -8,6 +8,10 @@ Major changes to PhyKIT are summarized here.
 
 **Unreleased**:
 
+* Extended the shared single-trait parser to ``rate_heterogeneity``, ``ouwie``,
+  ``ou_shift_detection``, ``phylogenetic_signal``, ``network_signal``, and
+  ``fit_continuous``, removing duplicate parsing code without changing their
+  input contracts or scientific calculations.
 * Shared the headerless single-trait parser between ``cont_map`` and
   ``phenogram``, preserving input handling, diagnostics, ordering, and lazy
   imports. Added characterization tests and a reproducible parser benchmark.

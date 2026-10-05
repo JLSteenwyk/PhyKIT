@@ -63,7 +63,7 @@ def test_all_shared_preserves_file_order(parse_traits, tmp_path, capsys, tips):
     assert capsys.readouterr() == ("", "")
 
 
-@pytest.mark.parametrize("service_class", [ContMap, Phenogram])
+@pytest.mark.parametrize("service_class", [ContMap, Phenogram, *ADDITIONAL_SERVICES])
 def test_service_method_delegates_to_shared_parser(service_class, monkeypatch):
     from phykit.helpers import trait_parsing
 
@@ -76,8 +76,12 @@ def test_service_method_delegates_to_shared_parser(service_class, monkeypatch):
         return expected
 
     monkeypatch.setattr(trait_parsing, "parse_single_trait_file", parser)
-    service = service_class.__new__(service_class)
-    assert service._parse_single_trait_data("traits.tsv", tips) is expected
+    if isinstance(service_class, tuple):
+        parse = service_parser(*service_class)
+    else:
+        service = service_class.__new__(service_class)
+        parse = service._parse_single_trait_data
+    assert parse("traits.tsv", tips) is expected
     assert calls == [("traits.tsv", tips)]
     assert calls[0][1] is tips
 
