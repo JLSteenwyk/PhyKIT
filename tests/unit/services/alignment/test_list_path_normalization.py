@@ -6,7 +6,7 @@ import os
 import pytest
 
 
-@pytest.fixture(params=["taxon_groups", "occupancy_filter"])
+@pytest.fixture(params=["_file_list", "taxon_groups", "occupancy_filter"])
 def normalize(request):
     module = importlib.import_module(f"phykit.services.alignment.{request.param}")
     return module._normalize_list_path
@@ -46,3 +46,11 @@ def test_posix_root_spelling(normalize, path, expected):
 def test_simple_path_returns_original_string(normalize):
     path = os.sep.join(["directory", "file.fa"])
     assert normalize(path) is path
+
+
+@pytest.mark.parametrize("name", ["taxon_groups", "occupancy_filter"])
+def test_services_alias_shared_function_without_wrapper(name):
+    from phykit.services.alignment._file_list import _normalize_list_path
+
+    module = importlib.import_module(f"phykit.services.alignment.{name}")
+    assert module._normalize_list_path is _normalize_list_path
