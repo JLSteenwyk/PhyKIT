@@ -9,8 +9,12 @@ from phykit.services.tree.cont_map import ContMap
 from phykit.services.tree.phenogram import Phenogram
 
 
-@pytest.fixture(params=[ContMap, Phenogram], ids=["cont_map", "phenogram"])
+@pytest.fixture(params=["shared", ContMap, Phenogram], ids=["shared", "cont_map", "phenogram"])
 def parse_traits(request):
+    if request.param == "shared":
+        from phykit.helpers.trait_parsing import parse_single_trait_file
+
+        return parse_single_trait_file
     service = request.param.__new__(request.param)
     return service._parse_single_trait_data
 
@@ -22,6 +26,25 @@ def test_all_shared_preserves_file_order(parse_traits, tmp_path, capsys, tips):
     result = parse_traits(str(path), tips)
     assert list(result.items()) == [("C", 3.0), ("A", 1.5), ("B", -20.0)]
     assert capsys.readouterr() == ("", "")
+
+
+@pytest.mark.parametrize("service_class", [ContMap, Phenogram])
+def test_service_method_delegates_to_shared_parser(service_class, monkeypatch):
+    from phykit.helpers import trait_parsing
+
+    tips = ["A", "B", "C"]
+    expected = {"A": 1.0, "B": 2.0, "C": 3.0}
+    calls = []
+
+    def parser(path, tree_tips):
+        calls.append((path, tree_tips))
+        return expected
+
+    monkeypatch.setattr(trait_parsing, "parse_single_trait_file", parser)
+    service = service_class.__new__(service_class)
+    assert service._parse_single_trait_data("traits.tsv", tips) is expected
+    assert calls == [("traits.tsv", tips)]
+    assert calls[0][1] is tips
 
 
 def test_duplicate_rows_overwrite_without_moving_taxon(parse_traits, tmp_path, capsys):

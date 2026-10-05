@@ -28,6 +28,7 @@ assert callable(module.print_json)
 assert "pickle" not in sys.modules
 assert "json" not in sys.modules
 assert "phykit.helpers.json_output" not in sys.modules
+assert "phykit.helpers.trait_parsing" not in sys.modules
 assert "phykit.helpers.plot_config" not in sys.modules
 assert "phykit.helpers.circular_layout" not in sys.modules
 assert "phykit.helpers.color_annotations" not in sys.modules

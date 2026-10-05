@@ -8,6 +8,9 @@ Major changes to PhyKIT are summarized here.
 
 **Unreleased**:
 
+* Shared the headerless single-trait parser between ``cont_map`` and
+  ``phenogram``, preserving input handling, diagnostics, ordering, and lazy
+  imports. Added characterization tests and a reproducible parser benchmark.
 * Added release-triggered Bioconda recipe synchronization with verified PyPI
   metadata, explicit dependency mappings, installed-package checks, dry runs,
   and guarded pull-request publication. Requires a maintainer-configured GitHub

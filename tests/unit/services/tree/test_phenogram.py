@@ -35,6 +35,7 @@ assert "typing" not in sys.modules
 assert "pickle" not in sys.modules
 assert "json" not in sys.modules
 assert "phykit.helpers.json_output" not in sys.modules
+assert "phykit.helpers.trait_parsing" not in sys.modules
 assert "phykit.helpers.plot_config" not in sys.modules
 assert "numpy" not in sys.modules
 """

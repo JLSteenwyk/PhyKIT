@@ -1,14 +1,103 @@
 """
 Shared trait file parsing utilities.
 
-Provides a single implementation for parsing tab-delimited multi-trait
-files with a header row, used across phylogenetic regression, signal,
-ordination, path analysis, ANOVA, and other comparative methods.
+Parses headerless single-trait files and headered multi-trait files while
+preserving the distinct input contracts of the consuming services.
 """
 from math import isfinite
 import sys
 
 from ..errors import PhykitUserError
+
+
+def parse_single_trait_file(path: str, tree_tips: list[str]) -> dict[str, float]:
+    """Parse the legacy headerless two-column format used by trait plots.
+
+    Preserve duplicate-row overwrites, non-finite values, diagnostics, and
+    overlap ordering. This contract differs from the headered multi-trait parser.
+    """
+    try:
+        traits = {}
+        with open(path) as f:
+            for line_num, line in enumerate(f, 1):
+                line = line.strip()
+                if not line or line[0] == "#":
+                    continue
+                parts = line.split("\t", 2)
+                if len(parts) != 2:
+                    column_count = line.count("\t") + 1
+                    raise PhykitUserError(
+                        [
+                            f"Line {line_num} in trait file has {column_count} columns; expected 2.",
+                            "Each line should be: taxon_name<tab>trait_value",
+                        ],
+                        code=2,
+                    )
+                taxon, value_str = parts
+                try:
+                    traits[taxon] = float(value_str)
+                except ValueError:
+                    raise PhykitUserError(
+                        [
+                            f"Non-numeric trait value '{value_str}' for taxon '{taxon}' on line {line_num}.",
+                        ],
+                        code=2,
+                    )
+    except FileNotFoundError:
+        raise PhykitUserError(
+            [
+                f"{path} corresponds to no such file or directory.",
+                "Please check filename and pathing",
+            ],
+            code=2,
+        )
+
+    if (
+        len(tree_tips) >= 3
+        and len(tree_tips) == len(traits)
+        and next(iter(traits)) == tree_tips[0]
+        and next(reversed(traits)) == tree_tips[-1]
+        and list(traits) == tree_tips
+    ):
+        return traits
+
+    tree_tip_set = set(tree_tips)
+    if (
+        len(tree_tip_set) >= 3
+        and len(tree_tip_set) == len(traits)
+        and tree_tip_set == traits.keys()
+    ):
+        return traits
+
+    trait_taxa_set = set(traits)
+    shared = tree_tip_set & trait_taxa_set
+
+    tree_only = tree_tip_set - trait_taxa_set
+    trait_only = trait_taxa_set - tree_tip_set
+
+    if tree_only:
+        print(
+            f"Warning: {len(tree_only)} taxa in tree but not in trait file: "
+            f"{', '.join(sorted(tree_only))}",
+            file=sys.stderr,
+        )
+    if trait_only:
+        print(
+            f"Warning: {len(trait_only)} taxa in trait file but not in tree: "
+            f"{', '.join(sorted(trait_only))}",
+            file=sys.stderr,
+        )
+
+    if len(shared) < 3:
+        raise PhykitUserError(
+            [
+                f"Only {len(shared)} shared taxa between tree and trait file.",
+                "At least 3 shared taxa are required.",
+            ],
+            code=2,
+        )
+
+    return {taxon: traits[taxon] for taxon in shared}
 
 
 def _split_tsv_line(line: str) -> list[str]:

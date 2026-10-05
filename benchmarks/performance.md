@@ -10004,3 +10004,39 @@ Profiling summary:
   directly instead of bulk-reading and splitting the full file. This preserves
   stripped blank-line entries and missing-final-newline behavior while reducing
   large taxa/list-file parsing time and peak temporary string/list pressure.
+
+## Single-trait parser cleanup (2026-10-05)
+
+The identical `cont_map` and `phenogram` parser bodies were extracted into
+`helpers.trait_parsing.parse_single_trait_file`. Service methods remain lazy
+forwarding wrappers. This is a maintenance change, not a claimed speedup.
+
+Reproduce against the pre-extraction implementation with:
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 venv/bin/python \
+  benchmarks/benchmark_single_trait_parsing.py \
+  --baseline-ref a698b87c32d9159b3867376e4f8c5a8be7648ec5
+```
+
+Python 3.11.14, macOS 26.6.2 arm64; median of nine alternating-order samples.
+Small files have eight rows and 500 parses per sample; other cases have 500,000
+rows and one parse per sample. Times include parsing, not plotting or cold
+imports. The benchmark checks values, key ordering, and warning equivalence.
+
+| Service | Case | Before (seconds) | After (seconds) |
+| --- | --- | ---: | ---: |
+| cont_map | Small | 0.00002128 | 0.00002241 |
+| cont_map | Ordered | 0.22035 | 0.23467 |
+| cont_map | Reordered | 0.24907 | 0.25791 |
+| cont_map | Partial overlap | 0.46255 | 0.45990 |
+| phenogram | Small | 0.00001857 | 0.00002004 |
+| phenogram | Ordered | 0.19571 | 0.21015 |
+| phenogram | Reordered | 0.24953 | 0.25134 |
+| phenogram | Partial overlap | 0.45598 | 0.44746 |
+
+Tiny-file overhead was about 1.1-1.5 microseconds per call. Large-file medians
+ranged from 1.9% faster to 7.4% slower, with substantial sample variation;
+these measurements do not establish performance equivalence. The original
+fast paths and parser algorithm remain unchanged. Subprocess unit tests
+separately check that importing either service does not import the helper.
