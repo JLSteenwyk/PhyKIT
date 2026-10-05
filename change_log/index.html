@@ -87,6 +87,12 @@
 <p>Major changes to PhyKIT are summarized here.</p>
 <p><strong>Unreleased</strong>:</p>
 <ul class="simple">
+<li><p>Shared file-list path normalization between <code class="docutils literal notranslate"><span class="pre">taxon_groups</span></code> and
+<code class="docutils literal notranslate"><span class="pre">occupancy_filter</span></code>, preserving path spelling and existing fast paths.</p></li>
+<li><p>Extended the shared single-trait parser to <code class="docutils literal notranslate"><span class="pre">rate_heterogeneity</span></code>, <code class="docutils literal notranslate"><span class="pre">ouwie</span></code>,
+<code class="docutils literal notranslate"><span class="pre">ou_shift_detection</span></code>, <code class="docutils literal notranslate"><span class="pre">phylogenetic_signal</span></code>, <code class="docutils literal notranslate"><span class="pre">network_signal</span></code>, and
+<code class="docutils literal notranslate"><span class="pre">fit_continuous</span></code>, removing duplicate parsing code without changing their
+input contracts or scientific calculations.</p></li>
 <li><p>Shared the headerless single-trait parser between <code class="docutils literal notranslate"><span class="pre">cont_map</span></code> and
 <code class="docutils literal notranslate"><span class="pre">phenogram</span></code>, preserving input handling, diagnostics, ordering, and lazy
 imports. Added characterization tests and a reproducible parser benchmark.</p></li>
