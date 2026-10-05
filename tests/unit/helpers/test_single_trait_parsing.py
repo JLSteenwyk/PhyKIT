@@ -1,6 +1,9 @@
 """Characterize the existing headerless format without tightening validation."""
 
 import math
+import importlib
+import subprocess
+import sys
 
 import pytest
 
@@ -8,15 +11,47 @@ from phykit.errors import PhykitUserError
 from phykit.services.tree.cont_map import ContMap
 from phykit.services.tree.phenogram import Phenogram
 
+ADDITIONAL_SERVICES = [
+    ("rate_heterogeneity", "RateHeterogeneity"),
+    ("ouwie", "OUwie"),
+    ("ou_shift_detection", "OUShiftDetection"),
+    ("phylogenetic_signal", "PhylogeneticSignal"),
+    ("network_signal", "NetworkSignal"),
+    ("fit_continuous", "FitContinuous"),
+]
 
-@pytest.fixture(params=["shared", ContMap, Phenogram], ids=["shared", "cont_map", "phenogram"])
+
+def service_parser(module_name, class_name):
+    module = importlib.import_module(f"phykit.services.tree.{module_name}")
+    cls = getattr(module, class_name)
+    return cls.__new__(cls)._parse_trait_file
+
+
+@pytest.fixture(
+    params=["shared", ContMap, Phenogram, *ADDITIONAL_SERVICES],
+    ids=["shared", "cont_map", "phenogram", *[s[0] for s in ADDITIONAL_SERVICES]],
+)
 def parse_traits(request):
     if request.param == "shared":
         from phykit.helpers.trait_parsing import parse_single_trait_file
 
         return parse_single_trait_file
+    if isinstance(request.param, tuple):
+        return service_parser(*request.param)
     service = request.param.__new__(request.param)
     return service._parse_single_trait_data
+
+
+@pytest.mark.parametrize("module_name,class_name", ADDITIONAL_SERVICES)
+def test_service_import_keeps_trait_helper_lazy(module_name, class_name):
+    subprocess.run(
+        [sys.executable, "-c", (
+            f"import phykit.services.tree.{module_name}\n"
+            "import sys\n"
+            "assert 'phykit.helpers.trait_parsing' not in sys.modules\n"
+        )],
+        check=True, capture_output=True, text=True,
+    )
 
 
 @pytest.mark.parametrize("tips", [["C", "A", "B"], ["A", "B", "C"], ["A", "A", "B", "C"]])
