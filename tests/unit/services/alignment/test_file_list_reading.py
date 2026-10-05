@@ -2,15 +2,21 @@
 
 import importlib
 import os
+from pathlib import Path
 
 import pytest
 
 from phykit.errors import PhykitUserError
 
 
-@pytest.fixture(params=[("taxon_groups", "TaxonGroups"),
+@pytest.fixture(params=["shared", ("taxon_groups", "TaxonGroups"),
                        ("occupancy_filter", "OccupancyFilter")])
 def read_list(request):
+    if request.param == "shared":
+        from functools import partial
+        from phykit.services.alignment._file_list import read_file_list, _normalize_list_path
+
+        return partial(read_file_list, path_factory=Path, normalize_path=_normalize_list_path)
     name, class_name = request.param
     module = importlib.import_module(f"phykit.services.alignment.{name}")
     cls = getattr(module, class_name)
@@ -56,3 +62,23 @@ def test_absolute_paths_keep_double_slash_root(read_list, tmp_path):
     path = tmp_path / "files.txt"
     path.write_text("//server//./file.fa\n///server//file.fa\n/dir/../file.fa\n")
     assert read_list(path) == ["//server/file.fa", "/server/file.fa", "/dir/../file.fa"]
+
+
+@pytest.mark.parametrize("name,class_name", [
+    ("taxon_groups", "TaxonGroups"), ("occupancy_filter", "OccupancyFilter"),
+])
+def test_service_normalization_hook_remains_replaceable(name, class_name, tmp_path, monkeypatch):
+    module = importlib.import_module(f"phykit.services.alignment.{name}")
+    cls = getattr(module, class_name)
+    path = tmp_path / "files.txt"
+    entry = "." + os.sep + "file.fa"
+    path.write_text(entry + "\n")
+    calls = []
+
+    def normalize(value):
+        calls.append(value)
+        return "replacement.fa"
+
+    monkeypatch.setattr(module, "_normalize_list_path", normalize)
+    assert cls.__new__(cls)._read_file_list(path) == [str(tmp_path / "replacement.fa")]
+    assert calls == [entry]

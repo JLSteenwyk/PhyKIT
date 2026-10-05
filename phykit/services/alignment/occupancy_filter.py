@@ -13,7 +13,7 @@ from pathlib import Path
 
 from ._fasta import _clean_sequence, read_fasta_first_tokens
 from ...errors import PhykitUserError
-from ._file_list import _normalize_list_path
+from ._file_list import _normalize_list_path, read_file_list
 
 
 _path_exists = os.path.exists
@@ -151,59 +151,9 @@ class OccupancyFilter:
             )
 
     def _read_file_list(self, path):
-        """Read file paths from a list file."""
-        source = Path(path)
-        if not source.exists():
-            raise PhykitUserError(
-                [f"{path} corresponds to no such file or directory."],
-                code=2,
-            )
-
-        paths = []
-        append = paths.append
-        parent_str = str(source.parent)
-        parent_prefix = "" if parent_str == "." else parent_str + os.sep
-        separator = os.sep
-        double_separator = separator + separator
-        dot_prefix = "." + separator
-        dot_segment = separator + "." + separator
-        dot_suffix = separator + "."
-        check_isabs = os.path.isabs if separator == "\\" else None
-        with source.open() as handle:
-            for line in handle:
-                line = line.strip()
-                if not line or line[0] == "#":
-                    continue
-                if line == ".":
-                    append(parent_str)
-                    continue
-                has_separator = separator in line
-                if not has_separator:
-                    append(parent_prefix + line)
-                    continue
-                needs_normalization = (
-                    line.startswith(dot_prefix)
-                    or double_separator in line
-                    or dot_segment in line
-                    or line.endswith(dot_suffix)
-                )
-                if line[0] == separator or (
-                    check_isabs is not None and check_isabs(line)
-                ):
-                    append(
-                        _normalize_list_path(line)
-                        if needs_normalization
-                        else line
-                    )
-                elif needs_normalization:
-                    normalized = _normalize_list_path(line)
-                    if normalized == ".":
-                        append(parent_str)
-                    else:
-                        append(parent_prefix + normalized)
-                else:
-                    append(parent_prefix + line)
-        return paths
+        return read_file_list(
+            path, path_factory=Path, normalize_path=_normalize_list_path,
+        )
 
     def _extract_taxa(self, path):
         """Extract taxon names from a tree or FASTA file."""

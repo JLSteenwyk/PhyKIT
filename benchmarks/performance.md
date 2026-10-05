@@ -10062,3 +10062,14 @@ ordering, and warning equivalence checks. Small-file median overhead was
 changes ranged from 5.9% faster to 11.6% slower; this noisy local run does not
 establish performance equivalence or a speed improvement. Parsing logic and
 fast paths are unchanged, and cold imports are checked separately by tests.
+
+### Alignment file-list reader consolidation
+
+The identical `taxon_groups` and `occupancy_filter` readers now share their
+loop, retaining service-level Path and normalization hooks. A local Python
+3.11/macOS check against `ecdbb673` used 100,000 entries (every third entry
+`nested//./fileN.fa`, otherwise `fileN.fa`), verified exact output equality,
+and alternated before/after timing order for nine rounds. Median seconds were
+0.04055 -> 0.04028 for taxon_groups and 0.04036 -> 0.04222 for occupancy_filter.
+This is a maintenance change, not a demonstrated speedup. Unit tests retain
+the one-Path-per-list and normalization-bypass checks.
