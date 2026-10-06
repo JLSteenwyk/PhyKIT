@@ -111,13 +111,14 @@ def test_taxon_whitespace_and_case_are_not_normalized(parse_traits, tmp_path):
     assert list(parse_traits(str(path), ["A ", "a", "C"])) == ["A ", "a", "C"]
 
 
-def test_partial_overlap_preserves_set_iteration_and_sorted_warnings(parse_traits, tmp_path, capsys):
+def test_partial_overlap_keeps_shared_taxa_and_sorted_warnings(parse_traits, tmp_path, capsys):
     path = tmp_path / "traits.tsv"
     path.write_text("C\t3\nA\t1\nY\t8\nB\t2\nX\t9\n")
     tips = ["D", "B", "E", "A", "C"]
     result = parse_traits(str(path), tips)
     shared = set(tips) & set(["C", "A", "Y", "B", "X"])
-    assert list(result) == list(shared)
+    # Key order follows set iteration, which varies with PYTHONHASHSEED.
+    assert set(result) == shared
     assert result == {"A": 1.0, "B": 2.0, "C": 3.0}
     assert capsys.readouterr() == ("", (
         "Warning: 2 taxa in tree but not in trait file: D, E\n"
