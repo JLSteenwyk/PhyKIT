@@ -1370,10 +1370,20 @@ assert "phykit.helpers.plot_config" not in sys.modules
         mocker.patch("builtins.print", side_effect=BrokenPipeError)
         service.run()
 
-    def test_calculate_pairwise_identities_multiprocessing_branch(self, mocker, args, monkeypatch):
+    @pytest.mark.parametrize("thread_limit,expected_workers", [(None, 2), ("1", 1)])
+    def test_calculate_pairwise_identities_multiprocessing_branch(
+        self, mocker, args, monkeypatch, thread_limit, expected_workers
+    ):
+        if thread_limit is None:
+            monkeypatch.delenv("PHYKIT_THREADS", raising=False)
+        else:
+            monkeypatch.setenv("PHYKIT_THREADS", thread_limit)
+        created_pools = []
+
         class FakePool:
             def __init__(self, processes):
                 self.processes = processes
+                created_pools.append(self)
 
             def __enter__(self):
                 return self
@@ -1390,6 +1400,11 @@ assert "phykit.helpers.plot_config" not in sys.modules
 
         service = PairwiseIdentity(args)
         mocker.patch.object(PairwiseIdentity, "_should_use_multiprocessing", return_value=True)
+        # Bypass the scalar and matrix fast paths so the pool branch runs.
+        mocker.patch.object(pairwise_identity_module, "_pairwise_identities_scalar", return_value=None)
+        mocker.patch.object(
+            PairwiseIdentity, "_calculate_pairwise_identities_matrix", return_value=None
+        )
         mocker.patch("phykit.services.alignment.pairwise_identity.mp.Pool", FakePool)
         mocker.patch("phykit.services.alignment.pairwise_identity.mp.cpu_count", return_value=2)
         monkeypatch.setattr(pairwise_identity_module.sys.stderr, "isatty", lambda: False)
@@ -1402,6 +1417,7 @@ assert "phykit.helpers.plot_config" not in sys.modules
         assert len(pair_ids) == 3
         assert "a-b" in identities
         assert "mean" in stats
+        assert [pool.processes for pool in created_pools] == [expected_workers]
 
     def test_calculate_pairwise_identities_medium_fallback_skips_pool(
         self, mocker, args

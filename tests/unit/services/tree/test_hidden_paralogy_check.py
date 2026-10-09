@@ -717,6 +717,26 @@ class TestHiddenParalogyCheck(unittest.TestCase):
         # Should be capped at 8 workers even with 16 CPUs
         mock_pool_class.assert_called_once_with(processes=8)
 
+    @patch.dict('os.environ', {'PHYKIT_THREADS': '2'})
+    @patch('multiprocessing.cpu_count')
+    @patch('multiprocessing.Pool')
+    def test_run_parallel_respects_thread_limit(self, mock_pool_class, mock_cpu_count):
+        """Test parallel processing respects the global --threads limit"""
+        self.checker.MP_MIN_CLADES = 10
+        mock_cpu_count.return_value = 16
+
+        self.checker.read_tree_file_unmodified = Mock(return_value=Mock())
+        self.checker.get_tip_names_from_tree = Mock(return_value=["taxa1"])
+        self.checker.read_clades_file = Mock(return_value=[["taxa1"] for _ in range(20)])
+
+        mock_pool = MagicMock()
+        mock_pool_class.return_value.__enter__.return_value = mock_pool
+        mock_pool.map.return_value = [[["monophyletic", []]] for _ in range(20)]
+
+        self.checker.run()
+
+        mock_pool_class.assert_called_once_with(processes=2)
+
     @patch('phykit.services.tree.hidden_paralogy_check.Phylo.read')
     def test_edge_cases(self, mock_phylo_read):
         """Test various edge cases"""

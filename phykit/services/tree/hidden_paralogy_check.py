@@ -3,6 +3,7 @@ from __future__ import annotations
 import sys
 
 from .base import Tree
+from ...helpers.threads import limit_workers
 
 
 def print_json(*args, **kwargs):
@@ -159,7 +160,7 @@ class HiddenParalogyCheck(Tree):
             # Use multiprocessing for larger datasets
             from functools import partial
 
-            num_workers = min(mp.cpu_count(), 8)
+            num_workers = limit_workers(min(mp.cpu_count(), 8))
             batch_size = max(1, len(clades) // num_workers)
 
             # Create clade batches

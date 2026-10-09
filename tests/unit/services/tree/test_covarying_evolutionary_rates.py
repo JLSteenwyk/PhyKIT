@@ -721,6 +721,72 @@ class TestCovaryingEvolutionaryRates(unittest.TestCase):
         self.assertEqual(l1, [2.0, 2.5, 3.0])
         self.assertEqual(tip_names, [['tip1'], ['tip2'], ['tip3']])
 
+    @patch.dict('os.environ', {'PHYKIT_THREADS': '2'})
+    @patch('pickle.dumps')
+    @patch('phykit.services.tree.covarying_evolutionary_rates.ProcessPoolExecutor')
+    def test_correct_branch_lengths_parallel_respects_thread_limit(self, mock_executor_class, mock_pickle_dumps):
+        """correct_branch_lengths caps executor workers at the global --threads limit"""
+        self.cov_rates.MP_MIN_REFERENCE_CLADES = 50
+        # Create mock trees
+        mock_t0 = Mock()
+        mock_t1 = Mock()
+        mock_sp = Mock()
+
+        # Create many terminals and nonterminals to trigger parallel processing
+        terminals = []
+        for i in range(30):
+            term = Mock()
+            term.name = f'terminal{i}'
+            term.branch_length = 1.0 + i * 0.1
+            terminals.append(term)
+
+        nonterminals = []
+        for i in range(25):
+            nonterm = Mock()
+            nonterm.branch_length = 2.0 + i * 0.1
+            nonterminals.append(nonterm)
+
+        mock_sp.get_terminals.return_value = terminals
+        mock_sp.get_nonterminals.return_value = nonterminals
+
+        # Mock get_tip_names_from_tree
+        self.cov_rates.get_tip_names_from_tree = Mock(side_effect=lambda x: [f'tip_{x.name}'] if hasattr(x, 'name') else ['tip_x'])
+
+        # Mock pickle dumps
+        mock_pickle_dumps.return_value = b'pickled_tree'
+
+        # Mock executor
+        mock_executor = MagicMock()
+        mock_executor_class.return_value.__enter__.return_value = mock_executor
+
+        # Create mock futures
+        future1 = Mock(spec=Future)
+        future1.result.return_value = [(1.0, 2.0, ['tip1']), (1.5, 2.5, ['tip2'])]
+        future2 = Mock(spec=Future)
+        future2.result.return_value = [(2.0, 3.0, ['tip3'])]
+
+        # Create enough futures for all submit calls
+        mock_futures = [future1, future2] + [Mock(spec=Future) for _ in range(10)]
+        for f in mock_futures[2:]:
+            f.result.return_value = []
+        mock_executor.submit.side_effect = mock_futures
+
+        # Mock as_completed
+        with patch('phykit.services.tree.covarying_evolutionary_rates.as_completed') as mock_as_completed:
+            mock_as_completed.return_value = [future1, future2]
+
+            l0, l1, tip_names = self.cov_rates.correct_branch_lengths(mock_t0, mock_t1, mock_sp)
+
+        # Check results
+        self.assertEqual(len(l0), 3)
+        self.assertEqual(len(l1), 3)
+        self.assertEqual(len(tip_names), 3)
+
+        self.assertEqual(l0, [1.0, 1.5, 2.0])
+        self.assertEqual(l1, [2.0, 2.5, 3.0])
+        self.assertEqual(tip_names, [['tip1'], ['tip2'], ['tip3']])
+        mock_executor_class.assert_called_once_with(max_workers=2)
+
     def test_correct_branch_lengths_medium_fallback_skips_executor(self):
         mock_t0 = Mock()
         mock_t1 = Mock()

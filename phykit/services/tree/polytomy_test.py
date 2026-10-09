@@ -8,6 +8,7 @@ from collections import namedtuple
 import os
 
 from .base import Tree
+from ...helpers.threads import limit_workers
 
 
 def print_json(*args, **kwargs):
@@ -531,7 +532,7 @@ class PolytomyTest(Tree):
             # Use multiprocessing for larger datasets
             from functools import partial
 
-            num_workers = min(mp.cpu_count(), self.MAX_MP_WORKERS)
+            num_workers = limit_workers(min(mp.cpu_count(), self.MAX_MP_WORKERS))
             batch_size = max(1, len(trees_file_path) // num_workers)
             tree_batches = [trees_file_path[i:i + batch_size]
                            for i in range(0, len(trees_file_path), batch_size)]

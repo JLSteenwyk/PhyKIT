@@ -4,6 +4,7 @@ import sys
 import itertools
 
 from .base import Tree
+from ...helpers.threads import limit_workers
 
 
 class _LazyPickle:
@@ -214,7 +215,7 @@ class LBScore(Tree):
         else:
             # Use multiprocessing for large datasets
             tree_pickle = pickle.dumps(tree)
-            cpu_count = mp.cpu_count()
+            cpu_count = limit_workers(mp.cpu_count())
             batch_size = max(50, num_combos // cpu_count)
 
             with ProcessPoolExecutor(max_workers=min(cpu_count, self.MAX_MP_WORKERS)) as executor:
@@ -305,7 +306,7 @@ class LBScore(Tree):
             tips_data.append((tip, tips_minus_i))
 
         # Process in batches
-        cpu_count = mp.cpu_count()
+        cpu_count = limit_workers(mp.cpu_count())
         batch_size = max(10, len(tips) // cpu_count)
         tree_pickle = pickle.dumps(tree)
 

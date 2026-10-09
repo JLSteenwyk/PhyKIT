@@ -418,7 +418,14 @@ class TestRobinsonFouldsDistance(object):
         assert results == expected
         mocked_executor.assert_not_called()
 
-    def test_calculate_multiple_rf_distances_parallel_path(self, mocker, args):
+    @pytest.mark.parametrize("thread_limit", [None, "1"])
+    def test_calculate_multiple_rf_distances_parallel_path(
+        self, mocker, args, monkeypatch, thread_limit
+    ):
+        if thread_limit is None:
+            monkeypatch.delenv("PHYKIT_THREADS", raising=False)
+        else:
+            monkeypatch.setenv("PHYKIT_THREADS", thread_limit)
         rf = RobinsonFouldsDistance(args)
         rf.MP_MIN_TREE_PAIRS = 5
 
@@ -483,7 +490,11 @@ class TestRobinsonFouldsDistance(object):
 
         results = rf.calculate_multiple_rf_distances(tree_pairs)
 
-        assert created_executors
+        assert len(created_executors) == 1
+        if thread_limit is None:
+            assert 1 <= created_executors[0].max_workers <= rf.MAX_MP_WORKERS
+        else:
+            assert created_executors[0].max_workers == 1
 
         expected = []
         for zero_tree, one_tree in tree_pairs:

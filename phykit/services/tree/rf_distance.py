@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from .base import Tree
+from ...helpers.threads import limit_workers
 
 
 def print_json(*args, **kwargs):
@@ -463,7 +464,7 @@ class RobinsonFouldsDistance(Tree):
         batch_size = max(2, len(tree_pairs) // 4)
         batches = [tree_pairs[i:i + batch_size] for i in range(0, len(tree_pairs), batch_size)]
 
-        with ProcessPoolExecutor(max_workers=min(self.MAX_MP_WORKERS, len(batches))) as executor:
+        with ProcessPoolExecutor(max_workers=limit_workers(min(self.MAX_MP_WORKERS, len(batches)))) as executor:
             futures = []
             for batch in batches:
                 batch_pickle = pickle.dumps(batch)

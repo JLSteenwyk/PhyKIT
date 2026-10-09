@@ -106,6 +106,29 @@ All possible function names are specified at the top of each function section.
 
 |
 
+Limiting threads
+################
+
+Every command accepts a global ``--threads`` option. It caps the number of
+worker processes PhyKIT starts and the number of threads used by numeric
+libraries (NumPy/SciPy BLAS, OpenMP, numba). This is useful when many PhyKIT
+commands run in parallel, for example in a workflow manager or with
+``xargs -P``, so that each command stays within its share of the CPUs:
+
+.. code-block:: shell
+
+   phykit saturation -a alignment.fa -t tree.tre --threads 1
+   # or, for every command run from this shell
+   export PHYKIT_THREADS=1
+
+``--threads`` can appear anywhere on the command line, including before the
+command name, and works the same with the *pk_* interfaces. When neither
+``--threads`` nor ``PHYKIT_THREADS`` is set, PhyKIT keeps its default behavior.
+An explicit ``--threads`` value overrides ``OMP_NUM_THREADS`` and similar
+variables; ``PHYKIT_THREADS`` alone only sets those that are not already set.
+
+|
+
 Command reference
 -----------------
 

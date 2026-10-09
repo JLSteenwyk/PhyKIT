@@ -1306,6 +1306,31 @@ assert "phykit.helpers.plot_config" not in sys.modules
         # Check that pool was created with max 8 workers
         mock_pool_class.assert_called_once_with(processes=8)
 
+    @patch.dict('os.environ', {'PHYKIT_THREADS': '2'})
+    @patch('multiprocessing.cpu_count')
+    @patch('multiprocessing.Pool')
+    def test_loop_through_combos_parallel_respects_thread_limit(self, mock_pool_class, mock_cpu_count):
+        """Test that parallel processing respects the global --threads limit"""
+        self.saturation.MP_MIN_COMBOS = 50
+        mock_cpu_count.return_value = 16
+
+        mock_tree = Mock()
+        mock_tree.distance.return_value = 0.15
+        seqs = [SeqRecord(Seq("ATCG"), id=f"seq{i}", name=f"seq{i}") for i in range(15)]
+        alignment = Align.MultipleSeqAlignment(seqs)
+        self.saturation.get_gap_chars = Mock(return_value={'-', 'N', '?'})
+        combos = [(f"seq{i}", f"seq{j}") for i in range(15) for j in range(i+1, 15)]
+
+        mock_pool = MagicMock()
+        mock_pool_class.return_value.__enter__.return_value = mock_pool
+        mock_pool.map.return_value = [[(0.15, 0.0)] * 10 for _ in range(11)]
+
+        self.saturation.loop_through_combos_and_calculate_pds_and_pis(
+            combos, alignment, mock_tree, False
+        )
+
+        mock_pool_class.assert_called_once_with(processes=2)
+
 
 if __name__ == '__main__':
     unittest.main()

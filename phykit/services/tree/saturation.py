@@ -5,6 +5,7 @@ import math
 import os
 
 from .base import Tree
+from ...helpers.threads import limit_workers
 
 
 def print_json(*args, **kwargs):
@@ -776,7 +777,7 @@ class Saturation(Tree):
             # Use multiprocessing for larger datasets
             from functools import partial
 
-            num_workers = min(mp.cpu_count(), self.MAX_MP_WORKERS)
+            num_workers = limit_workers(min(mp.cpu_count(), self.MAX_MP_WORKERS))
             chunk_size = max(1, len(combos) // (num_workers * 4))
             combo_chunks = [combos[i:i + chunk_size] for i in range(0, len(combos), chunk_size)]
 
