@@ -340,6 +340,20 @@ What alignment and tree formats are supported?
 See :doc:`Input formats and shared conventions </formats/index>`. Alignment format
 is detected from content; tree inputs are normally Newick.
 
+How do I limit CPU usage when running many PhyKIT commands in parallel?
+------------------------------------------------------------------------
+
+Add the global ``--threads N`` option to any command, or set the
+``PHYKIT_THREADS`` environment variable once for every command::
+
+   phykit saturation -a alignment.fa -t tree.tre --threads 1
+   export PHYKIT_THREADS=1
+
+The limit caps the worker processes PhyKIT starts and the threads used by
+numeric libraries (BLAS/OpenMP via NumPy and SciPy, numba). It also sets
+``OMP_NUM_THREADS`` and related variables, so setting ``OMP_NUM_THREADS`` alone
+is no longer necessary. See :doc:`Usage </usage/index>` for details.
+
 How do I make an analysis reproducible?
 ---------------------------------------
 
