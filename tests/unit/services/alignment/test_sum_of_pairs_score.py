@@ -793,7 +793,14 @@ class TestSumOfPairsScore:
         assert matches == 1
         assert pairs == 3
 
-    def test_determine_matches_parallel_path(self, mocker, monkeypatch, args):
+    @pytest.mark.parametrize("thread_limit,expected_workers", [(None, 4), ("2", 2)])
+    def test_determine_matches_parallel_path(
+        self, mocker, monkeypatch, args, thread_limit, expected_workers
+    ):
+        if thread_limit is None:
+            monkeypatch.delenv("PHYKIT_THREADS", raising=False)
+        else:
+            monkeypatch.setenv("PHYKIT_THREADS", thread_limit)
         sop = SumOfPairsScore(args)
         monkeypatch.setattr(module, "_SOPS_SCALAR_PAIR_MAX_CELLS", 0)
         ids = [f"id{i}" for i in range(13)]
@@ -830,7 +837,7 @@ class TestSumOfPairsScore:
             record_id_pairs, reference_records, query_records
         )
 
-        assert created_pools
+        assert [pool.processes for pool in created_pools] == [expected_workers]
         assert all(batch for batch in observed_batches)
         pairs_with_changed_taxon = sum("id0" in pair for pair in record_id_pairs)
         assert matches == (

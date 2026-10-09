@@ -166,9 +166,14 @@ class TestLBScore(object):
         assert result == pytest.approx(expected)
         mocked_executor.assert_not_called()
 
+    @pytest.mark.parametrize("thread_limit,expected_workers", [(None, 4), ("2", 2)])
     def test_calculate_average_distance_between_tips_parallel_path(
-        self, mocker, args
+        self, mocker, args, monkeypatch, thread_limit, expected_workers
     ):
+        if thread_limit is None:
+            monkeypatch.delenv("PHYKIT_THREADS", raising=False)
+        else:
+            monkeypatch.setenv("PHYKIT_THREADS", thread_limit)
         t = LBScore(args)
         t.MP_MIN_DISTANCE_PAIRS = 100
 
@@ -206,6 +211,7 @@ class TestLBScore(object):
         result = t.calculate_average_distance_between_tips(tips, tree)
 
         assert created_executors
+        assert [e.max_workers for e in created_executors] == [expected_workers]
         cpu_count.assert_called_once_with()
         assert result == pytest.approx(expected)
 
@@ -273,9 +279,14 @@ class TestLBScore(object):
 
         assert tips.iterations == 2
 
+    @pytest.mark.parametrize("thread_limit,expected_workers", [(None, 4), ("2", 2)])
     def test_calculate_average_distance_of_taxon_to_other_taxa_parallel_path(
-        self, mocker, args
+        self, mocker, args, monkeypatch, thread_limit, expected_workers
     ):
+        if thread_limit is None:
+            monkeypatch.delenv("PHYKIT_THREADS", raising=False)
+        else:
+            monkeypatch.setenv("PHYKIT_THREADS", thread_limit)
         t = LBScore(args)
 
         created_executors = []
@@ -317,6 +328,7 @@ class TestLBScore(object):
         result = t.calculate_average_distance_of_taxon_to_other_taxa(tips, tree)
 
         assert created_executors
+        assert [e.max_workers for e in created_executors] == [expected_workers]
         cpu_count.assert_called_once_with()
         assert result == pytest.approx(expected)
 

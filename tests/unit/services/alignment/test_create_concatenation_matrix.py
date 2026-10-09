@@ -1374,3 +1374,62 @@ class TestCreateConcatenationMatrix:
         fasta_text = Path(f"{prefix}.fa").read_text()
         assert ">A\n" in fasta_text
         assert ">B\n" not in fasta_text
+
+
+@pytest.mark.parametrize(
+    "thread_limit,expected_workers", [(None, [3, 8]), ("2", [2, 2])]
+)
+def test_create_concatenation_matrix_process_pools_respect_thread_limit(
+    tmp_path, monkeypatch, thread_limit, expected_workers
+):
+    from concurrent.futures import Future
+
+    if thread_limit is None:
+        monkeypatch.delenv("PHYKIT_THREADS", raising=False)
+    else:
+        monkeypatch.setenv("PHYKIT_THREADS", thread_limit)
+
+    created_workers = []
+
+    class InlineExecutor:
+        def __init__(self, max_workers):
+            created_workers.append(max_workers)
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def submit(self, fn, *args, **kwargs):
+            future = Future()
+            future.set_result(fn(*args, **kwargs))
+            return future
+
+    gene_files = []
+    for idx, entries in enumerate(
+        [
+            [("A", "AA"), ("B", "CC")],
+            [("A", "GG"), ("C", "TT")],
+            [("B", "TA"), ("C", "AT")],
+        ]
+    ):
+        gene = tmp_path / f"limited_g{idx}.fa"
+        _write_fasta(gene, entries)
+        gene_files.append(gene)
+
+    alignment_list = tmp_path / "alignments_limited.txt"
+    alignment_list.write_text("\n".join(str(p) for p in gene_files) + "\n")
+    prefix = tmp_path / "concat_limited"
+
+    monkeypatch.setattr(ccm_module, "_PARALLEL_MIN_ALIGNMENT_FILES", 1)
+    monkeypatch.setattr(ccm_module, "_PARALLEL_MIN_ALIGNMENT_BYTES", 0)
+    monkeypatch.setattr(ccm_module, "ProcessPoolExecutor", InlineExecutor)
+    monkeypatch.setattr(ccm_module.mp, "cpu_count", lambda: 16)
+    ccm = CreateConcatenationMatrix(
+        Namespace(alignment_list=str(alignment_list), prefix=str(prefix), json=False, plot_occupancy=False)
+    )
+    ccm.create_concatenation_matrix(str(alignment_list), str(prefix))
+
+    assert created_workers == expected_workers
+    assert Path(f"{prefix}.fa").exists()

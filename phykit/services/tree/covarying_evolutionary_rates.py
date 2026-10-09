@@ -1,6 +1,7 @@
 import math
 
 from .base import Tree
+from ...helpers.threads import limit_workers
 from ...errors import PhykitUserError
 
 
@@ -977,7 +978,7 @@ class CovaryingEvolutionaryRates(Tree):
             batch_size = max(10, (len(terminals_data) + len(nonterminals_data)) // 4)
 
             try:
-                with ProcessPoolExecutor(max_workers=min(self.MAX_MP_WORKERS, len(terminals_data) + len(nonterminals_data) // 10)) as executor:
+                with ProcessPoolExecutor(max_workers=limit_workers(min(self.MAX_MP_WORKERS, len(terminals_data) + len(nonterminals_data) // 10))) as executor:
                     futures = []
 
                     # Submit terminal batches

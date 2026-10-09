@@ -6,6 +6,7 @@ import os
 from math import sqrt
 
 from .base import Alignment
+from ...helpers.threads import limit_workers
 
 
 class _LazyMultiprocessing:
@@ -1005,7 +1006,7 @@ class PairwiseIdentity(Alignment):
             from functools import partial
 
             # Use multiprocessing for larger datasets
-            num_workers = min(mp.cpu_count(), self.MAX_MP_WORKERS)
+            num_workers = limit_workers(min(mp.cpu_count(), self.MAX_MP_WORKERS))
             chunk_size = max(1, n_pairs // (num_workers * 4))
             pair_chunks = self._batched_pair_indices(num_records, chunk_size)
 

@@ -297,14 +297,23 @@ class TestPatristicDistances(object):
         captured = capsys.readouterr()
         assert captured.out == "A\tB\t3.0\nA\tC\t8.0\nB\tC\t9.0\n"
 
-    def test_distance_values_fallback_skips_returned_combos(self, mocker, args):
+    @pytest.mark.parametrize("thread_limit,expected_workers", [(None, 4), ("2", 2)])
+    def test_distance_values_fallback_skips_returned_combos(
+        self, mocker, args, monkeypatch, thread_limit, expected_workers
+    ):
+        if thread_limit is None:
+            monkeypatch.delenv("PHYKIT_THREADS", raising=False)
+        else:
+            monkeypatch.setenv("PHYKIT_THREADS", thread_limit)
         t = PatristicDistances(args)
         tips = [f"tip{i}" for i in range(15)]
         tree = _IndexedDummyTree()
+        created_pools = []
 
         class DummyPool:
             def __init__(self, processes):
                 self.processes = processes
+                created_pools.append(self)
 
             def __enter__(self):
                 return self
@@ -324,6 +333,7 @@ class TestPatristicDistances(object):
             "calculate_distance_between_pairs",
             side_effect=AssertionError("stats-only fallback should not return combos"),
         )
+        t.MP_MIN_PAIRS = 100
         mocker.patch("phykit.services.tree.patristic_distances.mp.Pool", DummyPool)
         mocker.patch("phykit.services.tree.patristic_distances.mp.cpu_count", return_value=4)
         mocker.patch("phykit.services.tree.patristic_distances.pickle.dumps", side_effect=lambda obj: obj)
@@ -337,6 +347,7 @@ class TestPatristicDistances(object):
             for combo in combinations(tips, 2)
         ]
         assert patristic_distances == expected_distances
+        assert [pool.processes for pool in created_pools] == [expected_workers]
 
     def test_distance_values_fast_handles_mixed_child_counts_without_distance(
         self, monkeypatch, args
@@ -482,7 +493,14 @@ class TestPatristicDistances(object):
         assert patristic_distances == expected_distances
         mocked_pool.assert_not_called()
 
-    def test_calculate_distance_between_pairs_parallel_path(self, mocker, args):
+    @pytest.mark.parametrize("thread_limit,expected_workers", [(None, 4), ("2", 2)])
+    def test_calculate_distance_between_pairs_parallel_path(
+        self, mocker, args, monkeypatch, thread_limit, expected_workers
+    ):
+        if thread_limit is None:
+            monkeypatch.delenv("PHYKIT_THREADS", raising=False)
+        else:
+            monkeypatch.setenv("PHYKIT_THREADS", thread_limit)
         t = PatristicDistances(args)
         t.MP_MIN_PAIRS = 100
         tips = [f"tip{i}" for i in range(15)]  # generates >100 combinations
@@ -519,7 +537,7 @@ class TestPatristicDistances(object):
 
         combos, patristic_distances = t.calculate_distance_between_pairs(tips, tree)
 
-        assert created_pools
+        assert [pool.processes for pool in created_pools] == [expected_workers]
         assert all(len(chunk) > 0 for chunk in recorded_chunks)
 
         expected_combos = list(combinations(tips, 2))

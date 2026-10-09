@@ -6,6 +6,7 @@ from .version import __version__
 
 from .service_factories import SERVICE_FACTORIES
 from .errors import PhykitUserError
+from .helpers.threads import configure_threads
 
 
 _STR2BOOL = None
@@ -448,6 +449,18 @@ def add_plot_arguments(parser) -> None:
     group.add_argument("--color-file", type=str, default=None, help="Color annotation file for tip labels, clade ranges, and branch colors")
 
 
+def _cli_argv(argv=None):
+    """Apply the global --threads option and return argv without it."""
+    if argv is None:
+        argv = sys.argv[1:]
+    try:
+        return configure_threads(argv)
+    except PhykitUserError as err:
+        for message in err.messages:
+            print(message, file=sys.stderr)
+        raise SystemExit(err.code)
+
+
 def _run_service(parser, argv, service_factory) -> None:
     args = parser.parse_args(argv)
     _run_service_with_args(args, service_factory)
@@ -485,9 +498,10 @@ class Phykit:
             sys.exit(2)
 
     def __init__(self):
-        command = sys.argv[1] if len(sys.argv) > 1 else None
+        argv = _cli_argv()
+        command = argv[0] if argv else None
         if command not in (None, "-h", "--help"):
-            self._dispatch_command(command, sys.argv[2:])
+            self._dispatch_command(command, argv[1:])
             return
 
         parser = _new_parser(
@@ -508,6 +522,12 @@ class Phykit:
                 used to calculate summary statistics. 
 
                 Usage: phykit <command> [optional command arguments]
+
+                Every command also accepts --threads N, which caps the number
+                of worker processes PhyKIT starts and the number of threads used
+                by numeric libraries (NumPy/SciPy BLAS, OpenMP). The limit can also
+                be set with the PHYKIT_THREADS environment variable. This is useful
+                when running many PhyKIT commands in parallel.
 
                 Command specific help messages can be viewed by adding a 
                 -h/--help argument after the command. For example, to see the
@@ -790,7 +810,7 @@ class Phykit:
             ),
         )
         parser.add_argument("command", nargs="?", default=None, help=SUPPRESS)
-        args = parser.parse_args(sys.argv[1:2])
+        args = parser.parse_args(argv[:1])
 
         if args.command is None:
             parser.print_help()
@@ -799,7 +819,7 @@ class Phykit:
         # if command is part of the possible commands (i.e., the long form
         # commands, run). Otherwise, assume it is an alias and look to the
         # run_alias function
-        self._dispatch_command(args.command, sys.argv[2:])
+        self._dispatch_command(args.command, argv[1:])
 
     ## Aliases
     def run_alias(self, command, argv):
@@ -10667,467 +10687,467 @@ def version(argv=None):
 
 # Alignment-based functions
 def alignment_length(argv=None):
-    Phykit.alignment_length(sys.argv[1:])
+    Phykit.alignment_length(_cli_argv())
 
 
 def alignment_length_no_gaps(argv=None):
-    Phykit.alignment_length_no_gaps(sys.argv[1:])
+    Phykit.alignment_length_no_gaps(_cli_argv())
 
 
 def alignment_entropy(argv=None):
-    Phykit.alignment_entropy(sys.argv[1:])
+    Phykit.alignment_entropy(_cli_argv())
 
 
 def alignment_recoding(argv=None):
-    Phykit.alignment_recoding(sys.argv[1:])
+    Phykit.alignment_recoding(_cli_argv())
 
 
 def alignment_outlier_taxa(argv=None):
-    Phykit.alignment_outlier_taxa(sys.argv[1:])
+    Phykit.alignment_outlier_taxa(_cli_argv())
 
 
 def alignment_outlier_regions(argv=None):
-    Phykit.alignment_outlier_regions(sys.argv[1:])
+    Phykit.alignment_outlier_regions(_cli_argv())
 
 
 def column_score(argv=None):
-    Phykit.column_score(sys.argv[1:])
+    Phykit.column_score(_cli_argv())
 
 
 def compositional_bias_per_site(argv=None):
-    Phykit.compositional_bias_per_site(sys.argv[1:])
+    Phykit.compositional_bias_per_site(_cli_argv())
 
 
 def composition_per_taxon(argv=None):
-    Phykit.composition_per_taxon(sys.argv[1:])
+    Phykit.composition_per_taxon(_cli_argv())
 
 
 def evolutionary_rate_per_site(argv=None):
-    Phykit.evolutionary_rate_per_site(sys.argv[1:])
+    Phykit.evolutionary_rate_per_site(_cli_argv())
 
 
 def faidx(argv=None):
-    Phykit.faidx(sys.argv[1:])
+    Phykit.faidx(_cli_argv())
 
 
 def gc_content(argv=None):
-    Phykit.gc_content(sys.argv[1:])
+    Phykit.gc_content(_cli_argv())
 
 
 def mask_alignment(argv=None):
-    Phykit.mask_alignment(sys.argv[1:])
+    Phykit.mask_alignment(_cli_argv())
 
 
 def plot_alignment_qc(argv=None):
-    Phykit.plot_alignment_qc(sys.argv[1:])
+    Phykit.plot_alignment_qc(_cli_argv())
 
 
 def occupancy_per_taxon(argv=None):
-    Phykit.occupancy_per_taxon(sys.argv[1:])
+    Phykit.occupancy_per_taxon(_cli_argv())
 
 
 def pairwise_identity(argv=None):
-    Phykit.pairwise_identity(sys.argv[1:])
+    Phykit.pairwise_identity(_cli_argv())
 
 
 def codon_dnds(argv=None):
-    Phykit.codon_dnds(sys.argv[1:])
+    Phykit.codon_dnds(_cli_argv())
 
 
 def identity_matrix(argv=None):
-    Phykit.identity_matrix(sys.argv[1:])
+    Phykit.identity_matrix(_cli_argv())
 
 
 def parsimony_informative_sites(argv=None):
-    Phykit.parsimony_informative_sites(sys.argv[1:])
+    Phykit.parsimony_informative_sites(_cli_argv())
 
 
 def rcv(argv=None):
-    Phykit.rcv(sys.argv[1:])
+    Phykit.rcv(_cli_argv())
 
 
 def rcvt(argv=None):
-    Phykit.rcvt(sys.argv[1:])
+    Phykit.rcvt(_cli_argv())
 
 
 def rename_fasta_entries(argv=None):
-    Phykit.rename_fasta_entries(sys.argv[1:])
+    Phykit.rename_fasta_entries(_cli_argv())
 
 
 def sum_of_pairs_score(argv=None):
-    Phykit.sum_of_pairs_score(sys.argv[1:])
+    Phykit.sum_of_pairs_score(_cli_argv())
 
 
 def variable_sites(argv=None):
-    Phykit.variable_sites(sys.argv[1:])
+    Phykit.variable_sites(_cli_argv())
 
 
 def alignment_subsample(argv=None):
-    Phykit.alignment_subsample(sys.argv[1:])
+    Phykit.alignment_subsample(_cli_argv())
 
 
 def dstatistic(argv=None):
-    Phykit.dstatistic(sys.argv[1:])
+    Phykit.dstatistic(_cli_argv())
 
 
 def phylo_gwas(argv=None):
-    Phykit.phylo_gwas(sys.argv[1:])
+    Phykit.phylo_gwas(_cli_argv())
 
 
 def phylo_anova(argv=None):
-    Phykit.phylo_anova(sys.argv[1:])
+    Phykit.phylo_anova(_cli_argv())
 
 
 def phylo_path(argv=None):
-    Phykit.phylo_path(sys.argv[1:])
+    Phykit.phylo_path(_cli_argv())
 
 
 def dfoil(argv=None):
-    Phykit.dfoil(sys.argv[1:])
+    Phykit.dfoil(_cli_argv())
 
 
 # Tree-based functions
 def parsimony_score(argv=None):
-    Phykit.parsimony_score(sys.argv[1:])
+    Phykit.parsimony_score(_cli_argv())
 
 
 def character_map(argv=None):
-    Phykit.character_map(sys.argv[1:])
+    Phykit.character_map(_cli_argv())
 
 
 def independent_contrasts(argv=None):
-    Phykit.independent_contrasts(sys.argv[1:])
+    Phykit.independent_contrasts(_cli_argv())
 
 
 def ancestral_state_reconstruction(argv=None):
-    Phykit.ancestral_state_reconstruction(sys.argv[1:])
+    Phykit.ancestral_state_reconstruction(_cli_argv())
 
 
 def concordance_asr(argv=None):
-    Phykit.concordance_asr(sys.argv[1:])
+    Phykit.concordance_asr(_cli_argv())
 
 
 def chronogram(argv=None):
-    Phykit.chronogram(sys.argv[1:])
+    Phykit.chronogram(_cli_argv())
 
 
 def dtt(argv=None):
-    Phykit.dtt(sys.argv[1:])
+    Phykit.dtt(_cli_argv())
 
 
 def bipartition_support_stats(argv=None):
-    Phykit.bipartition_support_stats(sys.argv[1:])
+    Phykit.bipartition_support_stats(_cli_argv())
 
 
 def branch_length_multiplier(argv=None):
-    Phykit.branch_length_multiplier(sys.argv[1:])
+    Phykit.branch_length_multiplier(_cli_argv())
 
 
 def collapse_branches(argv=None):
-    Phykit.collapse_branches(sys.argv[1:])
+    Phykit.collapse_branches(_cli_argv())
 
 
 def covarying_evolutionary_rates(argv=None):
-    Phykit.covarying_evolutionary_rates(sys.argv[1:])
+    Phykit.covarying_evolutionary_rates(_cli_argv())
 
 
 def projected_covarying_rates(argv=None):
-    Phykit.projected_covarying_rates(sys.argv[1:])
+    Phykit.projected_covarying_rates(_cli_argv())
 
 
 def episodic_rate_covariation(argv=None):
-    Phykit.episodic_rate_covariation(sys.argv[1:])
+    Phykit.episodic_rate_covariation(_cli_argv())
 
 
 def dvmc(argv=None):
-    Phykit.dvmc(sys.argv[1:])
+    Phykit.dvmc(_cli_argv())
 
 
 def evolutionary_rate(argv=None):
-    Phykit.evolutionary_rate(sys.argv[1:])
+    Phykit.evolutionary_rate(_cli_argv())
 
 
 def hidden_paralogy_check(argv=None):
-    Phykit.hidden_paralogy_check(sys.argv[1:])
+    Phykit.hidden_paralogy_check(_cli_argv())
 
 
 def internal_branch_stats(argv=None):
-    Phykit.internal_branch_stats(sys.argv[1:])
+    Phykit.internal_branch_stats(_cli_argv())
 
 
 def internode_labeler(argv=None):
-    Phykit.internode_labeler(sys.argv[1:])
+    Phykit.internode_labeler(_cli_argv())
 
 
 def last_common_ancestor_subtree(argv=None):
-    Phykit.last_common_ancestor_subtree(sys.argv[1:])
+    Phykit.last_common_ancestor_subtree(_cli_argv())
 
 
 def lb_score(argv=None):
-    Phykit.lb_score(sys.argv[1:])
+    Phykit.lb_score(_cli_argv())
 
 
 def monophyly_check(argv=None):
-    Phykit.monophyly_check(sys.argv[1:])
+    Phykit.monophyly_check(_cli_argv())
 
 
 def nearest_neighbor_interchange(argv=None):
-    Phykit.nearest_neighbor_interchange(sys.argv[1:])
+    Phykit.nearest_neighbor_interchange(_cli_argv())
 
 
 def faiths_pd(argv=None):
-    Phykit.faiths_pd(sys.argv[1:])
+    Phykit.faiths_pd(_cli_argv())
 
 
 def patristic_distances(argv=None):
-    Phykit.patristic_distances(sys.argv[1:])
+    Phykit.patristic_distances(_cli_argv())
 
 
 def phylogenetic_signal(argv=None):
-    Phykit.phylogenetic_signal(sys.argv[1:])
+    Phykit.phylogenetic_signal(_cli_argv())
 
 
 def trait_correlation(argv=None):
-    Phykit.trait_correlation(sys.argv[1:])
+    Phykit.trait_correlation(_cli_argv())
 
 
 def phylogenetic_ordination(argv=None):
-    Phykit.phylogenetic_ordination(sys.argv[1:])
+    Phykit.phylogenetic_ordination(_cli_argv())
 
 
 def phylogenetic_pca(argv=None):
-    Phykit.phylogenetic_ordination(sys.argv[1:])
+    Phykit.phylogenetic_ordination(_cli_argv())
 
 
 def phylogenetic_dimreduce(argv=None):
-    Phykit.phylogenetic_ordination(sys.argv[1:])
+    Phykit.phylogenetic_ordination(_cli_argv())
 
 
 def phylo_heatmap(argv=None):
-    Phykit.phylo_heatmap(sys.argv[1:])
+    Phykit.phylo_heatmap(_cli_argv())
 
 
 def phylomorphospace(argv=None):
-    Phykit.phylomorphospace(sys.argv[1:])
+    Phykit.phylomorphospace(_cli_argv())
 
 
 def phylogenetic_regression(argv=None):
-    Phykit.phylogenetic_regression(sys.argv[1:])
+    Phykit.phylogenetic_regression(_cli_argv())
 
 
 def phylogenetic_glm(argv=None):
-    Phykit.phylogenetic_glm(sys.argv[1:])
+    Phykit.phylogenetic_glm(_cli_argv())
 
 
 def phylo_logistic(argv=None):
-    Phykit.phylo_logistic(sys.argv[1:])
+    Phykit.phylo_logistic(_cli_argv())
 
 
 def stochastic_character_map(argv=None):
-    Phykit.stochastic_character_map(sys.argv[1:])
+    Phykit.stochastic_character_map(_cli_argv())
 
 
 def simmap_summary(argv=None):
-    Phykit.simmap_summary(sys.argv[1:])
+    Phykit.simmap_summary(_cli_argv())
 
 
 def cont_map(argv=None):
-    Phykit.cont_map(sys.argv[1:])
+    Phykit.cont_map(_cli_argv())
 
 
 def density_map(argv=None):
-    Phykit.density_map(sys.argv[1:])
+    Phykit.density_map(_cli_argv())
 
 
 def phenogram(argv=None):
-    Phykit.phenogram(sys.argv[1:])
+    Phykit.phenogram(_cli_argv())
 
 
 def cophylo(argv=None):
-    Phykit.cophylo(sys.argv[1:])
+    Phykit.cophylo(_cli_argv())
 
 
 def rate_heterogeneity(argv=None):
-    Phykit.rate_heterogeneity(sys.argv[1:])
+    Phykit.rate_heterogeneity(_cli_argv())
 
 
 def fit_continuous(argv=None):
-    Phykit.fit_continuous(sys.argv[1:])
+    Phykit.fit_continuous(_cli_argv())
 
 
 def fit_discrete(argv=None):
-    Phykit.fit_discrete(sys.argv[1:])
+    Phykit.fit_discrete(_cli_argv())
 
 
 def ouwie(argv=None):
-    Phykit.ouwie(sys.argv[1:])
+    Phykit.ouwie(_cli_argv())
 
 
 def ou_shift_detection(argv=None):
-    Phykit.ou_shift_detection(sys.argv[1:])
+    Phykit.ou_shift_detection(_cli_argv())
 
 
 def polytomy_test(argv=None):
-    Phykit.polytomy_test(sys.argv[1:])
+    Phykit.polytomy_test(_cli_argv())
 
 
 def print_tree(argv=None):
-    Phykit.print_tree(sys.argv[1:])
+    Phykit.print_tree(_cli_argv())
 
 
 def consensus_network(argv=None):
-    Phykit.consensus_network(sys.argv[1:])
+    Phykit.consensus_network(_cli_argv())
 
 
 def neighbor_net(argv=None):
-    Phykit.neighbor_net(sys.argv[1:])
+    Phykit.neighbor_net(_cli_argv())
 
 
 def quartet_network(argv=None):
-    Phykit.quartet_network(sys.argv[1:])
+    Phykit.quartet_network(_cli_argv())
 
 
 def topology_landscape(argv=None):
-    Phykit.topology_landscape(sys.argv[1:] if argv is None else argv)
+    Phykit.topology_landscape(_cli_argv(argv))
 
 
 def topology_autocorrelation(argv=None):
-    Phykit.topology_autocorrelation(sys.argv[1:] if argv is None else argv)
+    Phykit.topology_autocorrelation(_cli_argv(argv))
 
 
 def quartet_pie(argv=None):
-    Phykit.quartet_pie(sys.argv[1:])
+    Phykit.quartet_pie(_cli_argv())
 
 
 def ltt(argv=None):
-    Phykit.ltt(sys.argv[1:])
+    Phykit.ltt(_cli_argv())
 
 
 def network_signal(argv=None):
-    Phykit.network_signal(sys.argv[1:])
+    Phykit.network_signal(_cli_argv())
 
 
 def consensus_tree(argv=None):
-    Phykit.consensus_tree(sys.argv[1:])
+    Phykit.consensus_tree(_cli_argv())
 
 
 def prune_tree(argv=None):
-    Phykit.prune_tree(sys.argv[1:])
+    Phykit.prune_tree(_cli_argv())
 
 
 def spr(argv=None):
-    Phykit.subtree_prune_regraft(sys.argv[1:])
+    Phykit.subtree_prune_regraft(_cli_argv())
 
 
 def subtree_prune_regraft(argv=None):
-    Phykit.subtree_prune_regraft(sys.argv[1:])
+    Phykit.subtree_prune_regraft(_cli_argv())
 
 
 def transfer_annotations(argv=None):
-    Phykit.transfer_annotations(sys.argv[1:])
+    Phykit.transfer_annotations(_cli_argv())
 
 
 def relative_rate_test(argv=None):
-    Phykit.relative_rate_test(sys.argv[1:])
+    Phykit.relative_rate_test(_cli_argv())
 
 
 def threshold_model(argv=None):
-    Phykit.threshold_model(sys.argv[1:])
+    Phykit.threshold_model(_cli_argv())
 
 
 def rename_tree_tips(argv=None):
-    Phykit.rename_tree_tips(sys.argv[1:])
+    Phykit.rename_tree_tips(_cli_argv())
 
 
 def kf_distance(argv=None):
-    Phykit.kf_distance(sys.argv[1:])
+    Phykit.kf_distance(_cli_argv())
 
 
 def rf_distance(argv=None):
-    Phykit.rf_distance(sys.argv[1:])
+    Phykit.rf_distance(_cli_argv())
 
 
 def root_tree(argv=None):
-    Phykit.root_tree(sys.argv[1:])
+    Phykit.root_tree(_cli_argv())
 
 
 def spurious_sequence(argv=None):
-    Phykit.spurious_sequence(sys.argv[1:])
+    Phykit.spurious_sequence(_cli_argv())
 
 
 def terminal_branch_stats(argv=None):
-    Phykit.terminal_branch_stats(sys.argv[1:])
+    Phykit.terminal_branch_stats(_cli_argv())
 
 
 def tip_labels(argv=None):
-    Phykit.tip_labels(sys.argv[1:])
+    Phykit.tip_labels(_cli_argv())
 
 
 def tip_to_tip_distance(argv=None):
-    Phykit.tip_to_tip_distance(sys.argv[1:])
+    Phykit.tip_to_tip_distance(_cli_argv())
 
 
 def tip_to_tip_node_distance(argv=None):
-    Phykit.tip_to_tip_node_distance(sys.argv[1:])
+    Phykit.tip_to_tip_node_distance(_cli_argv())
 
 
 def total_tree_length(argv=None):
-    Phykit.total_tree_length(sys.argv[1:])
+    Phykit.total_tree_length(_cli_argv())
 
 
 def treeness(argv=None):
-    Phykit.treeness(sys.argv[1:])
+    Phykit.treeness(_cli_argv())
 
 
 # Alignment- and tree-based functions
 def saturation(argv=None):
-    Phykit.saturation(sys.argv[1:])
+    Phykit.saturation(_cli_argv())
 
 
 def treeness_over_rcv(argv=None):
-    Phykit.treeness_over_rcv(sys.argv[1:])
+    Phykit.treeness_over_rcv(_cli_argv())
 
 
 # Helper functions
 def create_concatenation_matrix(argv=None):
-    Phykit.create_concatenation_matrix(sys.argv[1:])
+    Phykit.create_concatenation_matrix(_cli_argv())
 
 
 def thread_dna(argv=None):
-    Phykit.thread_dna(sys.argv[1:])
+    Phykit.thread_dna(_cli_argv())
 
 
 def evo_tempo_map(argv=None):
-    Phykit.evo_tempo_map(sys.argv[1:])
+    Phykit.evo_tempo_map(_cli_argv())
 
 
 def discordance_asymmetry(argv=None):
-    Phykit.discordance_asymmetry(sys.argv[1:])
+    Phykit.discordance_asymmetry(_cli_argv())
 
 
 def hybridization(argv=None):
-    Phykit.hybridization(sys.argv[1:])
+    Phykit.hybridization(_cli_argv())
 
 
 def spectral_discordance(argv=None):
-    Phykit.spectral_discordance(sys.argv[1:])
+    Phykit.spectral_discordance(_cli_argv())
 
 
 def tree_space(argv=None):
-    Phykit.tree_space(sys.argv[1:])
+    Phykit.tree_space(_cli_argv())
 
 
 def phylo_impute(argv=None):
-    Phykit.phylo_impute(sys.argv[1:])
+    Phykit.phylo_impute(_cli_argv())
 
 
 def trait_rate_map(argv=None):
-    Phykit.trait_rate_map(sys.argv[1:])
+    Phykit.trait_rate_map(_cli_argv())
 
 
 def taxon_groups(argv=None):
-    Phykit.taxon_groups(sys.argv[1:])
+    Phykit.taxon_groups(_cli_argv())
 
 
 def occupancy_filter(argv=None):
-    Phykit.occupancy_filter(sys.argv[1:])
+    Phykit.occupancy_filter(_cli_argv())

@@ -10,6 +10,7 @@ from ._fasta import (
     read_fasta_first_token_set,
 )
 from .base import Alignment
+from ...helpers.threads import limit_workers
 from ...errors import PhykitUserError
 
 
@@ -476,7 +477,7 @@ class CreateConcatenationMatrix(Alignment):
         # to be amortized by a very large input set.
         if _should_use_alignment_process_pool(alignment_paths):
             try:
-                with ProcessPoolExecutor(max_workers=min(mp.cpu_count(), len(alignment_paths))) as executor:
+                with ProcessPoolExecutor(max_workers=limit_workers(min(mp.cpu_count(), len(alignment_paths)))) as executor:
                     futures = [executor.submit(self._get_taxa_from_alignment, path) for path in alignment_paths]
                     for future in as_completed(futures):
                         taxa.update(future.result())
@@ -852,7 +853,7 @@ class CreateConcatenationMatrix(Alignment):
             try:
                 from functools import partial
 
-                with ProcessPoolExecutor(max_workers=min(mp.cpu_count(), 8)) as executor:
+                with ProcessPoolExecutor(max_workers=limit_workers(min(mp.cpu_count(), 8))) as executor:
                     process_func = partial(self._process_alignment_file, taxa=taxa)
                     # Keep results indexed by path to maintain order
                     futures = {executor.submit(process_func, path): path for path in alignment_paths}

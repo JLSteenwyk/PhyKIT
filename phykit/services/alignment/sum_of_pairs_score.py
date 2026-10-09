@@ -4,6 +4,7 @@ import itertools
 
 from ._fasta import read_unique_fasta_first_token
 from .base import Alignment
+from ...helpers.threads import limit_workers
 
 
 def print_json(*args, **kwargs):
@@ -472,7 +473,7 @@ class SumOfPairsScore(Alignment):
             return int(number_of_matches), number_of_total_pairs
 
         # Use multiprocessing for larger datasets
-        num_workers = min(mp.cpu_count(), 8)
+        num_workers = limit_workers(min(mp.cpu_count(), 8))
         batch_size = max(10, len(record_id_pairs) // (num_workers * 4))
 
         # Create batches

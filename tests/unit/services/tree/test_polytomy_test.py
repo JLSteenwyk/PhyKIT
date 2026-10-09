@@ -1180,6 +1180,22 @@ test2\tseq7;seq8\tseq9;seq10\tseq11;seq12\toutgroup3;outgroup4
         mock_pool.map.assert_called_once()
         self.assertEqual(len(summary), 2)
 
+    @patch.dict("os.environ", {"PHYKIT_THREADS": "2"})
+    @patch("phykit.services.tree.polytomy_test.mp.cpu_count", return_value=16)
+    @patch("phykit.services.tree.polytomy_test.mp.Pool")
+    def test_loop_through_trees_parallel_respects_thread_limit(self, mock_pool_class, _mock_cpu_count):
+        self.polytomy.MP_MIN_TREES = 2
+        trees = ["tree1.tre", "tree2.tre", "tree3.tre", "tree4.tre"]
+        mock_pool_class.return_value.__enter__.return_value.map.return_value = [
+            {"tree1.tre": {"0-1": 1}},
+        ]
+
+        self.polytomy.loop_through_trees_and_examine_sister_support_among_triplets(
+            trees, {"test": [["a"], ["b"], ["c"]]}, ["out"]
+        )
+
+        mock_pool_class.assert_called_once_with(processes=2)
+
     @patch("phykit.services.tree.polytomy_test.ThreadPoolExecutor")
     @patch("phykit.services.tree.polytomy_test.mp.Pool")
     def test_loop_through_trees_parallel_fallback_threadpool(self, mock_pool_class, mock_executor_class):
