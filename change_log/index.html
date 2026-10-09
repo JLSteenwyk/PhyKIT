@@ -87,6 +87,9 @@
 <p>Major changes to PhyKIT are summarized here.</p>
 <p><strong>Unreleased</strong>:</p>
 <ul class="simple">
+<li><p>Removed the unused internal <code class="docutils literal notranslate"><span class="pre">phykit.helpers.parallel</span></code> module
+(<code class="docutils literal notranslate"><span class="pre">ParallelProcessor</span></code>, <code class="docutils literal notranslate"><span class="pre">BatchFileProcessor</span></code>, <code class="docutils literal notranslate"><span class="pre">NumpyParallel</span></code>); no command
+used it, and worker pools are now governed by <code class="docutils literal notranslate"><span class="pre">--threads</span></code>.</p></li>
 <li><p>Added a global <code class="docutils literal notranslate"><span class="pre">--threads</span></code> option (and <code class="docutils literal notranslate"><span class="pre">PHYKIT_THREADS</span></code> environment
 variable) to cap worker processes and numeric-library (BLAS/OpenMP/numba)
 threads for every command, so many PhyKIT commands can run in parallel
