@@ -6,8 +6,10 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
-**Unreleased**:
+**2.8.0**:
 
+* Boolean command-line arguments now also accept ``yes``/``y`` and ``no``/``n``
+  (case-insensitive), in addition to ``true``/``t``/``1`` and ``false``/``f``/``0``.
 * Removed the unused internal ``phykit.helpers.parallel`` module
   (``ParallelProcessor``, ``BatchFileProcessor``, ``NumpyParallel``); no command
   used it, and worker pools are now governed by ``--threads``.
