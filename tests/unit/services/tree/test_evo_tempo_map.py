@@ -455,9 +455,10 @@ class TestClassifyGeneTrees:
         def fail_set(*_args, **_kwargs):
             raise AssertionError("binary clade taxa should use direct unions")
 
-        monkeypatch.setattr(builtins, "set", fail_set)
+        with monkeypatch.context() as patched:
+            patched.setattr(builtins, "set", fail_set)
 
-        clade_taxa = svc._collect_clade_taxa(tree)
+            clade_taxa = svc._collect_clade_taxa(tree)
 
         assert clade_taxa[id(tree.root)] == frozenset(("A", "B", "C", "D"))
         assert clade_taxa[id(tree.root.clades[0])] == frozenset(("A", "B"))
@@ -601,9 +602,10 @@ class TestClassifyGeneTrees:
         def fail_set(*_args, **_kwargs):
             raise AssertionError("binary split extraction should use direct unions")
 
-        monkeypatch.setattr(builtins, "set", fail_set)
+        with monkeypatch.context() as patched:
+            patched.setattr(builtins, "set", fail_set)
 
-        splits = svc._extract_bipartitions_with_lengths(tree, all_taxa)
+            splits = svc._extract_bipartitions_with_lengths(tree, all_taxa)
 
         assert splits[frozenset(("A", "B"))] == 3
 

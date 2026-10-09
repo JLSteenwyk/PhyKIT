@@ -237,14 +237,15 @@ class TestFitchAlgorithm:
         def fail_set(*_args, **_kwargs):
             raise AssertionError("ordered all-shared alignment should skip sets")
 
-        monkeypatch.setattr(builtins, "set", fail_set)
+        with monkeypatch.context() as patched:
+            patched.setattr(builtins, "set", fail_set)
 
-        shared_count, tips_to_prune, filtered = (
-            ParsimonyScore._shared_alignment_taxa_setup(
-                ["A", "B", "C"],
-                sequences,
+            shared_count, tips_to_prune, filtered = (
+                ParsimonyScore._shared_alignment_taxa_setup(
+                    ["A", "B", "C"],
+                    sequences,
+                )
             )
-        )
 
         assert shared_count == 3
         assert tips_to_prune == []

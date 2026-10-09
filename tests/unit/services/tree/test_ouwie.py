@@ -531,11 +531,11 @@ class TestTraitAndRegimeParsing:
         def fail_set(*args, **kwargs):
             raise AssertionError("ordered exact trait path should not build sets")
 
-        monkeypatch.setattr(builtins, "set", fail_set)
-        traits = svc._parse_trait_file(str(trait_file), ["A", "B", "C"])
+        with monkeypatch.context() as patched:
+            patched.setattr(builtins, "set", fail_set)
+            traits = svc._parse_trait_file(str(trait_file), ["A", "B", "C"])
 
         assert traits == {"A": 1.0, "B": 2.0, "C": 3.0}
-        assert builtins.set is fail_set
 
     def test_trait_file_extra_columns_error(self, tmp_path, default_args):
         trait_file = tmp_path / "traits.tsv"
@@ -637,11 +637,11 @@ class TestTraitAndRegimeParsing:
         def fail_set(*args, **kwargs):
             raise AssertionError("ordered exact regime path should not build sets")
 
-        monkeypatch.setattr(builtins, "set", fail_set)
-        regimes = svc._parse_regime_file(str(regime_file), ["A", "B", "C"])
+        with monkeypatch.context() as patched:
+            patched.setattr(builtins, "set", fail_set)
+            regimes = svc._parse_regime_file(str(regime_file), ["A", "B", "C"])
 
         assert regimes == {"A": "r1", "B": "r2", "C": "r1"}
-        assert builtins.set is fail_set
 
     def test_regime_file_extra_columns_error(self, tmp_path, default_args):
         regime_file = tmp_path / "regimes.tsv"

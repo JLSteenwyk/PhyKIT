@@ -234,12 +234,13 @@ class TestCharacterMapSharedTaxaSetup:
                 "ordered all-shared character data should skip set validation"
             )
 
-        monkeypatch.setattr(builtins, "set", fail_set)
-        monkeypatch.setattr(character_map_module, "Counter", fail_set)
+        with monkeypatch.context() as patched:
+            patched.setattr(builtins, "set", fail_set)
+            monkeypatch.setattr(character_map_module, "Counter", fail_set)
 
-        shared_count, tips_to_prune, filtered = (
-            CharacterMap._shared_character_taxa_setup(["A", "B", "C"], tip_states)
-        )
+            shared_count, tips_to_prune, filtered = (
+                CharacterMap._shared_character_taxa_setup(["A", "B", "C"], tip_states)
+            )
 
         assert shared_count == 3
         assert tips_to_prune == []

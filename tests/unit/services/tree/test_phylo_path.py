@@ -287,10 +287,11 @@ class TestPhyloPath:
         def fail_set(*args, **kwargs):
             raise AssertionError("ordered exact trait path should not build sets")
 
-        monkeypatch.setattr(builtins, "set", fail_set)
-        trait_names, traits = svc._parse_trait_file(
-            str(trait_file), ["A", "B", "C", "D"]
-        )
+        with monkeypatch.context() as patched:
+            patched.setattr(builtins, "set", fail_set)
+            trait_names, traits = svc._parse_trait_file(
+                str(trait_file), ["A", "B", "C", "D"]
+            )
 
         assert trait_names == ["body_mass", "brain_size"]
         assert traits == {
@@ -299,7 +300,6 @@ class TestPhyloPath:
             "C": [3.0, 30.0],
             "D": [4.0, 40.0],
         }
-        assert builtins.set is fail_set
 
     def test_parse_trait_file_non_numeric_error(self, tmp_path):
         trait_file = tmp_path / "traits.tsv"

@@ -355,13 +355,13 @@ class TestParseTraitFile:
         def fail_set(*args, **kwargs):
             raise AssertionError("ordered exact trait path should not build sets")
 
-        monkeypatch.setattr(builtins, "set", fail_set)
-        traits = svc._parse_trait_file(
-            str(trait_file), ["taxon1", "taxon2", "taxon3"]
-        )
+        with monkeypatch.context() as patched:
+            patched.setattr(builtins, "set", fail_set)
+            traits = svc._parse_trait_file(
+                str(trait_file), ["taxon1", "taxon2", "taxon3"]
+            )
 
         assert traits == {"taxon1": 1.0, "taxon2": 2.0, "taxon3": 3.0}
-        assert builtins.set is fail_set
 
     def test_taxon_mismatch_warns(self, default_args, tmp_path, capsys):
         trait_file = tmp_path / "partial.tsv"

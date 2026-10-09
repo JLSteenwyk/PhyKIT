@@ -120,9 +120,10 @@ def test_parse_multi_trait_file_ordered_all_shared_skips_set_validation(
     def fail_set(*_args, **_kwargs):
         raise AssertionError("ordered all-shared traits should skip set validation")
 
-    monkeypatch.setattr(builtins, "set", fail_set)
+    with monkeypatch.context() as patched:
+        patched.setattr(builtins, "set", fail_set)
 
-    trait_names, traits = parse_multi_trait_file(str(trait_file), ["A", "B", "C"])
+        trait_names, traits = parse_multi_trait_file(str(trait_file), ["A", "B", "C"])
 
     assert trait_names == ["body_mass", "length"]
     assert traits == {"A": [1.0, 10.0], "B": [2.0, 20.0], "C": [3.0, 30.0]}
