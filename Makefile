@@ -112,7 +112,7 @@ test.integration:
 	rm -rf output/
 	mkdir output/
 	python -m pytest --basetemp=output -m "integration"
-	rm test.fa test.occupancy test.partition
+	rm -f test.fa test.occupancy test.partition
 
 test.validation:
 	python -m pytest -m "validation" tests/validation
@@ -122,7 +122,7 @@ test.fast:
 	rm -rf output/
 	mkdir output/
 	python -m pytest --basetemp=output -m "integration and not slow" -vv
-	rm test.fa test.occupancy test.partition
+	rm -f test.fa test.occupancy test.partition
 
 # used by GitHub actions during CI workflow
 test.coverage: coverage.unit coverage.integration
