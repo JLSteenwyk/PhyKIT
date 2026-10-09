@@ -787,6 +787,42 @@ class TestCovaryingEvolutionaryRates(unittest.TestCase):
         self.assertEqual(tip_names, [['tip1'], ['tip2'], ['tip3']])
         mock_executor_class.assert_called_once_with(max_workers=2)
 
+    @patch('pickle.dumps', return_value=b'pickled_tree')
+    @patch('phykit.services.tree.covarying_evolutionary_rates.ProcessPoolExecutor')
+    def test_correct_branch_lengths_parallel_uses_one_worker_per_ten_clades(
+        self, mock_executor_class, _mock_pickle_dumps
+    ):
+        """Worker count is (terminals + nonterminals) // 10, capped at MAX_MP_WORKERS"""
+        self.cov_rates.MP_MIN_REFERENCE_CLADES = 20
+
+        terminals = []
+        for i in range(25):
+            term = Mock()
+            term.name = f'terminal{i}'
+            term.branch_length = 1.0
+            terminals.append(term)
+        nonterminals = []
+        for _ in range(5):
+            nonterm = Mock()
+            nonterm.branch_length = 2.0
+            nonterminals.append(nonterm)
+
+        mock_sp = Mock()
+        mock_sp.get_terminals.return_value = terminals
+        mock_sp.get_nonterminals.return_value = nonterminals
+        self.cov_rates.get_tip_names_from_tree = Mock(return_value=['tip'])
+
+        mock_executor = MagicMock()
+        mock_executor_class.return_value.__enter__.return_value = mock_executor
+        with patch(
+            'phykit.services.tree.covarying_evolutionary_rates.as_completed',
+            return_value=[],
+        ):
+            self.cov_rates.correct_branch_lengths(Mock(), Mock(), mock_sp)
+
+        # 30 clades with branch lengths -> 3 workers (not 25 + 5 // 10 = 25 -> 4)
+        mock_executor_class.assert_called_once_with(max_workers=3)
+
     def test_correct_branch_lengths_medium_fallback_skips_executor(self):
         mock_t0 = Mock()
         mock_t1 = Mock()
