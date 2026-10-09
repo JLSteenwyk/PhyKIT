@@ -87,6 +87,10 @@
 <p>Major changes to PhyKIT are summarized here.</p>
 <p><strong>Unreleased</strong>:</p>
 <ul class="simple">
+<li><p>Added a global <code class="docutils literal notranslate"><span class="pre">--threads</span></code> option (and <code class="docutils literal notranslate"><span class="pre">PHYKIT_THREADS</span></code> environment
+variable) to cap worker processes and numeric-library (BLAS/OpenMP/numba)
+threads for every command, so many PhyKIT commands can run in parallel
+without oversubscribing CPUs (GitHub issue #113).</p></li>
 <li><p>Consolidated file-list reading for <code class="docutils literal notranslate"><span class="pre">taxon_groups</span></code> and <code class="docutils literal notranslate"><span class="pre">occupancy_filter</span></code>,
 preserving relative paths, duplicate entries, diagnostics, and lazy imports.</p></li>
 <li><p>Shared file-list path normalization between <code class="docutils literal notranslate"><span class="pre">taxon_groups</span></code> and

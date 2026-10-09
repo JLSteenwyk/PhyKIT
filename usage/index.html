@@ -59,6 +59,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#calling-functions">Calling functions</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#function-aliases">Function aliases</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#command-line-interfaces">Command line interfaces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#limiting-threads">Limiting threads</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#command-reference">Command reference</a><ul>
@@ -184,6 +185,27 @@ pk_tness<span class="w"> </span>-h
 </pre></div>
 </div>
 <p>All possible function names are specified at the top of each function section.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="limiting-threads">
+<h3>Limiting threads<a class="headerlink" href="#limiting-threads" title="Link to this heading"></a></h3>
+<p>Every command accepts a global <code class="docutils literal notranslate"><span class="pre">--threads</span></code> option. It caps the number of
+worker processes PhyKIT starts and the number of threads used by numeric
+libraries (NumPy/SciPy BLAS, OpenMP, numba). This is useful when many PhyKIT
+commands run in parallel, for example in a workflow manager or with
+<code class="docutils literal notranslate"><span class="pre">xargs</span> <span class="pre">-P</span></code>, so that each command stays within its share of the CPUs:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>phykit<span class="w"> </span>saturation<span class="w"> </span>-a<span class="w"> </span>alignment.fa<span class="w"> </span>-t<span class="w"> </span>tree.tre<span class="w"> </span>--threads<span class="w"> </span><span class="m">1</span>
+<span class="c1"># or, for every command run from this shell</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">PHYKIT_THREADS</span><span class="o">=</span><span class="m">1</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">--threads</span></code> can appear anywhere on the command line, including before the
+command name, and works the same with the <em>pk_</em> interfaces. When neither
+<code class="docutils literal notranslate"><span class="pre">--threads</span></code> nor <code class="docutils literal notranslate"><span class="pre">PHYKIT_THREADS</span></code> is set, PhyKIT keeps its default behavior.
+An explicit <code class="docutils literal notranslate"><span class="pre">--threads</span></code> value overrides <code class="docutils literal notranslate"><span class="pre">OMP_NUM_THREADS</span></code> and similar
+variables; <code class="docutils literal notranslate"><span class="pre">PHYKIT_THREADS</span></code> alone only sets those that are not already set.</p>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
