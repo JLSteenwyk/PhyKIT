@@ -307,8 +307,9 @@ class TestPhyloAnovaParsing:
         def fail_set(*args, **kwargs):
             raise AssertionError("ordered exact trait path should not build sets")
 
-        monkeypatch.setattr(builtins, "set", fail_set)
-        header, traits = svc._parse_trait_file(str(trait_file), ["A", "B", "C"])
+        with monkeypatch.context() as patched:
+            patched.setattr(builtins, "set", fail_set)
+            header, traits = svc._parse_trait_file(str(trait_file), ["A", "B", "C"])
 
         assert header == ["body_mass", "group", "length"]
         assert traits == {
@@ -316,7 +317,6 @@ class TestPhyloAnovaParsing:
             "B": [2.0, "g2", 20.0],
             "C": [3.0, "g1", 30.0],
         }
-        assert builtins.set is fail_set
 
     def test_parse_trait_file_warns_and_filters_partial_overlap(
         self, tmp_path, capsys

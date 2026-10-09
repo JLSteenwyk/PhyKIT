@@ -421,11 +421,12 @@ class TestPhyloImpute:
         def fail_set(*_args, **_kwargs):
             raise AssertionError("exact ordered trait files should not build sets")
 
-        monkeypatch.setattr(builtins, "set", fail_set)
+        with monkeypatch.context() as patched:
+            patched.setattr(builtins, "set", fail_set)
 
-        trait_names, traits, missing_info = svc._parse_trait_file_with_na(
-            str(trait_file), ["C", "A", "B"]
-        )
+            trait_names, traits, missing_info = svc._parse_trait_file_with_na(
+                str(trait_file), ["C", "A", "B"]
+            )
 
         assert trait_names == ["body_mass", "brain_size"]
         assert traits["C"] == [5.0, 6.0]

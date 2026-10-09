@@ -310,13 +310,13 @@ class TestTraitParsing:
         def fail_set(*args, **kwargs):
             raise AssertionError("ordered exact trait path should not build sets")
 
-        monkeypatch.setattr(builtins, "set", fail_set)
-        traits = svc._parse_single_trait_data(
-            str(trait_file), ["raccoon", "bear", "weasel"]
-        )
+        with monkeypatch.context() as patched:
+            patched.setattr(builtins, "set", fail_set)
+            traits = svc._parse_single_trait_data(
+                str(trait_file), ["raccoon", "bear", "weasel"]
+            )
 
         assert traits == {"raccoon": 1.04, "bear": 2.39, "weasel": -0.30}
-        assert builtins.set is fail_set
 
     def test_single_trait_wrong_column_count(self, default_args, tmp_path):
         trait_file = tmp_path / "traits.tsv"
@@ -476,13 +476,13 @@ class TestTraitParsing:
         def fail_set(*args, **kwargs):
             raise AssertionError("ordered exact trait path should not build sets")
 
-        monkeypatch.setattr(builtins, "set", fail_set)
-        traits = svc._parse_multi_trait_data(
-            str(trait_file), ["raccoon", "bear", "weasel"], "body_mass"
-        )
+        with monkeypatch.context() as patched:
+            patched.setattr(builtins, "set", fail_set)
+            traits = svc._parse_multi_trait_data(
+                str(trait_file), ["raccoon", "bear", "weasel"], "body_mass"
+            )
 
         assert traits == {"raccoon": 1.04, "bear": 2.39, "weasel": -0.30}
-        assert builtins.set is fail_set
 
     @pytest.mark.parametrize(
         ("contents", "expected_message"),
@@ -2746,17 +2746,17 @@ class TestDiscreteTraitParsing:
         def fail_set(*args, **kwargs):
             raise AssertionError("ordered exact trait path should not build sets")
 
-        monkeypatch.setattr(builtins, "set", fail_set)
-        traits = svc._parse_discrete_trait_data_single(
-            str(trait_file), ["raccoon", "bear", "weasel"]
-        )
+        with monkeypatch.context() as patched:
+            patched.setattr(builtins, "set", fail_set)
+            traits = svc._parse_discrete_trait_data_single(
+                str(trait_file), ["raccoon", "bear", "weasel"]
+            )
 
         assert traits == {
             "raccoon": "omnivore",
             "bear": "omnivore",
             "weasel": "carnivore",
         }
-        assert builtins.set is fail_set
 
     def test_single_col_wrong_column_count_error(self, discrete_args, tmp_path):
         svc = AncestralReconstruction(discrete_args)
@@ -2879,19 +2879,19 @@ class TestDiscreteTraitParsing:
         def fail_set(*args, **kwargs):
             raise AssertionError("ordered exact trait path should not build sets")
 
-        monkeypatch.setattr(builtins, "set", fail_set)
-        traits = svc._parse_discrete_trait_data_multi(
-            str(trait_file),
-            ["raccoon", "bear", "weasel"],
-            "activity",
-        )
+        with monkeypatch.context() as patched:
+            patched.setattr(builtins, "set", fail_set)
+            traits = svc._parse_discrete_trait_data_multi(
+                str(trait_file),
+                ["raccoon", "bear", "weasel"],
+                "activity",
+            )
 
         assert traits == {
             "raccoon": "nocturnal",
             "bear": "diurnal",
             "weasel": "nocturnal",
         }
-        assert builtins.set is fail_set
 
     def test_multi_col_wrong_column_count_error(self, discrete_args, tmp_path):
         svc = AncestralReconstruction(discrete_args)

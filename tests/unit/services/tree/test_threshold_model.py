@@ -410,16 +410,17 @@ class TestParseMultiTraitFile:
         def fail_set(*_args, **_kwargs):
             raise AssertionError("exact ordered traits should not build taxon sets")
 
-        monkeypatch.setattr(builtins, "set", fail_set)
+        with monkeypatch.context() as patched:
+            patched.setattr(builtins, "set", fail_set)
 
-        t1, t2, names = ThresholdModel._parse_multi_trait_file(
-            str(trait_file),
-            "t1",
-            "t2",
-            "continuous",
-            "continuous",
-            ["B", "A", "C"],
-        )
+            t1, t2, names = ThresholdModel._parse_multi_trait_file(
+                str(trait_file),
+                "t1",
+                "t2",
+                "continuous",
+                "continuous",
+                ["B", "A", "C"],
+            )
 
         assert names == ["A", "B", "C"]
         assert t1 == {"B": 2.0, "A": 1.0, "C": 3.0}

@@ -224,9 +224,10 @@ class TestTraitParsing:
         def fail_set(*_args, **_kwargs):
             raise AssertionError("exact ordered matrices should not build taxon sets")
 
-        monkeypatch.setattr(builtins, "set", fail_set)
+        with monkeypatch.context() as patched:
+            patched.setattr(builtins, "set", fail_set)
 
-        trait_names, trait_data = ph._parse_trait_matrix(str(f), ["A", "B", "C"])
+            trait_names, trait_data = ph._parse_trait_matrix(str(f), ["A", "B", "C"])
 
         assert trait_names == ["trait1", "trait2"]
         assert trait_data == {
