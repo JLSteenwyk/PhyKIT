@@ -58,6 +58,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#can-phykit-produce-machine-readable-output">Can PhyKIT produce machine-readable output?</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#why-are-taxa-being-dropped-or-reported-as-missing">Why are taxa being dropped or reported as missing?</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#what-alignment-and-tree-formats-are-supported">What alignment and tree formats are supported?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#how-do-i-limit-cpu-usage-when-running-many-phykit-commands-in-parallel">How do I limit CPU usage when running many PhyKIT commands in parallel?</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#how-do-i-make-an-analysis-reproducible">How do I make an analysis reproducible?</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#how-do-i-report-a-bug-or-request-a-feature">How do I report a bug or request a feature?</a></li>
 </ul>
@@ -120,6 +121,19 @@ the command's missing-taxa option and the <a class="reference internal" href="..
 <h2>What alignment and tree formats are supported?<a class="headerlink" href="#what-alignment-and-tree-formats-are-supported" title="Link to this heading"></a></h2>
 <p>See <a class="reference internal" href="../formats/index.html"><span class="doc">Input formats and shared conventions</span></a>. Alignment format
 is detected from content; tree inputs are normally Newick.</p>
+</section>
+<section id="how-do-i-limit-cpu-usage-when-running-many-phykit-commands-in-parallel">
+<h2>How do I limit CPU usage when running many PhyKIT commands in parallel?<a class="headerlink" href="#how-do-i-limit-cpu-usage-when-running-many-phykit-commands-in-parallel" title="Link to this heading"></a></h2>
+<p>Add the global <code class="docutils literal notranslate"><span class="pre">--threads</span> <span class="pre">N</span></code> option to any command, or set the
+<code class="docutils literal notranslate"><span class="pre">PHYKIT_THREADS</span></code> environment variable once for every command:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">phykit</span> <span class="n">saturation</span> <span class="o">-</span><span class="n">a</span> <span class="n">alignment</span><span class="o">.</span><span class="n">fa</span> <span class="o">-</span><span class="n">t</span> <span class="n">tree</span><span class="o">.</span><span class="n">tre</span> <span class="o">--</span><span class="n">threads</span> <span class="mi">1</span>
+<span class="n">export</span> <span class="n">PHYKIT_THREADS</span><span class="o">=</span><span class="mi">1</span>
+</pre></div>
+</div>
+<p>The limit caps the worker processes PhyKIT starts and the threads used by
+numeric libraries (BLAS/OpenMP via NumPy and SciPy, numba). It also sets
+<code class="docutils literal notranslate"><span class="pre">OMP_NUM_THREADS</span></code> and related variables, so setting <code class="docutils literal notranslate"><span class="pre">OMP_NUM_THREADS</span></code> alone
+is no longer necessary. See <a class="reference internal" href="../usage/index.html"><span class="doc">Usage</span></a> for details.</p>
 </section>
 <section id="how-do-i-make-an-analysis-reproducible">
 <h2>How do I make an analysis reproducible?<a class="headerlink" href="#how-do-i-make-an-analysis-reproducible" title="Link to this heading"></a></h2>
