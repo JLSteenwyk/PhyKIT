@@ -6,6 +6,14 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.9.1**:
+
+* Avoid redundant comparisons in pairwise identity summaries.
+* Compute patristic distances faster for trees with tips in preorder.
+* Eliminate redundant tree copies during polytomy tests.
+* Reuse validated chromosome data across topology autocorrelation bootstrap
+  block sizes.
+
 **2.9.0**:
 
 * Added support for Python 3.14 and 3.15. Python 3.12 is now the minimum
