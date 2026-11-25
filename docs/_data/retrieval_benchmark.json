@@ -2,7 +2,7 @@
   "schema_version": 1,
   "description": "Gold questions for human and LLM documentation retrieval. Gold answers must be supported by the named canonical sources, and at least one source must rank in the top five.",
   "questions": [
-    {"id": "Q001", "question": "Which Python versions does PhyKIT support?", "answer": "Python 3.10, 3.11, 3.12, and 3.13.", "answer_terms": ["Python 3.10", "3.11", "3.12", "3.13"], "sources": ["getting_started/index.rst"]},
+    {"id": "Q001", "question": "Which Python versions does PhyKIT support?", "answer": "Python 3.12, 3.13, 3.14, and 3.15.", "answer_terms": ["Python 3.12", "3.13", "3.14", "3.15"], "sources": ["getting_started/index.rst"]},
     {"id": "Q002", "question": "How do I install PhyKIT from PyPI in a virtual environment?", "answer": "Create and activate a venv, then run python -m pip install phykit.", "answer_terms": ["python -m venv", "python -m pip install phykit"], "sources": ["getting_started/index.rst"]},
     {"id": "Q003", "question": "In the installation and first analysis guide, what output should the alignment length example produce?", "answer": "624 aligned sites.", "answer_terms": ["624", "aligned sites"], "sources": ["getting_started/index.rst"]},
     {"id": "Q004", "question": "Which multiple sequence alignment formats can PhyKIT detect?", "answer": "FASTA, Clustal, MAF, Mauve, PHYLIP variants, and Stockholm.", "answer_terms": ["FASTA", "Clustal", "MAF", "Mauve", "PHYLIP", "Stockholm"], "sources": ["formats/index.rst"]},

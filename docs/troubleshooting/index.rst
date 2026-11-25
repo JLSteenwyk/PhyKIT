@@ -19,7 +19,7 @@ environment::
 
 If ``phykit`` is not found, activate the environment used for installation or
 run ``python -m pip install --upgrade phykit`` in the intended environment.
-PhyKIT requires Python 3.10 or newer.
+PhyKIT requires Python 3.12 or newer.
 
 Input and parsing errors
 ------------------------

@@ -13,10 +13,10 @@ CLASSIFIERS = [
     'Operating System :: OS Independent',
     'Intended Audience :: Science/Research',
     'Programming Language :: Python',
-    'Programming Language :: Python :: 3.10',
-    'Programming Language :: Python :: 3.11',
     'Programming Language :: Python :: 3.12',
     'Programming Language :: Python :: 3.13',
+    'Programming Language :: Python :: 3.14',
+    'Programming Language :: Python :: 3.15',
     'Topic :: Scientific/Engineering',
 ]
 
@@ -46,7 +46,7 @@ setup(
     author_email="jlsteenwyk@gmail.com",
     url="https://github.com/jlsteenwyk/phykit",
     packages=find_packages(),
-    python_requires=">=3.10",
+    python_requires=">=3.12",
     classifiers=CLASSIFIERS,
     entry_points={
         "console_scripts": _console_scripts,

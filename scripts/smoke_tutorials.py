@@ -79,7 +79,7 @@ def main() -> int:
     args = parser.parse_args()
     interpreter = Path(args.python)
     if interpreter.exists():
-        args.python = str(interpreter.resolve())
+        args.python = str(interpreter.absolute())
     return run_smoke(args.python)
 
 

@@ -22,7 +22,7 @@ Start here
 First analysis
 --------------
 
-Install PhyKIT with Python 3.10 or newer, download the example alignment,
+Install PhyKIT with Python 3.12 or newer, download the example alignment,
 and calculate its length::
 
    python -m pip install phykit
