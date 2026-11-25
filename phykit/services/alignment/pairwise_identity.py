@@ -890,13 +890,16 @@ class PairwiseIdentity(Alignment):
         values = np.empty(num_records * (num_records - 1) // 2, dtype=np.float64)
         cursor = 0
         denominator = float(aln_len)
-        col_indices = np.arange(num_records)[None, :]
-        for start in range(0, num_records, block_size):
-            stop = min(num_records, start + block_size)
+        indices = np.arange(num_records)
+        for start in range(0, num_records - 1, block_size):
+            stop = min(num_records - 1, start + block_size)
+            # Earlier columns cannot contribute any upper-triangle pairs.
+            first_column = start + 1
             identity_counts = (
-                sequence_matrix[start:stop, None, :] == sequence_matrix[None, :, :]
+                sequence_matrix[start:stop, None, :]
+                == sequence_matrix[None, first_column:, :]
             ).sum(axis=2, dtype=np.int32)
-            upper_mask = col_indices > np.arange(start, stop)[:, None]
+            upper_mask = indices[None, first_column:] > indices[start:stop, None]
             block_values = identity_counts[upper_mask]
             next_cursor = cursor + block_values.size
             if aln_len > 0:

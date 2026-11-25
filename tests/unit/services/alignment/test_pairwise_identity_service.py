@@ -1580,6 +1580,27 @@ assert "phykit.helpers.plot_config" not in sys.modules
 
         assert stats == pytest.approx(expected)
 
+    def test_stats_matrix_preserves_pairs_across_blocks(self, args, mocker):
+        service = PairwiseIdentity(args)
+        records = [
+            SimpleNamespace(id=str(index), seq=f"ARN-{index:08b}")
+            for index in range(130)
+        ]
+        stats = mocker.spy(pairwise_identity_module, "calculate_summary_statistics_from_arr")
+
+        service._calculate_pairwise_identity_stats_matrix(
+            records,
+            is_protein=True,
+            exclude_gaps=False,
+        )
+
+        expected = [
+            sum(a == b for a, b in zip(left.seq, right.seq)) / len(left.seq)
+            for index, left in enumerate(records)
+            for right in records[index + 1:]
+        ]
+        np.testing.assert_array_equal(stats.call_args.args[0], expected)
+
     @pytest.mark.parametrize("stderr_is_tty", [False, True])
     def test_unicode_fallback_reaches_multiprocessing_backend(
         self, args, mocker, monkeypatch, stderr_is_tty

@@ -114,3 +114,70 @@ strace -f -e trace=clone,clone3,fork,vfork,execve -o "$P/signal-processes.log" \
   python phykit-runner.py --threads 4 phylogenetic_signal -t "$P/tree.nwk" \
   -d "$P/traits.tsv" -p 100 >/dev/null
 ```
+
+## Validated prototype: pairwise identity summary
+
+Compare each row block with trailing columns, then retain the original
+upper-triangle mask. This keeps summation and condensed row ordering intact
+and avoids allocating comparisons that cannot produce output. The change
+targets the default stats-only matrix fallback with gaps or nonstandard
+symbols.
+
+Two alternating control/prototype rounds on the baseline machine, seven
+readings per round after one warmup, with one thread:
+
+| Metric | Control rounds | Prototype rounds | Speedup |
+| --- | --- | --- | --- |
+| 1,024 × 1,000 CLI median | 0.473, 0.478 s | 0.300, 0.304 s | 1.57× |
+| 1,024 × 1,000 CLI median peak RSS | 65.7, 64.7 MiB | 49.9, 52.0 MiB | |
+| 1,024 × 1,000 stats matrix function median | 0.339, 0.340 s | 0.185, 0.184 s | 1.84× |
+| 32 × 300 CLI median | 0.101, 0.106 s | 0.101, 0.106 s | 1.00× |
+
+The stats matrix function and the large CLI workload both met the 1.5×
+target. Across rounds, large CLI samples ranged from 0.471 to 0.496 s in
+the control and 0.299 to 0.310 s in the prototype. Function samples
+ranged from 0.334 to 0.342 s and 0.184 to 0.186 s, respectively.
+
+Run the following from each checkout, alternating control at `f08bb31e`
+and the prototype. The function check constructs the records before
+timing and prints the summary for comparison.
+
+```sh
+python benchmarks/profile_scaled_workloads.py --command pairwise_identity \
+  --threads 1 --repeat 7 --gnu-time /usr/bin/time
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 python - <<'PY'
+from argparse import Namespace
+import random
+import statistics
+from time import perf_counter
+from types import SimpleNamespace
+
+from phykit.services.alignment.pairwise_identity import PairwiseIdentity
+
+rng = random.Random(41)
+records = [
+    SimpleNamespace(id=f"taxon{i:04d}", seq="".join(rng.choices("ACGT-", k=1000)))
+    for i in range(1024)
+]
+service = PairwiseIdentity(Namespace(alignment="synthetic.fa", verbose=False, exclude_gaps=False))
+run = service._calculate_pairwise_identity_stats_matrix
+expected = run(records, is_protein=False, exclude_gaps=False)
+timings = []
+for _ in range(7):
+    start = perf_counter()
+    result = run(records, is_protein=False, exclude_gaps=False)
+    timings.append(perf_counter() - start)
+    assert result == expected
+print(f"{statistics.median(timings):.6f} [{min(timings):.6f}, {max(timings):.6f}] {expected}")
+PY
+```
+
+The new regression checks the condensed values against a direct scalar
+calculation across three blocks. The targeted suites are
+`tests/unit/services/alignment/test_pairwise_identity_service.py` and
+`tests/integration/alignment/test_pairwise_identity_integration.py`.
+
+On CPython 3.12.14, 3.13.15, 3.14.7, and 3.15.2, those suites passed 85
+tests each. On all four versions, control and prototype CLI JSON matched
+byte-for-byte for the large default workload and for gap exclusion and
+verbose output on `tests/sample_files/test_alignment_0.fa`.
