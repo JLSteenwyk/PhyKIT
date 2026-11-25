@@ -173,15 +173,19 @@ def records(reference, chromosome, pairs, observed, expected, participants, cont
     return output
 
 
-def analyze(rows, edges, block_size=None):
-    """Chromosome and pair-weighted reference estimates, with reusable block marks."""
-    rows, edges = validate_rows(rows), validate_edges(edges)
+def _group_chromosomes(rows):
     grouped = defaultdict(list)
     for row in rows:
         grouped[(row["reference"], row["chromosome"])].append(row)
+    return sorted(grouped.items())
+
+
+def analyze(rows, edges, block_size=None):
+    """Chromosome and pair-weighted reference estimates, with reusable block marks."""
+    rows, edges = validate_rows(rows), validate_edges(edges)
     marks, chromosome_rows, reference_rows, diagnostics = [], [], [], []
     pooled = {}
-    for (ref, chrom), genes in sorted(grouped.items()):
+    for (ref, chrom), genes in _group_chromosomes(rows):
         m = chromosome_marks(genes, edges, block_size)
         marks.append(m)
         counts = m["pair_marks"].sum(axis=0)
@@ -250,12 +254,13 @@ def uncertainty(rows, edges, block_sizes, replicates=999, seed=0):
         fail("Inference requires at least two distinct positive integer block sizes.")
     if replicates * (len(edges) - 1) > 5_000_000:
         fail("Too many replicate/bin combinations; reduce replicates or bins.")
+    chromosomes = _group_chromosomes(validate_rows(rows))
     output, block_diagnostics = [], []
     for block_size in sorted(set(block_sizes)):
-        _, all_marks = analyze(rows, edges, block_size)
         by_reference = defaultdict(list)
-        for m in all_marks:
-            by_reference[m["reference"]].append(m)
+        for (reference, _), genes in chromosomes:
+            m = chromosome_marks(genes, edges, block_size)
+            by_reference[reference].append(m)
             for b, counts in enumerate(m["class_counts"]):
                 block_diagnostics.append({
                     "reference": m["reference"], "chromosome": m["chromosome"],

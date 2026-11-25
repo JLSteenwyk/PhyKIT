@@ -536,3 +536,84 @@ OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 PYTHONPATH="$PWD" \
   --maxima 1000 1000000 --output "$P/result.json"
 python -m pstats "$P/topology.prof"
 ```
+
+## Validated prototype: reuse topology uncertainty inputs
+
+The uncertainty routine validates and groups rows once, and computes
+only the chromosome marks needed for each block size. It retains the
+same group order, mark calculation, and seed derivation.
+
+Two alternating rounds with 50,000 classified genes across two
+chromosomes, three block sizes, 499 replicates, one thread and five
+samples per variant after warmup:
+
+| Metric | Control rounds | Prototype rounds | Speedup |
+| --- | --- | --- | --- |
+| CLI median | 2.00, 2.00 s | 1.77, 1.68 s | 1.16× |
+| CLI median peak RSS | 111.2, 111.4 MiB | 108.6, 110.3 MiB | |
+| Uncertainty function median | 0.644, 0.647 s | 0.405, 0.348 s | 1.72× |
+
+CLI samples ranged from 1.94 to 2.10 s in the control and 1.67 to
+1.80 s in the prototype. Function samples ranged from 0.633 to
+0.659 s and 0.347 to 0.410 s. The function met the 1.5× target.
+The CLI still reads, validates, and writes the full classified
+dataset, so the end-to-end improvement is smaller.
+
+Create the same input for both checkouts:
+
+```sh
+P=$(mktemp -d)
+python - "$P/genes.tsv" <<'PY'
+import random
+import sys
+
+rng = random.Random(41)
+with open(sys.argv[1], "w") as out:
+    out.write("reference\tchromosome\tgene_id\tstart\tend\tanchor\tclassification\n")
+    for i in range(50_000):
+        chrom = f"chr{i // 25_000 + 1}"
+        anchor = i % 25_000 * 100
+        category = rng.choice(("topology_1", "topology_2", "topology_3"))
+        out.write(f"ref\t{chrom}\tg{i}\t{anchor}\t{anchor+1}\t{anchor}\t{category}\n")
+PY
+```
+
+Run from each checkout, alternating control at `f08bb31e` and the
+prototype. Keep the input and output paths fixed for byte comparisons.
+Discard sample zero as warmup.
+
+```sh
+for sample in 0 1 2 3 4 5; do
+  /usr/bin/time -f "$sample %e %M" -a -o "$P/timings.tsv" \
+    python phykit-runner.py --threads 1 topology_autocorrelation \
+    --classified-genes "$P/genes.tsv" --distance-edges 0 250 500 1000 \
+    --block-sizes 10000 20000 40000 --replicates 499 \
+    --output-prefix "$P/result" --json > "$P/command.json"
+done
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 python - "$P/genes.tsv" <<'PY'
+import hashlib
+import json
+from statistics import median
+import sys
+from time import perf_counter
+from phykit.helpers.topology_autocorrelation import read_classified, uncertainty
+
+rows = read_classified(sys.argv[1])
+times = []
+for i in range(6):
+    start = perf_counter()
+    result = uncertainty(rows, [0, 250, 500, 1000], [10000, 20000, 40000], 499)
+    if i:
+        times.append(perf_counter() - start)
+    digest = hashlib.sha256(json.dumps(result, sort_keys=True).encode()).hexdigest()
+    if i == 0:
+        expected = digest
+    assert digest == expected
+print(f"{median(times):.6f} [{min(times):.6f}, {max(times):.6f}]", expected)
+PY
+```
+
+The digest of the uncertainty and diagnostics matched. On CPython
+3.12.14, 3.13.15, 3.14.7, and 3.15.2, all 78 targeted tests passed.
+The 50,000-gene CLI stdout, stderr, and all output file checksums
+also matched within each Python version.
