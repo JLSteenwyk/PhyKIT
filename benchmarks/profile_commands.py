@@ -27,6 +27,7 @@ PROFILE_FIXTURES = ROOT / "benchmarks" / "fixtures"
 _OUTPUT_PATH_TOKEN = "__PROFILE_OUTPUT_PATH__"
 
 COMMANDS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("version", ("version",)),
     ("alignment_length", ("alignment_length", str(SAMPLES / "test_alignment_0.fa"))),
     ("gc_content", ("gc_content", str(SAMPLES / "test_alignment_0.fa"))),
     (
@@ -190,6 +191,7 @@ def profile_commands(
                     "mean_seconds": statistics.mean(timings),
                     "median_seconds": statistics.median(timings),
                     "min_seconds": min(timings),
+                    "max_seconds": max(timings),
                     "runs": repeat,
                 }
             )
@@ -238,13 +240,14 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(results, indent=2))
         return 0
 
-    print("command\tmean_s\tmedian_s\tmin_s\truns")
+    print("command\tmean_s\tmedian_s\tmin_s\tmax_s\truns")
     for row in results:
         print(
             f"{row['command']}\t"
             f"{row['mean_seconds']:.6f}\t"
             f"{row['median_seconds']:.6f}\t"
             f"{row['min_seconds']:.6f}\t"
+            f"{row['max_seconds']:.6f}\t"
             f"{row['runs']}"
         )
     return 0
