@@ -1,5 +1,49 @@
 # Ponytail performance audit
 
+## Results and priorities
+
+These changes are on the [profiling branch](https://github.com/JLSteenwyk/PhyKIT/tree/profiling/phykit-performance).
+The [baseline](profiling_baseline.md) records the machine, dependencies,
+input sizes, thread caps and run-to-run spread.
+
+| Rank | Workload or candidate | Function speedup | CLI speedup | Evidence and disposition |
+| ---: | --- | ---: | ---: | --- |
+| 1 | Patristic distances, 1,024 tips | 4.55× | 1.80× | Adopted. Low implementation effort and exact output across Python versions. |
+| 2 | Pairwise identity, 1,024 × 1,000 gapped alignment | 1.84× | 1.57× | Adopted. Small change, lower memory, exact condensed values. |
+| 3 | Topology uncertainty, 50,000 genes | 1.72× | 1.16× | Adopted. Moderate time savings and identical reports and intervals. |
+| 4 | Polytomy batch, 250 trees | 1.29× | 1.28× with one worker, 1.16× with four | Adopted. Cache isolation required a regression test. |
+| 5 | Phylogenetic-signal covariance solves | 5.54× at 1,024 taxa and 100 permutations | Unmeasured | Discarded. Repeatability was good on the synthetic balanced input, but tie and near-singular results changed. |
+| 6 | GWAS rendering | Unmeasured | 0.96× for the crop experiment | Discarded. Lower memory came with different pixel dimensions and a longer runtime. |
+| 7 | Covarying-rates imports | Unmeasured | Unmeasured | Import attribution is strong. Parser substitutions require a wider fixture matrix and compatibility work. |
+
+The 1.5× target was reached by three measured functions. Two workloads
+reached it end to end. Small examples were often dominated by startup,
+while larger ones exposed algorithmic or memory costs. Function gains
+apply to the stated workloads. Most definitions have no isolated
+before-and-after timing.
+
+### Review and rollback
+
+| Commit | Purpose |
+| --- | --- |
+| `7602229b` | Bundled CLI benchmark and baseline |
+| `3da65a26` | Scaled baseline, profiler hooks, and function inventory tool |
+| `f08bb31e` | Initial Ponytail audit and unoptimized A/B control |
+| `0d9ffbca` | Pairwise identity optimization |
+| `9d4701b7` | Patristic distances optimization |
+| `c9fb2baa` | Worker-process attribution |
+| `c6db9a42` | Polytomy optimization |
+| `f2ba240c` | Expanded CLI coverage and rendering and import experiments |
+| `c4994b87` | Native signal profiling |
+| `fe0a7744`, `c464ac74` | Signal correctness result, reproducible experiment, and topology validation measurements |
+| `bfc099af` | Topology uncertainty optimization |
+
+The four performance changes touch independent production modules and
+can be reviewed or reverted separately. Their benchmark instructions
+use the baseline harness and common control commit. The report
+sections accumulate across commits, so reverting a production change
+may require removing its summary row here as well.
+
 ## Scope and execution
 
 PhyKIT processes multiple sequence alignments, phylogenetic trees, and
@@ -34,6 +78,15 @@ scripts, and docs were inventoried and still need detailed review.
   variance-covariance matrix, and computes the observed and permuted
   statistics. The alignment GWAS path reads the phenotype and alignment,
   calculates site associations, and renders a plot through Matplotlib.
+
+The generated command registry lists 114 canonical commands across
+13 categories. For broader coverage, the audit mapped tree comparison
+and consensus through tree paths and split processing, trait evolution
+through shared parsing, covariance and discrete model helpers, and
+genomic workflows through coordinate validation, topology classification,
+and aggregation. Output paths include text and JSON summaries, TSV
+reports, and Matplotlib figures. The packaging and release scripts are
+separate from these runtime paths.
 
 ## Ranked findings
 
