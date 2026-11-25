@@ -181,3 +181,64 @@ On CPython 3.12.14, 3.13.15, 3.14.7, and 3.15.2, those suites passed 85
 tests each. On all four versions, control and prototype CLI JSON matched
 byte-for-byte for the large default workload and for gap exclusion and
 verbose output on `tests/sample_files/test_alignment_0.fa`.
+
+## Validated prototype: patristic distances on preorder tips
+
+The shallow-tree fast path records the last selected tip in each subtree.
+For each output row, it assigns the common ancestor once per contiguous
+range as it walks up the tree. It retains the existing per-pair ancestor
+search for arbitrary tip order and the binary-lifting path for deep trees.
+Distance arithmetic and pair order are identical.
+
+Two alternating control/prototype rounds on the baseline machine, with
+seven samples per round after a warmup and one thread:
+
+| Metric | Control rounds | Prototype rounds | Speedup |
+| --- | --- | --- | --- |
+| 1,024-tip CLI median | 0.371, 0.368 s | 0.209, 0.202 s | 1.80× |
+| 1,024-tip CLI median peak RSS | 57.0, 58.1 MiB | 58.1, 58.1 MiB | |
+| 1,024-tip path-distance function median | 0.206, 0.216 s | 0.047, 0.046 s | 4.55× |
+| 32-tip CLI median | 0.105, 0.101 s | 0.103, 0.100 s | 1.01× |
+
+The function and large CLI both met the 1.5× target. Large CLI samples
+ranged from 0.365 to 0.385 s in the control and 0.201 to 0.210 s in the
+prototype. Function samples ranged from 0.204 to 0.220 s and 0.045 to
+0.052 s, respectively. The full-precision condensed distance lists had
+the same SHA-256 digest. The uninstrumented CLI ratio exceeds the bound
+estimated from the instrumented profile above because profiling changed
+the distribution of execution time.
+
+Run from the control at `f08bb31e` and the prototype:
+
+```sh
+python benchmarks/profile_scaled_workloads.py --command patristic_distances \
+  --threads 1 --repeat 7 --gnu-time /usr/bin/time
+P=$(mktemp -d)
+python -c 'from pathlib import Path; import sys; from benchmarks.profile_scaled_workloads import make_inputs; make_inputs(Path(sys.argv[1]), 1024, 1000)' "$P"
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 python - "$P/tree.nwk" <<'PY'
+import hashlib
+import statistics
+import sys
+from time import perf_counter
+
+from phykit.services.tree.patristic_distances import PatristicDistances
+
+_, tips, parents, _, depths = PatristicDistances._scan_simple_newick_distance_inputs(sys.argv[1])
+run = PatristicDistances._pairwise_tip_distance_values_from_paths
+expected = run(tips, parents, depths)
+timings = []
+for _ in range(7):
+    start = perf_counter()
+    result = run(tips, parents, depths)
+    timings.append(perf_counter() - start)
+    assert result == expected
+print(f"{statistics.median(timings):.6f} [{min(timings):.6f}, {max(timings):.6f}]",
+      hashlib.sha256(repr(expected).encode()).hexdigest())
+PY
+```
+
+All 45 targeted unit and integration tests passed on each of CPython
+3.12.14, 3.13.15, 3.14.7, and 3.15.2. The 1,024-tip command returned
+byte-identical text and JSON in both summary and verbose modes on every
+version. The new test covers omitted tips, a multifurcation, a negative
+branch length, arbitrary tip order, and repeated tips.

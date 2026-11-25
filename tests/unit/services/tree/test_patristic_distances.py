@@ -420,6 +420,23 @@ class TestPatristicDistances(object):
         ]
         assert observed == expected
 
+    @pytest.mark.parametrize(
+        "tip_indices, expected",
+        [
+            ([3, 5, 6, 7], [7.0, 8.0, 9.0, 7.0, 12.0, 13.0]),
+            ([7, 3, 6, 5], [9.0, 13.0, 12.0, 8.0, 7.0, 7.0]),
+            ([3, 5, 5], [7.0, 7.0, 0.0]),
+        ],
+    )
+    def test_path_distances_handle_tip_subsets_and_order(self, tip_indices, expected):
+        # Only one tip beneath node 1 is selected. The root
+        # has three children, and node 4 subtends selected tips 5 and 6.
+        parent_indices = [-1, 0, 1, 1, 0, 4, 4, 0]
+        depths = [0.0, -2.0, 1.0, 2.0, 2.0, 5.0, 6.0, 7.0]
+        assert PatristicDistances._pairwise_tip_distance_values_from_paths(
+            tip_indices, parent_indices, depths,
+        ) == expected
+
     def test_deep_tree_distance_values_use_lca_index_path(self, monkeypatch, args):
         t = PatristicDistances(args)
         root = Clade()

@@ -628,6 +628,11 @@ class PatristicDistances(Tree):
         parent_indices,
         depths,
     ) -> list[float]:
+        if all(left < right for left, right in zip(tip_indices, tip_indices[1:])):
+            return PatristicDistances._pairwise_tip_distance_values_in_preorder(
+                tip_indices, parent_indices, depths,
+            )
+
         tip_paths = []
         for tip_idx in tip_indices:
             path = [tip_idx]
@@ -653,6 +658,37 @@ class PatristicDistances(Tree):
                 distances[out_idx] = depth_a + depths[tip_indices[j]] - 2 * depths[mrca]
                 out_idx += 1
 
+        return distances
+
+    @staticmethod
+    def _pairwise_tip_distance_values_in_preorder(
+        tip_indices, parent_indices, depths,
+    ) -> list[float]:
+        # Preorder makes the selected tips of every subtree a contiguous range.
+        # Record its exclusive end, propagating the last selected tip upward.
+        subtree_ends = [0] * len(parent_indices)
+        for end, tip in enumerate(tip_indices, start=1):
+            subtree_ends[tip] = end
+        for node in range(len(parent_indices) - 1, 0, -1):
+            parent = parent_indices[node]
+            subtree_ends[parent] = max(subtree_ends[parent], subtree_ends[node])
+
+        tip_depths = [depths[tip] for tip in tip_indices]
+        distances = []
+        for row, tip in enumerate(tip_indices[:-1]):
+            first = row + 1
+            depth_a = tip_depths[row]
+            ancestor = parent_indices[tip]
+            while first < len(tip_indices):
+                stop = subtree_ends[ancestor]
+                # Tips in this range share this ancestor with the row's tip.
+                twice_ancestor_depth = 2 * depths[ancestor]
+                distances.extend(
+                    depth_a + depth_b - twice_ancestor_depth
+                    for depth_b in tip_depths[first:stop]
+                )
+                first = stop
+                ancestor = parent_indices[ancestor]
         return distances
 
     @staticmethod
