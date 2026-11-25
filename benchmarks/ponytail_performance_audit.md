@@ -428,3 +428,45 @@ env PHYKIT_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 \
   python benchmarks/profile_commands.py --repeat 1 --warmup 0 --profile-dir "$P"
 python benchmarks/profile_function_coverage.py "$P"/*.prof > "$P/functions.tsv"
 ```
+
+## Native profile of phylogenetic signal
+
+A separate one-thread py-spy profile repeated the 1,024-tip CLI command
+seven times in one process and excluded output display. Native BLAS
+matrix multiplication and triangular solve accounted for 102 of 200
+samples. In 81 of those the stack included `_blombergs_k`,
+`_inverse_from_spd_matrix`, and SciPy's `cho_solve`. This ranks ahead
+of small Newick parser changes for these inputs.
+
+[`_blombergs_k`](../phykit/services/tree/phylogenetic_signal.py#L515)
+computes `C_inv = _inverse_from_spd_matrix(C)` before applying it to
+trait vectors. A candidate is to factor the covariance once and solve
+for the observed and permuted vectors in batches. It can avoid solving
+for every column of the identity matrix. Factor reuse might also avoid
+separate work in the R² calculation. This affects statistical outputs,
+so compare K, permutation p-values and R² against the current path on
+near-singular covariance matrices and permutation ties. Start with
+100 versus 1,000 permutations because the solve-to-inverse cost balance
+depends on the number of right-hand sides.
+
+To reproduce the sample, generate the same tree and traits with
+`make_inputs(Path(P), 1024, 1000)` as above, then run:
+
+```sh
+cat > "$P/repeat_signal.py" <<'PY'
+import contextlib
+import os
+import sys
+from phykit.phykit import Phykit
+
+command = sys.argv[1:]
+with open(os.devnull, "w") as sink, contextlib.redirect_stdout(sink):
+    for _ in range(7):
+        sys.argv[:] = ["phykit", *command]
+        Phykit()
+PY
+env PHYKIT_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 PYTHONPATH="$PWD" \
+  py-spy record --native --rate 100 --format speedscope -o "$P/signal.json" -- \
+  python "$P/repeat_signal.py" phylogenetic_signal -t "$P/tree.nwk" \
+    -d "$P/traits.tsv" -p 100
+```
