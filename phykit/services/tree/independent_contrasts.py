@@ -13,28 +13,13 @@ import math
 
 from .base import Tree
 from ...errors import PhykitUserError
+from ...helpers._lazy_numpy import LazyNumpy as _LazyNumpy
 
 
 def _json_dumps(*args, **kwargs):
     import json
 
     return json.dumps(*args, **kwargs)
-
-
-class _LazyNumpy:
-    _module = None
-
-    def __getattr__(self, name):
-        module = self._module
-        if module is None:
-            import numpy as _np
-
-            module = _np
-            self._module = module
-
-        value = getattr(module, name)
-        setattr(self, name, value)
-        return value
 
 
 np = _LazyNumpy()

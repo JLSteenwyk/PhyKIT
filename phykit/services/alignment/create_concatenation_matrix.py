@@ -12,6 +12,7 @@ from ._fasta import (
 from .base import Alignment
 from ...helpers.threads import limit_workers
 from ...errors import PhykitUserError
+from ...helpers._lazy_numpy import LazyNumpy as _LazyNumpy
 
 
 _OCCUPANCY_INVALID_CHARS = {"-", "?", "*", "X", "x", "N", "n"}
@@ -60,22 +61,6 @@ def _store_validated_alignment_record(
     record_sequences[record_id] = sequence
     record_numbers[record_id] = record_number
     return first_taxon, expected_length
-
-
-class _LazyNumpy:
-    _module = None
-
-    def __getattr__(self, name):
-        module = self._module
-        if module is None:
-            import numpy as _np
-
-            module = _np
-            self._module = module
-
-        value = getattr(module, name)
-        setattr(self, name, value)
-        return value
 
 
 np = _LazyNumpy()

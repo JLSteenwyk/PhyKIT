@@ -4,6 +4,7 @@ import sys
 
 
 from .base import Alignment
+from ...helpers._lazy_numpy import LazyNumpy as _LazyNumpy
 
 
 def print_json(*args, **kwargs):
@@ -16,22 +17,6 @@ def get_alignment_and_format(*args, **kwargs):
     from ...helpers.files import get_alignment_and_format as _get_alignment_and_format
 
     return _get_alignment_and_format(*args, **kwargs)
-
-
-class _LazyNumpy:
-    _module = None
-
-    def __getattr__(self, name):
-        module = self._module
-        if module is None:
-            import numpy as _np
-
-            module = _np
-            self._module = module
-
-        value = getattr(module, name)
-        setattr(self, name, value)
-        return value
 
 
 np = _LazyNumpy()

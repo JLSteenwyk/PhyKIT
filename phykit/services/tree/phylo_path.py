@@ -12,6 +12,7 @@ from collections import defaultdict
 
 from .base import Tree
 from ...errors import PhykitUserError
+from ...helpers._lazy_numpy import LazyNumpy as _LazyNumpy
 
 
 def print_json(*args, **kwargs):
@@ -26,23 +27,6 @@ def trait_matrix_from_rows(*args, **kwargs):
     )
 
     return _trait_matrix_from_rows(*args, **kwargs)
-
-
-class _LazyNumpy:
-    def __init__(self):
-        self._module = None
-
-    def __getattr__(self, name):
-        module = self._module
-        if module is None:
-            import numpy as _np
-
-            module = _np
-            self._module = module
-
-        attr = getattr(module, name)
-        setattr(self, name, attr)
-        return attr
 
 
 np = _LazyNumpy()

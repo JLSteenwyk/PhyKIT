@@ -6,6 +6,7 @@ from pathlib import Path
 
 from ...errors import PhykitUserError
 from .base import Alignment
+from ...helpers._lazy_numpy import LazyNumpy as _LazyNumpy
 
 
 TAPER_DOI = "10.1111/2041-210X.13696"
@@ -24,22 +25,6 @@ _DEFAULT_SCALES = (
     (17, 0.10, 0.50, None),
 )
 _SCORE_BLOCK_SIZE = 2_048
-
-
-class _LazyNumpy:
-    _module = None
-
-    def __getattr__(self, name):
-        module = self._module
-        if module is None:
-            import numpy as _np
-
-            module = _np
-            self._module = module
-
-        value = getattr(module, name)
-        setattr(self, name, value)
-        return value
 
 
 np = _LazyNumpy()

@@ -11,6 +11,7 @@ import math
 import sys
 
 from ..errors import PhykitUserError
+from ._lazy_numpy import LazyNumpy as _LazyNumpy
 
 
 VALID_DISCRETE_MODELS = frozenset(["ER", "SYM", "ARD"])
@@ -19,22 +20,6 @@ _MINIMIZE = None
 _MINIMIZE_SCALAR = None
 _FIT_Q_MATRIX_CACHE = {}
 _FIT_Q_MATRIX_CACHE_MAXSIZE = 32
-
-
-class _LazyNumpy:
-    _module = None
-
-    def __getattr__(self, name):
-        module = self._module
-        if module is None:
-            import numpy as _np
-
-            module = _np
-            self._module = module
-
-        value = getattr(module, name)
-        setattr(self, name, value)
-        return value
 
 
 np = _LazyNumpy()

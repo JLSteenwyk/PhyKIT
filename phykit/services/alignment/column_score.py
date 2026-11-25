@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from .base import Alignment
+from ...helpers._lazy_numpy import LazyNumpy as _LazyNumpy
 
 
 class _LazyAlignIO:
@@ -20,22 +21,6 @@ class _LazyAlignIO:
 
 
 AlignIO = _LazyAlignIO()
-
-
-class _LazyNumpy:
-    _module = None
-
-    def __getattr__(self, name):
-        module = self._module
-        if module is None:
-            import numpy as _np
-
-            module = _np
-            self._module = module
-
-        value = getattr(module, name)
-        setattr(self, name, value)
-        return value
 
 
 np = _LazyNumpy()

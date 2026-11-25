@@ -5,6 +5,7 @@ import itertools
 from ._fasta import read_unique_fasta_first_token
 from .base import Alignment
 from ...helpers.threads import limit_workers
+from ...helpers._lazy_numpy import LazyNumpy as _LazyNumpy
 
 
 def print_json(*args, **kwargs):
@@ -29,21 +30,6 @@ class _LazyMultiprocessing:
 
     def Pool(self, *args, **kwargs):
         return self._load().Pool(*args, **kwargs)
-
-
-class _LazyNumpy:
-    _module = None
-
-    def __getattr__(self, name):
-        module = self._module
-        if module is None:
-            import numpy as _np
-
-            module = self._module = _np
-
-        value = getattr(module, name)
-        setattr(self, name, value)
-        return value
 
 
 mp = _LazyMultiprocessing()

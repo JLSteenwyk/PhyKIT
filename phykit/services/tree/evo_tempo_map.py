@@ -6,6 +6,7 @@ from io import StringIO
 
 from .base import Tree
 from ...errors import PhykitUserError
+from ...helpers._lazy_numpy import LazyNumpy as _LazyNumpy
 
 _path_isabs = os.path.isabs
 
@@ -26,22 +27,6 @@ def _mannwhitneyu(x, y, *, alternative):
     from scipy.stats import mannwhitneyu
 
     return mannwhitneyu(x, y, alternative=alternative)
-
-
-class _LazyNumpy:
-    _module = None
-
-    def __getattr__(self, name):
-        module = self._module
-        if module is None:
-            import numpy as _np
-
-            module = _np
-            self._module = module
-
-        value = getattr(module, name)
-        setattr(self, name, value)
-        return value
 
 
 class _LazyPhylo:

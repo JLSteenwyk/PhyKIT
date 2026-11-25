@@ -7,6 +7,7 @@ from math import sqrt
 
 from .base import Alignment
 from ...helpers.threads import limit_workers
+from ...helpers._lazy_numpy import LazyNumpy as _LazyNumpy
 
 
 class _LazyMultiprocessing:
@@ -28,23 +29,6 @@ class _LazyMultiprocessing:
 
 
 mp = _LazyMultiprocessing()
-
-
-class _LazyNumpy:
-    def __init__(self):
-        self._module = None
-
-    def __getattr__(self, name):
-        module = self._module
-        if module is None:
-            import numpy as _np
-
-            module = _np
-            self._module = module
-
-        attr = getattr(module, name)
-        setattr(self, name, attr)
-        return attr
 
 
 np = _LazyNumpy()
