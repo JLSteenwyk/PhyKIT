@@ -186,8 +186,7 @@ class PolytomyTest(Tree):
         if not hasattr(self, "_tree_cache"):
             self._tree_cache = {}
         if tree_path not in self._tree_cache:
-            tree = Phylo.read(tree_path, self.tree_format)
-            self._tree_cache[tree_path] = self._safe_copy(tree)
+            self._tree_cache[tree_path] = Phylo.read(tree_path, self.tree_format)
         return self._safe_copy(self._tree_cache[tree_path])
 
     def read_in_groups(
@@ -261,7 +260,7 @@ class PolytomyTest(Tree):
         for tree_file in tree_files_batch:
             try:
                 tree = self._read_tree_with_cache(tree_file)
-                prepared_tree = self._prepare_tree_for_triplets(tree, outgroup_taxa)
+                prepared_tree = self._prepare_tree_for_triplets(tree, outgroup_taxa, copy_tree=False)
                 tree_summary = self._evaluate_tree_triplets_fast(prepared_tree, groups_of_groups)
                 if not tree_summary:
                     tips = self.get_tip_names_from_tree(tree)
@@ -277,8 +276,14 @@ class PolytomyTest(Tree):
                 continue
         return batch_summary
 
-    def _prepare_tree_for_triplets(self, tree: Newick.Tree, outgroup_taxa: list[str]) -> Newick.Tree:
-        prepared = self._safe_copy(tree)
+    def _prepare_tree_for_triplets(
+        self,
+        tree: Newick.Tree,
+        outgroup_taxa: list[str],
+        *,
+        copy_tree: bool = True,
+    ) -> Newick.Tree:
+        prepared = self._safe_copy(tree) if copy_tree else tree
         if outgroup_taxa:
             try:
                 prepared.root_with_outgroup(outgroup_taxa)
@@ -657,7 +662,7 @@ class PolytomyTest(Tree):
         if triplet_count >= 2:
             try:
                 tree = self._read_tree_with_cache(tree_file)
-                prepared_tree = self._prepare_tree_for_triplets(tree, outgroup_taxa)
+                prepared_tree = self._prepare_tree_for_triplets(tree, outgroup_taxa, copy_tree=False)
                 fast_tree_summary = self._evaluate_tree_triplets_fast(
                     prepared_tree, groups_of_groups
                 )
@@ -691,7 +696,7 @@ class PolytomyTest(Tree):
             try:
                 if fast_tree_summary is None:
                     tree = self._read_tree_with_cache(tree_file)
-                    prepared_tree = self._prepare_tree_for_triplets(tree, outgroup_taxa)
+                    prepared_tree = self._prepare_tree_for_triplets(tree, outgroup_taxa, copy_tree=False)
                     tree_summary = self._evaluate_tree_triplets_fast(
                         prepared_tree, groups_of_groups
                     )

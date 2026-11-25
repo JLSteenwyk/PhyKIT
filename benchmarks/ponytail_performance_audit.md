@@ -289,3 +289,67 @@ py-spy record --subprocesses --native --format speedscope -o "$P/pool.json" -- \
   python "$ROOT/phykit-runner.py" --threads 4 polytomy_test \
   -t filamentous_fungi_250_trees.txt -g groups_file0.txt --json >/dev/null
 ```
+
+## Validated prototype: reuse private polytomy trees
+
+The cache retains the newly parsed tree and returns a private copy.
+The service reroots its private copy in place, avoiding a second copy.
+The preparation helper still copies by default for callers that supply
+a tree they need to reuse.
+
+Two alternating control/prototype rounds with the 250-tree tutorial:
+
+| Metric | Control rounds | Prototype rounds | Speedup |
+| --- | --- | --- | --- |
+| One-worker CLI median | 0.84, 0.82 s | 0.65, 0.65 s | 1.28× |
+| One-worker CLI median peak RSS | 48.5, 50.0 MiB | 48.5, 47.0 MiB | |
+| Four-worker CLI median | 0.35, 0.36 s | 0.30, 0.31 s | 1.16× |
+| Four-worker CLI median peak RSS | 39.5, 39.5 MiB | 37.1, 36.5 MiB | |
+| Worker batch function median | 0.927, 0.917 s | 0.711, 0.717 s | 1.29× |
+
+Each round used five timings after a warmup. One-worker CLI timings
+ranged from 0.81 to 0.85 s in the control and 0.61 to 0.66 s in the
+prototype. Four-worker CLI timings ranged from 0.35 to 0.36 s and 0.30
+to 0.31 s. Batch timings ranged from 0.815 to 0.997 s and 0.587 to
+0.787 s. The worker batch includes parsing, copies, rerooting, and
+triplet calculations. The speedups fell below 1.5×.
+
+Repeat the worker-process commands above for each checkout, alternating
+control at `f08bb31e` and prototype. To isolate the worker batch, run
+from the extracted tutorial directory with `ROOT` set to the checkout:
+
+```sh
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 PYTHONPATH="$ROOT" python - <<'PY'
+from argparse import Namespace
+import hashlib
+import json
+from pathlib import Path
+import statistics
+from time import perf_counter
+
+from phykit.services.tree.polytomy_test import PolytomyTest
+
+paths = Path("filamentous_fungi_250_trees.txt").read_text().splitlines()
+args = Namespace(trees="filamentous_fungi_250_trees.txt", groups="groups_file0.txt")
+timings = []
+for repeat in range(6):
+    service = PolytomyTest(args)
+    groups, outgroup = service.determine_groups_of_groups(service.read_in_groups())
+    start = perf_counter()
+    result = service._process_tree_batch(paths, groups, outgroup)
+    if repeat:
+        timings.append(perf_counter() - start)
+    digest = hashlib.sha256(json.dumps(result, sort_keys=True).encode()).hexdigest()
+    if repeat == 0:
+        expected = digest
+    assert digest == expected
+print(f"{statistics.median(timings):.6f} [{min(timings):.6f}, {max(timings):.6f}]", expected)
+PY
+```
+
+The full worker batch digests matched. On each of CPython 3.12.14,
+3.13.15, 3.14.7, and 3.15.2, the tutorial JSON matched byte for byte with
+one and four workers. All 95 polytomy unit and integration tests passed
+on each version. The new regression reroots a tree obtained from the
+cache and verifies that the next read still returns the original topology
+without reparsing.

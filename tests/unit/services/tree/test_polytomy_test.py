@@ -185,6 +185,19 @@ class TestPolytomyTest(unittest.TestCase):
             [tip.name for tip in second.get_terminals()],
         )
 
+    def test_rerooting_private_tree_does_not_change_cached_tree(self):
+        tree = Phylo.read(StringIO("((A:1,B:1):1,(C:1,D:1):1);"), "newick")
+        original = tree.format("newick")
+        with patch.object(module.Phylo, "read", return_value=tree) as read_mock:
+            first = self.polytomy._read_tree_with_cache("tree.nwk")
+            prepared = self.polytomy._prepare_tree_for_triplets(first, ["D"], copy_tree=False)
+            second = self.polytomy._read_tree_with_cache("tree.nwk")
+
+        self.assertIs(prepared, first)
+        self.assertNotEqual(prepared.format("newick"), original)
+        self.assertEqual(second.format("newick"), original)
+        read_mock.assert_called_once()
+
     def test_postorder_and_terminal_cache_fallbacks(self):
         self.assertIsNone(self.polytomy._iter_postorder_clades(object()))
 
