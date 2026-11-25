@@ -6,6 +6,11 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.9.2**:
+
+* Consolidate NumPy's lazy loading across alignment and tree services while
+  preserving per-module caching and deferred imports.
+
 **2.9.1**:
 
 * Avoid redundant comparisons in pairwise identity summaries.
