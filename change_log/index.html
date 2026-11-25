@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Change log &mdash; phykit 2.9.0 documentation</title>
+  <title>Change log &mdash; phykit 2.9.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=ae8b8648" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../_static/flavicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=182a64a0"></script>
+      <script src="../_static/documentation_options.js?v=bc52e0b9"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/js/theme.js"></script>
@@ -85,6 +85,14 @@
   <section id="change-log">
 <span id="id1"></span><h1>Change log<a class="headerlink" href="#change-log" title="Link to this heading"></a></h1>
 <p>Major changes to PhyKIT are summarized here.</p>
+<p><strong>2.9.1</strong>:</p>
+<ul class="simple">
+<li><p>Avoid redundant comparisons in pairwise identity summaries.</p></li>
+<li><p>Compute patristic distances faster for trees with tips in preorder.</p></li>
+<li><p>Eliminate redundant tree copies during polytomy tests.</p></li>
+<li><p>Reuse validated chromosome data across topology autocorrelation bootstrap
+block sizes.</p></li>
+</ul>
 <p><strong>2.9.0</strong>:</p>
 <ul class="simple">
 <li><p>Added support for Python 3.14 and 3.15. Python 3.12 is now the minimum
