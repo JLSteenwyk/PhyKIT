@@ -242,3 +242,50 @@ All 45 targeted unit and integration tests passed on each of CPython
 byte-identical text and JSON in both summary and verbose modes on every
 version. The new test covers omitted tips, a multifurcation, a negative
 branch length, arbitrary tip order, and repeated tips.
+
+## Worker-process profile: polytomy test
+
+The bundled tutorial contains 250 listed tree inputs and exercises the
+actual pool path. Five uninstrumented runs after a warmup gave these
+results. Both settings enter the pool path, so one thread means one pool
+worker. The CLI emitted identical JSON at both caps.
+
+| Worker cap | Median (s) | Min (s) | Max (s) | Median peak RSS (MiB) |
+| ---: | ---: | ---: | ---: | ---: |
+| 1 | 0.81 | 0.80 | 0.84 | 48.5 |
+| 4 | 0.34 | 0.34 | 0.35 | 38.6 |
+
+GNU time reports a process high-water mark. Concurrent worker RSS is
+not represented by adding these values. The four-worker speedup was
+2.38×. A separate py-spy 0.4.1 capture recorded four worker stack
+streams with 99 samples across them. In 58 samples, the innermost
+PhyKIT frame was `_safe_copy`. This is evidence for a new candidate
+between the existing pairwise identity and GWAS candidates.
+
+[`_read_tree_with_cache`](../phykit/services/tree/polytomy_test.py#L185)
+copies a newly parsed tree into the cache and then copies it again before
+returning it. [`_prepare_tree_for_triplets`](../phykit/services/tree/polytomy_test.py#L280)
+copies the returned tree before rerooting it. A worker can keep custody of
+the freshly parsed tree or receive one private copy of the cache entry,
+then root that private copy. Test repeat paths and worker fallback
+behavior before changing which tree is mutated.
+
+```sh
+ROOT=$PWD
+P=$(mktemp -d)
+tar -xzf docs/data/polytomy_tutorial.tar.gz -C "$P"
+cd "$P/polytomy_tutorial"
+for threads in 1 4; do
+  python "$ROOT/phykit-runner.py" --threads "$threads" polytomy_test \
+    -t filamentous_fungi_250_trees.txt -g groups_file0.txt --json > "$P/result-$threads.json"
+  for sample in 1 2 3 4 5; do
+    /usr/bin/time -f "$threads %e %M" -a -o "$P/timings.tsv" \
+      python "$ROOT/phykit-runner.py" --threads "$threads" polytomy_test \
+      -t filamentous_fungi_250_trees.txt -g groups_file0.txt --json >/dev/null
+  done
+done
+cmp "$P/result-1.json" "$P/result-4.json"
+py-spy record --subprocesses --native --format speedscope -o "$P/pool.json" -- \
+  python "$ROOT/phykit-runner.py" --threads 4 polytomy_test \
+  -t filamentous_fungi_250_trees.txt -g groups_file0.txt --json >/dev/null
+```
