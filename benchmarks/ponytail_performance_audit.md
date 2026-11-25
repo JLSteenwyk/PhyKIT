@@ -55,9 +55,10 @@ Audit instructions: [Ponytail audit skill at ebd8654](https://github.com/Dietric
 Followed the skill directly in this thread. The source under audit is
 `cf8c7652`. Repository mapping covered package entry points, dependency
 declarations, command families, helpers, scripts, release and CI workflows,
-tests, and benchmark inventory. Detailed tracing focused on the five
-workloads below. The remaining service implementations, tests, release
-scripts, and docs were inventoried and still need detailed review.
+tests, and benchmark inventory. The function inventory scanned all 150
+Python modules in the runtime package. Detailed runtime attribution
+focused on the measured workloads below. Releases and generated docs
+were inspected as supporting workflows.
 
 ## Data paths
 
@@ -670,3 +671,95 @@ The digest of the uncertainty and diagnostics matched. On CPython
 3.12.14, 3.13.15, 3.14.7, and 3.15.2, all 78 targeted tests passed.
 The 50,000-gene CLI stdout, stderr, and all output file checksums
 also matched within each Python version.
+
+## Representative CLI coverage by package area
+
+The bundled and scaled cases plus all 23 portable tutorial workloads
+exercised 786 named definitions on the profiling branch. Each tutorial
+completed and produced its expected artifacts. This table describes
+function observation, rather than a count of functions individually
+benchmarked or optimized. Native sampling and child-process checks are
+reported above and are separate from this cProfile inventory.
+
+| Package area | Observed | Definitions | Unobserved |
+| --- | ---: | ---: | ---: |
+| Package entry points and dispatch | 65 | 281 | 216 |
+| Shared helpers | 105 | 245 | 140 |
+| Base service and package initialization | 0 | 3 | 3 |
+| Alignment services | 138 | 646 | 508 |
+| Tree and trait services | 478 | 1,940 | 1,462 |
+| Total | 786 | 3,115 | 2,329 |
+
+The coverage tool enumerates definitions across all 150 Python modules
+in `phykit/`, including nested functions. A blank profile column in
+the generated TSV identifies a definition that needs a workload
+or a child-process capture. A nonblank column supplies the exact
+capture name for investigation. This includes low-cost helpers where
+a 1.5× microbenchmark gain may have no detectable effect on total
+runtime.
+
+Run this from the optimized checkout with an active benchmark
+environment. Each command type writes its own profiles outside Git.
+
+```sh
+P=$(mktemp -d)
+export PYTHONPATH="$PWD" PHYKIT_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1
+export MKL_NUM_THREADS=1 NUMBA_NUM_THREADS=1
+python benchmarks/profile_commands.py --repeat 1 --warmup 0 --profile-dir "$P/bundled"
+python benchmarks/profile_scaled_workloads.py --repeat 1 --threads 1 --profile-dir "$P/scaled"
+mkdir "$P/tutorials"
+cat > "$P/profile-python" <<'SH'
+#!/bin/sh
+profile=$(mktemp "$PHY_PROFILE_DIR/${3:-command}.XXXXXX.prof") || exit
+exec "$PHY_PROFILE_PYTHON" -m cProfile -o "$profile" "$@"
+SH
+chmod +x "$P/profile-python"
+PHY_PROFILE_DIR="$P/tutorials" PHY_PROFILE_PYTHON="$(command -v python)" \
+  python scripts/smoke_tutorials.py --python "$P/profile-python"
+python benchmarks/profile_function_coverage.py \
+  "$P"/bundled/*.prof "$P"/scaled/*.prof "$P"/tutorials/*.prof > "$P/functions.tsv"
+```
+
+## Unit-test profile and final verification
+
+A separate unit-test cProfile capture on the unoptimized control
+`f08bb31e` observed 2,832 of 3,113 functions. This test workload
+covers many mock, compatibility, and error paths outside the
+representative CLI cases. The counts refer to different source
+revisions and should not be added. Reproduce the test-path inventory
+from the control checkout with a Python 3.12 environment containing
+all runtime and test dependencies and installed CLI entry points:
+
+```sh
+P=$(mktemp -d)
+env PYTHONPATH="$PWD" OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 PHYKIT_THREADS=1 \
+  python -m cProfile -o "$P/unit.prof" -m pytest -q --basetemp="$P/pytest" \
+  -m 'not (integration or validation)'
+python benchmarks/profile_function_coverage.py "$P/unit.prof" > "$P/unit-functions.tsv"
+```
+
+The forced cap made three worker-count assertions and four UMAP
+thread-configuration cases fail in that observation run. It completed
+with 6,653 passing tests. The seven cases passed when rerun on the
+control with the default PhyKIT thread policy and no profiler. The
+profile is used solely for function observation. The test pass
+used for correctness verification was separate.
+
+The optimized code at `bfc099af` passed all 7,537 unit and integration
+tests on CPython 3.12.14. This run selected all tests except the separate
+validation group. The changed modules' targeted suites and CLI output
+comparisons were also verified on CPython 3.13.15, 3.14.7, and 3.15.2,
+as detailed in each prototype section.
+
+```sh
+P=$(mktemp -d)
+env PYTHONPATH="$PWD" OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 \
+  python -m pytest -q --basetemp="$P/pytest" -m 'not validation'
+```
+
+The five independent topology autocorrelation simulation checks also
+passed on CPython 3.12.14:
+
+```sh
+python -m pytest -q tests/validation/test_topology_autocorrelation_simulation.py
+```
