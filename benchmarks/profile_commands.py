@@ -168,11 +168,15 @@ def profile_commands(
     selected: list[str],
     repeat: int,
     warmup: int,
+    profile_dir: Path | None = None,
 ) -> list[dict[str, object]]:
     commands = _command_map()
     env = dict(os.environ)
     env["PYTHONPATH"] = str(ROOT)
     results: list[dict[str, object]] = []
+    if profile_dir is not None:
+        profile_dir = profile_dir.resolve()
+        profile_dir.mkdir(parents=True, exist_ok=True)
 
     with tempfile.TemporaryDirectory(prefix="phykit-profile-") as output_dir:
         output_path = str(Path(output_dir) / "phylo_gwas.png")
@@ -185,6 +189,17 @@ def profile_commands(
                 _run_once(command_args, env)
 
             timings = [_run_once(command_args, env) for _ in range(repeat)]
+            if profile_dir is not None:
+                subprocess.run(
+                    (
+                        sys.executable, "-m", "cProfile", "-o",
+                        str(profile_dir / f"{name}.prof"), str(RUNNER), *command_args,
+                    ),
+                    cwd=ROOT,
+                    env=env,
+                    stdout=subprocess.DEVNULL,
+                    check=True,
+                )
             results.append(
                 {
                     "command": name,
@@ -223,6 +238,9 @@ def _parse_args(argv: list[str]) -> argparse.Namespace:
         help="Command to profile. May be passed more than once.",
     )
     parser.add_argument("--json", action="store_true", help="Emit JSON rows.")
+    parser.add_argument(
+        "--profile-dir", type=Path, help="Capture a separate cProfile run per command.",
+    )
     args = parser.parse_args(argv)
     if args.repeat < 1:
         parser.error("--repeat must be at least 1")
@@ -234,7 +252,7 @@ def _parse_args(argv: list[str]) -> argparse.Namespace:
 def main(argv: list[str] | None = None) -> int:
     args = _parse_args(sys.argv[1:] if argv is None else argv)
     selected = args.command or [name for name, _ in COMMANDS]
-    results = profile_commands(selected, args.repeat, args.warmup)
+    results = profile_commands(selected, args.repeat, args.warmup, args.profile_dir)
 
     if args.json:
         print(json.dumps(results, indent=2))

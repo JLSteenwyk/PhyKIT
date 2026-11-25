@@ -353,3 +353,78 @@ one and four workers. All 95 polytomy unit and integration tests passed
 on each version. The new regression reroots a tree obtained from the
 cache and verifies that the next read still returns the original topology
 without reparsing.
+
+## Rendering and startup experiments
+
+**GWAS crop experiment.** The proposed removal of the tight bounding-box
+pass reduced median peak RSS from 136.5 to 109.5 MiB but increased median
+CLI time from 1.00 s (0.97–1.03 s) to 1.04 s (1.00–1.04 s). Six runs of
+each variant were alternated. The JSON reports matched byte for byte.
+The output PNG changed from 3,496 × 2,100 to 4,200 × 2,400 pixels because
+it retained the uncropped canvas. The experiment was discarded. The
+smallest follow-up would compare an equivalent crop produced from one
+Agg draw, checking pixel bounds and labels on default, customized, and
+partitioned plots.
+
+From the control checkout, create a temporary wrapper that only alters
+the plotting call. Both variants load Matplotlib in the same order.
+
+```sh
+P=$(mktemp -d)
+cat > "$P/render.py" <<'PY'
+import runpy
+import sys
+from matplotlib.figure import Figure
+
+mode, runner, *cli = sys.argv[1:]
+savefig = Figure.savefig
+
+def save_variant(self, *args, **kwargs):
+    if mode == "no-tight":
+        kwargs["bbox_inches"] = None
+    return savefig(self, *args, **kwargs)
+
+Figure.savefig = save_variant
+sys.argv[:] = [runner, *cli]
+runpy.run_path(runner, run_name="__main__")
+PY
+for sample in 1 2 3 4 5 6; do
+  for mode in tight no-tight; do
+    PYTHONPATH="$PWD" OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 \
+      /usr/bin/time -f "$mode %e %M" -a -o "$P/timings.tsv" \
+      python "$P/render.py" "$mode" "$PWD/phykit-runner.py" --threads 1 phylo_gwas \
+      --alignment benchmarks/fixtures/phylo_gwas_multigroup.fa \
+      --phenotype benchmarks/fixtures/phylo_gwas_multigroup.tsv \
+      --output "$P/$mode.png" --json > "$P/$mode.json"
+  done
+done
+cmp "$P/tight.json" "$P/no-tight.json"
+```
+
+For the PNG dimensions, open both outputs with `PIL.Image.open` and
+inspect `.size`.
+
+**Covarying rates imports.** Separately running the bundled command with
+`python -X importtime` attributed about 104 ms cumulative import time to
+`Bio.Phylo`, including 30 ms to its Nexus reader and 59 ms to its PhyloXML
+reader. These are import-tree measurements and fluctuate between runs.
+Importing only a Biopython Newick submodule still initializes its parent
+package. A follow-up would compare the existing compact PhyKIT Newick
+reader on ordinary files against Biopython on feature-rich fixtures,
+including metadata and rooting, before considering a parser substitution.
+
+## Expanded CLI function coverage
+
+The bundled harness can capture a separate profile for each command.
+A pass across its 30 cases observed 355 of 3,114 named definitions on
+the optimized checkout at `c6db9a42`. The exact function inventory can
+be regenerated as TSV. This records whether a definition was observed
+and which CLI profiles observed it.
+
+```sh
+P=$(mktemp -d)
+env PHYKIT_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 \
+  MKL_NUM_THREADS=1 NUMBA_NUM_THREADS=1 \
+  python benchmarks/profile_commands.py --repeat 1 --warmup 0 --profile-dir "$P"
+python benchmarks/profile_function_coverage.py "$P"/*.prof > "$P/functions.tsv"
+```
