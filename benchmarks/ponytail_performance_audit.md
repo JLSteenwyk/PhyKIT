@@ -498,6 +498,16 @@ repeated = (np.eye(8) + 0.01, np.array([0.0] * 4 + [1.0] * 4))
 near_singular = (np.full((8, 8), 1.0) + 1e-9 * np.eye(8), np.arange(8.0))
 ```
 
+To reproduce function timings and the negative correctness findings:
+
+```sh
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 PYTHONPATH="$PWD" \
+  python benchmarks/experiments/signal_covariance_solve.py --repeat 5
+```
+
+This was a function-level prototype. CLI runtime and peak memory were not
+measured for a production integration.
+
 ## Large topology-autocorrelation profile
 
 The existing checked benchmark exercises 1,000, 10,000, and 100,000
