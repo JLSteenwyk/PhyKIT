@@ -8,6 +8,8 @@ Major changes to PhyKIT are summarized here.
 
 **2.8.0**:
 
+* Added support for Python 3.14 and 3.15. Python 3.12 is now the minimum
+  supported version.
 * Boolean command-line arguments now also accept ``yes``/``y`` and ``no``/``n``
   (case-insensitive), in addition to ``true``/``t``/``1`` and ``false``/``f``/``0``.
 * Removed the unused internal ``phykit.helpers.parallel`` module
