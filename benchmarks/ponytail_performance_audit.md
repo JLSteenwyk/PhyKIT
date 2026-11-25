@@ -470,3 +470,59 @@ env PHYKIT_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 PYTHONPATH="$PWD" 
   python "$P/repeat_signal.py" phylogenetic_signal -t "$P/tree.nwk" \
     -d "$P/traits.tsv" -p 100
 ```
+
+### Covariance-solve prototype outcome
+
+A scratch prototype used a Cholesky factor and triangular solves to
+whiten the observed and permuted trait vectors in batches of 128.
+It retained the fixed permutation seed. At 1,024 taxa, with five
+runs per variant, the median time in the K calculation fell from
+0.138 to 0.025 s for 100 permutations and from 0.212 to 0.087 s for
+1,000 permutations. At 128 taxa and 1,000 permutations the prototype
+was slightly slower (0.0087 vs 0.0081 s).
+
+The prototype changed permutation p-values from 0.6 to 1.0 for eight
+exchangeable tips with repeated traits and from 0.993 to 0.005 for
+a near-singular covariance. The latter also materially changed K.
+The current production calculation was retained. A separate numerical
+investigation with an independent reference is needed to choose a
+tie and conditioning policy before deploying a new formula. The
+synthetic cases can be reproduced with the following covariance and
+trait pairs. The signed differences around ties matter because the
+existing count checks `permutations >= observed` exactly.
+
+```python
+import numpy as np
+
+repeated = (np.eye(8) + 0.01, np.array([0.0] * 4 + [1.0] * 4))
+near_singular = (np.full((8, 8), 1.0) + 1e-9 * np.eye(8), np.arange(8.0))
+```
+
+## Large topology-autocorrelation profile
+
+The existing checked benchmark exercises 1,000, 10,000, and 100,000
+classified genes with ten distance bins. Across both profiler and
+allocation instrumentation, `validate_rows` accounted for 69.73 s
+cumulative and `chromosome_marks` for 7.36 s. These elapsed times
+include tracing overhead. The 100,000-gene pair totals were 899,955
+and 949,905,000 at the two distance cutoffs, with the same 48.6 MiB peak
+additional traced allocation. The algorithm aggregates range counts
+without allocating a record per pair.
+
+[`uncertainty`](../phykit/helpers/topology_autocorrelation.py#L243)
+calls `_, all_marks = analyze(rows, edges, block_size)` for every
+block size. Each call normalizes, validates and groups the same gene
+rows, then builds point-estimate tables that uncertainty discards.
+This creates a candidate to validate and group rows once and compute
+only the required marks for each block size. Confirmation needs both
+interval and diagnostic output comparisons because group order affects
+random seed assignment.
+
+```sh
+P=$(mktemp -d)
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 PYTHONPATH="$PWD" \
+  python -m cProfile -o "$P/topology.prof" \
+  benchmarks/benchmark_topology_autocorrelation.py --sizes 1000 10000 100000 \
+  --maxima 1000 1000000 --output "$P/result.json"
+python -m pstats "$P/topology.prof"
+```
