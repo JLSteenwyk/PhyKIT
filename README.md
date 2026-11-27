@@ -39,8 +39,8 @@
             <img src="https://img.shields.io/badge/License-MIT-blue.svg">
         </a>
         <br />
-        <a href="https://pypi.org/project/phykit/">
-            <img src="https://img.shields.io/pypi/pyversions/phykit" alt="Supported Python versions">
+        <a href="https://github.com/JLSteenwyk/PhyKIT/actions/workflows/ci.yml">
+            <img src="https://img.shields.io/badge/Python-3.12%20%7C%203.13%20%7C%203.14%20%7C%203.15-blue" alt="Supported Python versions: 3.12, 3.13, 3.14, and 3.15">
         </a>
         <a href="https://academic.oup.com/bioinformatics/article-abstract/37/16/2325/6131675?redirectedFrom=fulltext">
           <img src="https://zenodo.org/badge/DOI/10.1093/bioinformatics/btab096.svg">
