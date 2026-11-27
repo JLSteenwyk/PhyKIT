@@ -547,9 +547,9 @@ class PhyloAnova(Tree):
         s = min(df_model, p)
         m = (abs(df_model - p) - 1) / 2.0
         nn = (df_resid - p - 1) / 2.0
-        if s > 0 and (s + 2 * nn + 2) > 0:
+        if s > 0 and (s - pillai) > 0 and (2 * nn + s + 1) > 0:
             f_approx = (
-                (pillai / s)
+                (pillai / (s - pillai))
                 * ((2 * nn + s + 1) / (2 * m + s + 1))
             )
         else:
