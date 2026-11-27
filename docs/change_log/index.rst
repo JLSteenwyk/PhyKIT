@@ -6,6 +6,13 @@ Change log
 
 Major changes to PhyKIT are summarized here.
 
+**2.9.3**:
+
+* Correct the Pillai approximate F statistic in phylogenetic MANOVA and
+  compute its denominator stably for near-perfect fits (GitHub PR #122).
+* Report a clear error for MANOVA with insufficient residual degrees of
+  freedom or a singular residual covariance matrix.
+
 **2.9.2**:
 
 * Consolidate NumPy's lazy loading across alignment and tree services while
