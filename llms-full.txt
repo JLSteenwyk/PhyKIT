@@ -1,6 +1,6 @@
 # PhyKIT complete documentation corpus
 
-Version: 2.9.2
+Version: 2.9.3
 Generated from canonical documentation and live command parsers.
 
 ## Source: getting_started/index.rst
