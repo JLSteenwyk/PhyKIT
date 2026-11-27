@@ -80,7 +80,7 @@ jobs:
       - name: Build and test the Conda package
         if: steps.generate.outputs.changed == 'true'
         run: >-
-          conda build bioconda/recipes/phykit
+          conda-build bioconda/recipes/phykit
           --override-channels -c conda-forge -c bioconda --no-anaconda-upload
       - name: Retain generated recipe for inspection, including on build failure
         if: always() && steps.generate.outcome == 'success'
