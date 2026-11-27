@@ -81,7 +81,9 @@ jobs:
         if: steps.generate.outputs.changed == 'true'
         run: >-
           conda-build bioconda/recipes/phykit
-          --override-channels -c conda-forge -c bioconda --no-anaconda-upload
+          --override-channels
+          -c https://conda.anaconda.org/conda-forge
+          -c https://conda.anaconda.org/bioconda --no-anaconda-upload
       - name: Retain generated recipe for inspection, including on build failure
         if: always() && steps.generate.outcome == 'success'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
