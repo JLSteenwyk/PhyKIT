@@ -742,7 +742,9 @@ class TestPhyloAnova:
         s = min(df_model, n_traits)
         m = (abs(df_model - n_traits) - 1) / 2.0
         nn = (df_resid - n_traits - 1) / 2.0
-        f_approx = (pillai / s) * ((2 * nn + s + 1) / (2 * m + s + 1))
+        f_approx = (pillai / (s - pillai)) * (
+            (2 * nn + s + 1) / (2 * m + s + 1)
+        )
 
         legacy_rng = np.random.RandomState(args.seed)
         pillai_perms = np.zeros(args.permutations)
@@ -771,6 +773,49 @@ class TestPhyloAnova:
         )
         assert observed["p_value"] == pytest.approx(
             float(np.mean(pillai_perms >= pillai))
+        )
+
+    def test_manova_pillai_f_approx_matches_univariate_and_r_reference(self):
+        tree = Phylo.read(
+            StringIO(
+                "(((A:1,B:1):1,(C:1,D:1):1):2,((E:1,F:1):1,(G:1,H:1):1):2);"
+            ),
+            "newick",
+        )
+        names = ["A", "B", "C", "D", "E", "F", "G", "H"]
+        from phykit.services.tree.vcv_utils import build_vcv_matrix
+
+        L_inv = np.linalg.inv(np.linalg.cholesky(build_vcv_matrix(tree, names)))
+        groups = np.array([0, 0, 0, 0, 1, 1, 1, 1])
+        Y = np.array(
+            [
+                [10.0, 20.0],
+                [10.2, 20.1],
+                [9.8, 19.9],
+                [10.1, 20.2],
+                [0.0, 0.0],
+                [0.1, -0.2],
+                [-0.1, 0.1],
+                [0.2, -0.1],
+            ]
+        )
+        Y_star = L_inv @ Y
+        X_full_star = L_inv @ np.column_stack([np.ones(8), groups])
+        X_red_star = L_inv @ np.ones((8, 1))
+        svc = PhyloAnova(_make_args(permutations=19, seed=42))
+
+        res_manova = svc._run_manova(Y_star, X_full_star, X_red_star, 8, 2)
+        assert res_manova["pillai_trace"] == pytest.approx(0.99883301, rel=1e-5)
+        assert res_manova["f_stat"] == pytest.approx(2139.7644, rel=1e-4)
+
+        res_anova_1d = svc._run_anova(
+            Y_star[:, 0], X_full_star, X_red_star, 8, 2
+        )
+        res_manova_1d = svc._run_manova(
+            Y_star[:, :1], X_full_star, X_red_star, 8, 2
+        )
+        assert res_manova_1d["f_stat"] == pytest.approx(
+            res_anova_1d["f_stat"], rel=1e-10
         )
 
     def test_pairwise_output(self, capsys):
