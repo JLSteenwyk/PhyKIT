@@ -514,6 +514,16 @@ class PhyloAnova(Tree):
         n_groups: int,
     ) -> dict:
         """Multivariate phylogenetic MANOVA with RRPP using Pillai's trace."""
+        p = Y_star.shape[1]
+        df_model = n_groups - 1
+        df_resid = n - n_groups
+        if df_resid < p:
+            raise PhykitUserError(
+                ["MANOVA requires at least as many residual degrees of freedom "
+                 "as response traits. Use fewer traits or more observations."],
+                code=2,
+            )
+
         Q_red = self._projection_basis(X_red_star)
         Q_full = self._projection_basis(X_full_star)
 
@@ -529,31 +539,31 @@ class PhyloAnova(Tree):
         SS_resid = resid_full.T @ resid_full
         SS_model = SS_total - SS_resid
 
-        df_model = n_groups - 1
-        df_resid = n - n_groups
-
         # Pillai's trace
         try:
             SS_resid_inv = np.linalg.inv(SS_resid)
             H_E_inv = SS_model @ SS_resid_inv
             eigenvalues = np.real(np.linalg.eigvals(H_E_inv))
             pillai = _pillai_trace_from_eigenvalues(eigenvalues)
-        except np.linalg.LinAlgError:
-            pillai = 0.0
-            eigenvalues = np.array([0.0])
+        except np.linalg.LinAlgError as error:
+            raise PhykitUserError(
+                ["MANOVA residual covariance is singular. Check for response "
+                 "traits with no residual variation or redundant traits."],
+                code=2,
+            ) from error
 
         # Approximate F for Pillai's trace
-        p = Y_star.shape[1]  # number of response variables
         s = min(df_model, p)
-        m = (abs(df_model - p) - 1) / 2.0
-        nn = (df_resid - p - 1) / 2.0
-        if s > 0 and (s - pillai) > 0 and (2 * nn + s + 1) > 0:
-            f_approx = (
-                (pillai / (s - pillai))
-                * ((2 * nn + s + 1) / (2 * m + s + 1))
-            )
-        else:
-            f_approx = 0.0
+        df_numerator = max(df_model, p)
+        df_denominator = df_resid - p + s
+        f_approx = 0.0
+        if s > 0 and df_denominator > 0:
+            # H has rank at most s. Sum the complements of its s largest
+            # generalized eigenvalue contributions before the trace rounds to s.
+            largest = np.sort(eigenvalues)[-s:]
+            complement = float((1.0 / (1.0 + largest)).sum())
+            if complement > 0:
+                f_approx = (pillai / complement) * (df_denominator / df_numerator)
 
         # RRPP permutations
         rng = np.random.RandomState(self.seed)

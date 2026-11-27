@@ -818,6 +818,44 @@ class TestPhyloAnova:
             res_anova_1d["f_stat"], rel=1e-10
         )
 
+    def test_manova_pillai_f_survives_trace_rounding_to_one(self):
+        groups = np.repeat([0.0, 1.0], 4)
+        response = groups + 1e-9 * np.tile([-2.0, -1.0, 1.0, 2.0], 2)
+        full = np.column_stack([np.ones(8), groups])
+        reduced = full[:, :1]
+        svc = PhyloAnova(_make_args(permutations=19, seed=42))
+
+        anova = svc._run_anova(response, full, reduced, 8, 2)
+        manova = svc._run_manova(response[:, None], full, reduced, 8, 2)
+
+        assert manova["pillai_trace"] == 1.0
+        assert manova["f_stat"] == pytest.approx(anova["f_stat"], rel=1e-6)
+
+    def test_manova_rejects_too_few_residual_degrees_of_freedom(self):
+        groups = np.repeat([0.0, 1.0], 2)
+        full = np.column_stack([np.ones(4), groups])
+        response = np.arange(12.0).reshape(4, 3)
+        svc = PhyloAnova(_make_args(permutations=19, seed=42))
+
+        with pytest.raises(PhykitUserError) as exc:
+            svc._run_manova(response, full, full[:, :1], 4, 2)
+
+        assert exc.value.code == 2
+        assert "residual degrees of freedom" in exc.value.messages[0]
+
+    def test_manova_rejects_singular_residual_covariance(self):
+        groups = np.repeat([0.0, 1.0], 4)
+        full = np.column_stack([np.ones(8), groups])
+        trait = np.arange(8.0)
+        response = np.column_stack([trait, trait])
+        svc = PhyloAnova(_make_args(permutations=19, seed=42))
+
+        with pytest.raises(PhykitUserError) as exc:
+            svc._run_manova(response, full, full[:, :1], 8, 2)
+
+        assert exc.value.code == 2
+        assert "residual covariance is singular" in exc.value.messages[0]
+
     def test_pairwise_output(self, capsys):
         """--pairwise produces pairwise comparisons."""
         args = _make_args(pairwise=True, permutations=99, seed=42)
