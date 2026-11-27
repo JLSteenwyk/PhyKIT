@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://github.com/jlsteenwyk/phykit">
-    <img src="https://raw.githubusercontent.com/JLSteenwyk/PhyKIT/master/docs/_static/img/phykit_logo.png" alt="Logo" width="400">
+    <img src="https://raw.githubusercontent.com/JLSteenwyk/PhyKIT/main/docs/_static/img/phykit_logo.png" alt="Logo" width="400">
   </a>
   <p align="center">
     <a href="https://jlsteenwyk.com/PhyKIT/">Docs</a>
@@ -11,10 +11,10 @@
   </p>
     <p align="center">
         <a href="https://github.com/JLSteenwyk/PhyKIT/actions" alt="Build">
-            <img src="https://img.shields.io/github/actions/workflow/status/JLSteenwyk/PhyKIT/ci.yml?branch=master">
+            <img src="https://img.shields.io/github/actions/workflow/status/JLSteenwyk/PhyKIT/ci.yml?branch=main" alt="CI status on main">
         </a>
         <a href="https://codecov.io/gh/jlsteenwyk/phykit" alt="Coverage">
-          <img src="https://codecov.io/gh/jlsteenwyk/phykit/branch/master/graph/badge.svg?token=0J49I6441V">
+          <img src="https://codecov.io/gh/jlsteenwyk/phykit/branch/main/graph/badge.svg?token=0J49I6441V" alt="Code coverage on main">
         </a>
         <a href="https://github.com/JLSteenwyk/PhyKIT/graphs/contributors" alt="Contributors">
             <img src="https://img.shields.io/github/contributors/JLSteenwyk/PhyKIT">
@@ -22,15 +22,25 @@
         <a href="https://bsky.app/profile/jlsteenwyk.bsky.social" target="_blank" rel="noopener noreferrer">
           <img src="https://img.shields.io/badge/Bluesky-0285FF?logo=bluesky&logoColor=fff">
         </a>
+        <a href="https://x.com/jlsteenwyk" target="_blank" rel="noopener noreferrer">
+          <img src="https://img.shields.io/badge/X-000000?logo=x&amp;logoColor=fff" alt="Jacob L. Steenwyk on X">
+        </a>
         <br />
         <a href="https://pepy.tech/badge/phykit">
           <img src="https://static.pepy.tech/personalized-badge/phykit?period=total&units=international_system&left_color=grey&right_color=blue&left_text=PyPi%20Downloads">
         </a>
+        <a href="https://anaconda.org/bioconda/phykit">
+          <img src="https://img.shields.io/conda/dn/bioconda/phykit?label=bioconda%20downloads" alt="Bioconda downloads">
+        </a>
+        <a href="https://usegalaxy.org/root?tool_id=toolshed.g2.bx.psu.edu%2Frepos%2Fpadge%2Fphykit%2Fphykit_alignment_based%2F0.1.0">
+          <img src="https://img.shields.io/badge/usegalaxy-.org-brightgreen" alt="Run PhyKIT alignment tools on Galaxy Main">
+        </a>
         <a href="https://lbesson.mit-license.org/" alt="License">
             <img src="https://img.shields.io/badge/License-MIT-blue.svg">
         </a>
-        <a href="https://pypi.org/project/phykit/" alt="PyPI - Python Version">
-            <img src="https://img.shields.io/pypi/pyversions/phykit">
+        <br />
+        <a href="https://pypi.org/project/phykit/">
+            <img src="https://img.shields.io/pypi/pyversions/phykit" alt="Supported Python versions">
         </a>
         <a href="https://academic.oup.com/bioinformatics/article-abstract/37/16/2325/6131675?redirectedFrom=fulltext">
           <img src="https://zenodo.org/badge/DOI/10.1093/bioinformatics/btab096.svg">
